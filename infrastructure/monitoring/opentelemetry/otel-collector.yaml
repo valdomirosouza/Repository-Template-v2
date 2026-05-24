@@ -1,0 +1,102 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: otel-collector
+          scrape_interval: 10s
+          static_configs:
+            - targets: ["0.0.0.0:8888"]
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 1000
+    send_batch_max_size: 2000
+
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  resource:
+    attributes:
+      - key: service.environment
+        value: ${env:SERVICE_ENVIRONMENT}
+        action: upsert
+      - key: deployment.region
+        value: ${env:DEPLOYMENT_REGION}
+        action: upsert
+
+  # Strip any remaining PII that might appear in span attributes
+  # Uses attribute key-name-based filtering (structural, not value-based)
+  attributes/mask-pii:
+    actions:
+      - key: user.email
+        action: delete
+      - key: user.name
+        action: delete
+      - key: http.request.header.authorization
+        action: delete
+      - key: http.request.header.cookie
+        action: delete
+
+exporters:
+  otlp/jaeger:
+    endpoint: ${env:JAEGER_ENDPOINT}
+    tls:
+      insecure: false
+      ca_file: /etc/ssl/certs/ca-certificates.crt
+
+  prometheusremotewrite:
+    endpoint: ${env:PROMETHEUS_REMOTE_WRITE_ENDPOINT}
+    tls:
+      insecure_skip_verify: false
+    headers:
+      Authorization: "Bearer ${env:PROMETHEUS_REMOTE_WRITE_TOKEN}"
+
+  logging:
+    loglevel: warn
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+  pprof:
+    endpoint: 0.0.0.0:1777
+
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+service:
+  extensions: [health_check, pprof, zpages]
+
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes/mask-pii, resource, batch]
+      exporters: [otlp/jaeger, logging]
+
+    metrics:
+      receivers: [otlp, prometheus]
+      processors: [memory_limiter, resource, batch]
+      exporters: [prometheusremotewrite, logging]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes/mask-pii, resource, batch]
+      exporters: [logging]
+
+  telemetry:
+    logs:
+      level: warn
+    metrics:
+      address: 0.0.0.0:8888

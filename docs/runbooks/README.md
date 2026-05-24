@@ -1,0 +1,133 @@
+# Runbooks
+
+Operational runbooks for this system. All runbooks follow a **blameless format**:
+they focus on systems, processes, and improvements — not on individual mistakes.
+
+---
+
+## Runbook Index
+
+| Runbook                                        | Severity scope | Last reviewed |
+| ---------------------------------------------- | -------------- | ------------- |
+| [rollback-procedure.md](rollback-procedure.md) | P1–P2          | 2026-05-24    |
+| [disaster-recovery.md](disaster-recovery.md)   | P1             | 2026-05-24    |
+
+---
+
+## Runbook Template
+
+Copy this template when creating a new runbook:
+
+```markdown
+# Runbook — <Service/Incident Name>
+
+**Runbook ID:** RB-NNN
+**Severity:** P1 Critical / P2 High / P3 Medium / P4 Low
+**Owner:** <Team>
+**Last reviewed:** YYYY-MM-DD
+**Reviewed by:** <Name — must be someone outside the authoring team>
+
+---
+
+## Symptoms
+
+What does the on-call engineer observe?
+
+- Alerts firing: <alert names>
+- Dashboard signals: <what looks wrong>
+- User reports: <if applicable>
+
+---
+
+## Impact
+
+- Who is affected: <users / services / data flows>
+- Severity: <P1/P2/P3/P4>
+- SLO at risk: <SLO name from slo.yaml>
+
+---
+
+## Immediate Mitigation
+
+Steps to reduce impact RIGHT NOW — before root cause is found.
+
+1. <Step 1>
+2. <Step 2>
+
+---
+
+## Root Cause Investigation
+
+Diagnostic commands and queries to run.
+
+\`\`\`bash
+
+# Check pod status
+
+kubectl get pods -n <namespace>
+
+# Check recent logs
+
+kubectl logs -n <namespace> <pod> --tail=100
+
+# Check Golden Signals dashboard
+
+# URL: <Grafana dashboard URL>
+
+\`\`\`
+
+Key questions to answer:
+
+- When did the issue start? (check `trace_id` in logs)
+- Which component is the failure origin?
+- Is the failure isolated or cascading?
+
+---
+
+## Resolution
+
+Steps to fully resolve the issue.
+
+1. <Step 1>
+2. <Step 2>
+
+---
+
+## Post-Incident
+
+Actions after resolution:
+
+- [ ] Monitoring window: observe Golden Signals for <duration> after fix
+- [ ] If P1 or P2: open post-mortem in `docs/postmortems/`
+- [ ] Update this runbook with any new findings
+- [ ] File ticket for any long-term prevention work
+
+---
+
+## Prevention
+
+Long-term fixes or improvements to prevent recurrence.
+
+- <Prevention item 1>
+- <Prevention item 2>
+```
+
+---
+
+## Blameless Principles
+
+1. **Systems over individuals** — runbooks describe what systems did, not what people did wrong
+2. **Learning over blame** — every incident is an opportunity to improve the system
+3. **Contributing factors** — identify all contributing factors, not a single root cause
+4. **Prevention over punishment** — post-mortems result in action items, not performance reviews
+5. **Psychological safety** — engineers must feel safe to report incidents promptly and accurately
+
+---
+
+## Review Requirements
+
+Every runbook must be:
+
+- Reviewed by someone **outside the authoring team** before it is considered active
+- Re-reviewed after any incident that reveals a gap in the runbook
+- Re-reviewed at least **annually** as part of the PRR process

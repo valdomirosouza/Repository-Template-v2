@@ -1,0 +1,248 @@
+{
+  "__requires__": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    },
+    { "type": "panel", "id": "stat", "name": "Stat", "version": "" },
+    { "type": "panel", "id": "gauge", "name": "Gauge", "version": "" }
+  ],
+  "__inputs__": [
+    {
+      "name": "datasource",
+      "label": "Prometheus Datasource",
+      "description": "Prometheus datasource",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "title": "SRE Overview — SLO & Error Budget",
+  "uid": "sre-overview-v1",
+  "tags": ["sre", "slo", "error-budget"],
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "query",
+        "datasource": "${datasource}",
+        "query": "label_values(http_requests_total, service)",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 2
+      },
+      {
+        "name": "window",
+        "type": "custom",
+        "query": "1h,6h,24h,30d",
+        "current": { "selected": false, "text": "1h", "value": "1h" },
+        "options": [
+          { "selected": true, "text": "1h", "value": "1h" },
+          { "selected": false, "text": "6h", "value": "6h" },
+          { "selected": false, "text": "24h", "value": "24h" },
+          { "selected": false, "text": "30d", "value": "30d" }
+        ]
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "SLO Status — Availability %",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 0 },
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "(1 - sum(rate(http_requests_total{status=~\"5..\", service=\"api-gateway\"}[$window])) / sum(rate(http_requests_total{service=\"api-gateway\"}[$window]))) * 100",
+          "legendFormat": "api-gateway"
+        },
+        {
+          "expr": "(1 - sum(rate(agent_actions_total{outcome=\"error\", service=\"agent-service\"}[$window])) / sum(rate(agent_actions_total{service=\"agent-service\"}[$window]))) * 100",
+          "legendFormat": "agent-service"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 99.0 },
+              { "color": "green", "value": 99.9 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "horizontal"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Error Budget Remaining",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "slo:error_budget_remaining:ratio{service=~\"$service\"} * 100",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "green", "value": 50 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Burn Rate (1h and 6h)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status=~\"5..\", service=~\"$service\"}[1h])) / sum(rate(http_requests_total{service=~\"$service\"}[1h])) / (1 - 0.999)",
+          "legendFormat": "{{service}} 1h burn"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{status=~\"5..\", service=~\"$service\"}[6h])) / sum(rate(http_requests_total{service=~\"$service\"}[6h])) / (1 - 0.999)",
+          "legendFormat": "{{service}} 6h burn"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 14.4 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "HITL — Approvals Today",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 8 },
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "increase(hitl_decisions_total{outcome=\"approved\"}[24h])",
+          "legendFormat": "Approved"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "fixed", "fixedColor": "green" }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "HITL — Rejections Today",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 8 },
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "increase(hitl_decisions_total{outcome=\"rejected\"}[24h])",
+          "legendFormat": "Rejected"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "fixed", "fixedColor": "orange" }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "HITL — Avg Approval Latency",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 8 },
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(hitl_wait_seconds_bucket[24h])) by (le))",
+          "legendFormat": "p50 wait"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1800 },
+              { "color": "red", "value": 2700 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Agent Action Errors (24h)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(rate(agent_actions_total{outcome=\"error\"}[5m])) by (agent_id) / sum(rate(agent_actions_total[5m])) by (agent_id) * 100",
+          "legendFormat": "{{agent_id}} error %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      }
+    }
+  ]
+}

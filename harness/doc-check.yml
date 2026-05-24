@@ -1,0 +1,50 @@
+name: doc-check
+description: Documentation gate — ensures all documentation obligations are met before merge
+version: "1.0"
+
+gates:
+  - name: changelog-updated
+    command: >
+      git diff --name-only origin/main...HEAD | grep -q '^CHANGELOG.md$'
+    blocking: true
+    failure_message: "CHANGELOG.md was not updated. Add an entry under [Unreleased] for every production change (see CONTRIBUTING.md)."
+
+  - name: spec-exists
+    command: >
+      bash -c "
+        SPEC=$(grep -oE 'specs/[a-z/-]+\.md' .git/MERGE_MSG 2>/dev/null || echo '');
+        [ -z \"$SPEC\" ] && SPEC=$(grep -oE 'specs/[a-z/-]+\.md' ${PR_BODY_FILE:-/dev/null} 2>/dev/null || echo '');
+        [ -z \"$SPEC\" ] && { echo 'No spec reference found'; exit 1; };
+        test -f \"$SPEC\" && echo \"Spec found: $SPEC\" || { echo \"Spec not found: $SPEC\"; exit 1; }
+      "
+    blocking: true
+    failure_message: "Referenced spec file does not exist in specs/. Create and approve the spec before implementing."
+
+  - name: adr-current
+    command: >
+      bash -c "
+        ADRS=$(grep -oE 'ADR-[0-9]+' .git/MERGE_MSG 2>/dev/null || echo '');
+        for adr in $ADRS; do
+          FILE=$(ls docs/adr/${adr}-*.md 2>/dev/null | head -1);
+          [ -z \"$FILE\" ] && { echo \"ADR file not found for $adr\"; exit 1; };
+          echo \"ADR found: $FILE\";
+        done
+      "
+    blocking: false
+    failure_message: "Referenced ADR file not found in docs/adr/. Create the ADR or correct the reference."
+
+  - name: runbook-linked
+    command: >
+      bash -c "
+        NEW_SERVICES=$(git diff --name-only origin/main...HEAD
+          | grep -oE 'src/[a-z_-]+/' | sort -u);
+        for svc in $NEW_SERVICES; do
+          SVC_NAME=$(basename $svc);
+          if ! ls docs/runbooks/*${SVC_NAME}*.md 2>/dev/null | grep -q .; then
+            echo \"Warning: new service $SVC_NAME has no runbook in docs/runbooks/\";
+          fi
+        done
+        exit 0
+      "
+    blocking: false
+    failure_message: "New service detected without a runbook. Add a runbook to docs/runbooks/ before the service goes to production."

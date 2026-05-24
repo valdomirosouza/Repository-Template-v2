@@ -1,0 +1,145 @@
+version: "1.0"
+description: "Machine-readable PRR checklist — mirrors PRR-TEMPLATE.md"
+last_updated: "2026-05-24"
+
+checklist:
+  - category: slo_readiness
+    items:
+      - id: PRR-SLO-001
+        description: "slo.yaml committed with SLOs for this service"
+        blocking: true
+        evidence_required: "Link to slo.yaml entry for this service"
+      - id: PRR-SLO-002
+        description: "SLOs reviewed and approved by SRE Lead"
+        blocking: true
+        evidence_required: "SRE Lead approval (name + date)"
+      - id: PRR-SLO-003
+        description: "Error budget policy acknowledged by team"
+        blocking: true
+      - id: PRR-SLO-004
+        description: "Error budget > 10% (service not in freeze state)"
+        blocking: true
+        evidence_required: "Current error budget percentage"
+
+  - category: observability
+    items:
+      - id: PRR-OBS-001
+        description: "Golden Signals instrumented (metrics.py)"
+        blocking: true
+        evidence_required: "Link to metrics implementation"
+      - id: PRR-OBS-002
+        description: "Structured JSON logging implemented (logger.py)"
+        blocking: true
+      - id: PRR-OBS-003
+        description: "Distributed tracing enabled (otel_setup.py)"
+        blocking: true
+      - id: PRR-OBS-004
+        description: "Grafana dashboard created and accessible"
+        blocking: true
+        evidence_required: "Dashboard URL"
+      - id: PRR-OBS-005
+        description: "All CUJs have dedicated dashboards"
+        blocking: true
+        evidence_required: "List of CUJ dashboard URLs"
+
+  - category: alerting
+    items:
+      - id: PRR-ALT-001
+        description: "Burn rate alerts configured in Prometheus rules"
+        blocking: true
+      - id: PRR-ALT-002
+        description: "Alerts routed to on-call rotation"
+        blocking: true
+        evidence_required: "PagerDuty / OpsGenie routing confirmation"
+      - id: PRR-ALT-003
+        description: "Alerts tested: fired and resolved in staging"
+        blocking: true
+      - id: PRR-ALT-004
+        description: "Every alert has a runbook URL in its annotation"
+        blocking: true
+
+  - category: operational
+    items:
+      - id: PRR-OPS-001
+        description: "Runbook reviewed by someone outside the authoring team"
+        blocking: true
+        evidence_required: "Reviewer name + date"
+      - id: PRR-OPS-002
+        description: "Rollback procedure documented and tested"
+        blocking: true
+      - id: PRR-OPS-003
+        description: "DR plan covers this service"
+        blocking: false
+      - id: PRR-OPS-004
+        description: "On-call rotation updated"
+        blocking: true
+
+  - category: ai_agent
+    applicable_if: "service includes AI agents"
+    items:
+      - id: PRR-AI-001
+        description: "HITL controls active for all production agent actions"
+        blocking: true
+      - id: PRR-AI-002
+        description: "HOTL monitoring dashboard configured"
+        blocking: true
+      - id: PRR-AI-003
+        description: "Agent audit log verified: append-only, queryable"
+        blocking: true
+      - id: PRR-AI-004
+        description: "Autonomy boundaries documented"
+        blocking: true
+      - id: PRR-AI-005
+        description: "HITL timeout = reject (never auto-approve)"
+        blocking: true
+
+  - category: privacy
+    items:
+      - id: PRR-PRV-001
+        description: "PII masking validated end-to-end (no PII in third-party systems)"
+        blocking: true
+      - id: PRR-PRV-002
+        description: "DPIA approved and current"
+        blocking: true
+        evidence_required: "DPIA version and DPO approval date"
+      - id: PRR-PRV-003
+        description: "RIPD approved and current"
+        blocking: true
+        evidence_required: "RIPD version and DPO approval date"
+      - id: PRR-PRV-004
+        description: "Data retention lifecycle rules configured and tested"
+        blocking: true
+      - id: PRR-PRV-005
+        description: "DPO sign-off obtained for this release"
+        blocking: true
+
+  - category: security
+    items:
+      - id: PRR-SEC-001
+        description: "SBOM generated and signed"
+        blocking: true
+        evidence_required: "Cosign attestation reference"
+      - id: PRR-SEC-002
+        description: "Container scan: zero Critical CVEs"
+        blocking: true
+        evidence_required: "Trivy scan report link"
+      - id: PRR-SEC-003
+        description: "SAST: zero CRITICAL/HIGH findings"
+        blocking: true
+        evidence_required: "Semgrep report link"
+      - id: PRR-SEC-004
+        description: "DAST: zero OWASP Top 10 critical findings in staging"
+        blocking: true
+
+  - category: capacity
+    items:
+      - id: PRR-CAP-001
+        description: "HPA configured with tested thresholds"
+        blocking: false
+      - id: PRR-CAP-002
+        description: "Load test completed at production-equivalent volume"
+        blocking: true
+        evidence_required: "k6 report link"
+      - id: PRR-CAP-003
+        description: "PodDisruptionBudget set (min 2 pods available)"
+        blocking: true

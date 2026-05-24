@@ -1,0 +1,54 @@
+# CODEOWNERS
+# Reviewers are auto-requested when matching paths are changed in a PR.
+# Last updated: 2026-05-24
+
+# Global fallback — all files not matched below
+*                                    @org/engineering-team
+
+# ── Governance ────────────────────────────────────────────────────────────────
+CLAUDE.md                            @org/tech-lead
+docs/adr/                            @org/tech-lead
+specs/                               @org/tech-lead @org/product-owner
+CHANGELOG.md                         @org/tech-lead
+
+# ── Privacy — DPO approval required ──────────────────────────────────────────
+docs/privacy/                        @org/dpo @org/tech-lead
+specs/privacy/                       @org/dpo @org/tech-lead
+PRIVACY.md                           @org/dpo
+
+# ── AI Governance ─────────────────────────────────────────────────────────────
+docs/ai-governance/                  @org/ai-governance-lead @org/tech-lead
+specs/ai/                            @org/ai-governance-lead @org/tech-lead
+
+# ── Security — Security Lead required ────────────────────────────────────────
+src/guardrails/                      @org/security-lead @org/tech-lead
+docs/security/                       @org/security-lead
+SECURITY.md                          @org/security-lead
+.github/workflows/                   @org/devops-lead @org/security-lead
+tests/security/                      @org/security-lead
+
+# ── HITL Gateway — dual approval required ────────────────────────────────────
+src/agents/hitl_gateway.py           @org/security-lead @org/ai-governance-lead
+
+# ── Agent source ──────────────────────────────────────────────────────────────
+src/agents/                          @org/ai-governance-lead @org/tech-lead
+src/observability/                   @org/sre-lead
+src/shared/                          @org/tech-lead
+
+# ── SRE & Infrastructure ──────────────────────────────────────────────────────
+docs/sre/                            @org/sre-lead
+infrastructure/                      @org/devops-lead @org/sre-lead
+harness/                             @org/devops-lead
+infrastructure/scripts/deploy/       @org/devops-lead @org/sre-lead
+
+# ── Change Management ─────────────────────────────────────────────────────────
+docs/change-management/              @org/tech-lead @org/sre-lead
+docs/runbooks/                       @org/sre-lead
+
+# ── Tests ─────────────────────────────────────────────────────────────────────
+tests/                               @org/engineering-team
+tests/chaos/                         @org/sre-lead
+tests/contract/                      @org/tech-lead
+
+# ── Skills (Claude Code behavior) ────────────────────────────────────────────
+skills/                              @org/tech-lead

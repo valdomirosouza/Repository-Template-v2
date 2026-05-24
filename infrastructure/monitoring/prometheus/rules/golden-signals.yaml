@@ -1,0 +1,168 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: golden-signals
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    role: alert-rules
+spec:
+  groups:
+    - name: golden-signals.traffic
+      interval: 30s
+      rules:
+        - alert: HighRequestRate
+          expr: |
+            sum(rate(http_requests_total[5m])) by (service)
+            > 2 * sum(rate(http_requests_total[1h] offset 1d)) by (service)
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High request rate on {{ $labels.service }}"
+            description: "Request rate is more than 2× the 24h baseline for {{ $labels.service }} (current: {{ $value | humanize }} req/s)."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+        - alert: ZeroRequestRate
+          expr: |
+            sum(rate(http_requests_total[3m])) by (service) == 0
+          for: 3m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Zero request rate on {{ $labels.service }}"
+            description: "No requests received by {{ $labels.service }} for 3 minutes. Service may be down or unreachable."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+    - name: golden-signals.errors
+      interval: 30s
+      rules:
+        - alert: HighErrorRate
+          expr: |
+            sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+            / sum(rate(http_requests_total[5m])) by (service)
+            > 0.01
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High 5xx error rate on {{ $labels.service }}"
+            description: "Error rate is {{ $value | humanizePercentage }} on {{ $labels.service }} (threshold: 1%)."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+        - alert: CriticalErrorRate
+          expr: |
+            sum(rate(http_requests_total{status=~"5.."}[2m])) by (service)
+            / sum(rate(http_requests_total[2m])) by (service)
+            > 0.05
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Critical error rate — SLO breach on {{ $labels.service }}"
+            description: "Error rate is {{ $value | humanizePercentage }} on {{ $labels.service }} (SLO blocker threshold: 5%). Immediate action required."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/rollback-procedure.md"
+
+        - alert: AgentActionErrorRate
+          expr: |
+            sum(rate(agent_actions_total{outcome="error"}[5m])) by (agent_id)
+            / sum(rate(agent_actions_total[5m])) by (agent_id)
+            > 0.005
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Agent action error rate elevated for {{ $labels.agent_id }}"
+            description: "Agent {{ $labels.agent_id }} error rate is {{ $value | humanizePercentage }} (threshold: 0.5%)."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+    - name: golden-signals.saturation
+      interval: 30s
+      rules:
+        - alert: HighCPUUsage
+          expr: |
+            100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[10m])) by (instance) * 100)
+            > 80
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High CPU usage on {{ $labels.instance }}"
+            description: "CPU usage is {{ $value | humanize }}% on {{ $labels.instance }} (threshold: 80%)."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+        - alert: HighMemoryUsage
+          expr: |
+            (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+            > 85
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High memory usage on {{ $labels.instance }}"
+            description: "Memory usage is {{ $value | humanize }}% on {{ $labels.instance }} (threshold: 85%)."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+        - alert: KafkaConsumerLagHigh
+          expr: |
+            sum(kafka_consumer_lag) by (consumer_group, topic)
+            > 10000
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Kafka consumer lag high for {{ $labels.consumer_group }}"
+            description: "Consumer group {{ $labels.consumer_group }} on topic {{ $labels.topic }} has lag {{ $value | humanize }} (threshold: 10k messages)."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/disaster-recovery.md"
+
+        - alert: LLMTokenBudgetNearing
+          expr: |
+            (llm_tokens_used_total / llm_tokens_budget_total) * 100
+            > 80
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "LLM token budget above 80%"
+            description: "LLM token consumption is {{ $value | humanize }}% of the monthly budget. Review usage to avoid service degradation."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+    - name: golden-signals.latency
+      interval: 30s
+      rules:
+        - alert: HighP99Latency
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(http_request_duration_seconds_bucket[5m])) by (service, le)
+            ) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High p99 latency on {{ $labels.service }}"
+            description: "p99 latency is {{ $value | humanizeDuration }} on {{ $labels.service }} (SLO target: ≤500ms)."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+        - alert: CriticalP99Latency
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(http_request_duration_seconds_bucket[2m])) by (service, le)
+            ) > 2.0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Critical p99 latency on {{ $labels.service }}"
+            description: "p99 latency is {{ $value | humanizeDuration }} on {{ $labels.service }} (critical threshold: >2s). SLO breach likely."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/rollback-procedure.md"
+
+        - alert: HITLApprovalTimeout
+          expr: |
+            (time() - hitl_request_created_timestamp) > 240
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "HITL approval pending for {{ $labels.request_id }}"
+            description: "HITL approval request {{ $labels.request_id }} has been pending for >4 minutes. SLO breach in <1 minute (timeout at 3600s)."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"

@@ -1,0 +1,101 @@
+version: "1.0"
+last_updated: "2026-05-24"
+owner: sre-lead
+
+services:
+  - name: api-gateway
+    description: "External-facing REST API gateway"
+    slos:
+      - name: availability
+        sli_type: availability
+        description: "Percentage of requests returning non-5xx responses"
+        target: 99.9
+        window: 30d
+        error_budget_minutes: 43.8
+        alert_burn_rates:
+          - window: 1h
+            burn_rate: 14.4
+            severity: critical
+            runbook: docs/runbooks/rollback-procedure.md
+          - window: 6h
+            burn_rate: 6.0
+            severity: warning
+            runbook: docs/runbooks/rollback-procedure.md
+
+      - name: latency_p99
+        sli_type: latency
+        description: "99th percentile request latency"
+        target_ms: 500
+        window: 30d
+        alert_burn_rates:
+          - window: 5m
+            threshold_ms: 2000
+            severity: critical
+          - window: 15m
+            threshold_ms: 1000
+            severity: warning
+
+      - name: error_rate
+        sli_type: error_rate
+        description: "Percentage of requests completing without 5xx error"
+        target: 99.5
+        window: 30d
+
+  - name: agent-service
+    description: "AI agent processing service"
+    slos:
+      - name: hitl_approval_latency
+        sli_type: latency
+        description: "Time from HITL request creation to human decision"
+        target_ms: 300000
+        window: 30d
+        alert_burn_rates:
+          - window: 5m
+            threshold_ms: 240000
+            severity: warning
+            runbook: docs/runbooks/README.md
+
+      - name: agent_action_success_rate
+        sli_type: availability
+        description: "Percentage of agent actions completing without error"
+        target: 99.5
+        window: 30d
+        alert_burn_rates:
+          - window: 1h
+            burn_rate: 14.4
+            severity: critical
+          - window: 6h
+            burn_rate: 6.0
+            severity: warning
+
+      - name: agent_latency_p99
+        sli_type: latency
+        description: "99th percentile end-to-end agent request latency"
+        target_ms: 5000
+        window: 30d
+
+  - name: event-consumer
+    description: "Kafka event consumer service"
+    slos:
+      - name: consumer_lag
+        sli_type: saturation
+        description: "Kafka consumer lag — messages behind head of partition"
+        target_max: 10000
+        window: 30d
+        alert_burn_rates:
+          - window: 5m
+            threshold: 50000
+            severity: critical
+          - window: 15m
+            threshold: 10000
+            severity: warning
+
+      - name: processing_success_rate
+        sli_type: availability
+        description: "Percentage of consumed events processed without DLQ"
+        target: 99.9
+        window: 30d
+        alert_burn_rates:
+          - window: 1h
+            burn_rate: 14.4
+            severity: critical

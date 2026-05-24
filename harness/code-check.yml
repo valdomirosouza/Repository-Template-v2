@@ -1,0 +1,36 @@
+name: code-check
+description: PR gate — all gates must pass before merge is allowed
+version: "1.0"
+
+gates:
+  - name: lint
+    command: "uv run ruff check . && uv run ruff format --check . && uv run mypy src/"
+    blocking: true
+    failure_message: "Linting or type-check failed. Run 'make lint' locally to fix."
+
+  - name: unit-tests
+    command: "uv run pytest tests/unit/ --cov=src --cov-fail-under=80 -q"
+    blocking: true
+    failure_message: "Unit tests failed or coverage < 80%. All tests must pass and coverage must be ≥ 80% before merge."
+
+  - name: sast
+    command: "uv run semgrep --config p/python --config p/secrets src/ --error"
+    blocking: true
+    failure_message: "SAST found HIGH or CRITICAL findings. Zero HIGH/CRITICAL findings required before merge."
+
+  - name: secret-detection
+    command: "detect-secrets scan --baseline .secrets.baseline"
+    blocking: true
+    failure_message: "Potential secrets detected. Review findings with 'detect-secrets audit' and update baseline after false-positive triage."
+
+  - name: pii-scan
+    command: >
+      uv run pytest tests/security/test_pii_leakage.py -q &&
+      grep -rE '(fake@example\.com|000\.000\.000-00|192\.0\.2\.[0-9])' tests/fixtures/ || true
+    blocking: true
+    failure_message: "Real PII detected in test fixtures. Replace with synthetic placeholders (see specs/privacy/pii-inventory.md)."
+
+  - name: spec-compliance
+    command: "grep -qE 'specs/' .git/COMMIT_EDITMSG || grep -qE 'specs/' ${PR_BODY_FILE:-/dev/null}"
+    blocking: true
+    failure_message: "No spec reference found in PR description. Add a 'Referenced Spec: specs/...' line (see specs/README.md)."

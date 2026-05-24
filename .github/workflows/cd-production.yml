@@ -1,0 +1,136 @@
+name: CD — Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "SemVer version to deploy (e.g. 1.2.3)"
+        required: true
+        type: string
+      strategy:
+        description: "Deploy strategy"
+        required: true
+        type: choice
+        options: [canary, blue-green, rolling]
+        default: canary
+
+jobs:
+  check-error-budget:
+    name: Check Error Budget
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query remaining error budget
+        run: |
+          BUDGET=$(curl -sf "${{ vars.PROMETHEUS_URL }}/api/v1/query" \
+            --data-urlencode 'query=slo:error_budget_remaining:ratio{service="api-gateway"}' \
+            | jq -r '.data.result[0].value[1]')
+          echo "Remaining budget: $BUDGET"
+          if (( $(echo "$BUDGET < 0.10" | bc -l) )); then
+            echo "ERROR: Error budget < 10%. Deploy blocked."
+            exit 1
+          fi
+
+  deploy-canary:
+    name: Canary — 5%
+    runs-on: ubuntu-latest
+    needs: check-error-budget
+    environment: production
+    if: ${{ inputs.strategy == 'canary' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.14.0"
+
+      - name: Deploy 5% canary
+        run: |
+          helm upgrade --install \
+            --namespace production \
+            --set image.tag=${{ inputs.version }} \
+            --set canary.enabled=true \
+            --set canary.weight=5 \
+            --wait --timeout 5m \
+            app ./infrastructure/helm/
+
+      - name: Wait and check Golden Signals (5%)
+        run: |
+          echo "Waiting 15 minutes to observe canary metrics..."
+          sleep 900
+          ERROR_RATE=$(curl -sf "${{ vars.PROMETHEUS_URL }}/api/v1/query" \
+            --data-urlencode 'query=rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m])' \
+            | jq -r '.data.result[0].value[1]')
+          P99=$(curl -sf "${{ vars.PROMETHEUS_URL }}/api/v1/query" \
+            --data-urlencode 'query=histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))' \
+            | jq -r '.data.result[0].value[1]')
+          echo "Error rate: $ERROR_RATE | p99 latency: $P99s"
+          if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )) || (( $(echo "$P99 > 0.5" | bc -l) )); then
+            echo "Golden Signals gate FAILED at 5% canary"
+            exit 1
+          fi
+
+  promote-canary-25:
+    name: Canary — 25%
+    runs-on: ubuntu-latest
+    needs: deploy-canary
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.14.0"
+
+      - name: Promote to 25%
+        run: |
+          helm upgrade app ./infrastructure/helm/ \
+            --namespace production \
+            --reuse-values \
+            --set canary.weight=25 \
+            --wait --timeout 5m
+
+      - name: Wait and check Golden Signals (25%)
+        run: |
+          echo "Waiting 15 minutes..."
+          sleep 900
+          ERROR_RATE=$(curl -sf "${{ vars.PROMETHEUS_URL }}/api/v1/query" \
+            --data-urlencode 'query=rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m])' \
+            | jq -r '.data.result[0].value[1]')
+          P99=$(curl -sf "${{ vars.PROMETHEUS_URL }}/api/v1/query" \
+            --data-urlencode 'query=histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))' \
+            | jq -r '.data.result[0].value[1]')
+          if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )) || (( $(echo "$P99 > 0.5" | bc -l) )); then
+            echo "Golden Signals gate FAILED at 25% canary"
+            exit 1
+          fi
+
+  promote-canary-100:
+    name: Full Deploy — 100%
+    runs-on: ubuntu-latest
+    needs: promote-canary-25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.14.0"
+
+      - name: Promote to 100%
+        run: |
+          helm upgrade app ./infrastructure/helm/ \
+            --namespace production \
+            --set image.tag=${{ inputs.version }} \
+            --set canary.enabled=false \
+            --wait --timeout 10m
+
+  rollback-on-failure:
+    name: Auto Rollback
+    runs-on: ubuntu-latest
+    needs: [deploy-canary, promote-canary-25, promote-canary-100]
+    if: failure()
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute rollback
+        run: bash infrastructure/scripts/deploy/rollback.sh --env production
