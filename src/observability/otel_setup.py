@@ -1,4 +1,8 @@
-"""OpenTelemetry SDK bootstrap. Call setup_telemetry() once at application startup."""
+"""OpenTelemetry SDK bootstrap. Call setup_telemetry() once at application startup.
+
+Spec: specs/system/architecture.md (Observability — Observable-by-default)
+ADR:  ADR-0004 (Observability Stack)
+"""
 
 from __future__ import annotations
 

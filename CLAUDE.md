@@ -77,7 +77,7 @@ Step 10: UPDATE CHANGELOG.md with the change under the correct category.
 
 - **NO** code without a spec reference. If asked to implement without a spec, write the spec first.
 - **NO** direct DB access from API layer — always go through domain services.
-- **NO** synchronous calls for high-volume flows — use async events (see `specs/api/async-api-design.md`).
+- **NO** synchronous calls for high-volume flows — use async events (see `specs/api/async-api-design.md` and `specs/system/async-event-flow.md`).
 - **ALL** ADR decisions in `docs/adr/` are binding unless superseded by a newer ADR.
 
 ### 3.5 Quality Rules
@@ -92,17 +92,21 @@ Step 10: UPDATE CHANGELOG.md with the change under the correct category.
 
 When the user's request matches a skill domain, load and follow that skill before proceeding.
 
-| Trigger / Domain                  | Skill Path                                    | Activation Condition                        |
-| --------------------------------- | --------------------------------------------- | ------------------------------------------- |
-| Golden Signals, SLO breach, alert | `skills/sre/golden-signals.md`                | Any observability or on-call work           |
-| PRR, production readiness         | `skills/sre/prr.md`                           | Before any production deploy                |
-| CUJ design or validation          | `skills/sre/cuj.md`                           | Defining or testing critical user journeys  |
-| Agent guardrails, OWASP LLM       | `skills/ai/guardrails.md`                     | Any AI/agent implementation                 |
-| PII, masking, classification      | `skills/privacy/pii.md`                       | Any data handling code                      |
-| LGPD compliance                   | `skills/privacy/lgpd.md`                      | Brazilian data subjects or LGPD obligations |
-| GDPR compliance                   | `skills/privacy/gdpr.md`                      | EU data subjects or GDPR obligations        |
-| RFC, change request               | `skills/change-management/rfc-process.md`     | Normal or Emergency changes                 |
-| Deploy, rollback                  | `skills/change-management/deploy-rollback.md` | Any deploy or rollback operation            |
+| Trigger / Domain                  | Skill Path                                     | Activation Condition                        |
+| --------------------------------- | ---------------------------------------------- | ------------------------------------------- |
+| Golden Signals, SLO breach, alert | `skills/sre/golden-signals.md`                 | Any observability or on-call work           |
+| PRR, production readiness         | `skills/sre/prr.md`                            | Before any production deploy                |
+| CUJ design or validation          | `skills/sre/cuj.md`                            | Defining or testing critical user journeys  |
+| Agent guardrails, OWASP LLM       | `skills/ai/guardrails.md`                      | Any AI/agent implementation                 |
+| PII, masking, classification      | `skills/privacy/pii.md`                        | Any data handling code                      |
+| LGPD compliance                   | `skills/privacy/lgpd.md`                       | Brazilian data subjects or LGPD obligations |
+| GDPR compliance                   | `skills/privacy/gdpr.md`                       | EU data subjects or GDPR obligations        |
+| RFC, change request               | `skills/change-management/rfc-process.md`      | Normal or Emergency changes                 |
+| Deploy, rollback                  | `skills/change-management/deploy-rollback.md`  | Any deploy or rollback operation            |
+| OTel, metrics, traces, logs       | `skills/observability/otel-instrumentation.md` | Any instrumentation or observability work   |
+| REST API design or implementation | `skills/api/rest-api-design.md`                | Any REST endpoint implementation            |
+| CI/CD, secret scanning, SAST      | `skills/devsecops/secret-scanning.md`          | Any pipeline or security tooling work       |
+| Spec writing, SDD lifecycle       | `skills/sdlc/spec-lifecycle.md`                | Writing or reviewing a spec                 |
 
 ---
 

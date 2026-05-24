@@ -13,6 +13,37 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- ADR-0002 through ADR-0009: Technology Stack, Async API, Observability, Message Broker,
+  Deployment Strategy, Service Mesh, Secrets Management, Caching Strategy
+- `pyproject.toml` with Ruff, mypy (strict), pytest, and Bandit configuration (R-01)
+- `Dockerfile` multi-stage build (builder + production) with non-root user (R-02)
+- `.pre-commit-config.yaml` enforcing Ruff, mypy, detect-secrets, and Bandit before commit (R-03)
+- `version.txt` for Makefile version management (R-05)
+- `specs/api/async-api-design.md` async API design rules and event catalogue (S-01)
+- `docs/api/openapi/v1/openapi.yaml` REST API contract stub (T-04)
+- `docs/api/asyncapi/v1/asyncapi.yaml` Kafka async event contract stub (T-04)
+- `src/api/rest/main.py`, `routers/health.py`, `routers/requests.py`, `routers/hitl.py` — FastAPI stubs (T-02)
+- `src/agents/orchestrator/orchestrator.py` — Perception→Reason→Act loop skeleton (T-05)
+- `tests/integration/test_hitl_gateway_integration.py` — HITL lifecycle integration tests (T-01)
+- `tests/integration/test_pii_filter_pipeline.py` — PII masking three-interception-point tests (T-01)
+- `tests/integration/test_audit_logger_integration.py` — write-before-execute invariant tests (T-01)
+- `skills/observability/otel-instrumentation.md` OTel spans, metrics, and logging skill (SK-02)
+- `skills/api/rest-api-design.md` REST vs. async decision rules and security checklist (SK-01)
+- `skills/devsecops/secret-scanning.md` SAST, detect-secrets, and dependency audit skill (SK-01)
+- `skills/sdlc/spec-lifecycle.md` SDD spec writing and lifecycle skill (SK-01)
+
+### Changed
+
+- `CLAUDE.md`: added 4 new skills to the Skill Activation Table; fixed broken reference
+  to `specs/api/async-api-design.md` (R-04)
+- `skills/README.md`: catalog updated to include 4 new skills (SK-03)
+- `src/*/`: all source modules now include `Spec:` and `ADR:` lines in module docstrings (T-03)
+- `.github/workflows/ci.yml`: added `governance` job validating ADR index, skill paths,
+  and spec paths on every PR (A-04, SK-03); fixed Kafka KRaft config removing
+  Zookeeper dependency (R-06); added `detect-secrets` to lint job
+
 ---
 
 ## [0.1.0] - 2026-05-24

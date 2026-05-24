@@ -4,6 +4,9 @@ Detects and rejects inputs with anomaly signatures before they reach the LLM.
 Detection uses structural/statistical checks only. No real exploit strings are
 stored in this module. Rejected inputs are never logged in full — only a
 truncated hash and the rejection reason are recorded.
+
+Spec: specs/ai/guardrails.md (Layer 2 — Prompt Injection Guard)
+ADR:  ADR-0010 (Agent Framework Selection)
 """
 
 from __future__ import annotations

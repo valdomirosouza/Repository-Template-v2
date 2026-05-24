@@ -1,0 +1,229 @@
+openapi: "3.1.0"
+
+info:
+  title: Enterprise AI System — REST API
+  version: "0.1.0"
+  description: |
+    Synchronous REST API for the Enterprise AI System.
+    High-volume async flows use Kafka events (see asyncapi.yaml).
+  contact:
+    name: Tech Lead
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:8000
+    description: Local development
+  - url: https://api.staging.example.com
+    description: Staging
+  - url: https://api.example.com
+    description: Production
+
+tags:
+  - name: health
+    description: Liveness and readiness probes
+  - name: requests
+    description: Domain request submission and status polling
+  - name: hitl
+    description: HITL approval queue management
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: health
+      summary: Liveness probe
+      description: Returns 200 if the process is alive. No dependency checks.
+      responses:
+        "200":
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /ready:
+    get:
+      tags: [health]
+      operationId: ready
+      summary: Readiness probe
+      description: Returns 200 if the service is ready to accept traffic.
+      responses:
+        "200":
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: Service not ready (dependency unavailable)
+
+  /v1/requests:
+    post:
+      tags: [requests]
+      operationId: submitRequest
+      summary: Submit a domain request for async processing
+      description: |
+        Accepts a request and publishes it to the async pipeline.
+        Returns 202 immediately. Poll GET /v1/requests/{request_id} for the result.
+        PII in the request body is masked before the event is published.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestIn"
+      responses:
+        "202":
+          description: Request accepted for async processing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestOut"
+        "422":
+          description: Validation error
+
+  /v1/requests/{request_id}:
+    get:
+      tags: [requests]
+      operationId: getRequestStatus
+      summary: Poll request processing status
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Current request status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestOut"
+        "404":
+          description: Request not found
+
+  /v1/hitl/status:
+    get:
+      tags: [hitl]
+      operationId: hitlStatus
+      summary: HITL subsystem health and queue depth
+      responses:
+        "200":
+          description: HITL operational status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HITLStatusResponse"
+
+  /v1/hitl/requests/{request_id}/decision:
+    post:
+      tags: [hitl]
+      operationId: submitDecision
+      summary: Submit an APPROVE or REJECT decision
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionIn"
+      responses:
+        "200":
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionOut"
+        "404":
+          description: Request not found or no longer pending
+        "422":
+          description: Validation error
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          example: ok
+        version:
+          type: string
+          example: 0.1.0
+
+    RequestIn:
+      type: object
+      required: [request_text]
+      properties:
+        request_text:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        priority:
+          type: string
+          enum: [low, normal, high]
+          default: normal
+
+    RequestOut:
+      type: object
+      required: [request_id, status, created_at, message]
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, processing, completed, failed]
+        created_at:
+          type: string
+          format: date-time
+        message:
+          type: string
+
+    HITLStatusResponse:
+      type: object
+      required: [status, pending_count, message]
+      properties:
+        status:
+          type: string
+        pending_count:
+          type: integer
+        message:
+          type: string
+
+    DecisionIn:
+      type: object
+      required: [decision, rationale, approver_id]
+      properties:
+        decision:
+          type: string
+          enum: [APPROVED, REJECTED]
+        rationale:
+          type: string
+          minLength: 10
+          maxLength: 1000
+        approver_id:
+          type: string
+
+    DecisionOut:
+      type: object
+      required: [request_id, decision, message]
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        decision:
+          type: string
+          enum: [APPROVED, REJECTED]
+        message:
+          type: string

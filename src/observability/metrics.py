@@ -1,4 +1,9 @@
-"""Golden Signals metrics for Prometheus. Provides counters, histograms, and gauges."""
+"""Golden Signals metrics for Prometheus. Provides counters, histograms, and gauges.
+
+Spec: specs/system/architecture.md (Quality Attributes)
+ADR:  ADR-0004 (Observability Stack)
+Skill: skills/sre/golden-signals.md
+"""
 
 from prometheus_client import Counter, Gauge, Histogram
 

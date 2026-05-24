@@ -1,0 +1,338 @@
+asyncapi: "2.6.0"
+
+info:
+  title: Enterprise AI System — Async Event API
+  version: "0.1.0"
+  description: |
+    Kafka-based async event contracts for the Enterprise AI System.
+    All payloads are PII-masked before publish (ADR-0012).
+    Schema format: Apache Avro, registered in Confluent Schema Registry.
+  contact:
+    name: Tech Lead
+
+defaultContentType: application/json
+
+servers:
+  development:
+    url: localhost:9092
+    protocol: kafka
+    description: Local Kafka broker
+  staging:
+    url: kafka.staging.example.com:9092
+    protocol: kafka
+    security:
+      - saslScram: []
+
+channels:
+  domain.request.created:
+    description: Fired when a user submits a new domain request via the REST API.
+    subscribe:
+      operationId: onDomainRequestCreated
+      summary: Agent Service consumes new requests
+      message:
+        $ref: "#/components/messages/DomainRequestCreated"
+    publish:
+      operationId: publishDomainRequestCreated
+      summary: API Gateway publishes after validating user input
+      message:
+        $ref: "#/components/messages/DomainRequestCreated"
+
+  agent.action.proposed:
+    description: Fired when the agent proposes an action that requires HITL approval.
+    subscribe:
+      operationId: onAgentActionProposed
+      summary: HITL Gateway consumes proposed actions
+      message:
+        $ref: "#/components/messages/AgentActionProposed"
+    publish:
+      operationId: publishAgentActionProposed
+      summary: Agent Service publishes when risk_score >= HITL threshold
+      message:
+        $ref: "#/components/messages/AgentActionProposed"
+
+  agent.action.approved:
+    description: Fired when a human reviewer approves a HITL request.
+    subscribe:
+      operationId: onAgentActionApproved
+      message:
+        $ref: "#/components/messages/HITLDecision"
+    publish:
+      operationId: publishAgentActionApproved
+      message:
+        $ref: "#/components/messages/HITLDecision"
+
+  agent.action.rejected:
+    description: Fired when a human reviewer rejects a HITL request.
+    subscribe:
+      operationId: onAgentActionRejected
+      message:
+        $ref: "#/components/messages/HITLDecision"
+    publish:
+      operationId: publishAgentActionRejected
+      message:
+        $ref: "#/components/messages/HITLDecision"
+
+  agent.action.expired:
+    description: |
+      Fired when a HITL request expires without a human decision.
+      Timeout always results in EXPIRED_AUTO_REJECTED — never auto-approval (ADR-0011).
+    subscribe:
+      operationId: onAgentActionExpired
+      message:
+        $ref: "#/components/messages/HITLExpired"
+    publish:
+      operationId: publishAgentActionExpired
+      message:
+        $ref: "#/components/messages/HITLExpired"
+
+  agent.action.executed:
+    description: Fired after an agent action completes execution (HOTL or post-HITL approval).
+    subscribe:
+      operationId: onAgentActionExecuted
+      message:
+        $ref: "#/components/messages/AgentActionExecuted"
+    publish:
+      operationId: publishAgentActionExecuted
+      message:
+        $ref: "#/components/messages/AgentActionExecuted"
+
+  domain.result.completed:
+    description: Fired when the full domain request processing pipeline completes.
+    subscribe:
+      operationId: onDomainResultCompleted
+      message:
+        $ref: "#/components/messages/DomainResultCompleted"
+    publish:
+      operationId: publishDomainResultCompleted
+      message:
+        $ref: "#/components/messages/DomainResultCompleted"
+
+  audit.event.written:
+    description: Fired for every immutable audit record written by the Audit Logger.
+    subscribe:
+      operationId: onAuditEventWritten
+      message:
+        $ref: "#/components/messages/AuditEventWritten"
+    publish:
+      operationId: publishAuditEventWritten
+      message:
+        $ref: "#/components/messages/AuditEventWritten"
+
+components:
+  messages:
+    DomainRequestCreated:
+      name: DomainRequestCreated
+      title: Domain Request Created
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/DomainRequestCreatedPayload"
+
+    AgentActionProposed:
+      name: AgentActionProposed
+      title: Agent Action Proposed
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/AgentActionProposedPayload"
+
+    HITLDecision:
+      name: HITLDecision
+      title: HITL Decision (Approved or Rejected)
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/HITLDecisionPayload"
+
+    HITLExpired:
+      name: HITLExpired
+      title: HITL Request Expired
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/HITLExpiredPayload"
+
+    AgentActionExecuted:
+      name: AgentActionExecuted
+      title: Agent Action Executed
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/AgentActionExecutedPayload"
+
+    DomainResultCompleted:
+      name: DomainResultCompleted
+      title: Domain Result Completed
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/DomainResultCompletedPayload"
+
+    AuditEventWritten:
+      name: AuditEventWritten
+      title: Audit Event Written
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/AuditEventWrittenPayload"
+
+  schemas:
+    EventEnvelope:
+      type: object
+      required:
+        [
+          event_id,
+          event_type,
+          schema_version,
+          produced_at,
+          trace_id,
+          producer_service,
+        ]
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+        schema_version:
+          type: string
+          example: "1.0"
+        produced_at:
+          type: string
+          format: date-time
+        trace_id:
+          type: string
+          description: W3C traceparent for distributed tracing
+        producer_service:
+          type: string
+
+    DomainRequestCreatedPayload:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          required: [payload]
+          properties:
+            payload:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  format: uuid
+                request_text:
+                  type: string
+                  description: PII-masked request text
+                priority:
+                  type: string
+
+    AgentActionProposedPayload:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          required: [payload]
+          properties:
+            payload:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  format: uuid
+                agent_id:
+                  type: string
+                action_type:
+                  type: string
+                risk_score:
+                  type: number
+                  minimum: 0.0
+                  maximum: 1.0
+                context_summary:
+                  type: string
+                  description: PII-masked context summary for HITL reviewer
+                expires_at:
+                  type: string
+                  format: date-time
+
+    HITLDecisionPayload:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          required: [payload]
+          properties:
+            payload:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  format: uuid
+                decision:
+                  type: string
+                  enum: [APPROVED, REJECTED]
+                rationale:
+                  type: string
+
+    HITLExpiredPayload:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          required: [payload]
+          properties:
+            payload:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  format: uuid
+                outcome:
+                  type: string
+                  enum: [EXPIRED_AUTO_REJECTED]
+
+    AgentActionExecutedPayload:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          required: [payload]
+          properties:
+            payload:
+              type: object
+              properties:
+                agent_id:
+                  type: string
+                action_type:
+                  type: string
+                outcome:
+                  type: string
+
+    DomainResultCompletedPayload:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          required: [payload]
+          properties:
+            payload:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  format: uuid
+                status:
+                  type: string
+                  enum: [completed, failed]
+                result_summary:
+                  type: string
+                  description: PII-masked result summary
+
+    AuditEventWrittenPayload:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          required: [payload]
+          properties:
+            payload:
+              type: object
+              properties:
+                audit_event_id:
+                  type: string
+                  format: uuid
+                agent_id:
+                  type: string
+                event_type:
+                  type: string
+                outcome:
+                  type: string
+
+  securitySchemes:
+    saslScram:
+      type: scramSha512
+      description: SASL/SCRAM-SHA-512 authentication for production Kafka

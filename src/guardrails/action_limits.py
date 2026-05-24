@@ -2,6 +2,9 @@
 
 check_rate_limit() and check_scope_limit() are mandatory guardrails called
 before every agent action. Both must pass before execution proceeds.
+
+Spec: specs/ai/guardrails.md (Layer 3 — Action Limits)
+ADR:  ADR-0010 (Agent Framework Selection)
 """
 
 from __future__ import annotations

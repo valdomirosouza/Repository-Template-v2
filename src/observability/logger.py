@@ -1,4 +1,8 @@
-"""Structured JSON logger with mandatory PII masking on every log record."""
+"""Structured JSON logger with mandatory PII masking on every log record.
+
+Spec: specs/ai/guardrails.md (Layer 1 — pre-log write interception point)
+ADR:  ADR-0004 (Observability Stack), ADR-0012 (PII Masking Strategy)
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,8 @@
-"""Application configuration loaded from environment variables via Pydantic Settings."""
+"""Application configuration loaded from environment variables via Pydantic Settings.
+
+Spec: specs/system/architecture.md (Technology Stack)
+ADR:  ADR-0002 (Technology Stack Selection), ADR-0008 (Secrets Management)
+"""
 
 from pydantic_settings import BaseSettings
 

@@ -11,9 +11,61 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  governance:
+    name: Governance Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate ADR index — every linked file must exist (A-04)
+        run: |
+          echo "Checking ADR index links..."
+          missing=0
+          while IFS= read -r adr_file; do
+            if [ ! -f "docs/adr/${adr_file}" ]; then
+              echo "MISSING: docs/adr/${adr_file}"
+              missing=$((missing + 1))
+            fi
+          done < <(grep -oE 'ADR-[0-9]+-[^)]+\.md' docs/adr/README.md)
+          if [ "$missing" -gt 0 ]; then
+            echo "::error::$missing ADR file(s) listed in the index are missing."
+            exit 1
+          fi
+          echo "All ADR files present."
+      - name: Validate skill paths in CLAUDE.md — every path must exist (SK-03)
+        run: |
+          echo "Checking skill paths..."
+          missing=0
+          while IFS= read -r skill_path; do
+            if [ ! -f "${skill_path}" ]; then
+              echo "MISSING: ${skill_path}"
+              missing=$((missing + 1))
+            fi
+          done < <(grep -oE 'skills/[^`]+\.md' CLAUDE.md | sort -u)
+          if [ "$missing" -gt 0 ]; then
+            echo "::error::$missing skill file(s) referenced in CLAUDE.md are missing."
+            exit 1
+          fi
+          echo "All skill paths present."
+      - name: Validate spec paths in CLAUDE.md — every path must exist
+        run: |
+          echo "Checking spec paths..."
+          missing=0
+          while IFS= read -r spec_path; do
+            if [ ! -f "${spec_path}" ]; then
+              echo "MISSING: ${spec_path}"
+              missing=$((missing + 1))
+            fi
+          done < <(grep -oE 'specs/[^` ]+\.md' CLAUDE.md | sort -u)
+          if [ "$missing" -gt 0 ]; then
+            echo "::error::$missing spec file(s) referenced in CLAUDE.md are missing."
+            exit 1
+          fi
+          echo "All spec paths present."
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    needs: governance
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -29,6 +81,8 @@ jobs:
         run: uv run ruff format --check .
       - name: Mypy type check
         run: uv run mypy src/
+      - name: Secret scan
+        run: uv run detect-secrets scan --baseline .secrets.baseline
 
   test-unit:
     name: Unit Tests
@@ -61,12 +115,30 @@ jobs:
           - 9092:9092
         env:
           KAFKA_BROKER_ID: 1
-          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_NODE_ID: 1
+          KAFKA_PROCESS_ROLES: broker,controller
+          KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+          KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
           KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+          KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+          KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+        options: >-
+          --health-cmd "kafka-broker-api-versions --bootstrap-server localhost:9092"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 10
       redis:
         image: redis:7-alpine
         ports:
           - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

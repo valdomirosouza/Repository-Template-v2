@@ -3,6 +3,9 @@
 Write-before-execute invariant: callers must call log_event() and await its
 completion before dispatching any action. A raised AuditWriteError must be
 treated as a hard failure — the action must not proceed.
+
+Spec: specs/ai/guardrails.md (Layer 4 — Audit Logger)
+ADR:  ADR-0011 (HITL/HOTL Human Oversight Model)
 """
 
 from __future__ import annotations

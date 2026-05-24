@@ -1,4 +1,8 @@
-"""Base domain models shared across all services."""
+"""Base domain models shared across all services.
+
+Spec: specs/system/architecture.md (Component Overview)
+ADR:  ADR-0002 (Technology Stack Selection)
+"""
 
 from __future__ import annotations
 

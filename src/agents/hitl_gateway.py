@@ -2,6 +2,9 @@
 
 All agent actions with real-world effects must route through this module.
 Timeout never auto-approves — it always rejects.
+
+Spec: specs/ai/hitl-hotl.md
+ADR:  ADR-0011 (HITL/HOTL Human Oversight Model)
 """
 
 from __future__ import annotations

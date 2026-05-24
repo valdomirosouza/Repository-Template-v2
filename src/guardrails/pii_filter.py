@@ -3,6 +3,9 @@
 Detection uses structural format patterns only — no real personal data is stored
 in this module. Masking tokens replace matched values; originals are never logged
 or forwarded.
+
+Spec: specs/ai/guardrails.md (Layer 1 — PII Filter)
+ADR:  ADR-0012 (PII Masking Strategy)
 """
 
 from __future__ import annotations
