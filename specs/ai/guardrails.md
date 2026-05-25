@@ -25,12 +25,12 @@ Masks personally identifiable information before it reaches the LLM, any log, or
 
 **Classification and masking tokens:**
 
-| PII Level | Examples                     | Mask token    |
-| --------- | ---------------------------- | ------------- |
-| L1        | CPF, SSN, health records     | `[MASKED_L1]` |
-| L2        | Email, full name, IP address | `[MASKED_L2]` |
-| L3        | User ID, session token       | `[MASKED_L3]` |
-| L4        | Public information           | Pass through  |
+| PII Level | Examples                     | Mask token                   |
+| --------- | ---------------------------- | ---------------------------- |
+| L1        | CPF, SSN, health records     | `[CPF]`, `[CARD]`            |
+| L2        | Email, full name, IP address | `[EMAIL]`, `[PHONE]`, `[IP]` |
+| L3        | User ID, session token       | `[TOKEN]`, `[UUID]`          |
+| L4        | Public information           | Pass through                 |
 
 **Detection approach:** format-based pattern matching on field names and structural validation of field values. Detection logic never stores, reproduces, or forwards the matched value — only the replacement token.
 

@@ -1,0 +1,64 @@
+{
+  "namespace": "com.template.agent",
+  "type": "record",
+  "name": "AgentAction",
+  "doc": "Event produced when an agent proposes or executes an action. Spec: specs/api/async-api-design.md. ADR: ADR-0003, ADR-0011.",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "UUID v4 — stable deduplication key"
+    },
+    {
+      "name": "event_type",
+      "type": "string",
+      "doc": "agent.action.proposed | agent.action.executed"
+    },
+    {
+      "name": "schema_version",
+      "type": "string",
+      "doc": "Semver; must match registered version"
+    },
+    { "name": "produced_at", "type": "string", "doc": "ISO8601 UTC timestamp" },
+    { "name": "trace_id", "type": "string", "doc": "W3C traceparent" },
+    {
+      "name": "producer_service",
+      "type": "string",
+      "doc": "Originating service name"
+    },
+    {
+      "name": "payload",
+      "type": {
+        "type": "record",
+        "name": "AgentActionPayload",
+        "doc": "All PII masked before publish (ADR-0012). action_params_hash is SHA-256 of masked params.",
+        "fields": [
+          { "name": "request_id", "type": "string" },
+          { "name": "agent_id", "type": "string" },
+          { "name": "action_type", "type": "string" },
+          {
+            "name": "action_params_hash",
+            "type": "string",
+            "doc": "SHA-256 of masked action parameters — raw params are never stored"
+          },
+          {
+            "name": "risk_score",
+            "type": "float",
+            "doc": "0.0–1.0; drives HITL vs HOTL routing"
+          },
+          {
+            "name": "context_summary",
+            "type": "string",
+            "doc": "PII-masked context summary for HITL reviewer"
+          },
+          {
+            "name": "outcome",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Populated on agent.action.executed: success | rejected | failed"
+          }
+        ]
+      }
+    }
+  ]
+}

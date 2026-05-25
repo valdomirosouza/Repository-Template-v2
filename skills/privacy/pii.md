@@ -6,12 +6,12 @@ Activate this skill for any code that reads, writes, transforms, or transmits pe
 
 ## Classification Levels
 
-| Level | Name      | Examples                                          | Masking token |
-| ----- | --------- | ------------------------------------------------- | ------------- |
-| L1    | Critical  | CPF, SSN, health records, biometric data          | `[MASKED_L1]` |
-| L2    | Sensitive | Email, full name, phone, IP address, home address | `[MASKED_L2]` |
-| L3    | Internal  | User ID, session token, request ID                | `[MASKED_L3]` |
-| L4    | Public    | Publicly available info                           | Pass through  |
+| Level | Name      | Examples                                          | Masking token                |
+| ----- | --------- | ------------------------------------------------- | ---------------------------- |
+| L1    | Critical  | CPF, SSN, health records, biometric data          | `[CPF]`, `[CARD]`            |
+| L2    | Sensitive | Email, full name, phone, IP address, home address | `[EMAIL]`, `[PHONE]`, `[IP]` |
+| L3    | Internal  | User ID, session token, request ID                | `[TOKEN]`, `[UUID]`          |
+| L4    | Public    | Publicly available info                           | Pass through                 |
 
 Full field inventory: `docs/privacy/pii-inventory.md` and `specs/privacy/pii-inventory.md`
 
@@ -64,7 +64,8 @@ Unit test using synthetic data:
 ```python
 def test_masks_new_field():
     result = pii_filter.mask_dict({"new_field_name": "test@example.com"})
-    assert result["new_field_name"] == "[MASKED_L2]"
+    assert result["new_field_name"] == "[EMAIL]"
+    # token depends on detected PII type; for an email value the token is [EMAIL]
     # Never use real email addresses in tests
 ```
 

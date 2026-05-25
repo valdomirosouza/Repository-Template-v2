@@ -44,6 +44,7 @@ Examples:
 | `specs/system/vision.md`           | Product Owner | Tech Lead     | Approved |
 | `specs/system/architecture.md`     | Tech Lead     | SRE Lead      | Approved |
 | `specs/system/async-event-flow.md` | Tech Lead     | DevOps Lead   | Approved |
+| `specs/api/async-api-design.md`    | Tech Lead     | DevOps Lead   | Approved |
 | `specs/ai/agent-design.md`         | AI Lead       | Tech Lead     | Approved |
 | `specs/ai/hitl-hotl.md`            | AI Lead       | Security Lead | Approved |
 | `specs/ai/guardrails.md`           | Security Lead | AI Lead       | Approved |

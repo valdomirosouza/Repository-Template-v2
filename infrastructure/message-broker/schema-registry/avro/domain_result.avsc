@@ -1,0 +1,62 @@
+{
+  "namespace": "com.template.domain",
+  "type": "record",
+  "name": "DomainResult",
+  "doc": "Event produced when an agent completes processing a domain request. Spec: specs/api/async-api-design.md. ADR: ADR-0003.",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "UUID v4 — stable deduplication key"
+    },
+    {
+      "name": "event_type",
+      "type": "string",
+      "doc": "domain.result.completed"
+    },
+    {
+      "name": "schema_version",
+      "type": "string",
+      "doc": "Semver; must match registered version"
+    },
+    { "name": "produced_at", "type": "string", "doc": "ISO8601 UTC timestamp" },
+    { "name": "trace_id", "type": "string", "doc": "W3C traceparent" },
+    {
+      "name": "producer_service",
+      "type": "string",
+      "doc": "Agent service name"
+    },
+    {
+      "name": "payload",
+      "type": {
+        "type": "record",
+        "name": "DomainResultPayload",
+        "doc": "All PII masked before publish (ADR-0012).",
+        "fields": [
+          { "name": "request_id", "type": "string" },
+          {
+            "name": "status",
+            "type": "string",
+            "doc": "completed | rejected | failed"
+          },
+          {
+            "name": "output",
+            "type": "string",
+            "doc": "JSON-encoded result payload; all PII masked"
+          },
+          {
+            "name": "processing_ms",
+            "type": "int",
+            "doc": "Total processing time in milliseconds"
+          },
+          {
+            "name": "error",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Error message if status is failed or rejected; null otherwise"
+          }
+        ]
+      }
+    }
+  ]
+}

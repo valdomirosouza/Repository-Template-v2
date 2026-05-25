@@ -1,0 +1,62 @@
+{
+  "namespace": "com.template.hitl",
+  "type": "record",
+  "name": "HITLDecision",
+  "doc": "Event produced by HITL Gateway on approval, rejection, or timeout expiry. Spec: specs/api/async-api-design.md. ADR: ADR-0011.",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "UUID v4 — stable deduplication key"
+    },
+    {
+      "name": "event_type",
+      "type": "string",
+      "doc": "agent.action.approved | agent.action.rejected | agent.action.expired"
+    },
+    {
+      "name": "schema_version",
+      "type": "string",
+      "doc": "Semver; must match registered version"
+    },
+    { "name": "produced_at", "type": "string", "doc": "ISO8601 UTC timestamp" },
+    { "name": "trace_id", "type": "string", "doc": "W3C traceparent" },
+    {
+      "name": "producer_service",
+      "type": "string",
+      "doc": "HITL Gateway service name"
+    },
+    {
+      "name": "payload",
+      "type": {
+        "type": "record",
+        "name": "HITLDecisionPayload",
+        "fields": [
+          { "name": "request_id", "type": "string" },
+          {
+            "name": "decision",
+            "type": "string",
+            "doc": "APPROVED | REJECTED | EXPIRED_AUTO_REJECTED"
+          },
+          {
+            "name": "approver_id",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Null on EXPIRED (no human actor). Masked identifier."
+          },
+          {
+            "name": "rationale",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Required text when REJECTED; optional when APPROVED at MEDIUM tier"
+          },
+          {
+            "name": "decided_at",
+            "type": "string",
+            "doc": "ISO8601 UTC — matches produced_at on EXPIRED"
+          }
+        ]
+      }
+    }
+  ]
+}

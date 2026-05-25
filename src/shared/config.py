@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     llm_max_tokens: int = 4096
     llm_token_budget_per_request: int = 2000
     hitl_approval_timeout_seconds: int = 3600
+    hitl_risk_threshold: float = 0.4           # MEDIUM/HIGH boundary per specs/ai/hitl-hotl.md
+    hotl_override_window_seconds: int = 300    # 5-min override window per specs/ai/hitl-hotl.md
 
     # ── Observability ─────────────────────────────────────────────────────────
     otel_exporter_otlp_endpoint: str = "http://localhost:4317"

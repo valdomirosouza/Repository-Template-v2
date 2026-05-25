@@ -271,6 +271,23 @@ Privacy docs: [`docs/privacy/`](docs/privacy/)
 
 ---
 
+## SDD Compliance Audit
+
+Audited **2026-05-24** across 5 Spec-Driven Development dimensions. Remediation was applied immediately after the audit.
+
+| Dimension           | Before          | After           | Key gaps closed                                                                                |
+| ------------------- | --------------- | --------------- | ---------------------------------------------------------------------------------------------- |
+| Specifications      | 7.0/10          | 9.0/10          | `specs/api/async-api-design.md` created; CLAUDE.md reference fixed; spec lifecycle skill added |
+| ADRs                | 5.0/10          | 9.5/10          | 8 missing ADRs created (ADR-0002 → ADR-0009); CI validates index links on every PR             |
+| Rules & Enforcement | 7.5/10          | 9.0/10          | `pyproject.toml`, `Dockerfile`, `.pre-commit-config.yaml` added; CI governance job added       |
+| Skills              | 6.5/10          | 9.0/10          | 4 new skill files (OTel, REST API, DevSecOps, SDD lifecycle); CI validates skill paths         |
+| Traceability        | 6.0/10          | 8.5/10          | Integration tests, API stubs, API contracts, orchestrator, module `Spec:`/`ADR:` docstrings    |
+| **Overall**         | **6.4/10 (B-)** | **9.0/10 (A-)** | 52 files changed in remediation commit                                                         |
+
+Audit methodology: [`CLAUDE.md`](CLAUDE.md) — SDD Cycle (§2) and Inviolable Rules (§3).
+
+---
+
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full contribution guide, branch naming, commit conventions, and PR process.

@@ -7,12 +7,12 @@
 
 ## Classification Scheme
 
-| Level | Name      | Description                                     | Masking token | Retention cap |
-| ----- | --------- | ----------------------------------------------- | ------------- | ------------- |
-| L1    | Critical  | Directly identifies a natural person; regulated | `[MASKED_L1]` | 90 days       |
-| L2    | Sensitive | Identifies with combination; moderate risk      | `[MASKED_L2]` | 1 year        |
-| L3    | Internal  | Technical identifiers; low direct risk          | `[MASKED_L3]` | 2 years       |
-| L4    | Public    | Publicly available; no masking required         | Pass through  | Per policy    |
+| Level | Name      | Description                                     | Masking tokens               | Retention cap |
+| ----- | --------- | ----------------------------------------------- | ---------------------------- | ------------- |
+| L1    | Critical  | Directly identifies a natural person; regulated | `[CPF]`, `[CARD]`            | 90 days       |
+| L2    | Sensitive | Identifies with combination; moderate risk      | `[EMAIL]`, `[PHONE]`, `[IP]` | 1 year        |
+| L3    | Internal  | Technical identifiers; low direct risk          | `[TOKEN]`, `[UUID]`          | 2 years       |
+| L4    | Public    | Publicly available; no masking required         | Pass through                 | Per policy    |
 
 ---
 

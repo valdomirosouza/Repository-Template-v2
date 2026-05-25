@@ -1,0 +1,65 @@
+{
+  "namespace": "com.template.domain",
+  "type": "record",
+  "name": "DomainRequest",
+  "doc": "Event produced when a new domain request is created. Spec: specs/api/async-api-design.md. ADR: ADR-0003, ADR-0005.",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "UUID v4 — stable deduplication key for consumers"
+    },
+    { "name": "event_type", "type": "string", "doc": "domain.request.created" },
+    {
+      "name": "schema_version",
+      "type": "string",
+      "doc": "Semver; must match the version registered in Schema Registry"
+    },
+    {
+      "name": "produced_at",
+      "type": "string",
+      "doc": "ISO8601 UTC timestamp of event production"
+    },
+    {
+      "name": "trace_id",
+      "type": "string",
+      "doc": "W3C traceparent for distributed tracing"
+    },
+    {
+      "name": "producer_service",
+      "type": "string",
+      "doc": "Name of the service that produced this event"
+    },
+    {
+      "name": "payload",
+      "type": {
+        "type": "record",
+        "name": "DomainRequestPayload",
+        "doc": "Domain-specific payload — all PII fields masked before publish (ADR-0012)",
+        "fields": [
+          {
+            "name": "request_id",
+            "type": "string",
+            "doc": "Unique request identifier"
+          },
+          {
+            "name": "user_id",
+            "type": "string",
+            "doc": "Anonymised internal user ID — not L1/L2 PII"
+          },
+          {
+            "name": "request_text",
+            "type": "string",
+            "doc": "User request text — PII masked before publish"
+          },
+          {
+            "name": "priority",
+            "type": "string",
+            "default": "normal",
+            "doc": "low | normal | high"
+          }
+        ]
+      }
+    }
+  ]
+}

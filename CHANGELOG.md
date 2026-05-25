@@ -15,6 +15,34 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ### Added
 
+- Avro schemas (5 arquivos) em `infrastructure/message-broker/schema-registry/avro/` cobrindo
+  todos os 8 event types do catálogo: `domain_request.avsc`, `agent_action.avsc`,
+  `hitl_decision.avsc`, `domain_result.avsc`, `audit_event.avsc` (ADR-0003, ADR-0005)
+- `tests/integration/test_kafka_events.py` — testes de contrato Kafka: envelope structure,
+  PII masking pre-publish, topic naming convention, UUID v4 idempotency key,
+  non-PII field preservation (ADR-0003, ADR-0012)
+
+### Fixed
+
+- `skills/ai/guardrails.md`: corrigidos nomes de métodos errados (`audit_logger.record()` →
+  `await audit_logger.log_event(AuditEvent(...))`, `injection_guard.check()` →
+  `injection_guard.validate()`, `result.rejected` → `not result.is_valid`,
+  `result.category` → `result.rejection_reason`) (P0-01)
+- `skills/ai/guardrails.md`: tokens de masking corrigidos de `[MASKED_L2]`/`[MASKED_L1]`
+  para tokens por tipo `[EMAIL]`/`[CPF]` conforme implementação real em `pii_filter.py` (P0-02)
+- `skills/privacy/pii.md`: tabela de Classification Levels e exemplo de teste corrigidos —
+  `[MASKED_L1/L2/L3]` → `[CPF]`/`[CARD]`, `[EMAIL]`/`[PHONE]`/`[IP]`, `[TOKEN]`/`[UUID]`
+  (P0-03, ADR-0012)
+- `specs/ai/guardrails.md`: tabela de masking tokens no Layer 1 PII Filter corrigida para
+  tokens por tipo, alinhando spec com código e ADR-0012 (P0-04 / P1-04)
+- `src/shared/config.py`: adicionados `hitl_risk_threshold: float = 0.4` e
+  `hotl_override_window_seconds: int = 300` — campos referenciados pelo orchestrator e
+  ausentes da configuração (P0-05, ADR-0011, specs/ai/hitl-hotl.md)
+- `specs/README.md`: `specs/api/async-api-design.md` registrado na tabela de ownership
+  com Owner: Tech Lead, Reviewer: DevOps Lead, Status: Approved (P1-01)
+
+### Added (anterior — P0/P1 audit sprint anterior)
+
 - ADR-0002 through ADR-0009: Technology Stack, Async API, Observability, Message Broker,
   Deployment Strategy, Service Mesh, Secrets Management, Caching Strategy
 - `pyproject.toml` with Ruff, mypy (strict), pytest, and Bandit configuration (R-01)
