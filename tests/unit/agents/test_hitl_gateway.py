@@ -1,0 +1,226 @@
+"""Unit tests for HITLGateway — eviction and hard cap (Wave 2).
+
+Spec: specs/ai/hitl-hotl.md
+ADR:  ADR-0011 (HITL/HOTL Human Oversight Model)
+"""
+
+from __future__ import annotations
+
+import uuid
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
+from src.agents.hitl_gateway import (
+    HITLDecision,
+    HITLGateway,
+    HITLGatewayError,
+    HITLRequest,
+    HITLStatus,
+)
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+
+def _make_gateway(max_pending: int = 500) -> HITLGateway:
+    audit = MagicMock()
+    audit.log_event = AsyncMock()
+    gw = HITLGateway(audit_logger=audit, broker=None)
+    # Patch the settings value used for the cap check
+    import src.agents.hitl_gateway as mod
+
+    mod.settings.hitl_max_pending_requests = max_pending
+    return gw
+
+
+def _make_request(agent_id: str = "agent-test") -> HITLRequest:
+    now = datetime.now(UTC)
+    return HITLRequest(
+        request_id=str(uuid.uuid4()),
+        agent_id=agent_id,
+        action_type="test_action",
+        action_parameters={},
+        risk_score=0.8,
+        context_summary="synthetic context",
+        created_at=now,
+        expires_at=now + timedelta(seconds=3600),
+    )
+
+
+# ── Hard cap ──────────────────────────────────────────────────────────────────
+
+
+class TestHITLGatewayHardCap:
+    @pytest.mark.asyncio
+    async def test_submit_raises_when_store_at_capacity(self):
+        gw = _make_gateway(max_pending=2)
+
+        req1 = _make_request()
+        req2 = _make_request()
+        req3 = _make_request()
+
+        await gw.submit_for_approval(req1)
+        await gw.submit_for_approval(req2)
+
+        with pytest.raises(HITLGatewayError, match="capacity"):
+            await gw.submit_for_approval(req3)
+
+    @pytest.mark.asyncio
+    async def test_submit_succeeds_when_below_capacity(self):
+        gw = _make_gateway(max_pending=5)
+        req = _make_request()
+        result = await gw.submit_for_approval(req)
+        assert result.status == HITLStatus.PENDING
+
+    @pytest.mark.asyncio
+    async def test_store_count_is_correct_after_submit(self):
+        gw = _make_gateway(max_pending=10)
+        for _ in range(3):
+            await gw.submit_for_approval(_make_request())
+        assert len(gw._requests) == 3
+
+
+# ── Eviction ──────────────────────────────────────────────────────────────────
+
+
+class TestHITLGatewayEviction:
+    @pytest.mark.asyncio
+    async def test_expire_stale_requests_evicts_from_store(self):
+        gw = _make_gateway()
+        now = datetime.now(UTC)
+
+        req = HITLRequest(
+            request_id=str(uuid.uuid4()),
+            agent_id="agent-x",
+            action_type="act",
+            action_parameters={},
+            risk_score=0.5,
+            context_summary="ctx",
+            created_at=now - timedelta(seconds=7200),
+            expires_at=now - timedelta(seconds=3600),  # already expired
+        )
+        async with gw._lock:
+            gw._requests[req.request_id] = req
+
+        expired = await gw.expire_stale_requests()
+
+        assert req.request_id in expired
+        assert req.request_id not in gw._requests
+
+    @pytest.mark.asyncio
+    async def test_expire_stale_requests_does_not_evict_pending_valid(self):
+        gw = _make_gateway()
+        req = _make_request()  # expires in 1 hour
+        async with gw._lock:
+            gw._requests[req.request_id] = req
+
+        expired = await gw.expire_stale_requests()
+
+        assert req.request_id not in expired
+        assert req.request_id in gw._requests
+
+    @pytest.mark.asyncio
+    async def test_eviction_frees_slot_for_new_request(self):
+        gw = _make_gateway(max_pending=1)
+        now = datetime.now(UTC)
+
+        expired_req = HITLRequest(
+            request_id=str(uuid.uuid4()),
+            agent_id="agent-y",
+            action_type="act",
+            action_parameters={},
+            risk_score=0.5,
+            context_summary="ctx",
+            created_at=now - timedelta(seconds=7200),
+            expires_at=now - timedelta(seconds=1),
+        )
+        async with gw._lock:
+            gw._requests[expired_req.request_id] = expired_req
+
+        # Store is full (1/1), but after eviction there is room
+        await gw.expire_stale_requests()
+
+        new_req = _make_request()
+        result = await gw.submit_for_approval(new_req)
+        assert result.status == HITLStatus.PENDING
+
+    @pytest.mark.asyncio
+    async def test_expired_request_status_is_set_to_expired(self):
+        gw = _make_gateway()
+        now = datetime.now(UTC)
+
+        req = HITLRequest(
+            request_id=str(uuid.uuid4()),
+            agent_id="agent-z",
+            action_type="act",
+            action_parameters={},
+            risk_score=0.5,
+            context_summary="ctx",
+            created_at=now - timedelta(seconds=7200),
+            expires_at=now - timedelta(seconds=1),
+        )
+        async with gw._lock:
+            gw._requests[req.request_id] = req
+
+        await gw.expire_stale_requests()
+
+        assert req.status == HITLStatus.EXPIRED
+
+    @pytest.mark.asyncio
+    async def test_expired_request_still_retrievable_via_get_request(self):
+        gw = _make_gateway()
+        now = datetime.now(UTC)
+
+        req = HITLRequest(
+            request_id=str(uuid.uuid4()),
+            agent_id="agent-a",
+            action_type="act",
+            action_parameters={},
+            risk_score=0.5,
+            context_summary="ctx",
+            created_at=now - timedelta(seconds=7200),
+            expires_at=now - timedelta(seconds=1),
+        )
+        async with gw._lock:
+            gw._requests[req.request_id] = req
+
+        await gw.expire_stale_requests()
+
+        retrieved = await gw.get_request(req.request_id)
+        assert retrieved is not None
+        assert retrieved.status == HITLStatus.EXPIRED
+        assert req.request_id not in gw._requests
+        assert req.request_id in gw._expired
+
+    @pytest.mark.asyncio
+    async def test_mid_decision_expiry_moves_request_to_expired_store(self):
+        gw = _make_gateway()
+        now = datetime.now(UTC)
+
+        req = HITLRequest(
+            request_id=str(uuid.uuid4()),
+            agent_id="agent-b",
+            action_type="act",
+            action_parameters={},
+            risk_score=0.5,
+            context_summary="ctx",
+            created_at=now - timedelta(seconds=7200),
+            expires_at=now - timedelta(seconds=1),
+        )
+        async with gw._lock:
+            gw._requests[req.request_id] = req
+
+        with pytest.raises(HITLGatewayError, match="expired"):
+            await gw.record_decision(
+                HITLDecision(
+                    request_id=req.request_id,
+                    decision=HITLStatus.APPROVED,
+                    approver_id="reviewer-01",
+                    rationale="Late.",
+                    decided_at=now,
+                )
+            )
+
+        assert req.request_id not in gw._requests
+        assert req.request_id in gw._expired

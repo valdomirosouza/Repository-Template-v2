@@ -1,0 +1,14 @@
+---
+# PodDisruptionBudget — ensures at least 1 pod is available during node drains
+# and voluntary disruptions, satisfying PRR-CAP-003.
+# Spec: specs/sre/prr.md (PRR-CAP-003)
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: agent-service-pdb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: agent-service

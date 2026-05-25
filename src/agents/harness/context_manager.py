@@ -14,7 +14,7 @@ Strategy:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from src.agents.harness.models import ContextSnapshot
@@ -75,7 +75,7 @@ class ContextManager:
 
         snapshot = ContextSnapshot(
             agent_id=agent_id,
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
             task_id=task_id,
             last_sprint_id=last_sprint_id,
             key_decisions=decisions,
@@ -94,7 +94,9 @@ class ContextManager:
 
     def restore_prompt(self, snapshot: ContextSnapshot) -> str:
         """Render a compact resume prompt to inject as system message after a reset."""
-        decisions_text = "\n".join(f"  - {d}" for d in snapshot.key_decisions) or "  (none recorded)"
+        decisions_text = (
+            "\n".join(f"  - {d}" for d in snapshot.key_decisions) or "  (none recorded)"
+        )
 
         import json
 

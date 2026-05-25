@@ -13,8 +13,6 @@ Synthetic data standards used in this file:
   Phone:  +00 00 00000-0000
 """
 
-import pytest
-
 from src.guardrails.pii_filter import PIIFilter, PIILevel, mask_dict, mask_text
 
 SYNTHETIC_EMAIL = "fake@example.com"
@@ -24,7 +22,6 @@ SYNTHETIC_PHONE = "+00 00 00000-0000"
 
 
 class TestNoLeakageInMaskedText:
-
     def test_email_not_in_output(self):
         output = mask_text(f"User: {SYNTHETIC_EMAIL}")
         assert SYNTHETIC_EMAIL not in output
@@ -42,11 +39,7 @@ class TestNoLeakageInMaskedText:
         assert SYNTHETIC_PHONE not in output
 
     def test_multiple_pii_fields_all_masked(self):
-        text = (
-            f"Email: {SYNTHETIC_EMAIL}, "
-            f"CPF: {SYNTHETIC_CPF}, "
-            f"IP: {SYNTHETIC_IP}"
-        )
+        text = f"Email: {SYNTHETIC_EMAIL}, CPF: {SYNTHETIC_CPF}, IP: {SYNTHETIC_IP}"
         output = mask_text(text)
         assert SYNTHETIC_EMAIL not in output
         assert SYNTHETIC_CPF not in output
@@ -66,7 +59,6 @@ class TestNoLeakageInMaskedText:
 
 
 class TestNoLeakageInMaskedDict:
-
     def test_nested_dict_no_leakage(self):
         data = {
             "profile": {

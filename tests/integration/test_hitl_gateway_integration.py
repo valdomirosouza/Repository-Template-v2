@@ -11,7 +11,7 @@ requiring a real database or message broker.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -23,10 +23,9 @@ from src.agents.hitl_gateway import (
     HITLStatus,
 )
 from src.guardrails.audit_logger import AuditLogger, InMemoryAuditStorage
-from src.shared.models import AuditEvent
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_gateway(timeout_seconds: int = 3600) -> tuple[HITLGateway, InMemoryAuditStorage]:
     storage = InMemoryAuditStorage()
@@ -43,17 +42,18 @@ def _make_request(request_id: str = "req-001", risk_score: float = 0.8) -> HITLR
         action_parameters={"template": "account_update"},
         risk_score=risk_score,
         context_summary="User requested account update — context masked",
-        created_at=datetime.now(timezone.utc),
-        expires_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        expires_at=datetime.now(UTC),
     )
 
 
 # ── Submit ────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_submit_creates_pending_request():
-    gateway, storage = _make_gateway()
+    gateway, _storage = _make_gateway()
     req = await gateway.submit_for_approval(_make_request())
 
     assert req.status == HITLStatus.PENDING
@@ -64,7 +64,7 @@ async def test_submit_creates_pending_request():
 @pytest.mark.asyncio
 async def test_submit_writes_audit_record():
     gateway, storage = _make_gateway()
-    req = await gateway.submit_for_approval(_make_request())
+    await gateway.submit_for_approval(_make_request())
 
     events = await storage.query(agent_id="test-agent")
     assert len(events) == 1
@@ -84,18 +84,19 @@ async def test_submit_sets_timeout_from_config():
 
 # ── Approve ───────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_approve_transitions_to_approved():
     gateway, _ = _make_gateway()
-    req = await gateway.submit_for_approval(_make_request("req-002"))
+    await gateway.submit_for_approval(_make_request("req-002"))
 
     decision = HITLDecision(
         request_id="req-002",
         decision=HITLStatus.APPROVED,
         approver_id="reviewer-01",
         rationale="Verified account change matches user intent.",
-        decided_at=datetime.now(timezone.utc),
+        decided_at=datetime.now(UTC),
     )
     result = await gateway.record_decision(decision)
     assert result.status == HITLStatus.APPROVED
@@ -107,13 +108,15 @@ async def test_approve_writes_audit_decision_record():
     gateway, storage = _make_gateway()
     await gateway.submit_for_approval(_make_request("req-003"))
 
-    await gateway.record_decision(HITLDecision(
-        request_id="req-003",
-        decision=HITLStatus.APPROVED,
-        approver_id="reviewer-01",
-        rationale="Approved.",
-        decided_at=datetime.now(timezone.utc),
-    ))
+    await gateway.record_decision(
+        HITLDecision(
+            request_id="req-003",
+            decision=HITLStatus.APPROVED,
+            approver_id="reviewer-01",
+            rationale="Approved.",
+            decided_at=datetime.now(UTC),
+        )
+    )
 
     events = await storage.query(agent_id="test-agent")
     types = [e.event_type for e in events]
@@ -122,30 +125,34 @@ async def test_approve_writes_audit_decision_record():
 
 # ── Reject ────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_reject_transitions_to_rejected():
     gateway, _ = _make_gateway()
     await gateway.submit_for_approval(_make_request("req-004"))
 
-    result = await gateway.record_decision(HITLDecision(
-        request_id="req-004",
-        decision=HITLStatus.REJECTED,
-        approver_id="reviewer-01",
-        rationale="Action scope exceeds user permission.",
-        decided_at=datetime.now(timezone.utc),
-    ))
+    result = await gateway.record_decision(
+        HITLDecision(
+            request_id="req-004",
+            decision=HITLStatus.REJECTED,
+            approver_id="reviewer-01",
+            rationale="Action scope exceeds user permission.",
+            decided_at=datetime.now(UTC),
+        )
+    )
     assert result.status == HITLStatus.REJECTED
 
 
 # ── Expiry — timeout always rejects (spec invariant) ──────────────────────────
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_expire_stale_marks_as_expired():
     # Use 0-second timeout so request is immediately stale
     gateway, _ = _make_gateway(timeout_seconds=0)
-    req = await gateway.submit_for_approval(_make_request("req-005"))
+    await gateway.submit_for_approval(_make_request("req-005"))
 
     await asyncio.sleep(0.01)
     expired_ids = await gateway.expire_stale_requests()
@@ -180,16 +187,19 @@ async def test_decision_on_expired_request_raises():
     await asyncio.sleep(0.01)
 
     with pytest.raises(HITLGatewayError, match="expired"):
-        await gateway.record_decision(HITLDecision(
-            request_id="req-007",
-            decision=HITLStatus.APPROVED,
-            approver_id="reviewer-01",
-            rationale="Too late.",
-            decided_at=datetime.now(timezone.utc),
-        ))
+        await gateway.record_decision(
+            HITLDecision(
+                request_id="req-007",
+                decision=HITLStatus.APPROVED,
+                approver_id="reviewer-01",
+                rationale="Too late.",
+                decided_at=datetime.now(UTC),
+            )
+        )
 
 
 # ── Guard: invalid state transitions ─────────────────────────────────────────
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio
@@ -202,7 +212,7 @@ async def test_double_decision_raises():
         decision=HITLStatus.APPROVED,
         approver_id="reviewer-01",
         rationale="First approval.",
-        decided_at=datetime.now(timezone.utc),
+        decided_at=datetime.now(UTC),
     )
     await gateway.record_decision(decision)
 
@@ -216,10 +226,12 @@ async def test_decision_on_unknown_request_raises():
     gateway, _ = _make_gateway()
 
     with pytest.raises(HITLGatewayError, match="not found"):
-        await gateway.record_decision(HITLDecision(
-            request_id="nonexistent",
-            decision=HITLStatus.APPROVED,
-            approver_id="reviewer-01",
-            rationale="Ghost approval.",
-            decided_at=datetime.now(timezone.utc),
-        ))
+        await gateway.record_decision(
+            HITLDecision(
+                request_id="nonexistent",
+                decision=HITLStatus.APPROVED,
+                approver_id="reviewer-01",
+                rationale="Ghost approval.",
+                decided_at=datetime.now(UTC),
+            )
+        )

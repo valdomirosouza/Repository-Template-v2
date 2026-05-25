@@ -9,11 +9,13 @@ ADR:  ADR-0010 (Agent Framework Selection)
 
 from __future__ import annotations
 
+import asyncio
 import time
 from dataclasses import dataclass, field
+from typing import Any
 
 from src.observability.logger import get_logger
-from src.observability.metrics import AGENT_ACTIONS_COUNTER
+from src.shared.config import settings
 
 logger = get_logger("action_limits")
 
@@ -55,7 +57,10 @@ class ActionLimiter:
             pipe.expire(hour_key, 7200)
             pipe.incr(day_key)
             pipe.expire(day_key, 172800)
-            results = await pipe.execute()
+            results = await asyncio.wait_for(
+                pipe.execute(),
+                timeout=settings.redis_call_timeout_seconds,
+            )
 
             minute_count, _, hour_count, _, day_count, _ = results
 
@@ -105,7 +110,7 @@ class ActionLimiter:
         self,
         agent_id: str,
         action_type: str,
-        parameters: dict,
+        parameters: dict[str, Any],
     ) -> tuple[bool, str]:
         """Return (allowed, reason). Validates action type and affected record count."""
 
@@ -113,10 +118,7 @@ class ActionLimiter:
             self._config.allowed_action_types
             and action_type not in self._config.allowed_action_types
         ):
-            reason = (
-                f"action_type '{action_type}' not in allowed list "
-                f"for agent '{agent_id}'"
-            )
+            reason = f"action_type '{action_type}' not in allowed list for agent '{agent_id}'"
             logger.warning("Scope limit: action type denied", agent_id=agent_id, reason=reason)
             return False, reason
 
@@ -131,6 +133,20 @@ class ActionLimiter:
 
         return True, "ok"
 
+    async def check(self, action_type: str, parameters: dict[str, Any]) -> None:
+        """Unified guardrail: scope limit then rate limit. Raises ValueError on denial.
+
+        Called by AgentOrchestrator before every action execution.
+        Uses self._config.agent_id as the rate-limit key.
+        """
+        allowed, reason = self.check_scope_limit(self._config.agent_id, action_type, parameters)
+        if not allowed:
+            raise ValueError(f"Action denied by scope limit: {reason}")
+
+        within_limits = await self.check_rate_limit(self._config.agent_id, action_type)
+        if not within_limits:
+            raise ValueError(f"Action denied by rate limit for agent '{self._config.agent_id}'")
+
     async def record_action(self, agent_id: str, action_type: str) -> None:
         """Increment Redis counters after a successful action execution."""
         now = int(time.time())
@@ -143,7 +159,10 @@ class ActionLimiter:
             ]:
                 pipe.incr(key)
                 pipe.expire(key, ttl)
-            await pipe.execute()
+            await asyncio.wait_for(
+                pipe.execute(),
+                timeout=settings.redis_call_timeout_seconds,
+            )
         except Exception as exc:
             logger.error(
                 "Failed to record action in rate limiter",

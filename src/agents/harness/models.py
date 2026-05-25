@@ -14,7 +14,7 @@ from typing import Any, Literal
 class TaskBrief:
     """Entry point for every harness invocation — the raw user request.
 
-    Kept deliberately thin: 1–4 sentences. The Planner expands it into
+    Kept deliberately thin: 1-4 sentences. The Planner expands it into
     a full ProductSpec. All fields are PII-masked before leaving Perception.
     """
 
@@ -70,7 +70,7 @@ class EvaluatorScore:
     """Quality assessment from EvaluatorAgent.
 
     Spec: specs/ai/harness-design.md §1.3
-    Dimensions are each scored 0.0–1.0. `passed` is True only when all
+    Dimensions are each scored 0.0-1.0. `passed` is True only when all
     dimensions meet or exceed settings.harness_evaluator_pass_threshold.
     """
 

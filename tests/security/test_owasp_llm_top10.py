@@ -1,6 +1,6 @@
 """Defensive validation suite for OWASP LLM Top 10 guardrail coverage.
 
-Spec: specs/ai/guardrails.md (Layers 1–4)
+Spec: specs/ai/guardrails.md (Layers 1-4)
 ADR:  ADR-0010 (Agent Framework), ADR-0011 (HITL/HOTL), ADR-0012 (PII Masking)
 
 Each test verifies that the relevant guardrail REJECTS a synthetic
@@ -17,7 +17,7 @@ Risk categories tested by name:
 import pytest
 
 from src.guardrails.action_limits import ActionLimitConfig, ActionLimiter
-from src.guardrails.pii_filter import PIIFilter, PIILevel
+from src.guardrails.pii_filter import PIIFilter
 from src.guardrails.prompt_injection_guard import PromptInjectionGuard, RejectionReason
 
 
@@ -144,7 +144,7 @@ class TestLLM08_ExcessiveAgencyPrevention:
             allowed_environments=["staging"],
         )
         limiter = ActionLimiter(config=config, redis_client=None)
-        allowed, reason = limiter.check_scope_limit(
+        allowed, _reason = limiter.check_scope_limit(
             agent_id="test-agent",
             action_type="update_records",
             parameters={"record_count": 100},
@@ -198,6 +198,7 @@ class TestLLM09_AuditLogIntegrity:
         class FailingStorage:
             async def append(self, event: object) -> None:
                 raise RuntimeError("Storage unavailable")
+
             async def query(self, **kwargs: object) -> list:
                 return []
 

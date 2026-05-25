@@ -1,4 +1,4 @@
-"""PII detection and masking with L1–L4 classification.
+"""PII detection and masking with L1-L4 classification.
 
 Detection uses structural format patterns only — no real personal data is stored
 in this module. Masking tokens replace matched values; originals are never logged
@@ -17,15 +17,15 @@ from typing import Any
 
 
 class PIILevel(Enum):
-    L1_CRITICAL = 1   # CPF/SSN, health data, biometric — never in logs or LLM
+    L1_CRITICAL = 1  # CPF/SSN, health data, biometric — never in logs or LLM
     L2_SENSITIVE = 2  # name, email, phone, IP — mask in logs
-    L3_INTERNAL = 3   # session token, UUID — internal audit only
-    L4_PUBLIC = 4     # declared role, org name — no special handling
+    L3_INTERNAL = 3  # session token, UUID — internal audit only
+    L4_PUBLIC = 4  # declared role, org name — no special handling
 
 
 @dataclass
 class PIIMatch:
-    field_type: str         # e.g. "EMAIL", "CPF", "IP"
+    field_type: str  # e.g. "EMAIL", "CPF", "IP"
     level: PIILevel
     start: int
     end: int
@@ -56,7 +56,7 @@ class PIIFilter:
             (
                 "CARD",
                 PIILevel.L1_CRITICAL,
-                # Structural: 13–19 digit groups separated by spaces or dashes
+                # Structural: 13-19 digit groups separated by spaces or dashes
                 re.compile(r"\b(?:\d[ \-]?){13,19}\d\b"),
                 "[CARD]",
             ),
@@ -70,9 +70,7 @@ class PIIFilter:
             (
                 "PHONE",
                 PIILevel.L2_SENSITIVE,
-                re.compile(
-                    r"(?:\+\d{1,3}[\s\-]?)?(?:\(?\d{2,3}\)?[\s\-]?)?\d{4,5}[\s\-]?\d{4}\b"
-                ),
+                re.compile(r"(?:\+\d{1,3}[\s\-]?)?(?:\(?\d{2,3}\)?[\s\-]?)?\d{4,5}[\s\-]?\d{4}\b"),
                 "[PHONE]",
             ),
             (
@@ -84,10 +82,10 @@ class PIIFilter:
                 ),
                 "[IP]",
             ),
-            # L3 — Internal
+            # L2 — Sensitive (continued)
             (
                 "TOKEN",
-                PIILevel.L3_INTERNAL,
+                PIILevel.L2_SENSITIVE,
                 # JWT structural shape: three base64url segments separated by dots
                 re.compile(r"\b[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\b"),
                 "[TOKEN]",
@@ -121,15 +119,24 @@ class PIIFilter:
     def mask_text(self, text: str, min_level: PIILevel = PIILevel.L2_SENSITIVE) -> str:
         """Replace all PII at or above min_level with replacement tokens.
 
-        Patterns are applied in level order (L1 first) to avoid double-masking.
+        All detected patterns (including those above min_level) claim their regions
+        first to prevent lower-priority patterns from matching within them.  For
+        example, a UUID (L3) at L2 threshold is not replaced but still blocks CARD
+        and PHONE patterns from matching its digit groups.
         The original matched value is never stored after replacement.
         """
         result = text
         offset = 0
-        matches = self.detect(text)
-        for match in matches:
+        all_matches = self.detect(text)
+        # Longest span first; for equal spans prefer higher-priority (lower level value)
+        all_matches.sort(key=lambda m: (m.start, -(m.end - m.start), m.level.value))
+        last_end = 0
+        for match in all_matches:
+            if match.start < last_end:
+                continue  # skip overlapping regardless of level
+            last_end = match.end  # claim region even if not replacing
             if match.level.value > min_level.value:
-                continue
+                continue  # above threshold — region blocked but not masked
             start = match.start + offset
             end = match.end + offset
             result = result[:start] + match.replacement_token + result[end:]
@@ -142,7 +149,7 @@ class PIIFilter:
         min_level: PIILevel = PIILevel.L2_SENSITIVE,
     ) -> dict[str, Any]:
         """Recursively mask PII in all string values of a dictionary."""
-        return self._mask_value(data, min_level)
+        return self._mask_value(data, min_level)  # type: ignore[no-any-return]
 
     def _mask_value(self, value: Any, min_level: PIILevel) -> Any:
         if isinstance(value, str):

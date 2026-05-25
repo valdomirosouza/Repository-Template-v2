@@ -21,32 +21,36 @@ from src.agents.harness.planner import PlannerAgent
 from src.guardrails.audit_logger import AuditLogger, InMemoryAuditStorage
 from src.shared.llm_client import StubLLMClient
 
-
 # ── Synthetic response builders ───────────────────────────────────────────────
 
+
 def _passing_evaluator_response() -> str:
-    return json.dumps({
-        "quality": 0.9,
-        "originality": 0.85,
-        "craft": 0.80,
-        "functionality": 0.90,
-        "feedback": "All success criteria confirmed.",
-        "criteria_results": {},
-    })
+    return json.dumps(
+        {
+            "quality": 0.9,
+            "originality": 0.85,
+            "craft": 0.80,
+            "functionality": 0.90,
+            "feedback": "All success criteria confirmed.",
+            "criteria_results": {},
+        }
+    )
 
 
 def _planner_response() -> str:
-    return json.dumps({
-        "detailed_description": "A synthetic integration test application.",
-        "sprint_contracts": [
-            {
-                "sprint_id": "sprint-int-001",
-                "objectives": ["User can complete the primary task"],
-                "success_criteria": ["Task completes without error on first attempt"],
-            }
-        ],
-        "ai_feature_opportunities": ["Add AI search capability"],
-    })
+    return json.dumps(
+        {
+            "detailed_description": "A synthetic integration test application.",
+            "sprint_contracts": [
+                {
+                    "sprint_id": "sprint-int-001",
+                    "objectives": ["User can complete the primary task"],
+                    "success_criteria": ["Task completes without error on first attempt"],
+                }
+            ],
+            "ai_feature_opportunities": ["Add AI search capability"],
+        }
+    )
 
 
 def _make_brief() -> TaskBrief:
@@ -59,6 +63,7 @@ def _make_brief() -> TaskBrief:
 
 
 # ── Fixture helpers ───────────────────────────────────────────────────────────
+
 
 def _make_storage() -> tuple[AuditLogger, InMemoryAuditStorage]:
     storage = InMemoryAuditStorage()
@@ -80,14 +85,16 @@ def _make_coordinator(
     )
 
     orchestrator_mock = MagicMock()
-    orchestrator_mock.run = AsyncMock(return_value={
-        "agent_id": "test-orchestrator",
-        "action": "summarise",
-        "parameters": {},
-        "risk_score": 0.1,
-        "outcome": "EXECUTED",
-        "trace_id": "trace-int-001",
-    })
+    orchestrator_mock.run = AsyncMock(
+        return_value={
+            "agent_id": "test-orchestrator",
+            "action": "summarise",
+            "parameters": {},
+            "risk_score": 0.1,
+            "outcome": "EXECUTED",
+            "trace_id": "trace-int-001",
+        }
+    )
 
     gateway_mock = MagicMock()
     gateway_mock.submit_for_approval = AsyncMock()
@@ -103,6 +110,7 @@ def _make_coordinator(
 
 
 # ── Simplified-mode pipeline tests ───────────────────────────────────────────
+
 
 @pytest.mark.integration
 class TestHarnessPipelineSimplified:
@@ -221,7 +229,4 @@ class TestHarnessPipelineSimplified:
 
         result = await coordinator.run(_make_brief())
 
-        assert any(
-            "synthetic output for test" in str(a.outputs)
-            for a in result.artifacts
-        )
+        assert any("synthetic output for test" in str(a.outputs) for a in result.artifacts)

@@ -122,7 +122,10 @@ class PlannerAgent:
                 )
             )
         except AuditWriteError:
-            logger.error("Audit write failed in planner — blocking plan return", task_id=brief.task_id)
+            logger.error(
+                "Audit write failed in planner — blocking plan return",
+                task_id=brief.task_id,
+            )
             raise
 
         logger.info(

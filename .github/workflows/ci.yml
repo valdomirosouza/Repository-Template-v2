@@ -74,7 +74,7 @@ jobs:
       - name: Install uv
         run: pip install uv
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --extra dev
       - name: Ruff lint
         run: uv run ruff check .
       - name: Ruff format check
@@ -96,7 +96,7 @@ jobs:
       - name: Install uv
         run: pip install uv
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --extra dev
       - name: Run unit tests
         run: uv run pytest tests/unit/ -v --cov=src --cov-report=xml --cov-fail-under=80
       - name: Upload coverage
@@ -125,6 +125,7 @@ jobs:
           KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
           KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
           KAFKA_CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+          CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
         options: >-
           --health-cmd "kafka-broker-api-versions --bootstrap-server localhost:9092"
           --health-interval 10s
@@ -147,7 +148,7 @@ jobs:
       - name: Install uv
         run: pip install uv
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --extra dev
       - name: Run integration tests
         run: uv run pytest tests/integration/ -v
         env:
@@ -166,7 +167,7 @@ jobs:
       - name: Install uv
         run: pip install uv
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --extra dev
       - name: SAST — Bandit
         run: uv run bandit -r src/ -ll -x tests/
       - name: Dependency audit — pip-audit

@@ -68,7 +68,9 @@ class PromptInjectionGuard:
 
             scores: dict[RejectionReason, float] = {
                 RejectionReason.STRUCTURAL_ANOMALY: self._check_structural_anomaly(user_input),
-                RejectionReason.ROLE_OVERRIDE_PATTERN: self._check_role_override_pattern(user_input),
+                RejectionReason.ROLE_OVERRIDE_PATTERN: self._check_role_override_pattern(
+                    user_input
+                ),
                 RejectionReason.REPETITIVE_PATTERN: self._check_repetition(user_input),
                 RejectionReason.ENCODING_ANOMALY: self._check_encoding(user_input),
             }
@@ -119,32 +121,49 @@ class PromptInjectionGuard:
         return min(caps_colon * 0.25, 1.0)
 
     def _check_repetition(self, text: str) -> float:
-        """Detect inputs with low character entropy (repetitive content)."""
+        """Detect inputs with low character entropy or word-level repetition."""
         if len(text) < 20:
             return 0.0
+
+        # Character entropy check — catches single-char floods like "a"*N
         freq: dict[str, int] = {}
         for ch in text:
             freq[ch] = freq.get(ch, 0) + 1
         total = len(text)
         entropy = -sum((c / total) * math.log2(c / total) for c in freq.values())
-        # Normal English text has entropy ~4.0–4.5 bits/char
-        # Highly repetitive content has entropy < 2.0
-        return max(0.0, min(1.0, (2.5 - entropy) / 2.5))
+        # Normal English has entropy ~4.0-4.5 bits/char; cap char score for
+        # single-token strings to avoid false positives on inputs like "aaaa"
+        words = text.split()
+        if len(words) < 10:
+            char_score = max(0.0, min(0.6, (2.5 - entropy) / 2.5))
+        else:
+            char_score = max(0.0, min(1.0, (2.5 - entropy) / 2.5))
+
+        # Word-level repetition — catches repeated-token injection patterns
+        word_score = 0.0
+        if len(words) >= 10:
+            unique_ratio = len(set(words)) / len(words)
+            # unique_ratio near 0 (all same word) → score near 1.0
+            word_score = max(0.0, 1.0 - unique_ratio)
+
+        return max(char_score, word_score)
 
     def _check_encoding(self, text: str) -> float:
         """Detect unusual encoding or escape sequences."""
         if not text:
             return 0.0
         null_bytes = text.count("\x00")
-        control_chars = sum(1 for c in text if unicodedata.category(c) == "Cc" and c not in "\n\r\t")
+        control_chars = sum(
+            1 for c in text if unicodedata.category(c) == "Cc" and c not in "\n\r\t"
+        )
         score = min((null_bytes + control_chars) / max(len(text), 1) * 100, 1.0)
         return score
 
     def _compute_risk_score(self, scores: list[float]) -> float:
-        """Weighted combination of individual check scores."""
+        """Weighted combination: dominant signal contributes 50%, average 25%."""
         if not scores:
             return 0.0
-        return min(sum(scores) / len(scores) + max(scores) * 0.3, 1.0)
+        return min(sum(scores) / len(scores) + max(scores) * 0.5, 1.0)
 
     def _sanitise(self, text: str) -> str:
         """Normalise unicode, strip null bytes, collapse excessive whitespace."""

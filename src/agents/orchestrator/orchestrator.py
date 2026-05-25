@@ -16,11 +16,11 @@ All agent actions with real-world effects MUST route through HITLGateway.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from src.agents.hitl_gateway import HITLGateway, HITLRequest, HITLStatus
-from src.guardrails.action_limits import ActionLimitConfig, ActionLimiter
+from src.guardrails.action_limits import ActionLimiter
 from src.guardrails.audit_logger import AuditLogger, AuditWriteError
 from src.guardrails.pii_filter import mask_dict
 from src.guardrails.prompt_injection_guard import PromptInjectionGuard
@@ -32,7 +32,7 @@ from src.shared.models import AuditEvent
 logger = get_logger("orchestrator")
 
 
-class AgentPhase(str, Enum):
+class AgentPhase(StrEnum):
     PERCEPTION = "perception"
     REASON = "reason"
     ACT = "act"
@@ -130,7 +130,7 @@ class AgentOrchestrator:
         response_text = await self._llm.complete(
             system=(
                 "You are an AI agent. Analyse the provided context and respond with a JSON object "
-                "containing: {\"action\": \"<action_name>\", \"parameters\": {}, \"risk_score\": 0.0}. "
+                'containing: {"action": "<action_name>", "parameters": {}, "risk_score": 0.0}. '
                 "risk_score must be between 0.0 (low) and 1.0 (high). "
                 "The context has already been PII-masked — never request raw personal data."
             ),
@@ -172,7 +172,7 @@ class AgentOrchestrator:
         import uuid
 
         if self._action_limiter is not None:
-            self._action_limiter.check(ctx.proposed_action or "", ctx.proposed_parameters)
+            await self._action_limiter.check(ctx.proposed_action or "", ctx.proposed_parameters)
 
         # Write audit record BEFORE action execution (write-before-execute invariant)
         try:

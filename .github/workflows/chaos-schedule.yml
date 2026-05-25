@@ -1,0 +1,122 @@
+---
+# Weekly scheduled chaos experiments run against staging.
+# Spec: specs/sre/game-day-playbook.md
+# ADR:  ADR-0014 (Multi-Agent Harness Strategy)
+
+name: Chaos Schedule
+
+on:
+  schedule:
+    # Weekdays at 02:00 UTC — nightly regression against staging
+    - cron: "0 2 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      experiment:
+        description: "Experiment to run (leave blank to run all)"
+        required: false
+        default: ""
+
+env:
+  CHAOS_NAMESPACE: staging
+  CHAOS_SERVICE_URL: ${{ secrets.STAGING_SERVICE_URL }}
+  TOXIPROXY_URL: ${{ secrets.STAGING_TOXIPROXY_URL }}
+  KAFKA_PROXY_NAME: kafka
+
+jobs:
+  chaos-kill-agent:
+    name: "Kill agent pod"
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.experiment == '' || github.event.inputs.experiment == 'kill-agent' }}
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Chaos Toolkit
+        run: pip install chaostoolkit chaostoolkit-kubernetes
+
+      - name: Configure kubeconfig
+        run: |
+          echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > /tmp/kubeconfig
+          echo "KUBECONFIG=/tmp/kubeconfig" >> "$GITHUB_ENV"
+
+      - name: Run kill-agent experiment
+        run: chaos run tests/chaos/experiments/kill-agent.yaml
+
+      - name: Upload journal
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kill-agent-journal
+          path: chaostoolkit.log
+
+  chaos-network-partition:
+    name: "Network partition (agent ↔ Kafka)"
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.experiment == '' || github.event.inputs.experiment == 'network-partition' }}
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Chaos Toolkit
+        run: pip install chaostoolkit chaostoolkit-toxiproxy
+
+      - name: Run network-partition experiment
+        run: chaos run tests/chaos/experiments/network-partition.yaml
+
+      - name: Upload journal
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-partition-journal
+          path: chaostoolkit.log
+
+  chaos-broker-outage:
+    name: "Kafka broker outage"
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.experiment == '' || github.event.inputs.experiment == 'broker-outage' }}
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Chaos Toolkit
+        run: pip install chaostoolkit chaostoolkit-kubernetes
+
+      - name: Configure kubeconfig
+        run: |
+          echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > /tmp/kubeconfig
+          echo "KUBECONFIG=/tmp/kubeconfig" >> "$GITHUB_ENV"
+
+      - name: Run broker-outage experiment
+        run: chaos run tests/chaos/experiments/broker-outage.yaml
+
+      - name: Upload journal
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: broker-outage-journal
+          path: chaostoolkit.log
+
+  chaos-summary:
+    name: "Notify on failure"
+    runs-on: ubuntu-latest
+    needs: [chaos-kill-agent, chaos-network-partition, chaos-broker-outage]
+    if: failure()
+    steps:
+      - name: Post failure summary
+        run: |
+          echo "::error::One or more chaos experiments failed. Review uploaded journals."

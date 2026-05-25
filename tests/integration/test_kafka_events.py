@@ -19,13 +19,13 @@ from __future__ import annotations
 import json
 import re
 import uuid
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
 
-from src.guardrails.pii_filter import mask_dict, mask_text
+from src.guardrails.pii_filter import mask_dict
 
 # ── Synthetic PII constants (no real personal data) ───────────────────────────
 
@@ -55,7 +55,7 @@ class InMemoryProducer:
     async def send_and_wait(self, topic: str, value: bytes) -> None:
         self.sent.append(CapturedEvent(topic=topic, value=json.loads(value)))
 
-    async def __aenter__(self) -> "InMemoryProducer":
+    async def __aenter__(self) -> InMemoryProducer:
         return self
 
     async def __aexit__(self, *_: object) -> None:
@@ -71,7 +71,7 @@ def _envelope(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
         "event_id": str(uuid.uuid4()),
         "event_type": event_type,
         "schema_version": "1.0",
-        "produced_at": datetime.now(timezone.utc).isoformat(),
+        "produced_at": datetime.now(UTC).isoformat(),
         "trace_id": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
         "producer_service": "test-service",
         "payload": payload,
@@ -122,9 +122,7 @@ def test_producer_masks_pii_before_publish() -> None:
     raw_payload = {
         "request_id": "req-002",
         "user_id": "u-002",
-        "request_text": (
-            f"Update email to {SYNTHETIC_EMAIL} for CPF {SYNTHETIC_CPF}"
-        ),
+        "request_text": (f"Update email to {SYNTHETIC_EMAIL} for CPF {SYNTHETIC_CPF}"),
         "priority": "high",
     }
 
@@ -203,8 +201,7 @@ def test_pii_masked_in_domain_request_event() -> None:
         "request_id": "req-003",
         "user_id": "u-003",
         "request_text": (
-            f"User {SYNTHETIC_EMAIL} requests document access. "
-            f"CPF on file: {SYNTHETIC_CPF}."
+            f"User {SYNTHETIC_EMAIL} requests document access. CPF on file: {SYNTHETIC_CPF}."
         ),
         "priority": "normal",
     }

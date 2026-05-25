@@ -10,6 +10,7 @@ method satisfies it without explicit registration.
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
@@ -42,6 +43,29 @@ class LLMClient(Protocol):
     ) -> str:
         """Send a completion request and return the response content as a string."""
         ...
+
+
+class TimeoutLLMClientWrapper:
+    """Wraps any LLMClient and enforces a per-call asyncio timeout.
+
+    Raises asyncio.TimeoutError if the underlying call exceeds timeout_seconds.
+    Inject this wrapper wherever a production LLMClient is used.
+    """
+
+    def __init__(self, client: LLMClient, timeout_seconds: float = 30.0) -> None:
+        self._client = client
+        self._timeout = timeout_seconds
+
+    async def complete(
+        self,
+        user: str,
+        system: str = "",
+        trace_id: str | None = None,
+    ) -> str:
+        return await asyncio.wait_for(
+            self._client.complete(user=user, system=system, trace_id=trace_id),
+            timeout=self._timeout,
+        )
 
 
 class StubLLMClient:

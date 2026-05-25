@@ -9,13 +9,13 @@ ADR:  ADR-0011 (HITL/HOTL Human Oversight Model)
 
 from __future__ import annotations
 
-import uuid
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from enum import Enum
+import asyncio
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from enum import StrEnum
 from typing import Any
 
-from src.guardrails.audit_logger import AuditLogger, AuditWriteError
+from src.guardrails.audit_logger import AuditLogger
 from src.observability.logger import get_logger
 from src.observability.metrics import (
     ACTIVE_HITL_REQUESTS,
@@ -27,7 +27,7 @@ from src.shared.models import AuditEvent
 logger = get_logger("hitl_gateway")
 
 
-class HITLStatus(str, Enum):
+class HITLStatus(StrEnum):
     PENDING = "PENDING"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
@@ -39,7 +39,7 @@ class HITLRequest:
     request_id: str
     agent_id: str
     action_type: str
-    action_parameters: dict
+    action_parameters: dict[str, Any]
     risk_score: float
     context_summary: str  # PII-masked summary for the human reviewer
     created_at: datetime
@@ -75,18 +75,29 @@ class HITLGateway:
     ) -> None:
         self._audit = audit_logger
         self._broker = broker
-        self._timeout = timeout_seconds or settings.hitl_approval_timeout_seconds
+        default_timeout = settings.hitl_approval_timeout_seconds
+        self._timeout = timeout_seconds if timeout_seconds is not None else default_timeout
         self._requests: dict[str, HITLRequest] = {}
+        self._expired: dict[str, HITLRequest] = {}  # retains expired entries for audit/lookup
+        self._lock = asyncio.Lock()
 
     async def submit_for_approval(self, request: HITLRequest) -> HITLRequest:
-        """Persist the request and publish agent.action.proposed to the broker."""
+        """Persist the request and publish agent.action.proposed to the broker.
 
-        now = datetime.now(timezone.utc)
+        Raises HITLGatewayError if the store has reached hitl_max_pending_requests.
+        """
+        now = datetime.now(UTC)
         request.created_at = now
         request.expires_at = now + timedelta(seconds=self._timeout)
         request.status = HITLStatus.PENDING
 
-        self._requests[request.request_id] = request
+        async with self._lock:
+            if len(self._requests) >= settings.hitl_max_pending_requests:
+                raise HITLGatewayError(
+                    f"HITL request store at capacity ({settings.hitl_max_pending_requests}). "
+                    "Expire stale requests or increase hitl_max_pending_requests."
+                )
+            self._requests[request.request_id] = request
         ACTIVE_HITL_REQUESTS.labels(request.agent_id).inc()
 
         # Write audit record before notifying broker
@@ -128,27 +139,40 @@ class HITLGateway:
     async def record_decision(self, decision: HITLDecision) -> HITLRequest:
         """Record a human approval or rejection and publish the outcome event."""
 
-        request = self._requests.get(decision.request_id)
-        if request is None:
-            raise HITLGatewayError(f"Request {decision.request_id} not found")
+        # Phase 1: atomic state transition — lock held only for in-memory mutation.
+        # I/O (audit, broker) happens outside the lock to minimise contention.
+        expired = False
+        async with self._lock:
+            request = self._requests.get(decision.request_id)
+            if request is None:
+                raise HITLGatewayError(f"Request {decision.request_id} not found")
 
-        if request.status != HITLStatus.PENDING:
-            raise HITLGatewayError(
-                f"Request {decision.request_id} is not PENDING (current: {request.status})"
-            )
+            if request.status != HITLStatus.PENDING:
+                raise HITLGatewayError(
+                    f"Request {decision.request_id} is not PENDING (current: {request.status})"
+                )
 
-        if self._is_expired(request):
-            await self._expire_single(request)
+            if decision.decision not in (HITLStatus.APPROVED, HITLStatus.REJECTED):
+                raise HITLGatewayError(
+                    f"Decision must be APPROVED or REJECTED, got: {decision.decision}"
+                )
+
+            if self._is_expired(request):
+                request.status = HITLStatus.EXPIRED
+                expired = True
+            else:
+                request.status = decision.decision
+
+        # Phase 2: I/O outside lock.
+        if expired:
+            async with self._lock:
+                self._requests.pop(decision.request_id, None)
+                self._expired[decision.request_id] = request
+            await self._expire_audit(request)
             raise HITLGatewayError(
                 f"Request {decision.request_id} expired before decision was recorded"
             )
 
-        if decision.decision not in (HITLStatus.APPROVED, HITLStatus.REJECTED):
-            raise HITLGatewayError(
-                f"Decision must be APPROVED or REJECTED, got: {decision.decision}"
-            )
-
-        request.status = decision.decision
         wait_seconds = (decision.decided_at - request.created_at).total_seconds()
 
         await self._audit.log_event(
@@ -197,22 +221,37 @@ class HITLGateway:
         return request
 
     async def get_request(self, request_id: str) -> HITLRequest | None:
-        return self._requests.get(request_id)
+        async with self._lock:
+            return self._requests.get(request_id) or self._expired.get(request_id)
 
     async def expire_stale_requests(self) -> list[str]:
-        """Mark all PENDING requests past their expires_at as EXPIRED.
+        """Mark all PENDING requests past their expires_at as EXPIRED and evict them.
 
         Never auto-approves — timeout always results in EXPIRED (treated as rejection).
+        Evicting expired entries prevents unbounded growth of the in-memory store.
         """
         expired_ids: list[str] = []
-        for req in list(self._requests.values()):
-            if req.status == HITLStatus.PENDING and self._is_expired(req):
-                await self._expire_single(req)
-                expired_ids.append(req.request_id)
+        async with self._lock:
+            candidates = [
+                req
+                for req in self._requests.values()
+                if req.status == HITLStatus.PENDING and self._is_expired(req)
+            ]
+        for req in candidates:
+            await self._expire_single(req)
+            async with self._lock:
+                self._requests.pop(req.request_id, None)
+                self._expired[req.request_id] = req
+            expired_ids.append(req.request_id)
         return expired_ids
 
     async def _expire_single(self, request: HITLRequest) -> None:
+        """Set status to EXPIRED (state) then emit audit + broker events (I/O)."""
         request.status = HITLStatus.EXPIRED
+        await self._expire_audit(request)
+
+    async def _expire_audit(self, request: HITLRequest) -> None:
+        """Emit audit log and broker event for an already-expired request."""
         ACTIVE_HITL_REQUESTS.labels(request.agent_id).dec()
 
         await self._audit.log_event(
@@ -238,4 +277,4 @@ class HITLGateway:
         )
 
     def _is_expired(self, request: HITLRequest) -> bool:
-        return datetime.now(timezone.utc) >= request.expires_at
+        return datetime.now(UTC) >= request.expires_at

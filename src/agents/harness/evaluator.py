@@ -181,10 +181,7 @@ class EvaluatorAgent:
         craft = float(data.get("craft", 0.0))
         functionality = float(data.get("functionality", 0.0))
 
-        passed = all(
-            dim >= self._threshold
-            for dim in (quality, originality, craft, functionality)
-        )
+        passed = all(dim >= self._threshold for dim in (quality, originality, craft, functionality))
 
         return EvaluatorScore(
             sprint_id=sprint_id,

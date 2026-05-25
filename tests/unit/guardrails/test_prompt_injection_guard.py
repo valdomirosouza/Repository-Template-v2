@@ -7,8 +7,6 @@ All test inputs use clearly synthetic placeholder tokens.
 No real exploit strings appear in this file.
 """
 
-import pytest
-
 from src.guardrails.prompt_injection_guard import (
     PromptInjectionGuard,
     RejectionReason,
@@ -25,9 +23,7 @@ class TestNormalInputs:
 
     def test_accepts_multi_sentence_input(self):
         guard = PromptInjectionGuard()
-        result = guard.validate(
-            "I need help with my account. The issue started yesterday."
-        )
+        result = guard.validate("I need help with my account. The issue started yesterday.")
         assert result.is_valid is True
 
     def test_accepts_empty_string(self):
@@ -118,6 +114,7 @@ class TestSanitisation:
     def test_result_never_raises(self):
         guard = PromptInjectionGuard()
         # validate() must never raise — always returns ValidationResult
-        for text in [None.__class__.__name__, "\xff\xfe", "𝕳𝖊𝖑𝖑𝖔"]:
+        fraktur = "\U0001d573\U0001d58a\U0001d591\U0001d591\U0001d594"
+        for text in [None.__class__.__name__, "\xff\xfe", fraktur]:
             result = guard.validate(text)
             assert isinstance(result, ValidationResult)

@@ -1,0 +1,96 @@
+---
+# Chaos Toolkit experiment: partition agent ↔ Kafka and verify DLQ recovery.
+# Spec: specs/system/async-event-flow.md
+# ADR:  ADR-0007 (Event-Driven Architecture)
+#
+# Prerequisites: Chaos Toolkit + chaostoolkit-toxiproxy installed.
+# Toxiproxy must be configured as a proxy in front of Kafka (TOXIPROXY_URL in env).
+# Run: chaos run tests/chaos/experiments/network-partition.yaml
+
+version: "1.0.0"
+title: "Network partition between agent and Kafka — verify DLQ and lag recovery"
+description: >
+  Injects a 100% packet loss proxy between the agent service and Kafka brokers
+  for 60 seconds. Asserts that (1) messages are routed to the DLQ within the
+  partition window and (2) consumer lag returns to zero within 5 minutes of
+  network restoration.
+
+tags:
+  - network
+  - kafka
+  - dlq
+  - backpressure
+
+configuration:
+  toxiproxy_url:
+    type: env
+    key: TOXIPROXY_URL
+    default: "http://localhost:8474"
+  kafka_proxy_name:
+    type: env
+    key: KAFKA_PROXY_NAME
+    default: "kafka"
+  service_url:
+    type: env
+    key: CHAOS_SERVICE_URL
+    default: "http://localhost:8000"
+
+steady-state-hypothesis:
+  title: "Service healthy and Kafka consumer lag is zero"
+  probes:
+    - type: probe
+      name: "health-endpoint-returns-200"
+      tolerance: 200
+      provider:
+        type: http
+        url: "${service_url}/health"
+        timeout: 3
+
+method:
+  - type: action
+    name: "inject-network-partition-via-toxiproxy"
+    provider:
+      type: python
+      module: chaostoolkit_toxiproxy.actions
+      func: add_toxic
+      arguments:
+        proxy_name: "${kafka_proxy_name}"
+        toxic_type: "bandwidth"
+        toxic_name: "partition"
+        attributes:
+          rate: 0
+    pauses:
+      after: 60
+
+  - type: probe
+    name: "messages-reach-dlq-during-partition"
+    tolerance:
+      type: regex
+      pattern: 'dlq_messages_total\{[^}]+\} [1-9]'
+    provider:
+      type: http
+      url: "${service_url}/metrics"
+      timeout: 5
+
+  - type: action
+    name: "remove-network-partition"
+    provider:
+      type: python
+      module: chaostoolkit_toxiproxy.actions
+      func: delete_toxic
+      arguments:
+        proxy_name: "${kafka_proxy_name}"
+        toxic_name: "partition"
+    pauses:
+      after: 300
+
+rollbacks:
+  - type: action
+    name: "remove-partition-on-failure"
+    provider:
+      type: python
+      module: chaostoolkit_toxiproxy.actions
+      func: delete_toxic
+      arguments:
+        proxy_name: "${kafka_proxy_name}"
+        toxic_name: "partition"

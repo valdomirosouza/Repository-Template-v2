@@ -63,7 +63,7 @@ class TestPerceive:
 
     @pytest.mark.asyncio
     async def test_injection_attempt_raises_value_error(self) -> None:
-        # Synthetic injection: REPETITIVE_PATTERN trigger (80× repetition)
+        # Synthetic injection: REPETITIVE_PATTERN trigger (80x repetition)
         orchestrator = _make_orchestrator()
         malicious = "SYNTHETIC_INJECT_ATTEMPT " * 80
 
@@ -74,7 +74,9 @@ class TestPerceive:
 class TestReason:
     @pytest.mark.asyncio
     async def test_valid_json_populates_action_and_risk(self) -> None:
-        llm_json = json.dumps({"action": "send_report", "parameters": {"to": "team"}, "risk_score": 0.2})
+        llm_json = json.dumps(
+            {"action": "send_report", "parameters": {"to": "team"}, "risk_score": 0.2}
+        )
         orchestrator = _make_orchestrator(llm_response=llm_json)
 
         result = await orchestrator.run(raw_input={"request_text": "Generate weekly report"})
@@ -103,7 +105,9 @@ class TestReason:
 
     @pytest.mark.asyncio
     async def test_parameters_passed_through_to_result(self) -> None:
-        llm_json = json.dumps({"action": "analyse", "parameters": {"depth": "full"}, "risk_score": 0.1})
+        llm_json = json.dumps(
+            {"action": "analyse", "parameters": {"depth": "full"}, "risk_score": 0.1}
+        )
         orchestrator = _make_orchestrator(llm_response=llm_json)
 
         result = await orchestrator.run(raw_input={"request_text": "Analyse data"})
@@ -183,7 +187,9 @@ class TestAct:
 
     @pytest.mark.asyncio
     async def test_result_contains_expected_fields(self) -> None:
-        llm_json = json.dumps({"action": "analyse", "parameters": {"depth": "full"}, "risk_score": 0.2})
+        llm_json = json.dumps(
+            {"action": "analyse", "parameters": {"depth": "full"}, "risk_score": 0.2}
+        )
         orchestrator = _make_orchestrator(llm_response=llm_json)
 
         result = await orchestrator.run(

@@ -19,13 +19,14 @@ from src.guardrails.pii_filter import PIIFilter, PIILevel, mask_dict, mask_text
 
 SYNTHETIC_EMAIL = "fake@example.com"
 SYNTHETIC_CPF = "000.000.000-00"
-SYNTHETIC_IP = "192.0.2.1"          # TEST-NET per RFC 5737
+SYNTHETIC_IP = "192.0.2.1"  # TEST-NET per RFC 5737
 SYNTHETIC_PHONE = "+00 00 00000-0000"
 SYNTHETIC_JWT = "aaaaaaaaaa.bbbbbbbbbb.cccccccccc"
 SYNTHETIC_UUID = "00000000-0000-0000-0000-000000000000"
 
 
 # ── Interception point 1: pre-LLM call ───────────────────────────────────────
+
 
 @pytest.mark.integration
 class TestPreLLMInterception:
@@ -71,6 +72,7 @@ class TestPreLLMInterception:
 
 # ── Interception point 2: pre-log write ──────────────────────────────────────
 
+
 @pytest.mark.integration
 class TestPreLogInterception:
     """Verify structured log records are masked before emission."""
@@ -111,6 +113,7 @@ class TestPreLogInterception:
 
 # ── Interception point 3: pre-broker publish ─────────────────────────────────
 
+
 @pytest.mark.integration
 class TestPreBrokerInterception:
     """Verify event payloads are masked before Kafka produce."""
@@ -147,6 +150,7 @@ class TestPreBrokerInterception:
 
 # ── End-to-end: context summary for HITL reviewer ────────────────────────────
 
+
 @pytest.mark.integration
 class TestHITLContextSummaryMasking:
     """Verify that the context summary shown to HITL reviewers is fully masked."""
@@ -162,9 +166,7 @@ class TestHITLContextSummaryMasking:
             assert pii not in masked_summary, f"PII leaked in HITL summary: {pii}"
 
     def test_hitl_summary_retains_action_description(self):
-        raw_summary = (
-            f"Requested action: send_report. Requester: {SYNTHETIC_EMAIL}."
-        )
+        raw_summary = f"Requested action: send_report. Requester: {SYNTHETIC_EMAIL}."
         masked = mask_text(raw_summary)
         assert "send_report" in masked
         assert "Requested action" in masked

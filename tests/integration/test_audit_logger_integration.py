@@ -11,8 +11,6 @@ Validates that:
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-
 import pytest
 
 from src.guardrails.audit_logger import AuditLogger, AuditWriteError, InMemoryAuditStorage
@@ -34,6 +32,7 @@ def _make_event(
 
 
 # ── Write-before-execute invariant ────────────────────────────────────────────
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio
@@ -79,6 +78,7 @@ async def test_multiple_events_all_persisted():
 
 # ── Append-only semantics ─────────────────────────────────────────────────────
 
+
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_records_are_immutable_after_write():
@@ -86,7 +86,7 @@ async def test_records_are_immutable_after_write():
     audit = AuditLogger(storage_backend=storage)
 
     event = _make_event(outcome="pending")
-    event_id = await audit.log_event(event)
+    await audit.log_event(event)
 
     events = await audit.query_events(agent_id="test-agent")
     assert events[0].outcome == "pending"
@@ -98,6 +98,7 @@ async def test_records_are_immutable_after_write():
 
 
 # ── Query filtering ───────────────────────────────────────────────────────────
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio
@@ -142,6 +143,7 @@ async def test_query_limit_respected():
 
 
 # ── HITL events audit trail ───────────────────────────────────────────────────
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio

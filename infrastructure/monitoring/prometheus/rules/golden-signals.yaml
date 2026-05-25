@@ -65,7 +65,7 @@ spec:
 
         - alert: AgentActionErrorRate
           expr: |
-            sum(rate(agent_actions_total{outcome="error"}[5m])) by (agent_id)
+            sum(rate(agent_actions_total{result="error"}[5m])) by (agent_id)
             / sum(rate(agent_actions_total[5m])) by (agent_id)
             > 0.005
           for: 5m
@@ -117,7 +117,10 @@ spec:
 
         - alert: LLMTokenBudgetNearing
           expr: |
-            (llm_tokens_used_total / llm_tokens_budget_total) * 100
+            (
+              sum(increase(llm_tokens_total{token_type="input"}[30d])) by (service)
+              / on(service) llm_tokens_budget_total
+            ) * 100
             > 80
           for: 5m
           labels:

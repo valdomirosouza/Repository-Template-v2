@@ -10,17 +10,17 @@ import atexit
 import logging
 
 from opentelemetry import metrics, trace
+from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.propagate import set_global_textmap
+from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.propagators.composite import CompositePropagator
-from opentelemetry.propagate import set_global_textmap
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
-from opentelemetry.baggage.propagation import W3CBaggagePropagator
 
 from src.shared.config import settings
 

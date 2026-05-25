@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from opentelemetry import trace
@@ -21,7 +21,8 @@ from src.shared.config import settings
 try:
     from src.guardrails.pii_filter import mask_dict as _mask_dict
 except ImportError:  # during initial scaffold / unit tests without guardrails
-    def _mask_dict(data: dict) -> dict:  # type: ignore[misc]
+
+    def _mask_dict(data: dict[str, object]) -> dict[str, object]:  # type: ignore[misc]
         return data
 
 
@@ -52,7 +53,7 @@ class StructuredLogger:
         safe_context = _mask_dict(context) if mask and settings.pii_masking_enabled else context
 
         return {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "severity": severity,
             "service": self._service,
             "component": self._component,
@@ -85,6 +86,7 @@ class StructuredLogger:
         payload = self._build_record("ERROR", message, context)
         if exc_info:
             import traceback
+
             payload["exception"] = traceback.format_exc()
         self._emit(logging.ERROR, payload)
 

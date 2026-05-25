@@ -83,8 +83,35 @@ ACTIVE_HITL_REQUESTS = Gauge(
     ["agent_id"],
 )
 
+LLM_TOKEN_BUDGET = Gauge(
+    "llm_tokens_budget_total",
+    "Configured LLM token monthly budget",
+    ["service"],
+)
+
+AGENT_SEMAPHORE_WAITING = Gauge(
+    "agent_semaphore_waiting",
+    "Requests currently waiting for an available agent slot",
+    ["service"],
+)
+
+DLQ_MESSAGES_COUNTER = Counter(
+    "dlq_messages_total",
+    "Total messages routed to Dead Letter Queue",
+    ["consumer_group", "topic"],
+)
+
+
+# ── Initialisation helpers ───────────────────────────────────────────────────
+
+
+def init_budget_gauge(service: str, monthly_token_budget: int) -> None:
+    """Set the static LLM token budget gauge once at startup."""
+    LLM_TOKEN_BUDGET.labels(service).set(monthly_token_budget)
+
 
 # ── Helper functions ─────────────────────────────────────────────────────────
+
 
 def record_request(
     service: str,

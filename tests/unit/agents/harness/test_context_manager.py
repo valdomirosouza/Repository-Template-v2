@@ -9,8 +9,6 @@ No real personal data appears in this file.
 
 from __future__ import annotations
 
-import pytest
-
 from src.agents.harness.context_manager import ContextManager
 from src.agents.harness.models import ContextSnapshot
 
