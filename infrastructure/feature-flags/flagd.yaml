@@ -1,0 +1,93 @@
+---
+# flagd — OpenFeature flag evaluation server (ADR-0015)
+# Reads flag definitions from a ConfigMap mounted as /etc/flagd/flags/
+# HTTP port 8014 (OFREP) — consumed by openfeature-sdk in the app pod
+#
+# Spec: specs/system/architecture.md
+# ADR:  ADR-0015 (Feature Flag Strategy)
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flagd-flags
+  namespace: default
+  labels:
+    app: flagd
+data:
+  autonomous-mode.yaml: |
+    flags:
+      autonomous-mode:
+        state: ENABLED
+        variants:
+          "on": true
+          "off": false
+        defaultVariant: "off"
+        targeting: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flagd
+  namespace: default
+  labels:
+    app: flagd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flagd
+  template:
+    metadata:
+      labels:
+        app: flagd
+    spec:
+      containers:
+        - name: flagd
+          image: ghcr.io/open-feature/flagd:latest
+          args:
+            - start
+            - --uri
+            - file:/etc/flagd/flags/autonomous-mode.yaml
+          ports:
+            - name: http
+              containerPort: 8014
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8014
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi
+          volumeMounts:
+            - name: flags
+              mountPath: /etc/flagd/flags
+              readOnly: true
+      volumes:
+        - name: flags
+          configMap:
+            name: flagd-flags
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flagd
+  namespace: default
+  labels:
+    app: flagd
+spec:
+  selector:
+    app: flagd
+  ports:
+    - name: http
+      port: 8014
+      targetPort: http
+      protocol: TCP

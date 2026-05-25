@@ -29,6 +29,7 @@ dependencies = [
     "anthropic>=0.28.0",
     "tenacity>=8.3.0",
     "slowapi>=0.1.9",
+    "openfeature-sdk>=0.4.0",
 ]
 
 [project.optional-dependencies]
@@ -103,6 +104,7 @@ module = [
     "alembic.*",
     "slowapi.*",
     "fakeredis.*",
+    "openfeature.*",
 ]
 ignore_missing_imports = true
 

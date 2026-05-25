@@ -13,6 +13,33 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added (P3 Wave 3c — platform maturity)
+
+- `src/shared/feature_flags.py`: `is_autonomous_mode_enabled()` — thin OpenFeature SDK
+  wrapper that evaluates the `autonomous-mode` flag; falls back to
+  `settings.autonomous_mode_enabled` when the SDK is unavailable (ADR-0015)
+- `docs/adr/ADR-0015-feature-flag-strategy.md`: documents choice of OpenFeature + flagd —
+  vendor-neutral CNCF standard; provider swap (LaunchDarkly, Unleash) requires no
+  application code changes
+- `infrastructure/feature-flags/flags/autonomous-mode.yaml`: flag definition with
+  `defaultVariant: "off"` (HITL required by default)
+- `infrastructure/feature-flags/flagd.yaml`: k8s Deployment + Service + ConfigMap for
+  flagd (lightweight OpenFeature evaluation server reading flags from mounted YAML)
+- `infrastructure/k8s/prometheus-adapter-config.yaml`: Prometheus Adapter ConfigMap with
+  rules mapping `agent_semaphore_waiting` and `kafka_consumer_lag` to `custom.metrics.k8s.io`
+- `tests/unit/shared/test_feature_flags.py`: 6 unit tests using `InMemoryProvider` —
+  flag on/off, SDK-overrides-settings, fallback on SDK error
+
+### Changed (P3 Wave 3c — platform maturity)
+
+- `src/agents/orchestrator/orchestrator.py`: HITL routing now gated by
+  `is_autonomous_mode_enabled()` — when autonomous mode is enabled (HOTL), high-risk
+  actions bypass HITL approval; disabled by default for safety
+- `infrastructure/k8s/hpa.yaml`: added custom-metric rules for `agent_semaphore_waiting`
+  (scale when avg > 3 waiting per pod) and `kafka_consumer_lag` (scale when lag > 5000);
+  added `behavior` block with stabilization windows to prevent thrashing (PRR-CAP-001)
+- `pyproject.toml`: added `openfeature-sdk>=0.4.0` to runtime dependencies
+
 ### Added (P3 Wave 3b — HITL Redis persistence)
 
 - `src/agents/hitl_store.py`: `HITLStore` Protocol + `InMemoryHITLStore` + `HITLRedisStore` —

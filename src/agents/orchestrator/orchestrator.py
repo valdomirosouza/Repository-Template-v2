@@ -26,6 +26,7 @@ from src.guardrails.pii_filter import mask_dict
 from src.guardrails.prompt_injection_guard import PromptInjectionGuard
 from src.observability.logger import get_logger
 from src.shared.config import settings
+from src.shared.feature_flags import is_autonomous_mode_enabled
 from src.shared.llm_client import LLMClient
 from src.shared.models import AuditEvent
 
@@ -196,8 +197,9 @@ class AgentOrchestrator:
             logger.error("Audit write failed — blocking action", agent_id=ctx.agent_id)
             raise
 
-        # Route through HITL for MEDIUM/HIGH risk; HOTL for LOW risk
-        if ctx.risk_score >= settings.hitl_risk_threshold:
+        # Route through HITL for MEDIUM/HIGH risk unless autonomous mode is active.
+        # Autonomous mode (HOTL) bypasses HITL — only enable with explicit governance approval.
+        if ctx.risk_score >= settings.hitl_risk_threshold and not is_autonomous_mode_enabled():
             logger.info(
                 "Routing to HITL",
                 agent_id=ctx.agent_id,

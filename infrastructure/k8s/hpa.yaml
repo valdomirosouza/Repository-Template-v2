@@ -1,0 +1,65 @@
+---
+# HorizontalPodAutoscaler — scales on CPU, agent semaphore saturation, and Kafka lag.
+# Custom metrics require prometheus-community/prometheus-adapter (see prometheus-adapter-config.yaml).
+# Spec: specs/sre/prr.md (PRR-CAP-001)
+# ADR:  ADR-0015 (Feature Flag Strategy — flagd included as sidecar consideration)
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: agent-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: agent-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    # CPU — baseline resource metric (always active)
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+    # Agent semaphore waiting — scale when >3 coroutines per pod are blocked
+    # waiting for a slot (indicates agent concurrency saturation)
+    # Requires: prometheus-adapter + agent_semaphore_waiting gauge in metrics.py
+    - type: Pods
+      pods:
+        metric:
+          name: agent_semaphore_waiting
+        target:
+          type: AverageValue
+          averageValue: "3"
+
+    # Kafka consumer lag — scale when total lag exceeds 5000 messages
+    # (indicates consumer is falling behind producers under burst load)
+    # Requires: prometheus-adapter + kafka_consumer_lag gauge exposed by Kafka exporter
+    - type: Object
+      object:
+        metric:
+          name: kafka_consumer_lag
+        describedObject:
+          apiVersion: v1
+          kind: Service
+          name: kafka
+        target:
+          type: Value
+          value: "5000"
+
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60 # avoid thrashing on burst spikes
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300 # conservative scale-down to absorb queue drain
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120

@@ -1,0 +1,37 @@
+---
+# Prometheus Adapter rules — maps Prometheus metrics to custom.metrics.k8s.io
+# Required for HPA scaling on agent_semaphore_waiting and kafka_consumer_lag.
+#
+# Pre-requisite: prometheus-community/prometheus-adapter Helm chart installed.
+# Spec: specs/sre/prr.md (PRR-CAP-001)
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-adapter-config
+  namespace: monitoring
+data:
+  config.yaml: |
+    rules:
+      # agent_semaphore_waiting: avg waiting coroutines per pod
+      # HPA scales when average > 3 per pod (see hpa.yaml)
+      - seriesQuery: 'agent_semaphore_waiting{namespace!="",pod!=""}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+            pod: {resource: "pod"}
+        name:
+          matches: "^agent_semaphore_waiting$"
+          as: "agent_semaphore_waiting"
+        metricsQuery: 'avg(<<.Series>>{<<.LabelMatchers>>})'
+
+      # kafka_consumer_lag: total lag across all partitions for the consumer group
+      # HPA scales when lag > 5000 messages (see hpa.yaml)
+      - seriesQuery: 'kafka_consumer_lag{namespace!=""}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+        name:
+          matches: "^kafka_consumer_lag$"
+          as: "kafka_consumer_lag"
+        metricsQuery: 'sum(<<.Series>>{<<.LabelMatchers>>})'
