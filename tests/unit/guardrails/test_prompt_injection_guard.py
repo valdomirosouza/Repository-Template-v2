@@ -1,5 +1,8 @@
 """Unit tests for src/guardrails/prompt_injection_guard.py.
 
+Spec: specs/ai/guardrails.md (Layer 2 — Prompt Injection Guard)
+ADR:  ADR-0010 (Agent Framework Selection)
+
 All test inputs use clearly synthetic placeholder tokens.
 No real exploit strings appear in this file.
 """

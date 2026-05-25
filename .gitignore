@@ -56,4 +56,3 @@ test-results/
 
 # Claude Code session data — per-project memory, not part of the codebase
 .claude/memory/
-.secrets.baseline

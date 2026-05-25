@@ -1,5 +1,7 @@
 # Skill — OpenTelemetry Instrumentation
 
+**Owner:** SRE Lead | **Reviewer:** Tech Lead | **Status:** Active | **Last updated:** 2026-05-24
+
 Activate this skill for any work involving metrics, traces, logs, or OTel SDK usage.
 
 Spec: specs/system/architecture.md

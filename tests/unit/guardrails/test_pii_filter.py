@@ -1,5 +1,8 @@
 """Unit tests for src/guardrails/pii_filter.py.
 
+Spec: specs/ai/guardrails.md (Layer 1 — PII Filter)
+ADR:  ADR-0012 (PII Masking Strategy)
+
 All test inputs use clearly synthetic, obviously fake data.
 No real personal data appears in this file.
 """

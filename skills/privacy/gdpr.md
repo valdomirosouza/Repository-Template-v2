@@ -1,5 +1,7 @@
 # Skill — GDPR Compliance
 
+**Owner:** DPO | **Reviewer:** Legal | **Status:** Active | **Last updated:** 2026-05-24
+
 Activate this skill when working with EU data subjects or any GDPR obligations.
 
 ---

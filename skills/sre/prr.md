@@ -1,5 +1,7 @@
 # Skill — Production Readiness Review (PRR)
 
+**Owner:** SRE Lead | **Reviewer:** Tech Lead | **Status:** Active | **Last updated:** 2026-05-24
+
 Activate this skill before any production deployment.
 
 ---

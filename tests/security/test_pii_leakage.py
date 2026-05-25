@@ -1,5 +1,8 @@
 """PII leakage prevention tests.
 
+Spec: specs/ai/guardrails.md (Layer 1), specs/privacy/pii-inventory.md
+ADR:  ADR-0012 (PII Masking Strategy)
+
 Verifies that after applying pii_filter, no PII from the input appears
 in the output. Uses only clearly synthetic, fake data.
 

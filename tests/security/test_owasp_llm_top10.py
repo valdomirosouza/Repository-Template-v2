@@ -1,5 +1,8 @@
 """Defensive validation suite for OWASP LLM Top 10 guardrail coverage.
 
+Spec: specs/ai/guardrails.md (Layers 1–4)
+ADR:  ADR-0010 (Agent Framework), ADR-0011 (HITL/HOTL), ADR-0012 (PII Masking)
+
 Each test verifies that the relevant guardrail REJECTS a synthetic
 placeholder input representing a risk category. No real exploit payloads
 are stored in this file.

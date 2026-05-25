@@ -1,5 +1,7 @@
 # Skill — LGPD Compliance
 
+**Owner:** DPO | **Reviewer:** Legal | **Status:** Active | **Last updated:** 2026-05-24
+
 Activate this skill when working with Brazilian data subjects or any LGPD obligations.
 
 ---

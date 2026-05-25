@@ -15,6 +15,20 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ### Added
 
+- `.secrets.baseline` criado para habilitar `detect-secrets` no pre-commit hook (P2-01)
+- Governance headers (`Owner`/`Reviewer`/`Status`/`Last updated`) adicionados aos 13 skill files (P2-03)
+
+### Fixed
+
+- `tests/unit/guardrails/test_pii_filter.py`: adicionados `Spec:` e `ADR:` no docstring (P2-04)
+- `tests/unit/guardrails/test_prompt_injection_guard.py`: adicionados `Spec:` e `ADR:` no docstring (P2-04)
+- `tests/security/test_pii_leakage.py`: adicionados `Spec:` e `ADR:` no docstring (P2-04)
+- `tests/security/test_owasp_llm_top10.py`: adicionados `Spec:` e `ADR:` no docstring (P2-04)
+- `specs/api/async-api-design.md`: Testing Requirements corrigido para documentar uso do
+  `InMemoryProducer` para testes estruturais + Kafka real em CI (P2-05)
+
+### Added
+
 - Avro schemas (5 arquivos) em `infrastructure/message-broker/schema-registry/avro/` cobrindo
   todos os 8 event types do catálogo: `domain_request.avsc`, `agent_action.avsc`,
   `hitl_decision.avsc`, `domain_result.avsc`, `audit_event.avsc` (ADR-0003, ADR-0005)

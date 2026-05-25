@@ -1,5 +1,7 @@
 # Skill — Deploy & Rollback
 
+**Owner:** DevOps Lead | **Reviewer:** SRE Lead | **Status:** Active | **Last updated:** 2026-05-24
+
 Activate this skill for any deploy or rollback operation.
 
 ---

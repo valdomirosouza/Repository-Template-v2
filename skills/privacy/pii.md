@@ -1,5 +1,7 @@
 # Skill — PII Handling
 
+**Owner:** DPO | **Reviewer:** Security Lead | **Status:** Active | **Last updated:** 2026-05-24
+
 Activate this skill for any code that reads, writes, transforms, or transmits personal data.
 
 ---

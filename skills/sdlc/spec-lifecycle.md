@@ -1,5 +1,7 @@
 # Skill — Spec Lifecycle (SDD)
 
+**Owner:** Tech Lead | **Reviewer:** Product Owner | **Status:** Active | **Last updated:** 2026-05-24
+
 Activate this skill when writing, reviewing, or updating a spec.
 
 ---

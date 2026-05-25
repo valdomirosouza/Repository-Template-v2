@@ -1,5 +1,7 @@
 # Skill — Golden Signals
 
+**Owner:** SRE Lead | **Reviewer:** Tech Lead | **Status:** Active | **Last updated:** 2026-05-24
+
 Activate this skill for any observability work, SLO monitoring, alert triage, or on-call response.
 
 ---

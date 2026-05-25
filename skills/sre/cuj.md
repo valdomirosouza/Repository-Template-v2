@@ -1,5 +1,7 @@
 # Skill — Critical User Journey (CUJ)
 
+**Owner:** SRE Lead | **Reviewer:** Product Owner | **Status:** Active | **Last updated:** 2026-05-24
+
 Activate this skill when defining, validating, or testing a critical user journey.
 
 ---

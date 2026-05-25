@@ -1,5 +1,7 @@
 # Skill — AI Guardrails
 
+**Owner:** Security Lead | **Reviewer:** AI Lead | **Status:** Active | **Last updated:** 2026-05-24
+
 Activate this skill for any agent implementation, guardrail change, or AI safety review.
 
 ---

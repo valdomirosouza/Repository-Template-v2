@@ -133,6 +133,7 @@ Every consumer must implement:
 ## Testing Requirements
 
 - Unit tests must use a mock broker (no real Kafka dependency)
-- Integration tests (`tests/integration/test_kafka_events.py`) must use a real Kafka instance
-  (provided by the CI `test-integration` job services block)
+- Integration tests (`tests/integration/test_kafka_events.py`) use an `InMemoryProducer` stub
+  for structural assertions (envelope, PII masking, naming); tests marked `@pytest.mark.integration`
+  also run against a real Kafka instance in CI (provided by the `test-integration` job services block)
 - Every producer test must assert that the emitted payload contains no unmasked PII fields

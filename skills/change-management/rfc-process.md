@@ -1,5 +1,7 @@
 # Skill — RFC Process
 
+**Owner:** Tech Lead | **Reviewer:** DevOps Lead | **Status:** Active | **Last updated:** 2026-05-24
+
 Activate this skill for any Normal or Emergency change request.
 
 ---

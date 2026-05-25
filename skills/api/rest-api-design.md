@@ -1,5 +1,7 @@
 # Skill — REST API Design
 
+**Owner:** Tech Lead | **Reviewer:** Security Lead | **Status:** Active | **Last updated:** 2026-05-24
+
 Activate this skill when designing or implementing REST endpoints.
 
 Spec: specs/system/architecture.md, specs/api/async-api-design.md

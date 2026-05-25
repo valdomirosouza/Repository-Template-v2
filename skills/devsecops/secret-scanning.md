@@ -1,5 +1,7 @@
 # Skill — DevSecOps & Secret Scanning
 
+**Owner:** Security Lead | **Reviewer:** DevOps Lead | **Status:** Active | **Last updated:** 2026-05-24
+
 Activate this skill for any work touching CI/CD pipelines, secret management, SAST, or dependency auditing.
 
 ADR: ADR-0008 (Secrets Management)
