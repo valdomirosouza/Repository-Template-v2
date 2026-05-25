@@ -39,6 +39,15 @@ class Settings(BaseSettings):
     hitl_risk_threshold: float = 0.4           # MEDIUM/HIGH boundary per specs/ai/hitl-hotl.md
     hotl_override_window_seconds: int = 300    # 5-min override window per specs/ai/hitl-hotl.md
 
+    # ── Harness ───────────────────────────────────────────────────────────────
+    harness_mode: str = "solo"                          # solo | simplified | full
+    harness_context_reset_threshold: float = 0.85       # context utilisation → reset
+    harness_max_iterations: int = 15                    # max evaluator retries per sprint
+    harness_evaluator_pass_threshold: float = 0.75      # min score per dimension to pass
+    harness_planner_enabled: bool = True                # disable to skip Planner in full mode
+    harness_evaluator_enabled: bool = True              # disable to skip Evaluator (debug only)
+    harness_planner_hitl_review: bool = False           # opt-in: HITL review of ProductSpec
+
     # ── Observability ─────────────────────────────────────────────────────────
     otel_exporter_otlp_endpoint: str = "http://localhost:4317"
     otel_service_name: str = "template-service"

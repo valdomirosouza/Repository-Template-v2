@@ -51,6 +51,7 @@ Examples:
 | `specs/privacy/pii-inventory.md`   | DPO           | Tech Lead     | Approved |
 | `specs/privacy/data-retention.md`  | DPO           | SRE Lead      | Approved |
 | `specs/privacy/dpia-ripd.md`       | DPO           | Legal         | Approved |
+| `specs/ai/harness-design.md`       | AI Lead       | Tech Lead     | Approved |
 
 ---
 

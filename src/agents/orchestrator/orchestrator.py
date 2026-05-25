@@ -19,11 +19,15 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from src.agents.hitl_gateway import HITLGateway, HITLRequest, HITLStatus
 from src.guardrails.action_limits import ActionLimitConfig, ActionLimiter
-from src.guardrails.audit_logger import AuditLogger
+from src.guardrails.audit_logger import AuditLogger, AuditWriteError
 from src.guardrails.pii_filter import mask_dict
 from src.guardrails.prompt_injection_guard import PromptInjectionGuard
 from src.observability.logger import get_logger
+from src.shared.config import settings
+from src.shared.llm_client import LLMClient
+from src.shared.models import AuditEvent
 
 logger = get_logger("orchestrator")
 
@@ -64,13 +68,15 @@ class AgentOrchestrator:
         self,
         agent_id: str,
         audit_logger: AuditLogger,
-        hitl_gateway: Any,  # HITLGateway — typed as Any to avoid circular import
+        hitl_gateway: HITLGateway,
+        llm_client: LLMClient,
         injection_guard: PromptInjectionGuard | None = None,
         action_limiter: ActionLimiter | None = None,
     ) -> None:
         self._agent_id = agent_id
         self._audit = audit_logger
         self._hitl = hitl_gateway
+        self._llm = llm_client
         self._injection_guard = injection_guard or PromptInjectionGuard()
         self._action_limiter = action_limiter
 
@@ -119,16 +125,35 @@ class AgentOrchestrator:
         """
         logger.info("Agent reasoning phase", agent_id=ctx.agent_id)
 
-        # TODO: call LLM provider with ctx.masked_input as context
-        # response = await llm_client.complete(prompt=build_prompt(ctx.masked_input))
-        # ctx.proposed_action = response.action
-        # ctx.proposed_parameters = response.parameters
-        # ctx.risk_score = risk_scorer.score(ctx.proposed_action, ctx.proposed_parameters)
+        import json
 
-        raise NotImplementedError(
-            "LLM reasoning not implemented. "
-            "Implement _reason() by calling the configured LLM provider with ctx.masked_input."
+        response_text = await self._llm.complete(
+            system=(
+                "You are an AI agent. Analyse the provided context and respond with a JSON object "
+                "containing: {\"action\": \"<action_name>\", \"parameters\": {}, \"risk_score\": 0.0}. "
+                "risk_score must be between 0.0 (low) and 1.0 (high). "
+                "The context has already been PII-masked — never request raw personal data."
+            ),
+            user=json.dumps(ctx.masked_input),
+            trace_id=ctx.trace_id,
         )
+
+        try:
+            parsed = json.loads(response_text)
+        except (json.JSONDecodeError, ValueError):
+            parsed = {"action": "unknown", "parameters": {}, "risk_score": 1.0}
+
+        ctx.proposed_action = str(parsed.get("action", "unknown"))
+        ctx.proposed_parameters = dict(parsed.get("parameters", {}))
+        ctx.risk_score = float(parsed.get("risk_score", 1.0))
+
+        logger.info(
+            "Agent reasoning complete",
+            agent_id=ctx.agent_id,
+            proposed_action=ctx.proposed_action,
+            risk_score=ctx.risk_score,
+        )
+        return ctx
 
     async def _act(self, ctx: AgentContext) -> dict[str, Any]:
         """Phase 3: route proposed action through HITL/HOTL gateway and execute.
@@ -142,13 +167,85 @@ class AgentOrchestrator:
             risk_score=ctx.risk_score,
         )
 
-        # TODO: submit to HITLGateway if risk_score >= threshold
-        # if ctx.risk_score >= settings.hitl_risk_threshold:
-        #     request = HITLRequest(...)
-        #     approved_request = await self._hitl.submit_for_approval(request)
-        #     # Block until decision or timeout (timeout → EXPIRED_AUTO_REJECTED)
+        import hashlib
+        import json
+        import uuid
 
-        raise NotImplementedError(
-            "Action execution not implemented. "
-            "Implement _act() by routing through HITLGateway for consequential actions."
+        if self._action_limiter is not None:
+            self._action_limiter.check(ctx.proposed_action or "", ctx.proposed_parameters)
+
+        # Write audit record BEFORE action execution (write-before-execute invariant)
+        try:
+            await self._audit.log_event(
+                AuditEvent(
+                    event_type="agent.action.proposed",
+                    agent_id=ctx.agent_id,
+                    action=ctx.proposed_action or "unknown",
+                    outcome="PENDING",
+                    risk_score=ctx.risk_score,
+                    metadata={
+                        "action_params_hash": hashlib.sha256(
+                            json.dumps(ctx.proposed_parameters, sort_keys=True).encode()
+                        ).hexdigest(),
+                        "guardrails_passed": ["pii_filter", "injection_guard"],
+                    },
+                    trace_id=ctx.trace_id,
+                )
+            )
+        except AuditWriteError:
+            logger.error("Audit write failed — blocking action", agent_id=ctx.agent_id)
+            raise
+
+        # Route through HITL for MEDIUM/HIGH risk; HOTL for LOW risk
+        if ctx.risk_score >= settings.hitl_risk_threshold:
+            logger.info(
+                "Routing to HITL",
+                agent_id=ctx.agent_id,
+                risk_score=ctx.risk_score,
+                threshold=settings.hitl_risk_threshold,
+            )
+            request = HITLRequest(
+                request_id=str(uuid.uuid4()),
+                agent_id=ctx.agent_id,
+                action_type=ctx.proposed_action or "unknown",
+                action_parameters=ctx.proposed_parameters,
+                risk_score=ctx.risk_score,
+                context_summary=json.dumps(ctx.masked_input)[:500],
+                created_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
+                expires_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
+            )
+            approved_request = await self._hitl.submit_for_approval(request)
+
+            if approved_request.status != HITLStatus.APPROVED:
+                raise ValueError(
+                    f"HITL rejected action '{ctx.proposed_action}' "
+                    f"(status={approved_request.status.value})"
+                )
+
+        # Action approved (HOTL or HITL-approved) — log executed outcome
+        await self._audit.log_event(
+            AuditEvent(
+                event_type="agent.action.executed",
+                agent_id=ctx.agent_id,
+                action=ctx.proposed_action or "unknown",
+                outcome="EXECUTED",
+                risk_score=ctx.risk_score,
+                trace_id=ctx.trace_id,
+            )
         )
+
+        logger.info(
+            "Agent action executed",
+            agent_id=ctx.agent_id,
+            action=ctx.proposed_action,
+            risk_score=ctx.risk_score,
+        )
+
+        return {
+            "agent_id": ctx.agent_id,
+            "action": ctx.proposed_action,
+            "parameters": ctx.proposed_parameters,
+            "risk_score": ctx.risk_score,
+            "outcome": "EXECUTED",
+            "trace_id": ctx.trace_id,
+        }

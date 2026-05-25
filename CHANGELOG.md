@@ -55,6 +55,54 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 - `specs/README.md`: `specs/api/async-api-design.md` registrado na tabela de ownership
   com Owner: Tech Lead, Reviewer: DevOps Lead, Status: Approved (P1-01)
 
+### Added (harness design — ADR-0014)
+
+- `docs/adr/ADR-0014-multi-agent-harness-strategy.md` — architectural decision capturing why
+  multi-agent harness is needed (quality plateau, context exhaustion), Planner+Generator+Evaluator
+  pattern, cost multipliers, and rejected alternatives (ADR-0014)
+- `specs/ai/harness-design.md` — full harness design spec: agent roles, sprint contract schema,
+  context management strategy, handoff model, harness modes, HITL integration, observability (ADR-0014)
+- `src/agents/harness/models.py` — typed dataclasses: `TaskBrief`, `SprintContract`, `ProductSpec`,
+  `GeneratorArtifact`, `EvaluatorScore`, `ContextSnapshot`, `HarnessResult` (ADR-0014)
+- `src/agents/harness/context_manager.py` — `ContextManager` with `should_reset()`,
+  `create_snapshot()` (decisions capped at 20/200 chars, PII safety-net applied),
+  `restore_prompt()` (ADR-0014, specs/ai/harness-design.md §3)
+- `src/agents/harness/planner.py` — `PlannerAgent` with injection guard, PII masking,
+  LLM planning call, audit logging on `plan_generated` (ADR-0014, specs/ai/harness-design.md §1.1)
+- `src/agents/harness/evaluator.py` — `EvaluatorAgent` with explicit skepticism system prompt,
+  4-dimension scoring (quality/originality/craft/functionality), pass threshold per dimension
+  (ADR-0014, specs/ai/harness-design.md §1.3)
+- `src/agents/harness/coordinator.py` — `HarnessCoordinator` supporting solo/simplified/full modes;
+  generate→evaluate→retry loop; HITL escalation on max iterations; optional spec HITL review
+  (ADR-0014, specs/ai/harness-design.md §1.4)
+- `src/shared/llm_client.py` — `LLMClient` Protocol + `StubLLMClient` for tests (ADR-0014)
+- `skills/ai/harness.md` — multi-agent harness skill: mode selection table, sprint contract
+  checklist, evaluator skepticism block, context reset pattern, HITL escalation protocol (ADR-0014)
+- `tests/unit/agents/harness/test_context_manager.py` — 17 unit tests for `ContextManager`
+  (should_reset, create_snapshot, restore_prompt) (ADR-0014)
+- `tests/unit/agents/harness/test_evaluator.py` — 11 unit tests for `EvaluatorAgent`
+  (pass/fail dimensions, threshold boundary, audit log, invalid JSON) (ADR-0014)
+- `tests/unit/agents/harness/test_planner.py` — 10 unit tests for `PlannerAgent`
+  (injection rejection, invalid JSON, audit log, missing contracts) (ADR-0014)
+- `tests/unit/agents/test_orchestrator.py` — 9 unit tests for `AgentOrchestrator`
+  (PII masking, injection guard, HITL routing, write-before-execute invariant) (ADR-0011, ADR-0014)
+- `tests/integration/test_harness_pipeline.py` — 11 integration tests for end-to-end simplified
+  harness pipeline (HarnessResult, artifact storage, evaluator audit log, no HITL escalation on
+  first pass) (ADR-0014)
+
+### Changed (harness design — ADR-0014)
+
+- `src/shared/config.py`: added 7 harness settings fields (`harness_mode`, `harness_context_reset_threshold`,
+  `harness_max_iterations`, `harness_evaluator_pass_threshold`, `harness_planner_enabled`,
+  `harness_evaluator_enabled`, `harness_planner_hitl_review`) (ADR-0014)
+- `src/agents/orchestrator/orchestrator.py`: closed `_reason()` and `_act()` `NotImplementedError`
+  stubs; added LLM call with masked context, HITL routing via `HITLGateway`, write-before-execute
+  audit log, `llm_client` constructor parameter (ADR-0010, ADR-0011)
+- `CLAUDE.md`: added Multi-Agent Harness row to Skill Activation Table (ADR-0014)
+- `skills/README.md`: added Multi-Agent Harness row to skill catalog (ADR-0014)
+- `docs/adr/README.md`: added ADR-0014 row to Master Index (ADR-0014)
+- `specs/README.md`: added `specs/ai/harness-design.md` to Ownership Table (ADR-0014)
+
 ### Added (anterior — P0/P1 audit sprint anterior)
 
 - ADR-0002 through ADR-0009: Technology Stack, Async API, Observability, Message Broker,
