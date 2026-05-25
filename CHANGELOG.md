@@ -13,6 +13,19 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added (P3 Wave 3a — quick wins)
+
+- `infrastructure/k8s/deployment.yaml`: `startupProbe` added (httpGet `/health`,
+  `failureThreshold: 30`, `periodSeconds: 10` — 5-minute startup window). Prevents
+  premature liveness kills during slow boot (asyncpg pool + Redis ping). Reduced
+  `livenessProbe.initialDelaySeconds` from 15 → 5 since startupProbe owns the
+  startup gate.
+- `infrastructure/monitoring/grafana/cuj-dashboards/CUJ-001-user-request-processing.json`:
+  Grafana dashboard covering all 7 steps of CUJ-001 with 12 panels — SLO stat rows
+  (availability ≥ 99.9%, p99 latency ≤ 500ms, HITL approval ≤ 300s, error budget),
+  time-series for request rate/latency/HITL queue/decisions/semaphore saturation/LLM
+  tokens/DLQ depth. Satisfies PRR-OBS-005 (blocking).
+
 ### Added (harness audit P2 — operational resilience)
 
 - `src/shared/db_client.py`: `ResilientDBPool` — wraps `asyncpg.Pool` with per-call

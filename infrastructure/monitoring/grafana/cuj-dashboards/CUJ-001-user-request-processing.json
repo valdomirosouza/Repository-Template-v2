@@ -1,0 +1,400 @@
+{
+  "__requires__": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    },
+    { "type": "panel", "id": "stat", "name": "Stat", "version": "" },
+    { "type": "panel", "id": "gauge", "name": "Gauge", "version": "" },
+    { "type": "panel", "id": "table", "name": "Table", "version": "" }
+  ],
+  "__inputs__": [
+    {
+      "name": "datasource",
+      "label": "Prometheus Datasource",
+      "description": "Prometheus datasource",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "title": "CUJ-001 — User Request Processing",
+  "uid": "cuj-001-user-request-processing",
+  "description": "Critical User Journey: authenticated user submits a request and receives a processed response within SLO. Spec: docs/sre/cuj/CUJ-001-user-request-processing.md",
+  "tags": ["cuj", "sre", "slo", "hitl"],
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "query",
+        "datasource": "${datasource}",
+        "query": "label_values(http_requests_total, service)",
+        "multi": false,
+        "includeAll": false,
+        "current": {
+          "selected": false,
+          "text": "agent-service",
+          "value": "agent-service"
+        },
+        "refresh": 2,
+        "label": "Service"
+      },
+      {
+        "name": "env",
+        "type": "custom",
+        "query": "staging,production",
+        "current": {
+          "selected": false,
+          "text": "production",
+          "value": "production"
+        },
+        "label": "Environment"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "SLO — End-to-End Availability (target ≥ 99.9%)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.995 },
+              { "color": "green", "value": 0.999 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "colorMode": "background"
+      },
+      "targets": [
+        {
+          "expr": "1 - (sum(rate(http_requests_total{service=\"$service\",status=~\"5..\"}[30d])) / sum(rate(http_requests_total{service=\"$service\"}[30d])))",
+          "legendFormat": "Availability"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "SLO — p99 Latency (target ≤ 500ms)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.3 },
+              { "color": "red", "value": 0.5 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "colorMode": "background"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{service=\"$service\"}[5m])) by (le))",
+          "legendFormat": "p99 latency"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "SLO — HITL Approval Latency p99 (target ≤ 300s)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 200 },
+              { "color": "red", "value": 300 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "colorMode": "background"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(hitl_wait_seconds_bucket[5m])) by (le))",
+          "legendFormat": "HITL p99"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Error Budget Remaining",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.1 },
+              { "color": "green", "value": 0.5 }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "expr": "1 - clamp_min((sum(increase(http_requests_total{service=\"$service\",status=~\"5..\"}[30d])) / sum(increase(http_requests_total{service=\"$service\"}[30d]))) / 0.001, 0)",
+          "legendFormat": "Error Budget"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Request Rate (req/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 4 },
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{service=\"$service\"}[5m])) by (status)",
+          "legendFormat": "HTTP {{status}}"
+        },
+        {
+          "expr": "sum(rate(agent_actions_total{service=\"$service\"}[5m])) by (outcome)",
+          "legendFormat": "Agent {{outcome}}"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "End-to-End Latency — p50 / p95 / p99",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 4 },
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{service=\"$service\"}[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service=\"$service\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{service=\"$service\"}[5m])) by (le))",
+          "legendFormat": "p99 (SLO ≤ 500ms)"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "title": "HITL Queue Depth (active pending requests)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 11 },
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "red", "value": 50 }
+            ]
+          }
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "sum(hitl_active_requests) by (agent_id)",
+          "legendFormat": "Pending ({{agent_id}})"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "title": "HITL Approval Latency — p50 / p99",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 11 },
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(hitl_wait_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(hitl_wait_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99 (SLO ≤ 300s)"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "title": "HITL Decisions (approvals vs rejections vs expirations)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 11 },
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "sum(rate(hitl_approvals_total[5m]))",
+          "legendFormat": "Approved"
+        },
+        {
+          "expr": "sum(rate(hitl_rejections_total[5m]))",
+          "legendFormat": "Rejected"
+        },
+        {
+          "expr": "sum(rate(agent_actions_total{outcome=\"EXPIRED_AUTO_REJECTED\"}[5m]))",
+          "legendFormat": "Expired (auto-rejected)"
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "title": "Agent Semaphore — Waiting Requests",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 18 },
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "sum(agent_semaphore_waiting)",
+          "legendFormat": "Requests waiting for agent slot"
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "title": "LLM Token Usage vs Budget",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 18 },
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "sum(increase(llm_tokens_total{token_type=\"input\"}[30d]))",
+          "legendFormat": "Input tokens (30d)"
+        },
+        {
+          "expr": "sum(increase(llm_tokens_total{token_type=\"output\"}[30d]))",
+          "legendFormat": "Output tokens (30d)"
+        },
+        {
+          "expr": "sum(llm_tokens_budget_total)",
+          "legendFormat": "Monthly budget"
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "title": "DLQ Depth — Delivery Failures",
+      "type": "stat",
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 18 },
+      "datasource": "${datasource}",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "colorMode": "background"
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(dlq_messages_total[5m]))",
+          "legendFormat": "DLQ messages (5m)"
+        }
+      ]
+    }
+  ]
+}
