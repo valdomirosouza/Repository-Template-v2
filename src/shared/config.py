@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     hitl_risk_threshold: float = 0.4  # MEDIUM/HIGH boundary per specs/ai/hitl-hotl.md
     hotl_override_window_seconds: int = 300  # 5-min override window per specs/ai/hitl-hotl.md
     hitl_max_pending_requests: int = 500  # hard cap on in-memory HITL request store
+    hitl_redis_key_prefix: str = "hitl"
+    hitl_redis_ttl_grace_hours: int = 24  # TTL extension beyond expires_at for active keys
+    hitl_expired_ttl_days: int = 7  # retention period for archived (expired) HITL requests
     llm_call_timeout_seconds: float = 30.0  # asyncio.wait_for ceiling on LLM API calls
     redis_call_timeout_seconds: float = 5.0  # asyncio.wait_for ceiling on Redis pipeline calls
     shutdown_drain_seconds: int = 5  # grace period before pool teardown (LB deregister)

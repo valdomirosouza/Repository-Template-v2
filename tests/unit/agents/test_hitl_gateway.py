@@ -19,6 +19,7 @@ from src.agents.hitl_gateway import (
     HITLRequest,
     HITLStatus,
 )
+from src.agents.hitl_store import InMemoryHITLStore
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -26,8 +27,8 @@ from src.agents.hitl_gateway import (
 def _make_gateway(max_pending: int = 500) -> HITLGateway:
     audit = MagicMock()
     audit.log_event = AsyncMock()
-    gw = HITLGateway(audit_logger=audit, broker=None)
-    # Patch the settings value used for the cap check
+    store = InMemoryHITLStore()
+    gw = HITLGateway(audit_logger=audit, broker=None, store=store)
     import src.agents.hitl_gateway as mod
 
     mod.settings.hitl_max_pending_requests = max_pending
@@ -78,7 +79,7 @@ class TestHITLGatewayHardCap:
         gw = _make_gateway(max_pending=10)
         for _ in range(3):
             await gw.submit_for_approval(_make_request())
-        assert len(gw._requests) == 3
+        assert await gw._store.pending_count() == 3
 
 
 # ── Eviction ──────────────────────────────────────────────────────────────────
@@ -100,25 +101,23 @@ class TestHITLGatewayEviction:
             created_at=now - timedelta(seconds=7200),
             expires_at=now - timedelta(seconds=3600),  # already expired
         )
-        async with gw._lock:
-            gw._requests[req.request_id] = req
+        await gw._store.save(req)
 
         expired = await gw.expire_stale_requests()
 
         assert req.request_id in expired
-        assert req.request_id not in gw._requests
+        assert await gw._store.get_active(req.request_id) is None
 
     @pytest.mark.asyncio
     async def test_expire_stale_requests_does_not_evict_pending_valid(self):
         gw = _make_gateway()
         req = _make_request()  # expires in 1 hour
-        async with gw._lock:
-            gw._requests[req.request_id] = req
+        await gw._store.save(req)
 
         expired = await gw.expire_stale_requests()
 
         assert req.request_id not in expired
-        assert req.request_id in gw._requests
+        assert await gw._store.get_active(req.request_id) is not None
 
     @pytest.mark.asyncio
     async def test_eviction_frees_slot_for_new_request(self):
@@ -135,8 +134,7 @@ class TestHITLGatewayEviction:
             created_at=now - timedelta(seconds=7200),
             expires_at=now - timedelta(seconds=1),
         )
-        async with gw._lock:
-            gw._requests[expired_req.request_id] = expired_req
+        await gw._store.save(expired_req)
 
         # Store is full (1/1), but after eviction there is room
         await gw.expire_stale_requests()
@@ -160,8 +158,7 @@ class TestHITLGatewayEviction:
             created_at=now - timedelta(seconds=7200),
             expires_at=now - timedelta(seconds=1),
         )
-        async with gw._lock:
-            gw._requests[req.request_id] = req
+        await gw._store.save(req)
 
         await gw.expire_stale_requests()
 
@@ -182,16 +179,15 @@ class TestHITLGatewayEviction:
             created_at=now - timedelta(seconds=7200),
             expires_at=now - timedelta(seconds=1),
         )
-        async with gw._lock:
-            gw._requests[req.request_id] = req
+        await gw._store.save(req)
 
         await gw.expire_stale_requests()
 
         retrieved = await gw.get_request(req.request_id)
         assert retrieved is not None
         assert retrieved.status == HITLStatus.EXPIRED
-        assert req.request_id not in gw._requests
-        assert req.request_id in gw._expired
+        assert await gw._store.get_active(req.request_id) is None
+        assert await gw._store.get(req.request_id) is not None
 
     @pytest.mark.asyncio
     async def test_mid_decision_expiry_moves_request_to_expired_store(self):
@@ -208,8 +204,7 @@ class TestHITLGatewayEviction:
             created_at=now - timedelta(seconds=7200),
             expires_at=now - timedelta(seconds=1),
         )
-        async with gw._lock:
-            gw._requests[req.request_id] = req
+        await gw._store.save(req)
 
         with pytest.raises(HITLGatewayError, match="expired"):
             await gw.record_decision(
@@ -222,5 +217,5 @@ class TestHITLGatewayEviction:
                 )
             )
 
-        assert req.request_id not in gw._requests
-        assert req.request_id in gw._expired
+        assert await gw._store.get_active(req.request_id) is None
+        assert await gw._store.get(req.request_id) is not None

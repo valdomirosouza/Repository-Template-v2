@@ -21,6 +21,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from src.agents.hitl_gateway import HITLGateway
+from src.agents.hitl_store import HITLRedisStore, InMemoryHITLStore
 from src.api.rest._limiter import limiter
 from src.api.rest.routers import health, hitl, requests
 from src.guardrails.audit_logger import AuditLogger, InMemoryAuditStorage, PostgresAuditStorage
@@ -89,10 +90,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             )
         app.state.audit_logger = AuditLogger(InMemoryAuditStorage())
 
-    # HITL gateway — wired to the audit logger
+    # HITL gateway — Redis-backed when available; in-memory fallback for local dev.
+    # Production pods must always have Redis available (see RB-003-hitl-recovery.md).
+    if app.state.redis is not None:
+        hitl_store = HITLRedisStore(client=app.state.redis)
+    else:
+        hitl_store = InMemoryHITLStore()
     app.state.hitl_gateway = HITLGateway(
         audit_logger=app.state.audit_logger,
         broker=None,
+        store=hitl_store,
     )
 
     # Agent concurrency cap — limits simultaneous coroutines to prevent event-loop starvation

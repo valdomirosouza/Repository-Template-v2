@@ -13,6 +13,31 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added (P3 Wave 3b — HITL Redis persistence)
+
+- `src/agents/hitl_store.py`: `HITLStore` Protocol + `InMemoryHITLStore` + `HITLRedisStore` —
+  pluggable persistence backends for HITL requests; Redis-backed store survives pod restarts
+  (ADR-0011). Schema: `hitl:req:{id}` (active, TTL = expires_at + 24 h grace),
+  `hitl:pending` sorted set (score = expires_at timestamp), `hitl:expired:{id}` (7-day audit archive)
+- `docs/runbooks/RB-003-hitl-recovery.md`: HITL recovery runbook covering pod restart, Redis
+  failover, stuck queue, capacity exhaustion, and manual key inspection (satisfies PRR-OPS-002)
+- `tests/integration/test_hitl_redis_store.py`: 14 integration tests for `HITLRedisStore`
+  using `fakeredis` (no external service required) — save/get round-trip, TTL semantics,
+  archive, pending-expired queries
+
+### Changed (P3 Wave 3b — HITL Redis persistence)
+
+- `src/agents/hitl_gateway.py`: `HITLGateway` now accepts an injectable `store: HITLStore`
+  parameter; defines `HITLStore` Protocol; defaults to `InMemoryHITLStore` via lazy import
+  when no store is provided — breaks no existing callers
+- `src/api/rest/main.py`: lifespan startup selects `HITLRedisStore` when Redis is available,
+  falls back to `InMemoryHITLStore` for local dev; wires store into `HITLGateway`
+- `src/shared/config.py`: added `hitl_redis_key_prefix`, `hitl_redis_ttl_grace_hours`,
+  `hitl_expired_ttl_days` configuration fields
+- `tests/unit/agents/test_hitl_gateway.py`: updated to construct `InMemoryHITLStore` explicitly
+  and inject into `HITLGateway`; assertions updated from direct dict access to store API
+- `pyproject.toml`: added `fakeredis>=2.0.0` to dev dependencies
+
 ### Added (P3 Wave 3a — quick wins)
 
 - `infrastructure/k8s/deployment.yaml`: `startupProbe` added (httpGet `/health`,

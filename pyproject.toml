@@ -45,6 +45,7 @@ dev = [
     "pre-commit>=3.7.0",
     "mkdocs-material>=9.5.0",
     "types-redis>=4.6.0",
+    "fakeredis>=2.0.0",
 ]
 
 # ── Ruff ──────────────────────────────────────────────────────────────────────
@@ -101,6 +102,7 @@ module = [
     "prometheus_client.*",
     "alembic.*",
     "slowapi.*",
+    "fakeredis.*",
 ]
 ignore_missing_imports = true
 
