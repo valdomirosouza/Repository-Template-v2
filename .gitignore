@@ -50,9 +50,11 @@ terraform.tfvars
 # Generated in CI — do not commit manually
 sbom.cyclonedx.json
 docs/site/
+site/
 
 # Test outputs
 test-results/
 
 # Claude Code session data — per-project memory, not part of the codebase
 .claude/memory/
+resumo-*.md

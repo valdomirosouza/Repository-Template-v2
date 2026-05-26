@@ -2,7 +2,7 @@
 # Multi-stage build — target "production" is used by make build and CI.
 
 # ── Stage 1: builder ──────────────────────────────────────────────────────────
-FROM python:3.12-slim AS builder
+FROM python:3.13-slim AS builder
 
 WORKDIR /build
 
@@ -20,7 +20,7 @@ RUN uv sync --no-dev --frozen
 COPY src/ ./src/
 
 # ── Stage 2: production ───────────────────────────────────────────────────────
-FROM python:3.12-slim AS production
+FROM python:3.13-slim AS production
 
 # Security: run as non-root user
 RUN groupadd --gid 1001 appgroup && \

@@ -13,7 +13,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, ClassVar
 
 
 class PIILevel(Enum):
@@ -39,71 +39,66 @@ class PIIFilter:
     On match, the original value is replaced with a token and discarded.
     """
 
-    def _get_patterns(self) -> list[tuple[str, PIILevel, re.Pattern[str], str]]:
-        """Return (field_type, level, compiled_pattern, replacement_token).
-
-        Patterns match the structural FORMAT of each PII category without
-        storing any real personal data.
-        """
-        return [
-            # L1 — Critical
-            (
-                "CPF",
-                PIILevel.L1_CRITICAL,
-                re.compile(r"\b\d{3}[.\-]?\d{3}[.\-]?\d{3}[.\-]?\d{2}\b"),
-                "[CPF]",
+    # Compiled once at import time — patterns are stateless and shared across all instances.
+    _PATTERNS: ClassVar[list[tuple[str, PIILevel, re.Pattern[str], str]]] = [
+        # L1 — Critical
+        (
+            "CPF",
+            PIILevel.L1_CRITICAL,
+            re.compile(r"\b\d{3}[.\-]?\d{3}[.\-]?\d{3}[.\-]?\d{2}\b"),
+            "[CPF]",
+        ),
+        (
+            "CARD",
+            PIILevel.L1_CRITICAL,
+            # Structural: 13-19 digit groups separated by spaces or dashes
+            re.compile(r"\b(?:\d[ \-]?){13,19}\d\b"),
+            "[CARD]",
+        ),
+        # L2 — Sensitive
+        (
+            "EMAIL",
+            PIILevel.L2_SENSITIVE,
+            re.compile(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b"),
+            "[EMAIL]",
+        ),
+        (
+            "PHONE",
+            PIILevel.L2_SENSITIVE,
+            re.compile(r"(?:\+\d{1,3}[\s\-]?)?(?:\(?\d{2,3}\)?[\s\-]?)?\d{4,5}[\s\-]?\d{4}\b"),
+            "[PHONE]",
+        ),
+        (
+            "IP",
+            PIILevel.L2_SENSITIVE,
+            re.compile(
+                r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b"
+                r"|(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}"
             ),
-            (
-                "CARD",
-                PIILevel.L1_CRITICAL,
-                # Structural: 13-19 digit groups separated by spaces or dashes
-                re.compile(r"\b(?:\d[ \-]?){13,19}\d\b"),
-                "[CARD]",
+            "[IP]",
+        ),
+        # L2 — Sensitive (continued)
+        (
+            "TOKEN",
+            PIILevel.L2_SENSITIVE,
+            # JWT structural shape: three base64url segments separated by dots
+            re.compile(r"\b[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\b"),
+            "[TOKEN]",
+        ),
+        (
+            "UUID",
+            PIILevel.L3_INTERNAL,
+            re.compile(
+                r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b"
             ),
-            # L2 — Sensitive
-            (
-                "EMAIL",
-                PIILevel.L2_SENSITIVE,
-                re.compile(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b"),
-                "[EMAIL]",
-            ),
-            (
-                "PHONE",
-                PIILevel.L2_SENSITIVE,
-                re.compile(r"(?:\+\d{1,3}[\s\-]?)?(?:\(?\d{2,3}\)?[\s\-]?)?\d{4,5}[\s\-]?\d{4}\b"),
-                "[PHONE]",
-            ),
-            (
-                "IP",
-                PIILevel.L2_SENSITIVE,
-                re.compile(
-                    r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b"
-                    r"|(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}"
-                ),
-                "[IP]",
-            ),
-            # L2 — Sensitive (continued)
-            (
-                "TOKEN",
-                PIILevel.L2_SENSITIVE,
-                # JWT structural shape: three base64url segments separated by dots
-                re.compile(r"\b[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\b"),
-                "[TOKEN]",
-            ),
-            (
-                "UUID",
-                PIILevel.L3_INTERNAL,
-                re.compile(
-                    r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b"
-                ),
-                "[UUID]",
-            ),
-        ]
+            "[UUID]",
+        ),
+    ]
 
     def detect(self, text: str) -> list[PIIMatch]:
         """Return all PII matches found, without masking."""
         matches: list[PIIMatch] = []
-        for field_type, level, pattern, token in self._get_patterns():
+        for field_type, level, pattern, token in self._PATTERNS:
             for m in pattern.finditer(text):
                 matches.append(
                     PIIMatch(

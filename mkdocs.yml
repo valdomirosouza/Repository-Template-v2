@@ -1,0 +1,52 @@
+site_name: Template Monorepo
+docs_dir: docs
+
+# Suppress "not found" warnings for links to files outside the docs/ tree
+# (e.g. quickstart/ links to services.yaml, .env.example) and template
+# placeholder links (e.g. ../runbooks/XXX.md in POSTMORTEM-TEMPLATE.md).
+validation:
+  links:
+    not_found: ignore
+
+theme:
+  name: material
+  palette:
+    scheme: slate
+
+nav:
+  - Home: repo-structure.md
+  - Glossary: glossary.md
+  - Quickstart:
+      - Overview: quickstart/README.md
+      - Python Backend: quickstart/python-backend.md
+      - Java Backend: quickstart/java-backend.md
+      - Go Backend: quickstart/go-backend.md
+      - Frontend: quickstart/frontend.md
+      - Jobs & Workers: quickstart/jobs-worker.md
+      - Contract-Driven Dev: quickstart/contract-driven-dev.md
+      - Add a Service: quickstart/add-new-service.md
+  - ADRs: adr/README.md
+  - AI Governance:
+      - Autonomy Boundaries: ai-governance/autonomy-boundaries.md
+      - Model Card: ai-governance/model-card.md
+      - EU AI Act: ai-governance/eu-ai-act-compliance.md
+      - NIST AI RMF: ai-governance/nist-ai-rmf.md
+  - Privacy:
+      - PII Inventory: privacy/pii-inventory.md
+      - Data Retention: privacy/data-retention-policy.md
+      - Data Processing Register: privacy/data-processing-register.md
+      - DPIA: privacy/dpia/dpia-v1.md
+      - RIPD: privacy/ripd/ripd-v1.md
+  - SRE:
+      - Runbooks: runbooks/README.md
+      - Disaster Recovery: runbooks/disaster-recovery.md
+      - Rollback: runbooks/rollback-procedure.md
+      - HITL Recovery: runbooks/RB-003-hitl-recovery.md
+      - SLO Error Budget: sre/slo/error-budget-policy.md
+      - CUJ-001: sre/cuj/CUJ-001-user-request-processing.md
+      - PRR Template: sre/prr/PRR-TEMPLATE.md
+  - Change Management:
+      - Overview: change-management/README.md
+      - RFC Template: change-management/RFC-TEMPLATE.md
+      - CAB Process: change-management/CAB-PROCESS.md
+  - Postmortems: postmortems/POSTMORTEM-TEMPLATE.md
