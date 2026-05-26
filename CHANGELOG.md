@@ -15,6 +15,44 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [1.1.1] - 2026-05-26
+
+### Fixed
+
+- `src/guardrails/pii_filter.py`: `_get_patterns()` promovido para `ClassVar` — 7 regexes compiladas uma vez no import em vez de a cada chamada a `detect()` / `mask_text()` (hot path: executa antes de todo log write e LLM call) (ADR-0012)
+- `src/guardrails/prompt_injection_guard.py`: `RejectionReason.NESTED_INSTRUCTION` removido do enum — era dead code não utilizado pelo guard e exposto na API pública (ADR-0012)
+- `src/shared/config.py`: `database_url` e `redis_url` agora validados em produção — placeholders rejeitados no startup (ADR-0008); `SECRET_KEY` com menos de 32 chars rejeitado quando `JWT_ALGORITHM=HS256`
+- `src/shared/config.py`: `service_version` lido dinamicamente de `version.txt` em vez de hardcoded `"0.0.0"` (ADR-0002)
+- `src/api/rest/main.py`: `AsyncGenerator[None, None]` corrigido para `AsyncGenerator[None]` — default arg desnecessário removido (UP043, Python 3.13)
+- `alembic/versions/0001_create_audit_events.py`: role do DB lido do `alembic.ini` via `context.config.get_main_option("db_app_role", "app_user")` em vez de hardcoded; `REVOKE` envolto em guard `DO $$ IF EXISTS` para não falhar silenciosamente se a role não existir (ADR-0011)
+- `alembic/env.py`: substituído `engine_from_config` síncrono por `create_async_engine` + `asyncio.run()` — codebase só tem asyncpg, sem psycopg2 (ADR-0002)
+- `.github/workflows/ci.yml`: job `build` agora requer `[test-unit, test-security, test-integration]` — antes podia rodar com testes falhando; Kafka atualizado de `7.6.0` para `7.7.0`
+- `.github/workflows/cd-production.yml`: gates de canary substituídos de `bc` (não disponível no ubuntu-latest) para `python3`; estratégias de deploy restritas a `[canary]`
+- `docker-compose.yml`: Redis com `--save 60 1` (persistência activada); Kafka com listener `INTERNAL://kafka:29092` para comunicação inter-container sem usar o listener externo
+
+### Added
+
+- `tests/conftest.py`: fixtures `stub_llm` (`StubLLMClient`) e `audit_logger` (`AuditLogger` + `InMemoryAuditStorage`) disponíveis globalmente para todos os testes — elimina duplicação inline
+- `mkdocs.yml`: configuração mínima do mkdocs-material criada — `make docs-serve` e `mkdocs build --strict` agora funcionam; nav cobre todos os docs existentes (ADRs, AI Governance, Privacy, SRE, Change Management)
+- `.github/dependabot.yml`: Dependabot configurado para pip e github-actions com cadência semanal e limite de 5 PRs por ecossistema
+- `infrastructure/message-broker/schema-registry/avro/`: 6 schemas Avro stub criados com os nomes exatos referenciados em `services.yaml` (`request-created-v1.avsc`, `hitl-decision-v1.avsc`, `audit-event-v1.avsc`, `domain-entity-created-v1.avsc`, `domain-entity-updated-v1.avsc`, `event-processed-v1.avsc`) — CI `contract-drift` agora passa (ADR-0003)
+- `tests/unit/shared/test_config.py`: 3 novos testes — `DATABASE_URL` com placeholder rejeitado em produção, `REDIS_URL` com placeholder rejeitado em produção, `SECRET_KEY` curto com HS256 rejeitado
+
+### Changed
+
+- `pyproject.toml`: alinhado para Python 3.13 — `requires-python = ">=3.13"`, `ruff target-version = "py313"`, `mypy python_version = "3.13"`; adicionado `"alembic/**" = ["S608"]` em `per-file-ignores` (SQL dinâmico é padrão em migrations)
+- `Dockerfile`: ambos os stages atualizados de `python:3.12-slim` para `python:3.13-slim`
+- `.github/workflows/ci.yml`: todos os 4 steps `setup-python` atualizados de `"3.12"` para `"3.13"`
+- `.env.example`: `REDIS_PASSWORD=devpassword` e `REDIS_URL` com senha adicionados; alinhado com `docker-compose.yml`
+- `Makefile`: `make new-service` agora cria estrutura mínima Python (`src/<name>/`, `__init__.py`, `README.md`, `pyproject.toml`) em vez de diretório vazio
+- `.gitignore`: `resumo-*.md` e `site/` adicionados para evitar commit de artifacts de sessão e build do mkdocs
+
+### Removed
+
+- `resumo-memória-2026-05-26.md`: artifact de sessão Claude Code removido do repositório
+
+---
+
 ## [1.1.0] - 2026-05-26
 
 ### Added (multi-language template — Block 4)
@@ -438,7 +476,8 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/template-monorepo/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/valdomirosouza/template-monorepo/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/valdomirosouza/template-monorepo/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/valdomirosouza/template-monorepo/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/valdomirosouza/template-monorepo/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/valdomirosouza/template-monorepo/releases/tag/v0.1.0
