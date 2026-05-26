@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+---
+
+## [1.2.0] - 2026-05-26
+
 ### Fixed
 
 - `src/api/rest/routers/hitl.py`: `hitl_status` endpoint replaced stale `gateway._requests`
