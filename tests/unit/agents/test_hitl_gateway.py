@@ -289,3 +289,75 @@ class TestHITLGatewayGauge:
 
             mock_labels.inc.assert_called_once()
             mock_labels.dec.assert_called_once()
+
+
+# ── Archive ───────────────────────────────────────────────────────────────────
+
+
+class TestHITLGatewayArchive:
+    @pytest.mark.asyncio
+    async def test_approved_request_archived(self):
+        gw = _make_gateway()
+        req = _make_request()
+        now = datetime.now(UTC)
+
+        await gw.submit_for_approval(req)
+        await gw.record_decision(
+            HITLDecision(
+                request_id=req.request_id,
+                decision=HITLStatus.APPROVED,
+                approver_id="reviewer-01",
+                rationale="Approved.",
+                decided_at=now,
+            )
+        )
+
+        assert await gw._store.get_active(req.request_id) is None
+        retrieved = await gw._store.get(req.request_id)
+        assert retrieved is not None
+        assert retrieved.status == HITLStatus.APPROVED
+
+    @pytest.mark.asyncio
+    async def test_rejected_request_archived(self):
+        gw = _make_gateway()
+        req = _make_request()
+        now = datetime.now(UTC)
+
+        await gw.submit_for_approval(req)
+        await gw.record_decision(
+            HITLDecision(
+                request_id=req.request_id,
+                decision=HITLStatus.REJECTED,
+                approver_id="reviewer-01",
+                rationale="Rejected.",
+                decided_at=now,
+            )
+        )
+
+        assert await gw._store.get_active(req.request_id) is None
+        retrieved = await gw._store.get(req.request_id)
+        assert retrieved is not None
+        assert retrieved.status == HITLStatus.REJECTED
+
+    @pytest.mark.asyncio
+    async def test_pending_count_decrements_after_decision(self):
+        gw = _make_gateway(max_pending=10)
+        req1 = _make_request()
+        req2 = _make_request()
+        now = datetime.now(UTC)
+
+        await gw.submit_for_approval(req1)
+        await gw.submit_for_approval(req2)
+        assert await gw._store.pending_count() == 2
+
+        await gw.record_decision(
+            HITLDecision(
+                request_id=req1.request_id,
+                decision=HITLStatus.APPROVED,
+                approver_id="reviewer-01",
+                rationale="Approved.",
+                decided_at=now,
+            )
+        )
+
+        assert await gw._store.pending_count() == 1

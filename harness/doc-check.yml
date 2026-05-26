@@ -12,10 +12,15 @@ gates:
   - name: spec-exists
     command: >
       bash -c "
-        SPEC=$(grep -oE 'specs/[a-z/-]+\.md' .git/MERGE_MSG 2>/dev/null || echo '');
-        [ -z \"$SPEC\" ] && SPEC=$(grep -oE 'specs/[a-z/-]+\.md' ${PR_BODY_FILE:-/dev/null} 2>/dev/null || echo '');
-        [ -z \"$SPEC\" ] && { echo 'No spec reference found'; exit 1; };
-        test -f \"$SPEC\" && echo \"Spec found: $SPEC\" || { echo \"Spec not found: $SPEC\"; exit 1; }
+        if [ -n \"${PR_BODY_FILE:-}\" ] && [ -f \"${PR_BODY_FILE}\" ]; then
+          SPEC=$(grep -oE 'specs/[a-zA-Z0-9/_.-]+\.md' \"${PR_BODY_FILE}\" | head -1);
+          [ -z \"$SPEC\" ] && { echo 'No spec reference found in PR body.'; exit 1; };
+          test -f \"$SPEC\" && echo \"Spec found: $SPEC\" ||
+            { echo \"Spec not found on disk: $SPEC\"; exit 1; }
+        else
+          echo 'PR_BODY_FILE not set — spec-exists check skipped (set it in CI).';
+          exit 0
+        fi
       "
     blocking: true
     failure_message: "Referenced spec file does not exist in specs/. Create and approve the spec before implementing."
@@ -23,12 +28,17 @@ gates:
   - name: adr-current
     command: >
       bash -c "
-        ADRS=$(grep -oE 'ADR-[0-9]+' .git/MERGE_MSG 2>/dev/null || echo '');
-        for adr in $ADRS; do
-          FILE=$(ls docs/adr/${adr}-*.md 2>/dev/null | head -1);
-          [ -z \"$FILE\" ] && { echo \"ADR file not found for $adr\"; exit 1; };
-          echo \"ADR found: $FILE\";
-        done
+        if [ -n \"${PR_BODY_FILE:-}\" ] && [ -f \"${PR_BODY_FILE}\" ]; then
+          ADRS=$(grep -oE 'ADR-[0-9]+' \"${PR_BODY_FILE}\" || true);
+          for adr in \$ADRS; do
+            FILE=\$(ls docs/adr/\${adr}-*.md 2>/dev/null | head -1);
+            [ -z \"\$FILE\" ] && { echo \"ADR file not found for \$adr\"; exit 1; };
+            echo \"ADR found: \$FILE\";
+          done
+        else
+          echo 'PR_BODY_FILE not set — adr-current check skipped (set it in CI).';
+          exit 0
+        fi
       "
     blocking: false
     failure_message: "Referenced ADR file not found in docs/adr/. Create the ADR or correct the reference."

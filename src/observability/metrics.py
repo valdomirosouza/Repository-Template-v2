@@ -145,7 +145,6 @@ def record_hitl_decision(
     else:
         HITL_REJECTIONS_COUNTER.labels(agent_id, action_type).inc()
     HITL_WAIT_SECONDS.labels(agent_id).observe(wait_seconds)
-    ACTIVE_HITL_REQUESTS.labels(agent_id).dec()
 
 
 def record_llm_call(

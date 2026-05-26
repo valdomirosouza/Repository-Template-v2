@@ -202,6 +202,9 @@ class HITLGateway:
 
         ACTIVE_HITL_REQUESTS.labels(request.agent_id).dec()
 
+        async with self._lock:
+            await self._store.archive(decision.request_id, request)
+
         wait_seconds = (decision.decided_at - request.created_at).total_seconds()
 
         await self._audit.log_event(
