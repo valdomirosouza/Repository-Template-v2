@@ -29,7 +29,6 @@ class RejectionReason(Enum):
     ROLE_OVERRIDE_PATTERN = "role_override_pattern"
     REPETITIVE_PATTERN = "repetitive_pattern"
     ENCODING_ANOMALY = "encoding_anomaly"
-    NESTED_INSTRUCTION = "nested_instruction"
 
 
 @dataclass
