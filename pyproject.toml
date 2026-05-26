@@ -9,7 +9,7 @@ packages = ["src"]
 name = "template-service"
 version = "1.1.0"
 description = "Enterprise AI-powered system — production-ready monorepo template"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
@@ -51,7 +51,7 @@ dev = [
 
 # ── Ruff ──────────────────────────────────────────────────────────────────────
 [tool.ruff]
-target-version = "py312"
+target-version = "py313"
 line-length = 100
 src = ["src"]
 
@@ -76,13 +76,14 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "T20"]
+"alembic/**" = ["S608"]  # Dynamic SQL is standard in Alembic migrations
 
 [tool.ruff.lint.isort]
 known-first-party = ["src"]
 
 # ── Mypy ──────────────────────────────────────────────────────────────────────
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 strict = true
 explicit_package_bases = true
 warn_return_any = true

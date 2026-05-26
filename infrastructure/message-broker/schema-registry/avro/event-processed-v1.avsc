@@ -1,0 +1,54 @@
+{
+  "namespace": "com.template.worker",
+  "type": "record",
+  "name": "EventProcessed",
+  "doc": "Emitted by a worker after it successfully consumes and processes an upstream event. Spec: specs/api/async-api-design.md.",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "UUID v4 — stable deduplication key"
+    },
+    {
+      "name": "schema_version",
+      "type": "string",
+      "doc": "Semver; must match registered version"
+    },
+    { "name": "produced_at", "type": "string", "doc": "ISO8601 UTC timestamp" },
+    { "name": "trace_id", "type": "string", "doc": "W3C traceparent" },
+    {
+      "name": "producer_service",
+      "type": "string",
+      "doc": "Worker service that processed the event"
+    },
+    {
+      "name": "payload",
+      "type": {
+        "type": "record",
+        "name": "EventProcessedPayload",
+        "fields": [
+          {
+            "name": "source_event_id",
+            "type": "string",
+            "doc": "event_id of the upstream event consumed"
+          },
+          {
+            "name": "source_topic",
+            "type": "string",
+            "doc": "Kafka topic the upstream event arrived on"
+          },
+          {
+            "name": "processing_duration_ms",
+            "type": ["null", "long"],
+            "default": null
+          },
+          {
+            "name": "outcome",
+            "type": "string",
+            "doc": "SUCCESS | SKIPPED | DEAD_LETTERED"
+          }
+        ]
+      }
+    }
+  ]
+}

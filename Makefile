@@ -219,8 +219,11 @@ endif
 	@echo "  4. Edit services/$(NAME)/README.md      (purpose, schedule, owner)"
 
 _scaffold-python-$(NAME):
-	mkdir -p src/agents/$(NAME)
-	@printf '"""$(NAME) agent."""\n' > src/agents/$(NAME)/__init__.py
+	mkdir -p services/$(NAME)/src/$(NAME)
+	@printf '"""$(NAME) service."""\n' > services/$(NAME)/src/$(NAME)/__init__.py
+	@printf '# $(NAME)\n\nTODO: describe this service.\n' > services/$(NAME)/README.md
+	@printf '[project]\nname = "$(NAME)"\nversion = "0.1.0"\n\n[build-system]\nrequires = ["hatchling"]\nbuild-backend = "hatchling.build"\n' \
+		> services/$(NAME)/pyproject.toml
 
 _scaffold-java-$(NAME):
 	mkdir -p services/$(NAME)/src/main/java/com/yourorg/$(NAME)/{api,domain,infra,config}

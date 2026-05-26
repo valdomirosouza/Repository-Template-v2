@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     # ── Startup ───────────────────────────────────────────────────────────────
     setup_telemetry()
     init_budget_gauge(settings.service_name, settings.llm_monthly_token_budget)

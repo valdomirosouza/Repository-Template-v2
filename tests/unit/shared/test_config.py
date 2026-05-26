@@ -39,7 +39,9 @@ class TestProductionSecretValidation:
         s = Settings(
             app_env="production",
             llm_api_key="sk-ant-real-key-xyz",
-            secret_key="super-secret-value-abc123",
+            secret_key="super-secret-value-abc123-long-enough",
+            database_url="postgresql+asyncpg://appuser:real-db-pass@prod-db:5432/appdb",
+            redis_url="redis://:real-redis-pass@prod-redis:6379/0",
         )
         assert s.app_env == "production"
 
@@ -65,4 +67,34 @@ class TestProductionSecretValidation:
                 app_env="production",
                 llm_api_key="PLACEHOLDER-SET-IN-ENV",
                 secret_key="real-secret",
+            )
+
+    def test_placeholder_database_url_rejected_in_production(self):
+        with pytest.raises(ValidationError, match="DATABASE_URL"):
+            Settings(
+                app_env="production",
+                llm_api_key="sk-ant-real-key-xyz",
+                secret_key="super-secret-value-abc123-long-enough",
+                database_url="postgresql+asyncpg://appuser:placeholder-set-in-env@localhost:5432/appdb",
+                redis_url="redis://:real-redis-pass@prod-redis:6379/0",
+            )
+
+    def test_placeholder_redis_url_rejected_in_production(self):
+        with pytest.raises(ValidationError, match="REDIS_URL"):
+            Settings(
+                app_env="production",
+                llm_api_key="sk-ant-real-key-xyz",
+                secret_key="super-secret-value-abc123-long-enough",
+                database_url="postgresql+asyncpg://appuser:real-db-pass@prod-db:5432/appdb",
+                redis_url="redis://:placeholder-set-in-env@prod-redis:6379/0",
+            )
+
+    def test_hs256_short_secret_key_rejected_in_production(self):
+        with pytest.raises(ValidationError, match="SECRET_KEY must be at least 32 characters"):
+            Settings(
+                app_env="production",
+                llm_api_key="sk-ant-real-key-xyz",
+                secret_key="tooshort",
+                database_url="postgresql+asyncpg://appuser:real-db-pass@prod-db:5432/appdb",
+                redis_url="redis://:real-redis-pass@prod-redis:6379/0",
             )

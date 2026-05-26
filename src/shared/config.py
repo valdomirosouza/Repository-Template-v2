@@ -4,8 +4,15 @@ Spec: specs/system/architecture.md (Technology Stack)
 ADR:  ADR-0002 (Technology Stack Selection), ADR-0008 (Secrets Management)
 """
 
+from pathlib import Path
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
+
+_version_file = Path(__file__).parent.parent.parent / "version.txt"
+_service_version_default: str = (
+    _version_file.read_text(encoding="utf-8").strip() if _version_file.exists() else "0.0.0"
+)
 
 
 class Settings(BaseSettings):
@@ -14,15 +21,15 @@ class Settings(BaseSettings):
     app_port: int = 8000
     log_level: str = "INFO"
     service_name: str = "template-service"
-    service_version: str = "0.1.0"
+    service_version: str = _service_version_default
 
     # ── Database ──────────────────────────────────────────────────────────────
-    database_url: str = "postgresql+asyncpg://user:pass@localhost:5432/appdb"
+    database_url: str = "postgresql+asyncpg://appuser:placeholder-set-in-env@localhost:5432/appdb"
     database_pool_size: int = 10
     database_max_overflow: int = 20
 
     # ── Redis ─────────────────────────────────────────────────────────────────
-    redis_url: str = "redis://localhost:6379/0"
+    redis_url: str = "redis://:placeholder-set-in-env@localhost:6379/0"
     redis_max_connections: int = 50
 
     # ── Kafka ─────────────────────────────────────────────────────────────────
@@ -75,6 +82,8 @@ class Settings(BaseSettings):
 
     # ── Security ──────────────────────────────────────────────────────────────
     secret_key: str = "placeholder-set-in-env"
+    # HS256 is symmetric and suitable for single-service deployments.
+    # For multi-service or public-key verification use RS256 or ES256.
     jwt_algorithm: str = "HS256"
     jwt_expiry_seconds: int = 3600
     allowed_origins: list[str] = ["http://localhost:3000"]
@@ -95,10 +104,18 @@ class Settings(BaseSettings):
             checks = {
                 "LLM_API_KEY": self.llm_api_key,
                 "SECRET_KEY": self.secret_key,
+                "DATABASE_URL": self.database_url,
+                "REDIS_URL": self.redis_url,
             }
             for name, value in checks.items():
                 if "placeholder" in value.lower():
                     raise ValueError(f"{name} must be set via environment variable in production")
+            if self.jwt_algorithm == "HS256" and len(self.secret_key) < 32:
+                raise ValueError(
+                    "SECRET_KEY must be at least 32 characters when using HS256. "
+                    "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\". "
+                    "Consider RS256 with asymmetric keys for stronger security."
+                )
         return self
 
     model_config = {
