@@ -1,170 +1,135 @@
-# <project-name>
+# Enterprise AI Monorepo Template
 
-> Enterprise AI-powered system — production-ready monorepo template
-> **Version:** 1.0.0 | **Status:** Active
+> Production-ready monorepo template for AI-powered systems.
+> **Version:** 1.1.0 | **Status:** Active | **License:** Proprietary
 
----
-
-## Usando como Template — Scaffolding
-
-Este repositório é um **template de monorepo**. Para gerar todos os arquivos de governança,
-specs, CI/CD, código-fonte e documentação em um repositório novo, use a pasta `SETUP/`.
-
-### Pré-requisitos
-
-- [Claude Code](https://claude.ai/code) instalado e autenticado
-- Python 3.12+, Docker & Docker Compose, `make`, `uv`
-
-### Execução guiada (12 prompts)
-
-```bash
-# 1. Clone ou inicialize o repositório vazio
-git init my-project && cd my-project
-
-# 2. Coloque o MONOREPO-STRUCTURE-EN.md e a pasta SETUP/ na raiz
-# 3. No Claude Code, execute cada prompt em ordem:
-Read SETUP/001-prompt.md carefully and execute every instruction in it.
-# Aguarde a conclusão, depois repita para 002, 003, ... até 012
-```
-
-| #   | Prompt          | Conteúdo                                   | Arquivos |
-| --- | --------------- | ------------------------------------------ | -------- |
-| 1   | `001-prompt.md` | Estrutura de diretórios + `.gitkeep`       | ~55 dirs |
-| 2   | `002-prompt.md` | Arquivos raiz de governança                | 10       |
-| 3   | `003-prompt.md` | ADRs + Glossário + Repo structure          | 8        |
-| 4   | `004-prompt.md` | Privacy docs + AI Governance               | 9        |
-| 5   | `005-prompt.md` | SRE + Change Management + Runbooks         | 11       |
-| 6   | `006-prompt.md` | Specs (SDD)                                | 10       |
-| 7   | `007-prompt.md` | CI/CD workflows + Harness                  | 14       |
-| 8   | `008-prompt.md` | Infrastructure monitoring + Skills         | 17       |
-| 9   | `009-prompt.md` | Source code: agents, observability, shared | 8        |
-| 10  | `010-prompt.md` | Guardrails + Security tests ⚠️             | 7        |
-| 11  | `011-prompt.md` | Postmortem template                        | 1        |
-| 12  | `012-prompt.md` | Validação final (somente leitura)          | 0        |
-
-> ⚠️ Prompt 010 contém arquivos de guardrails (detecção defensiva). Todos os inputs de teste
-> usam tokens sintéticos (`SYNTHETIC_INJECT_ATTEMPT`, `fake@example.com`, `000.000.000-00`).
-
-**Guia completo:** [`SETUP/README.md`](SETUP/README.md)
+[![CI](https://github.com/valdomirosouza/template-monorepo/actions/workflows/ci.yml/badge.svg)](https://github.com/valdomirosouza/template-monorepo/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/valdomirosouza/template-monorepo)](https://github.com/valdomirosouza/template-monorepo/releases/latest)
 
 ---
 
-## Quick Start (projeto já scaffoldado)
+## Use this template
 
-### Pré-requisitos
-
-- Python 3.12+
-- Docker & Docker Compose
-- `make`
-- `uv` (Python package manager)
-
-### Setup em um comando
+Click **"Use this template"** on the GitHub repository page, or run:
 
 ```bash
-make setup
+gh repo create my-project --template valdomirosouza/template-monorepo --clone
+cd my-project
 ```
 
-Instala dependências, copia `.env.example` → `.env`, sobe o stack Docker Compose e roda as migrations.
-
-### Fluxo diário
-
-```bash
-make test           # Suite completa (unit + integration)
-make lint           # Lint + type-check + secret scan
-make deploy-staging # Build → push → deploy para staging
-make rollback       # Rollback do último deploy em produção
-make docs-serve     # Preview local MkDocs
-```
+Then follow the **5-step setup** below to go from blank repo to running system.
 
 ---
 
-## Primeiros Passos após o Clone (Desenvolvedor)
+## What you get
 
-Execute esta checklist **uma única vez** após clonar o repositório, antes de começar a codar.
+A production-ready scaffold for teams building AI-powered systems with human oversight. Everything is wired together from day one:
 
-### 1. Configure o ambiente
+| Layer              | What's included                                                         |
+| ------------------ | ----------------------------------------------------------------------- |
+| **Languages**      | Python 3.12 · Java 21 · Go 1.23 · Node 20 / Next.js 14                  |
+| **AI**             | Anthropic Claude · HITL/HOTL gateway · multi-agent harness · guardrails |
+| **Infrastructure** | PostgreSQL · Redis · Kafka (KRaft) · Schema Registry · flagd            |
+| **Observability**  | OpenTelemetry · Prometheus · Grafana (Golden Signals + CUJ) · Jaeger    |
+| **Governance**     | 15 ADRs · SDD cycle · privacy-by-design (LGPD + GDPR) · PRR checklist   |
+| **CI/CD**          | GitHub Actions for Python · Java · Go · Frontend — all path-filtered    |
+| **Dev experience** | Devcontainer · `docker compose up -d` · per-language `make` targets     |
+
+---
+
+## 5-step setup
+
+### Step 1 — Start the infrastructure
 
 ```bash
 cp .env.example .env
+# Fill in: ANTHROPIC_API_KEY, SECRET_KEY
+# Everything else has working local defaults
+
+make infra-up
+# Starts: PostgreSQL, Redis, Kafka, Schema Registry,
+#         OTel Collector, Jaeger, Prometheus, Grafana, flagd
 ```
 
-Abra `.env` e preencha os valores obrigatórios:
-
-| Variável       | Descrição                                     |
-| -------------- | --------------------------------------------- |
-| `DATABASE_URL` | URL de conexão com o banco de dados           |
-| `LLM_API_KEY`  | Chave de API do provedor LLM                  |
-| `SECRET_KEY`   | Chave de segurança da aplicação (>= 32 chars) |
-| `REDIS_URL`    | URL do Redis                                  |
-
-> ⚠️ **Nunca commite o `.env`** — ele está no `.gitignore`.
-
-### 2. Suba o stack e instale dependências
+### Step 2 — Run database migrations
 
 ```bash
-make setup
+make setup   # installs Python deps + runs Alembic migrations
 ```
 
-Instala dependências Python (`uv`), sobe o Docker Compose (Postgres, Redis, OTel Collector, Jaeger) e roda as migrations.
-
-### 3. Inicialize o baseline de detecção de secrets
+### Step 3 — Verify baseline is green
 
 ```bash
-detect-secrets scan > .secrets.baseline
+make test-python    # unit + integration + security
+make lint-python    # ruff + mypy + secret scan
 ```
 
-Necessário para que o hook de pre-commit do `detect-secrets` funcione corretamente.
+### Step 4 — Open your language quickstart
 
-### 4. Leia o contrato de comportamento do AI
+| I am building...                  | Guide                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------ |
+| Python API or AI agent            | [`docs/quickstart/python-backend.md`](docs/quickstart/python-backend.md) |
+| Java / Spring Boot domain service | [`docs/quickstart/java-backend.md`](docs/quickstart/java-backend.md)     |
+| Go high-throughput worker         | [`docs/quickstart/go-backend.md`](docs/quickstart/go-backend.md)         |
+| React / Next.js frontend          | [`docs/quickstart/frontend.md`](docs/quickstart/frontend.md)             |
+| Scheduled job or batch processor  | [`docs/quickstart/jobs-worker.md`](docs/quickstart/jobs-worker.md)       |
 
-```
-CLAUDE.md
-```
+Also read after your language guide:
 
-Este arquivo governa todo o desenvolvimento assistido por AI neste repositório. Leitura **obrigatória** antes de usar Claude Code em qualquer tarefa.
+- [`docs/quickstart/contract-driven-dev.md`](docs/quickstart/contract-driven-dev.md) — generate code from OpenAPI / AsyncAPI / proto
+- [`docs/quickstart/add-new-service.md`](docs/quickstart/add-new-service.md) — 10-step checklist for registering a new service
 
-### 5. Leia o glossário
+### Step 5 — Customise for your project
 
-```
-docs/glossary.md
-```
+| File                 | What to change                                              |
+| -------------------- | ----------------------------------------------------------- |
+| `services.yaml`      | Rename services, add your own, update ports and topic names |
+| `.env.example`       | Add project-specific environment variables                  |
+| `docs/adr/`          | Add ADRs for your own architectural decisions               |
+| `specs/`             | Write specs for features before implementing                |
+| `CLAUDE.md`          | Adjust AI behavioral contract for your team                 |
+| `.github/CODEOWNERS` | Set team ownership                                          |
 
-Terminologia canônica do projeto. Em caso de ambiguidade, o glossário prevalece.
+---
 
-### 6. Leia as specs da área em que vai trabalhar
-
-```
-specs/system/      ← arquitetura e visão geral
-specs/ai/          ← agentes, HITL/HOTL, guardrails
-specs/privacy/     ← PII, retenção, DPIA/RIPD
-```
-
-**Nenhum código é escrito sem spec referenciada.** Consulte `specs/README.md` para o índice completo.
-
-### 7. Confirme baseline verde antes da primeira alteração
+## Daily workflow
 
 ```bash
-make test
-make lint
+# Python (API gateway + AI agents)
+make test-python          # unit + integration (coverage ≥ 80%)
+make lint-python          # ruff + mypy + detect-secrets
+make run                  # FastAPI dev server with hot-reload
+
+# Java (domain service)
+make test-java SERVICE=domain-service
+make lint-java SERVICE=domain-service
+make run-java  SERVICE=domain-service
+
+# Go (event worker)
+make test-go   SERVICE=event-worker
+make lint-go   SERVICE=event-worker
+make run-go    SERVICE=event-worker
+
+# Frontend
+make test-frontend APP=frontend
+make lint-frontend APP=frontend
+make run-frontend  APP=frontend
+
+# Infrastructure
+make infra-up          # start full dev stack
+make infra-down        # stop (preserves volumes)
+make infra-reset       # stop + wipe all volumes
+make test-infra-up     # start lightweight test stack (offset ports)
+
+# Contracts
+make openapi-ui        # Swagger UI at http://localhost:8082
+make asyncapi-ui       # AsyncAPI Studio at http://localhost:8083
+make gen-api-client-ts # regenerate TypeScript client from OpenAPI
+make gen-proto-go      # regenerate Go gRPC stubs from proto
+
+# Scaffold a new service
+make new-service NAME=my-service LANG=python   # or java / go
 ```
-
-Se algum teste ou lint falhar antes de você tocar no código, abra uma issue imediatamente — não tente corrigir sem entender a causa.
-
-### 8. Revise as decisões arquiteturais da sua área
-
-```
-docs/adr/README.md
-```
-
-As ADRs são vinculantes. Qualquer decisão que as contradiga requer uma nova ADR aprovada pelo Tech Lead.
-
-### 9. Verifique os targets de SLO
-
-```
-docs/sre/slo/slo.yaml
-```
-
-Suas alterações **não devem degradar** nenhum SLO existente. O error budget atual está em `infrastructure/monitoring/grafana/dashboards/sre-overview.json`.
 
 ---
 
@@ -172,178 +137,172 @@ Suas alterações **não devem degradar** nenhum SLO existente. O error budget a
 
 ```
 .
-├── CLAUDE.md              ← AI behavioral contract (v2.0.0)
-├── docs/                  ← Architecture, ADRs, SRE, Privacy docs
-├── specs/                 ← Spec-Driven Development specs
-├── src/                   ← Application source code
-│   ├── agents/            ← AI agents + HITL gateway + HITL persistence store
+├── CLAUDE.md                    ← AI behavioral contract (v2.0.0)
+├── services.yaml                ← Service catalog (all languages, ports, topics)
+├── docker-compose.yml           ← Full dev infrastructure stack
+├── docker-compose.test.yml      ← Lightweight test stack (offset ports)
+├── .devcontainer/               ← Multi-language devcontainer (Python+Java+Go+Node)
+│
+├── docs/
+│   ├── quickstart/              ← Role-specific onboarding guides (5 languages)
+│   ├── adr/                     ← Architecture Decision Records (ADR-0001–0015)
+│   ├── api/                     ← OpenAPI · AsyncAPI · gRPC proto contracts
+│   ├── privacy/                 ← PII inventory, DPIA/RIPD, data retention
+│   ├── sre/                     ← SLOs, error budget policy, PRR, CUJ
+│   ├── runbooks/                ← RB-003 HITL recovery + rollback + DR
+│   └── ai-governance/           ← Model card, EU AI Act, NIST AI RMF
+│
+├── specs/                       ← Spec-Driven Development specs (write before code)
+│   ├── system/                  ← Vision, architecture, async event flow
+│   ├── ai/                      ← Agent design, HITL/HOTL, guardrails, harness
+│   └── privacy/                 ← PII, retention, DPIA/RIPD
+│
+├── src/                         ← Python application code
+│   ├── agents/
 │   │   ├── hitl_gateway.py      ← HITL approval gateway (all agent actions)
 │   │   ├── hitl_store.py        ← Pluggable HITL persistence (Memory / Redis)
 │   │   ├── orchestrator/        ← Perception → Reason → Act loop
 │   │   └── harness/             ← Multi-agent harness (Planner/Generator/Evaluator)
-│   ├── guardrails/        ← Safety controls (PII, injection, audit, action limits)
-│   ├── observability/     ← Metrics, logs, traces (Golden Signals)
-│   └── shared/            ← Config, models, retry/circuit-breaker, DB pool, feature flags
-│       ├── config.py            ← Pydantic Settings (env-var driven)
-│       ├── retry.py             ← Exponential backoff + CircuitBreaker + jitter
-│       ├── db_client.py         ← ResilientDBPool (asyncpg + CB + retry)
-│       ├── llm_client.py        ← LLMClient Protocol + resilience wrappers
-│       └── feature_flags.py     ← OpenFeature SDK wrapper (autonomous-mode flag)
-├── tests/                 ← Full test pyramid (unit / integration / security / chaos)
-├── infrastructure/        ← IaC (Terraform, Helm, K8s manifests, monitoring, feature flags)
-│   ├── k8s/               ← Deployment, HPA (custom metrics), PDB, service
-│   ├── feature-flags/     ← flagd + autonomous-mode.yaml (OpenFeature / ADR-0015)
-│   └── monitoring/        ← Prometheus rules, Grafana dashboards (Golden Signals + CUJ-001)
-├── .github/workflows/     ← CI/CD pipelines + chaos-schedule (nightly)
-└── skills/                ← Claude Code enterprise skills catalog
+│   ├── api/rest/                ← FastAPI routers, middleware, lifespan
+│   ├── guardrails/              ← PII filter, injection guard, audit logger, limits
+│   ├── observability/           ← OTel setup, Prometheus metrics, structured logger
+│   └── shared/                  ← Config, models, retry, DB pool, feature flags
+│
+├── services/                    ← Java / Go service directories (add yours here)
+├── frontend/                    ← Next.js applications (add yours here)
+│
+├── infrastructure/
+│   ├── k8s/                     ← Deployment · Service · HPA · PDB manifests
+│   ├── feature-flags/           ← flagd + autonomous-mode.yaml (OpenFeature)
+│   └── monitoring/
+│       ├── prometheus/          ← prometheus.yml scrape config + alert rules
+│       └── grafana/             ← Dashboards (Golden Signals · SRE · CUJ-001)
+│                                   + datasource & dashboard provisioning
+│
+├── tests/                       ← Unit · Integration · Security · Chaos
+├── .github/workflows/           ← CI: Python · Java · Go · Frontend (path-filtered)
+└── skills/                      ← Claude Code enterprise skills catalog
 ```
 
 Full annotated tree: [`docs/repo-structure.md`](docs/repo-structure.md)
 
 ---
 
-## API
+## API Contracts
 
-| API Type         | Spec                                 | Description                   |
-| ---------------- | ------------------------------------ | ----------------------------- |
-| REST (sync)      | `docs/api/openapi/v1/openapi.yaml`   | Synchronous user-facing API   |
-| Events (async)   | `docs/api/asyncapi/v1/asyncapi.yaml` | Event-driven async API        |
-| gRPC (inter-svc) | `docs/api/grpc/proto/`               | High-performance internal API |
+| Type   | Spec                                                                           | Description                            |
+| ------ | ------------------------------------------------------------------------------ | -------------------------------------- |
+| REST   | [`docs/api/openapi/v1/openapi.yaml`](docs/api/openapi/v1/openapi.yaml)         | Synchronous REST API (OpenAPI 3.1)     |
+| Events | [`docs/api/asyncapi/v1/asyncapi.yaml`](docs/api/asyncapi/v1/asyncapi.yaml)     | Kafka event contracts (AsyncAPI 2.6)   |
+| gRPC   | [`docs/api/grpc/proto/ai_service.proto`](docs/api/grpc/proto/ai_service.proto) | Inter-service calls (Protocol Buffers) |
 
-Local API docs:
-
-```bash
-make openapi-ui    # Swagger UI at http://localhost:8080
-make asyncapi-ui   # AsyncAPI Studio at http://localhost:8081
-```
+> **Rule:** Never write stubs by hand. Generate from the contracts — see [`docs/quickstart/contract-driven-dev.md`](docs/quickstart/contract-driven-dev.md).
 
 ---
 
 ## Observability
 
-| Signal                   | Stack                  | Dashboard / Source                                                                       |
-| ------------------------ | ---------------------- | ---------------------------------------------------------------------------------------- |
-| Metrics (Golden Signals) | Prometheus + Grafana   | `infrastructure/monitoring/grafana/dashboards/golden-signals.json`                       |
-| SLO / Error Budget       | Prometheus + Grafana   | `infrastructure/monitoring/grafana/dashboards/sre-overview.json`                         |
-| CUJ-001 Dashboard        | Prometheus + Grafana   | `infrastructure/monitoring/grafana/cuj-dashboards/CUJ-001-user-request-processing.json`  |
-| Traces                   | OpenTelemetry + Jaeger | http://localhost:16686                                                                   |
-| Logs                     | Structured JSON + OTel | Aggregated via OTel Collector                                                            |
-| Alerting rules           | PrometheusRule         | `infrastructure/monitoring/prometheus/rules/golden-signals.yaml` (runbook_url per alert) |
+| Signal                   | Stack                            | Location                                      |
+| ------------------------ | -------------------------------- | --------------------------------------------- |
+| Metrics (Golden Signals) | Prometheus + Grafana             | http://localhost:3001 (admin/admin)           |
+| Traces                   | OpenTelemetry + Jaeger           | http://localhost:16686                        |
+| Logs                     | Structured JSON + OTel Collector | —                                             |
+| SLO / Error Budget       | Prometheus + Grafana             | `sre-overview.json` dashboard                 |
+| CUJ-001 dashboard        | Prometheus + Grafana             | `cuj-dashboards/CUJ-001-*.json`               |
+| Alerting                 | PrometheusRule                   | `infrastructure/monitoring/prometheus/rules/` |
+
+All dashboards and datasources are **provisioned automatically** — no manual import needed after `make infra-up`.
 
 SLO definitions: [`docs/sre/slo/slo.yaml`](docs/sre/slo/slo.yaml)
 
 ---
 
-## On-call
-
-| Resource             | Location                                                                             |
-| -------------------- | ------------------------------------------------------------------------------------ |
-| Runbooks             | [`docs/runbooks/`](docs/runbooks/)                                                   |
-| Rollback procedure   | [`docs/runbooks/rollback-procedure.md`](docs/runbooks/rollback-procedure.md)         |
-| Disaster recovery    | [`docs/runbooks/disaster-recovery.md`](docs/runbooks/disaster-recovery.md)           |
-| HITL recovery        | [`docs/runbooks/RB-003-hitl-recovery.md`](docs/runbooks/RB-003-hitl-recovery.md)     |
-| Post-mortem template | [`docs/postmortems/POSTMORTEM-TEMPLATE.md`](docs/postmortems/POSTMORTEM-TEMPLATE.md) |
-
-**Escalation:** On-call → Tech Lead → Engineering Manager
-
----
-
-## Architecture Decisions
-
-All significant architectural decisions are recorded as ADRs:
-[`docs/adr/README.md`](docs/adr/README.md)
-
-Key ADRs:
-
-- [ADR-0001](docs/adr/ADR-0001-monorepo-structure-and-governance.md) — Monorepo structure e governança
-- [ADR-0010](docs/adr/ADR-0010-agent-framework-selection.md) — Agent framework selection
-- [ADR-0011](docs/adr/ADR-0011-hitl-hotl-model.md) — Human oversight model (HITL/HOTL)
-- [ADR-0012](docs/adr/ADR-0012-pii-masking-strategy.md) — PII masking strategy
-- [ADR-0013](docs/adr/ADR-0013-data-retention-policy.md) — Data retention policy
-- [ADR-0014](docs/adr/ADR-0014-multi-agent-harness-strategy.md) — Multi-agent harness strategy
-- [ADR-0015](docs/adr/ADR-0015-feature-flag-strategy.md) — Feature flag strategy (OpenFeature + flagd)
-
----
-
 ## AI Governance
 
-This system incorporates AI agents with human oversight controls:
+Every agent action with a real-world effect **must** route through the HITL gateway:
 
-- **HITL** (Human in the Loop): all agent actions with real-world effects require human approval via `src/agents/hitl_gateway.py`
-- **HOTL** (Human on the Loop): monitoring and classification flows are autonomous with override capability; controlled via the `autonomous-mode` feature flag (`src/shared/feature_flags.py`, ADR-0015)
-- **HITL persistence**: approval state survives pod restarts — `src/agents/hitl_store.py` uses Redis-backed store in production, in-memory for local dev (ADR-0011)
-- Guardrails: prompt injection defense (LLM01), PII filter (LLM06), action limits (LLM08), immutable audit log (LLM09)
-- Multi-agent harness: Planner → Generator → Evaluator loop with skepticism scoring and HITL escalation on max iterations (ADR-0014)
+```python
+from src.agents.hitl_gateway import HITLGateway, HITLRequest
 
-Full AI governance docs: [`docs/ai-governance/`](docs/ai-governance/)
+await hitl_gateway.submit(HITLRequest(
+    action="send-email",
+    payload=safe_payload,   # PII-masked
+    risk_score=0.85,        # above threshold → human approval required
+))
+```
+
+| Control                  | Where                                      | Default                                             |
+| ------------------------ | ------------------------------------------ | --------------------------------------------------- |
+| HITL (Human in the Loop) | `src/agents/hitl_gateway.py`               | **on** — all high-risk actions require approval     |
+| HOTL (Human on the Loop) | `autonomous-mode` feature flag             | **off** — must be enabled explicitly per ADR-0015   |
+| HITL persistence         | `src/agents/hitl_store.py`                 | Redis-backed in production, in-memory for local dev |
+| PII masking              | `src/guardrails/pii_filter.py`             | Always on — blocks if disabled                      |
+| Prompt injection guard   | `src/guardrails/prompt_injection_guard.py` | Always on                                           |
+| Audit log                | `src/guardrails/audit_logger.py`           | Immutable — all agent actions logged                |
+
+Full AI governance: [`docs/ai-governance/`](docs/ai-governance/)
 
 ---
 
 ## Feature Flags
 
-Feature flags use the [OpenFeature](https://openfeature.dev/) SDK (CNCF standard) backed by [flagd](https://flagd.dev/) in Kubernetes. No external SaaS dependency — flags are YAML files in `infrastructure/feature-flags/flags/`.
+Flags use the [OpenFeature](https://openfeature.dev/) SDK (CNCF standard) backed by [flagd](https://flagd.dev/). No external SaaS dependency — flags are YAML files mounted via ConfigMap.
 
-| Flag              | Default | Effect                                             |
-| ----------------- | ------- | -------------------------------------------------- |
-| `autonomous-mode` | `off`   | When `on`, enables HOTL (bypasses HITL for agents) |
+| Flag              | Default | Effect                                                     |
+| ----------------- | ------- | ---------------------------------------------------------- |
+| `autonomous-mode` | `off`   | When `on`, enables HOTL — agents act without HITL approval |
 
-Changing a flag: edit the YAML in `infrastructure/feature-flags/flags/`, apply the ConfigMap. flagd reloads automatically. Governance approval required before enabling `autonomous-mode` in production (ADR-0015).
+To change a flag locally: edit `infrastructure/feature-flags/flags/autonomous-mode.yaml`, then restart flagd (`docker compose restart flagd`). Governance approval required before enabling `autonomous-mode` in production (ADR-0015).
 
-Recovery runbook: [`docs/runbooks/RB-003-hitl-recovery.md`](docs/runbooks/RB-003-hitl-recovery.md)
+---
+
+## CI / CD
+
+Four path-filtered workflows — each language's CI only runs when its code changes:
+
+| Workflow          | Triggered by                         | Key gates                                                           |
+| ----------------- | ------------------------------------ | ------------------------------------------------------------------- |
+| `ci.yml`          | all pushes                           | Python lint + unit ≥ 80% + integration + security + contract drift  |
+| `ci-java.yml`     | `services/**/*.java`, `**/pom.xml`   | Checkstyle · SpotBugs · JaCoCo ≥ 80% · Testcontainers               |
+| `ci-go.yml`       | `services/**/*.go`, `**/go.mod`      | golangci-lint · race detector · proto drift · 80% coverage          |
+| `ci-frontend.yml` | `frontend/**`, `docs/api/openapi/**` | ESLint · TS type-check · API client drift · Jest ≥ 80% · Playwright |
+
+The `contract-drift` job in `ci.yml` verifies that OpenAPI/AsyncAPI specs parse, proto files compile, and all `services.yaml` schema references exist on disk.
+
+---
+
+## Architecture Decisions
+
+All significant architectural decisions are recorded as ADRs in [`docs/adr/`](docs/adr/README.md).
+
+| ADR                                                                | Decision                                               |
+| ------------------------------------------------------------------ | ------------------------------------------------------ |
+| [ADR-0001](docs/adr/ADR-0001-monorepo-structure-and-governance.md) | Monorepo structure and governance                      |
+| [ADR-0002](docs/adr/ADR-0002-technology-stack-selection.md)        | Technology stack selection (Python · Java · Go · Node) |
+| [ADR-0003](docs/adr/ADR-0003-async-api-strategy.md)                | Async-first — Kafka vs REST vs gRPC                    |
+| [ADR-0010](docs/adr/ADR-0010-agent-framework-selection.md)         | Agent framework selection                              |
+| [ADR-0011](docs/adr/ADR-0011-hitl-hotl-model.md)                   | Human oversight model (HITL / HOTL)                    |
+| [ADR-0012](docs/adr/ADR-0012-pii-masking-strategy.md)              | PII masking before LLM ingestion and logging           |
+| [ADR-0014](docs/adr/ADR-0014-multi-agent-harness-strategy.md)      | Multi-agent harness (Planner → Generator → Evaluator)  |
+| [ADR-0015](docs/adr/ADR-0015-feature-flag-strategy.md)             | Feature flags via OpenFeature + flagd                  |
 
 ---
 
 ## Privacy
 
-This system processes personal data subject to **LGPD** (Brazil) and **GDPR** (EU):
+This template processes personal data subject to **LGPD** (Brazil) and **GDPR** (EU):
 
-- PII is masked before LLM ingestion, logging, and event publishing
-- DPIA and RIPD completed before every production release handling personal data
-- Data retention automated per policy
+- PII is classified L1–L4 and masked before LLM calls, logging, and event publishing
+- DPIA and RIPD templates are pre-filled in `docs/privacy/`
+- Data retention is automated per policy in `src/jobs/`
 
 Privacy docs: [`docs/privacy/`](docs/privacy/)
 
 ---
 
-## Compliance Audits
-
-### SDD Compliance Audit (2026-05-24)
-
-Audited across 5 Spec-Driven Development dimensions. Remediation applied immediately.
-
-| Dimension           | Before          | After           | Key gaps closed                                                                                |
-| ------------------- | --------------- | --------------- | ---------------------------------------------------------------------------------------------- |
-| Specifications      | 7.0/10          | 9.0/10          | `specs/api/async-api-design.md` created; CLAUDE.md reference fixed; spec lifecycle skill added |
-| ADRs                | 5.0/10          | 9.5/10          | 8 missing ADRs created (ADR-0002 → ADR-0009); CI validates index links on every PR             |
-| Rules & Enforcement | 7.5/10          | 9.0/10          | `pyproject.toml`, `Dockerfile`, `.pre-commit-config.yaml` added; CI governance job added       |
-| Skills              | 6.5/10          | 9.0/10          | 4 new skill files (OTel, REST API, DevSecOps, SDD lifecycle); CI validates skill paths         |
-| Traceability        | 6.0/10          | 8.5/10          | Integration tests, API stubs, API contracts, orchestrator, module `Spec:`/`ADR:` docstrings    |
-| **Overall**         | **6.4/10 (B-)** | **9.0/10 (A-)** | 52 files changed in remediation commit                                                         |
-
-### Harness Engineering & Design Audit (2026-05-25)
-
-Audited across 8 harness engineering dimensions (D1–D8). Score 25/32 (78%) — production ready.
-
-| Dim | Dimension           | Score | Status | Key result                                                          |
-| --- | ------------------- | ----- | ------ | ------------------------------------------------------------------- |
-| D1  | Process Lifecycle   | 3/4   | 🟢     | startupProbe, preStop drain, terminationGracePeriod, lifespan       |
-| D2  | Resilience          | 3/4   | 🟡     | LLM + DB circuit breaker + retry; Redis calls lack CB (P1 item)     |
-| D3  | Observability       | 4/4   | 🟢     | Full Golden Signals, OTel, SLO burn-rate alerts, CUJ-001 dashboard  |
-| D4  | Resource Management | 3/4   | 🟡     | Pool bounds, semaphore, HITL cap; no idle timeout on DB pool        |
-| D5  | Config & Secrets    | 3/4   | 🟢     | Pydantic Settings, secretKeyRef, placeholder validator, flagd       |
-| D6  | Concurrency         | 3/4   | 🟡     | Semaphore + 503/Retry-After, asyncio.Lock; private attr access      |
-| D7  | Deployment Harness  | 4/4   | 🟢     | All probes, PDB, HPA (CPU + custom metrics), rolling update         |
-| D8  | Chaos Readiness     | 2/4   | 🟡     | 3 Chaos Toolkit experiments in CI; lacks toxiproxy + testcontainers |
-
-P1 remediation items tracked in `CHANGELOG.md` under `[Unreleased]`.
-
-Audit methodology: [`CLAUDE.md`](CLAUDE.md) — SDD Cycle (§2) and Inviolable Rules (§3).
-
----
-
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full contribution guide, branch naming, commit conventions, and PR process.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the SDD cycle, branch naming, commit conventions, and PR process.
 
 See [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) for community standards.
 
@@ -358,9 +317,3 @@ To report a vulnerability, see [`SECURITY.md`](SECURITY.md).
 ## Changelog
 
 See [`CHANGELOG.md`](CHANGELOG.md).
-
----
-
-## License
-
-See [`LICENSE`](LICENSE).
