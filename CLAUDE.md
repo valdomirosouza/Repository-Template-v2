@@ -72,6 +72,7 @@ Step 10: UPDATE CHANGELOG.md with the change under the correct category.
 - **NEVER** grant an agent permissions beyond what is documented in `specs/ai/guardrails.md`.
 - **ALWAYS** log every agent action via `guardrails/audit_logger.py` (immutable).
 - **NEVER** remove or weaken prompt injection guards.
+- **HOTL (autonomous) mode** is controlled exclusively via the `autonomous-mode` feature flag in `src/shared/feature_flags.py`. Enabling it bypasses HITL for high-risk actions — requires explicit governance approval (ADR-0015).
 
 ### 3.4 Architecture Rules
 
@@ -168,13 +169,16 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `security`, `privacy`
 
 ## 8. File Ownership Quick Reference
 
-| Path                         | Owner / Governance                                   |
-| ---------------------------- | ---------------------------------------------------- |
-| `docs/adr/`                  | Tech Lead — ADRs are binding architectural decisions |
-| `docs/privacy/`              | DPO (Data Protection Officer)                        |
-| `docs/ai-governance/`        | AI Governance Lead                                   |
-| `docs/sre/`                  | SRE Lead                                             |
-| `src/guardrails/`            | Security Lead — changes require Security review      |
-| `src/agents/hitl_gateway.py` | Security + AI Governance — dual approval             |
-| `.github/workflows/`         | DevOps Lead                                          |
-| `specs/`                     | Product Owner + Tech Lead                            |
+| Path                            | Owner / Governance                                              |
+| ------------------------------- | --------------------------------------------------------------- |
+| `docs/adr/`                     | Tech Lead — ADRs are binding architectural decisions            |
+| `docs/privacy/`                 | DPO (Data Protection Officer)                                   |
+| `docs/ai-governance/`           | AI Governance Lead                                              |
+| `docs/sre/`                     | SRE Lead                                                        |
+| `src/guardrails/`               | Security Lead — changes require Security review                 |
+| `src/agents/hitl_gateway.py`    | Security + AI Governance — dual approval                        |
+| `src/agents/hitl_store.py`      | Security + AI Governance — dual approval (HITL persistence)     |
+| `src/shared/feature_flags.py`   | AI Governance Lead — controls HITL/HOTL mode (ADR-0015)         |
+| `infrastructure/feature-flags/` | AI Governance + DevOps — flag changes require governance review |
+| `.github/workflows/`            | DevOps Lead                                                     |
+| `specs/`                        | Product Owner + Tech Lead                                       |

@@ -13,6 +13,78 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added (multi-language template — Block 4)
+
+- `.github/workflows/ci-java.yml`: Java CI pipeline — `lint-java` (Checkstyle + SpotBugs + OWASP dependency-check), `test-java-unit` (JaCoCo ≥ 80%), `test-java-integration` (PostgreSQL + Redis + Kafka services), `build-java` (Spring Boot buildpack); auto-discovers all `services/*/pom.xml`; triggered only on Java/contract file changes
+- `.github/workflows/ci-go.yml`: Go CI pipeline — `lint-go` (golangci-lint + proto drift check), `test-go-unit` (race detector + 80% coverage gate), `test-go-integration` (PostgreSQL + Redis + Kafka services), `build-go`; auto-discovers all `services/*/go.mod`; triggered only on Go/proto file changes
+- `.github/workflows/ci-frontend.yml`: Frontend CI pipeline — `lint-frontend` (ESLint + TypeScript + API client drift check), `test-frontend-unit` (Jest + 80% coverage gate), `test-frontend-e2e` (Playwright), `build-frontend` (Docker image); matrix over `app:` list; triggered only on `frontend/**` or OpenAPI changes
+- `docs/quickstart/add-new-service.md`: step-by-step 10-step checklist for registering a new service — language selection table (Python/Java/Go criteria), directory scaffold, services.yaml registration, CODEOWNERS, Prometheus scrape config, K8s manifests, env vars, CI wiring, Dockerfile templates per language, spec-first requirement, day-1 PR checklist
+- `infrastructure/k8s/service.yaml`: K8s ClusterIP Service manifest template for agent-service
+
+### Changed (multi-language template — Block 4)
+
+- `.github/workflows/ci.yml`: added `contract-drift` job — validates OpenAPI + AsyncAPI specs are parseable, proto files compile, and `services.yaml` schema file references all exist on disk
+- `CONTRIBUTING.md`: added per-language test/lint command table to "Before opening a PR" section; added checklist items for `services.yaml` and Prometheus config when adding new services; linked to `add-new-service.md`
+- `docs/quickstart/README.md`: added `add-new-service.md` row to "After reading your language guide" table; updated label to "read these in order"
+- `Makefile`: added `new-service` scaffold target (`make new-service NAME=foo LANG=python|java|go`); creates directory structure, go.mod, K8s manifests from templates; updated `.PHONY` list
+
+### Added (multi-language template — Block 3)
+
+- `infrastructure/monitoring/prometheus/prometheus.yml`: Prometheus scrape config — jobs for api-gateway (port 8000 `/metrics`), domain-service (port 8080 `/actuator/prometheus`), event-worker (port 8090 `/metrics`), otel-collector self-telemetry; rule_files wired to golden-signals.yaml; commented stubs for postgres/kafka exporters
+- `infrastructure/monitoring/grafana/provisioning/datasources/datasource.yml`: Grafana datasource provisioning — Prometheus as default datasource with exemplar→Jaeger trace linking; Jaeger datasource
+- `infrastructure/monitoring/grafana/provisioning/dashboards/dashboard.yml`: Grafana dashboard provisioning — auto-loads all JSON dashboards from `/var/lib/grafana/dashboards` with 30s hot-reload
+- `docker-compose.yml`: fixed Grafana volume mounts — provisioning directory now correctly wired (`./grafana/provisioning:/etc/grafana/provisioning`) and dashboard JSONs mounted at `/var/lib/grafana/dashboards`
+- `docs/api/grpc/proto/ai_service.proto`: example proto file — `AgentService` (SubmitTask unary + WatchTask server-streaming) and `HITLService` (SubmitForApproval + GetDecision); replaces .gitkeep; includes field numbering rules and generation instructions
+- `docs/quickstart/contract-driven-dev.md`: contract-driven development guide — OpenAPI→TypeScript/Java/Go/Python generation commands; AsyncAPI+Avro consumer patterns per language; gRPC stub generation per language; contract change workflow; CI diff-check pattern; quick-reference table of all generators
+- `docs/quickstart/README.md`: added "After reading your language guide" row linking to contract-driven-dev.md
+
+### Changed (multi-language template — Block 3)
+
+- `Makefile`: added `gen-proto-python`, `gen-sources-java`, `gen-api-client-python` targets; updated `.PHONY` list
+
+### Added (multi-language template — Block 2)
+
+- `docker-compose.yml`: shared development infrastructure stack — PostgreSQL 16, Redis 7, Kafka 7.7 (KRaft), Schema Registry, OTel Collector, Jaeger, Prometheus, Grafana, flagd; healthchecks on all services; named volumes; monorepo-dev network
+- `docker-compose.test.yml`: lightweight integration-test stack with offset ports (PG 5433, Redis 6380, Kafka 9093) and tmpfs for speed; no observability services
+- `.env.example`: fully rewritten — organized into per-language sections (Python, Java, Go, Frontend, Jobs); REQUIRED vs OPTIONAL markers on every var; Spring Boot property name translations; test environment vars (TEST_DATABASE_URL etc.); security generation instructions
+- `frontend/.env.example`: frontend-only env stub — NEXT*PUBLIC*\* vars only, browser-safe HTTP OTel endpoint, flagd OFREP URL; no secrets
+
+### Changed (multi-language template — Block 2)
+
+- `Makefile`: added `infra-up`, `infra-down`, `infra-reset`, `test-infra-up`, `test-infra-down` targets for managing docker-compose stacks; updated .PHONY list
+
+### Added (multi-language template — Block 1)
+
+- `docs/quickstart/java-backend.md`: Java/Spring Boot developer quickstart — prerequisites, project layout, setup steps, resilience patterns (Resilience4j), PII masking, HITL REST client, Kafka consumer, structured logging, Testcontainers conventions, key ADRs
+- `docs/quickstart/go-backend.md`: Go developer quickstart — prerequisites, project layout, setup steps, circuit breaker (gobreaker), context timeouts, PII masking, HITL REST client, structured slog, OTel Go SDK, testcontainers-go conventions, key ADRs
+- `docs/quickstart/frontend.md`: React/Next.js developer quickstart — prerequisites, project layout, generated API client (openapi-generator), React Query + HITL polling, PII masking in UI, OTel browser tracing, Jest + Playwright testing conventions, key ADRs
+- `docs/quickstart/jobs-worker.md`: Scheduled jobs & batch worker quickstart — BaseJob interface, APScheduler registration, idempotency + checkpointing pattern, HITL routing from batch context, job README requirements, K8s CronJob deployment
+- `services.yaml`: service catalog (root) — all services with language, type, port, image, owner, Kafka publish/subscribe topics, runtime dependencies, governing ADRs; topic catalogue with schema paths, partitions, retention
+- `.devcontainer/devcontainer.json`: multi-language devcontainer — Python 3.12, Java 21, Go 1.23, Node 20, Docker-in-Docker, kubectl + helm; VS Code extensions for all languages; port forwarding for all services and infra
+- `.devcontainer/post-create.sh`: automated post-create script — installs uv, pnpm, Go tools (air, golangci-lint, protoc plugins), Java/Maven verification, pre-commit hooks, copies .env.example, starts infra stack, runs Alembic migrations
+
+### Changed (multi-language template — Block 1)
+
+- `Makefile`: extended with per-language targets (`test-python`, `test-java`, `test-go`, `test-frontend`, `lint-*`, `format-*`, `build-*`, `run-*`); added `gen-proto-go`, `gen-api-client-ts`, `new-service` scaffold; legacy aliases preserved; `help` column width updated; `SERVICE` and `APP` variables added
+
+### Added (documentation — post v1.0.0 audit)
+
+- `infrastructure/README.md`: criado — overview de K8s manifests, probe configuration, HPA custom metrics, related ADRs
+- `infrastructure/feature-flags/README.md`: criado — arquitetura OpenFeature + flagd, catálogo de flags, instruções para adicionar nova flag
+- `SETUP/013-prompt.md`: criado — prompt de scaffolding para a camada de resiliência e maturidade de plataforma (retry, HITL store, feature flags, K8s, alembic, chaos experiments)
+
+### Changed (documentation — post v1.0.0 audit)
+
+- `README.md`: versão atualizada para 1.0.0; ADR-0014 e ADR-0015 adicionados à seção de ADRs chave; seção Feature Flags criada; CUJ-001 dashboard adicionado à tabela de Observability; RB-003-hitl-recovery adicionado à seção On-call; estrutura de repositório atualizada com novos módulos; seção "Harness Engineering & Design Audit" adicionada com scorecard D1–D8
+- `CLAUDE.md`: `src/agents/hitl_store.py` e `src/shared/feature_flags.py` adicionados à tabela de File Ownership; `infrastructure/feature-flags/` adicionado à governança; rule 3.3 atualizada com referência ao controle HOTL via feature flag (ADR-0015)
+- `docs/adr/README.md`: ADR-0015 (Feature Flag Strategy) adicionado ao Master Index
+- `MONOREPO-STRUCTURE-EN.md`: `src/agents/` atualizado com `hitl_store.py` e subdiretório `harness/`; `src/shared/` atualizado com `retry.py`, `db_client.py`, `llm_client.py`, `feature_flags.py`
+- `SETUP/README.md`: prompts 011 (Validation) e 012 (Postmortem) com descrições corrigidas (estavam trocadas); prompt 013 adicionado; file map atualizado com todos os arquivos das waves P1/P2/P3; versão do template bumped para 2.2.0
+
+---
+
+## [1.0.0] - 2026-05-25
+
 ### Added (P3 Wave 3c — platform maturity)
 
 - `src/shared/feature_flags.py`: `is_autonomous_mode_enabled()` — thin OpenFeature SDK
@@ -362,5 +434,6 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/org/project/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/org/project/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/org/project/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/org/project/releases/tag/v0.1.0

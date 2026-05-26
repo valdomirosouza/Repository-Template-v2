@@ -77,3 +77,4 @@ What other options were evaluated and why were they rejected?
 | [ADR-0012](ADR-0012-pii-masking-strategy.md)              | PII Masking Strategy              | Accepted | 2026-05-24 |
 | [ADR-0013](ADR-0013-data-retention-policy.md)             | Data Retention Policy             | Accepted | 2026-05-24 |
 | [ADR-0014](ADR-0014-multi-agent-harness-strategy.md)      | Multi-Agent Harness Strategy      | Accepted | 2026-05-24 |
+| [ADR-0015](ADR-0015-feature-flag-strategy.md)             | Feature Flag Strategy             | Accepted | 2026-05-25 |

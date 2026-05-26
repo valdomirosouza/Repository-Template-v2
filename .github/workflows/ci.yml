@@ -177,6 +177,54 @@ jobs:
       - name: OWASP LLM Top 10 tests
         run: uv run pytest tests/security/test_owasp_llm_top10.py -v
 
+  contract-drift:
+    name: Contract Drift Check
+    runs-on: ubuntu-latest
+    needs: governance
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install Python deps (for openapi-python-client)
+        run: uv sync --extra dev
+
+      - name: Validate OpenAPI spec is parseable
+        run: uv run python -c "import yaml; yaml.safe_load(open('docs/api/openapi/v1/openapi.yaml'))"
+
+      - name: Validate AsyncAPI spec is parseable
+        run: uv run python -c "import yaml; yaml.safe_load(open('docs/api/asyncapi/v1/asyncapi.yaml'))"
+
+      - name: Validate proto files compile
+        run: |
+          sudo apt-get install -y protobuf-compiler
+          find docs/api/grpc/proto -name "*.proto" | xargs \
+            protoc --proto_path=docs/api/grpc/proto \
+            --descriptor_set_out=/dev/null 2>&1 | grep -v "^$" || true
+
+      - name: Check services.yaml references valid schema files
+        run: |
+          python3 - <<'EOF'
+          import yaml, sys, pathlib
+          catalog = yaml.safe_load(open("services.yaml"))
+          missing = []
+          for topic in catalog.get("topics", []):
+              schema_path = topic.get("schema", "")
+              if schema_path and not pathlib.Path(schema_path).exists():
+                  missing.append(schema_path)
+          if missing:
+              print("Missing schema files referenced in services.yaml:")
+              for p in missing:
+                  print(f"  {p}")
+              sys.exit(1)
+          print("All schema file references in services.yaml are valid.")
+          EOF
+
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest

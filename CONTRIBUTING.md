@@ -101,12 +101,25 @@ Refs: #99, SPEC-010, ADR-0006, RFC-0007
 
 ### Before opening a PR
 
-- [ ] All tests pass locally (`make test`)
-- [ ] Lint passes (`make lint`)
+Run the checks for your language stack:
+
+| Stack    | Test command                    | Lint command                    |
+| -------- | ------------------------------- | ------------------------------- |
+| Python   | `make test-python`              | `make lint-python`              |
+| Java     | `make test-java SERVICE=<name>` | `make lint-java SERVICE=<name>` |
+| Go       | `make test-go SERVICE=<name>`   | `make lint-go SERVICE=<name>`   |
+| Frontend | `make test-frontend APP=<name>` | `make lint-frontend APP=<name>` |
+
+Then confirm the full checklist:
+
+- [ ] Tests pass locally (see table above)
+- [ ] Lint passes locally (see table above)
 - [ ] No secrets or real PII in any changed file
 - [ ] `CHANGELOG.md` updated under `[Unreleased]`
 - [ ] Spec referenced in commit messages and PR description
 - [ ] ADR updated or new ADR filed if architectural decision made
+- [ ] `services.yaml` updated if a new service was added (see [add-new-service.md](docs/quickstart/add-new-service.md))
+- [ ] `infrastructure/monitoring/prometheus/prometheus.yml` updated if a new service was added
 
 ### PR template
 

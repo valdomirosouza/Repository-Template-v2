@@ -1,0 +1,164 @@
+# Service Catalog
+# ---------------
+# Source of truth for all services in this monorepo.
+# Every service that exposes an API, consumes a Kafka topic, or has a K8s deployment
+# must have an entry here.
+#
+# Fields:
+#   name:        unique service identifier (used in make targets, K8s labels, log tags)
+#   language:    python | java | go | nodejs
+#   type:        api | worker | job | frontend
+#   port:        primary HTTP/gRPC port (local development)
+#   image:       container image name (without tag)
+#   owner:       team or individual responsible (maps to CODEOWNERS)
+#   publishes:   Kafka topics this service produces to
+#   subscribes:  Kafka topics this service consumes from
+#   depends_on:  other services this service calls at runtime (REST or gRPC)
+#   adr:         list of ADRs that govern this service's design decisions
+
+services:
+  # ────────────────────────────────────────────────────────────────
+  # API Gateway — Python/FastAPI
+  # Primary REST entry point + AI orchestration + HITL gateway
+  # ────────────────────────────────────────────────────────────────
+  - name: api-gateway
+    language: python
+    type: api
+    port: 8000
+    image: yourorg/api-gateway
+    owner: platform-team
+    publishes:
+      - request.created.v1
+      - hitl.decision.v1
+      - audit.event.v1
+    subscribes: []
+    depends_on: []
+    adr:
+      - ADR-0002 # Technology stack selection
+      - ADR-0010 # Agent framework selection
+      - ADR-0011 # HITL/HOTL model
+      - ADR-0014 # Multi-agent harness strategy
+      - ADR-0015 # Feature flag strategy
+
+  # ────────────────────────────────────────────────────────────────
+  # Domain Service — Java/Spring Boot
+  # Core business logic, domain events, JPA persistence
+  # ────────────────────────────────────────────────────────────────
+  - name: domain-service
+    language: java
+    type: api
+    port: 8080
+    image: yourorg/domain-service
+    owner: domain-team
+    publishes:
+      - domain.entity.updated.v1
+      - domain.entity.created.v1
+    subscribes:
+      - request.created.v1
+    depends_on:
+      - api-gateway # for HITL decisions (REST /v1/hitl/requests)
+    adr:
+      - ADR-0002 # Technology stack selection
+      - ADR-0003 # Async API strategy
+      - ADR-0011 # HITL/HOTL model
+
+  # ────────────────────────────────────────────────────────────────
+  # Event Worker — Go
+  # High-throughput Kafka consumer, stateless event processing
+  # ────────────────────────────────────────────────────────────────
+  - name: event-worker
+    language: go
+    type: worker
+    port: 8090
+    image: yourorg/event-worker
+    owner: platform-team
+    publishes:
+      - event.processed.v1
+    subscribes:
+      - domain.entity.updated.v1
+      - domain.entity.created.v1
+    depends_on: []
+    adr:
+      - ADR-0002 # Technology stack selection
+      - ADR-0003 # Async API strategy
+      - ADR-0005 # Message broker selection
+
+  # ────────────────────────────────────────────────────────────────
+  # Frontend — Next.js
+  # Customer-facing UI + HITL operator approval interface
+  # ────────────────────────────────────────────────────────────────
+  - name: frontend
+    language: nodejs
+    type: frontend
+    port: 3000
+    image: yourorg/frontend
+    owner: frontend-team
+    publishes: []
+    subscribes: []
+    depends_on:
+      - api-gateway # all REST calls go through the API gateway
+    adr:
+      - ADR-0002 # Technology stack selection
+      - ADR-0011 # HITL/HOTL model (approval UI)
+
+  # ────────────────────────────────────────────────────────────────
+  # Batch Jobs — Python
+  # Scheduled nightly jobs (data cleanup, retention enforcement, etc.)
+  # ────────────────────────────────────────────────────────────────
+  - name: batch-jobs
+    language: python
+    type: job
+    port: null # no inbound port — CronJob, not a server
+    image: yourorg/api-gateway # reuses the API image with a different entrypoint
+    owner: platform-team
+    publishes:
+      - audit.event.v1
+    subscribes: []
+    depends_on:
+      - api-gateway # for HITL gateway if job triggers agent actions
+    adr:
+      - ADR-0013 # Data retention policy
+      - ADR-0011 # HITL/HOTL model
+
+# ────────────────────────────────────────────────────────────────
+# Kafka Topics
+# ────────────────────────────────────────────────────────────────
+# Canonical topic definitions. Do not add topics here without a
+# corresponding entry in docs/api/asyncapi/v1/asyncapi.yaml.
+#
+topics:
+  - name: request.created.v1
+    schema: infrastructure/message-broker/schema-registry/avro/request-created-v1.avsc
+    partitions: 12
+    retention_ms: 604800000 # 7 days
+    owner: platform-team
+
+  - name: hitl.decision.v1
+    schema: infrastructure/message-broker/schema-registry/avro/hitl-decision-v1.avsc
+    partitions: 6
+    retention_ms: 2592000000 # 30 days
+    owner: platform-team
+
+  - name: audit.event.v1
+    schema: infrastructure/message-broker/schema-registry/avro/audit-event-v1.avsc
+    partitions: 24
+    retention_ms: 7776000000 # 90 days (compliance retention)
+    owner: platform-team
+
+  - name: domain.entity.created.v1
+    schema: infrastructure/message-broker/schema-registry/avro/domain-entity-created-v1.avsc
+    partitions: 12
+    retention_ms: 604800000
+    owner: domain-team
+
+  - name: domain.entity.updated.v1
+    schema: infrastructure/message-broker/schema-registry/avro/domain-entity-updated-v1.avsc
+    partitions: 12
+    retention_ms: 604800000
+    owner: domain-team
+
+  - name: event.processed.v1
+    schema: infrastructure/message-broker/schema-registry/avro/event-processed-v1.avsc
+    partitions: 6
+    retention_ms: 604800000
+    owner: platform-team

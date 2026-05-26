@@ -1,0 +1,106 @@
+{
+  "name": "Enterprise AI Monorepo",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12",
+      "installTools": true
+    },
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "21",
+      "jdkDistro": "ms",
+      "installMaven": true,
+      "mavenVersion": "3.9"
+    },
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.23"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20",
+      "nodeGypDependencies": false
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "dockerDaemonStart": true,
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+      "version": "1.28",
+      "helm": "3",
+      "minikube": "none"
+    }
+  },
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  "forwardPorts": [3000, 8000, 8080, 8090, 5432, 6379, 9092, 16686, 3001, 9090],
+
+  "portsAttributes": {
+    "3000": { "label": "Frontend (Next.js)" },
+    "8000": { "label": "API Gateway (Python/FastAPI)" },
+    "8080": { "label": "Domain Service (Java/Spring Boot)" },
+    "8090": { "label": "Event Worker (Go)" },
+    "5432": { "label": "PostgreSQL" },
+    "6379": { "label": "Redis" },
+    "9092": { "label": "Kafka" },
+    "16686": { "label": "Jaeger UI" },
+    "3001": { "label": "Grafana" },
+    "9090": { "label": "Prometheus" }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.mypy-type-checker",
+        "charliermarsh.ruff",
+        "vscjava.vscode-java-pack",
+        "golang.go",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "redhat.vscode-yaml",
+        "42crunch.vscode-openapi",
+        "asyncapi.asyncapi-preview",
+        "zxh404.vscode-proto3",
+        "eamodio.gitlens",
+        "streetsidesoftware.code-spell-checker"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.formatting.provider": "none",
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true
+        },
+        "[java]": {
+          "editor.defaultFormatter": "redhat.java",
+          "editor.formatOnSave": true
+        },
+        "[go]": {
+          "editor.defaultFormatter": "golang.go",
+          "editor.formatOnSave": true
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "go.toolsManagement.autoUpdate": true,
+        "editor.rulers": [100],
+        "files.trimTrailingWhitespace": true
+      }
+    }
+  },
+
+  "remoteEnv": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUNBUFFERED": "1",
+    "GOPATH": "/go",
+    "JAVA_HOME": "/usr/local/sdkman/candidates/java/current"
+  }
+}

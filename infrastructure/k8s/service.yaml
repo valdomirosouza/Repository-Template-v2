@@ -1,0 +1,20 @@
+---
+# ClusterIP Service for agent-service.
+# Spec: specs/sre/prr.md
+# ADR:  ADR-0002 (Technology Stack Selection)
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-service
+  labels:
+    app: agent-service
+spec:
+  type: ClusterIP
+  selector:
+    app: agent-service
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP

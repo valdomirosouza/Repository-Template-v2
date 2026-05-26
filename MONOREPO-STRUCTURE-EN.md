@@ -1,4 +1,5 @@
 # Ideal Monorepo Structure — Enterprise AI-Powered Systems
+
 > **Template version:** 2.0.0  
 > **Last updated:** 2026-05-24  
 > **Scope:** Generic enterprise monorepo for AI-powered and Agentic AI systems
@@ -11,24 +12,24 @@ This document defines the ideal monorepo structure for **enterprise-grade, AI-po
 
 The template covers all dimensions of a modern, scalable, reliable, and secure software product:
 
-| Dimension | Coverage |
-|---|---|
-| **Governance** | ADRs, Specs (SDD), Rules, CLAUDE.md, CONTRIBUTING.md |
-| **Documentation** | README, CHANGELOG, Glossary, Repo Structure, Dependency Manifest |
-| **Change Management** | RFC lifecycle, CAB process, deploy scripts, rollback procedures |
-| **DevSecOps Compliance** | OWASP (Web + LLM Top 10), SAST, DAST, SBOM, Supply Chain, SLSA |
-| **SDLC** | Full lifecycle: requirements → design → implement → test → release → operate |
-| **DevOps / CI/CD** | Pipeline stages, quality gates, canary deploy, blue-green, feature flags |
-| **Test Coverage** | Unit, integration, contract, E2E, performance, security, chaos engineering |
-| **SRE Journey** | Logs, Metrics (Golden Signals), Traces, SLO/SLI, Error Budget, PRR, CUJ |
-| **AI Governance** | EU AI Act, NIST AI RMF, HITL/HOTL controls, audit trail, bias auditing |
-| **Data Privacy** | PII inventory, masking, LGPD (Brazil), GDPR (EU), DPIA/RIPD, data retention |
-| **Async APIs** | AsyncAPI 2.6, event-driven architecture, Kafka, gRPC for high performance |
-| **Scalability** | Horizontal (HPA, partitioning, stateless), vertical (VPA, LLM throttling) |
-| **Reliability** | Circuit breaker, PodDisruptionBudget, multi-AZ, graceful shutdown |
-| **Chaos Engineering** | Controlled failure injection, game days, resilience validation in staging (Litmus / Chaos Toolkit) |
-| **Feature Flags** | Progressive delivery, A/B testing, autonomous-mode toggles, safe LLM model rollouts |
-| **FinOps** | LLM token cost attribution, infrastructure cost per SLO met, budget alerts, cost-per-agent-action tracking |
+| Dimension                | Coverage                                                                                                   |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| **Governance**           | ADRs, Specs (SDD), Rules, CLAUDE.md, CONTRIBUTING.md                                                       |
+| **Documentation**        | README, CHANGELOG, Glossary, Repo Structure, Dependency Manifest                                           |
+| **Change Management**    | RFC lifecycle, CAB process, deploy scripts, rollback procedures                                            |
+| **DevSecOps Compliance** | OWASP (Web + LLM Top 10), SAST, DAST, SBOM, Supply Chain, SLSA                                             |
+| **SDLC**                 | Full lifecycle: requirements → design → implement → test → release → operate                               |
+| **DevOps / CI/CD**       | Pipeline stages, quality gates, canary deploy, blue-green, feature flags                                   |
+| **Test Coverage**        | Unit, integration, contract, E2E, performance, security, chaos engineering                                 |
+| **SRE Journey**          | Logs, Metrics (Golden Signals), Traces, SLO/SLI, Error Budget, PRR, CUJ                                    |
+| **AI Governance**        | EU AI Act, NIST AI RMF, HITL/HOTL controls, audit trail, bias auditing                                     |
+| **Data Privacy**         | PII inventory, masking, LGPD (Brazil), GDPR (EU), DPIA/RIPD, data retention                                |
+| **Async APIs**           | AsyncAPI 2.6, event-driven architecture, Kafka, gRPC for high performance                                  |
+| **Scalability**          | Horizontal (HPA, partitioning, stateless), vertical (VPA, LLM throttling)                                  |
+| **Reliability**          | Circuit breaker, PodDisruptionBudget, multi-AZ, graceful shutdown                                          |
+| **Chaos Engineering**    | Controlled failure injection, game days, resilience validation in staging (Litmus / Chaos Toolkit)         |
+| **Feature Flags**        | Progressive delivery, A/B testing, autonomous-mode toggles, safe LLM model rollouts                        |
+| **FinOps**               | LLM token cost attribution, infrastructure cost per SLO met, budget alerts, cost-per-agent-action tracking |
 
 > **AI & Agentic AI note:** Every AI-governed component — LLM pipelines, autonomous agents,
 > multi-agent orchestration, or any system with delegated decision-making — must comply with
@@ -227,9 +228,16 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 │   │   │   ├── tools.py                 ← Agent tools (external integrations)
 │   │   │   └── prompts.py              ← LLM prompt templates
 │   │   ├── orchestrator/
-│   │   │   ├── orchestrator.py          ← Multi-agent coordinator
+│   │   │   ├── orchestrator.py          ← Perception→Reason→Act loop; HITL routing via feature flag
 │   │   │   └── router.py               ← Task routing between agents
-│   │   └── hitl_gateway.py             ← HITL Gateway — mandatory human approval
+│   │   ├── harness/                     ← Multi-agent harness (ADR-0014)
+│   │   │   ├── coordinator.py           ← HarnessCoordinator (solo/simplified/full modes)
+│   │   │   ├── planner.py               ← PlannerAgent — sprint contract generation
+│   │   │   ├── evaluator.py             ← EvaluatorAgent — skepticism scoring (4 dimensions)
+│   │   │   ├── context_manager.py       ← ContextManager — snapshot + reset logic
+│   │   │   └── models.py               ← TaskBrief, SprintContract, EvaluatorScore, HarnessResult
+│   │   ├── hitl_gateway.py             ← HITL Gateway — mandatory human approval (ADR-0011)
+│   │   └── hitl_store.py               ← HITLStore Protocol + InMemoryHITLStore + HITLRedisStore
 │   │
 │   ├── api/
 │   │   ├── rest/                        ← FastAPI / Express — synchronous APIs
@@ -273,7 +281,11 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 │   │
 │   └── shared/                          ← Shared code across modules
 │       ├── config.py                    ← Config via env vars (Pydantic Settings)
-│       ├── models.py                    ← Domain models
+│       ├── models.py                    ← Domain models (AuditEvent, AgentActionRequest, etc.)
+│       ├── retry.py                     ← with_retry() + CircuitBreaker (CLOSED/OPEN/HALF_OPEN)
+│       ├── db_client.py                 ← ResilientDBPool (asyncpg + CB + retry + timeout)
+│       ├── llm_client.py                ← LLMClient Protocol + TimeoutLLMClientWrapper
+│       ├── feature_flags.py             ← is_autonomous_mode_enabled() — OpenFeature SDK wrapper (ADR-0015)
 │       ├── exceptions.py
 │       └── constants.py
 │
@@ -609,19 +621,19 @@ stages:
 
 #### Quality Gates — All Blocking
 
-| Gate | Criterion | Blocks |
-|---|---|---|
-| Lint | Zero critical rule violations | Merge |
-| Unit tests | Coverage ≥ 80%, zero failures | Merge |
-| SAST | Zero CRITICAL / HIGH findings | Merge |
-| Secret detection | Zero secrets detected | Merge |
-| Container scan | Zero Critical CVEs in base image | Merge |
-| SBOM | Generated and signed | Release |
-| DAST | Zero OWASP Top 10 critical findings | Staging → Prod |
-| Human review | Minimum 1 approved reviewer | Merge |
-| Error budget | Budget > 10% | Production deploy |
-| RFC approved | For Normal / Emergency changes | Production deploy |
-| PII scan | No real PII in test fixtures or logs | Merge |
+| Gate             | Criterion                            | Blocks            |
+| ---------------- | ------------------------------------ | ----------------- |
+| Lint             | Zero critical rule violations        | Merge             |
+| Unit tests       | Coverage ≥ 80%, zero failures        | Merge             |
+| SAST             | Zero CRITICAL / HIGH findings        | Merge             |
+| Secret detection | Zero secrets detected                | Merge             |
+| Container scan   | Zero Critical CVEs in base image     | Merge             |
+| SBOM             | Generated and signed                 | Release           |
+| DAST             | Zero OWASP Top 10 critical findings  | Staging → Prod    |
+| Human review     | Minimum 1 approved reviewer          | Merge             |
+| Error budget     | Budget > 10%                         | Production deploy |
+| RFC approved     | For Normal / Emergency changes       | Production deploy |
+| PII scan         | No real PII in test fixtures or logs | Merge             |
 
 ---
 
@@ -734,6 +746,7 @@ OBSERVABILITY:
 ## Section 9 — AI Governance
 
 This section applies to **any system component** that incorporates:
+
 - LLM-based generation or classification
 - Autonomous agents (Agentic AI)
 - Multi-agent orchestration
@@ -741,29 +754,29 @@ This section applies to **any system component** that incorporates:
 
 ### Human Oversight Model
 
-| Layer | Mode | Description |
-|---|---|---|
-| Monitoring & Classification | **HOTL** — Human on the Loop | Agent acts autonomously; human monitors with override always available |
-| Actions with real-world effect | **HITL** — Human in the Loop | Agent proposes; human must approve before execution |
+| Layer                          | Mode                         | Description                                                            |
+| ------------------------------ | ---------------------------- | ---------------------------------------------------------------------- |
+| Monitoring & Classification    | **HOTL** — Human on the Loop | Agent acts autonomously; human monitors with override always available |
+| Actions with real-world effect | **HITL** — Human in the Loop | Agent proposes; human must approve before execution                    |
 
 ### Guardrails — Mandatory Technical Controls
 
-| Guardrail | Implementation | OWASP LLM Risk |
-|---|---|---|
-| Prompt Injection defense | `guardrails/prompt_injection_guard.py` | LLM01 |
-| Output validation | `guardrails/output_validator.py` | LLM02 |
-| PII masking before LLM ingestion | `guardrails/pii_filter.py` | LLM06 |
-| Action scope limits | `guardrails/action_limits.py` | LLM08 |
-| Immutable audit log | `guardrails/audit_logger.py` | LLM09 |
+| Guardrail                        | Implementation                         | OWASP LLM Risk |
+| -------------------------------- | -------------------------------------- | -------------- |
+| Prompt Injection defense         | `guardrails/prompt_injection_guard.py` | LLM01          |
+| Output validation                | `guardrails/output_validator.py`       | LLM02          |
+| PII masking before LLM ingestion | `guardrails/pii_filter.py`             | LLM06          |
+| Action scope limits              | `guardrails/action_limits.py`          | LLM08          |
+| Immutable audit log              | `guardrails/audit_logger.py`           | LLM09          |
 
 ### Compliance Baseline (AI)
 
-| Standard | Domain | Key Articles / Controls |
-|---|---|---|
-| **EU AI Act** | Human oversight, transparency, audit trail | Arts. 9, 12, 13, 14 |
-| **NIST AI RMF** | AI risk governance, autonomy controls | Govern, Map, Measure, Manage |
-| **OWASP LLM Top 10** | LLM-specific attack surface | LLM01–LLM10 |
-| **ISO 42001** | AI management system | All clauses |
+| Standard             | Domain                                     | Key Articles / Controls      |
+| -------------------- | ------------------------------------------ | ---------------------------- |
+| **EU AI Act**        | Human oversight, transparency, audit trail | Arts. 9, 12, 13, 14          |
+| **NIST AI RMF**      | AI risk governance, autonomy controls      | Govern, Map, Measure, Manage |
+| **OWASP LLM Top 10** | LLM-specific attack surface                | LLM01–LLM10                  |
+| **ISO 42001**        | AI management system                       | All clauses                  |
 
 ### Model Card (docs/ai-governance/model-card.md)
 
@@ -773,23 +786,28 @@ Required for every LLM or ML model in production. Minimum fields:
 # Model Card — <Model Name>
 
 ## Model Details
+
 - Provider / Version / API endpoint
 - Intended use cases
 - Out-of-scope uses
 
 ## Training Data (if fine-tuned)
+
 - Data sources, date range, known biases
 
 ## Performance
+
 - Benchmark results relevant to the use case
 - Evaluation methodology
 
 ## Ethical Considerations
+
 - Known failure modes
 - Bias assessment summary (link to docs/ai-governance/bias-audit.md)
 - Autonomy level: HITL / HOTL (link to ADR)
 
 ## Privacy
+
 - Data sent to model (fields, classification)
 - PII handling: masked / not sent
 - Data retention at provider (link to DPA)
@@ -813,29 +831,29 @@ logs, metrics, traces, event payloads, LLM prompts, agent context, and databases
 
 ### PII Classification (docs/privacy/pii-inventory.md)
 
-| Class | Examples | Handling |
-|---|---|---|
-| **L1 — Critical** | CPF, SSN, health data, biometric | Encrypt at rest + in transit; never in logs |
-| **L2 — Sensitive** | Full name, email, phone, IP address | Mask in logs; pseudonymize for analytics |
-| **L3 — Internal** | Username, user ID, session token | Mask in external logs; allow in internal audit |
-| **L4 — Public** | Publicly declared role, org name | No special handling required |
+| Class              | Examples                            | Handling                                       |
+| ------------------ | ----------------------------------- | ---------------------------------------------- |
+| **L1 — Critical**  | CPF, SSN, health data, biometric    | Encrypt at rest + in transit; never in logs    |
+| **L2 — Sensitive** | Full name, email, phone, IP address | Mask in logs; pseudonymize for analytics       |
+| **L3 — Internal**  | Username, user ID, session token    | Mask in external logs; allow in internal audit |
+| **L4 — Public**    | Publicly declared role, org name    | No special handling required                   |
 
 ### Regulatory Compliance
 
-| Regulation | Jurisdiction | Key Obligations in this System |
-|---|---|---|
-| **LGPD** (Lei 13.709/2018) | Brazil | RIPD before production; ANPD notification of breaches; DPO designation; lawful basis for all processing |
-| **GDPR** (EU 2016/679) | European Union | DPIA before high-risk processing; data subject rights (access, deletion, portability); cross-border transfer mechanisms; 72h breach notification |
+| Regulation                 | Jurisdiction   | Key Obligations in this System                                                                                                                   |
+| -------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **LGPD** (Lei 13.709/2018) | Brazil         | RIPD before production; ANPD notification of breaches; DPO designation; lawful basis for all processing                                          |
+| **GDPR** (EU 2016/679)     | European Union | DPIA before high-risk processing; data subject rights (access, deletion, portability); cross-border transfer mechanisms; 72h breach notification |
 
 ### Data Retention Rules (docs/privacy/data-retention-policy.md)
 
-| Data Type | Retention | Deletion Method |
-|---|---|---|
-| Logs (containing PII) | 30 days hot / 90 days warm | Automated purge via retention policy |
-| Audit logs (anonymized) | 1 year | Archived, then deleted |
-| Agent action history | 90 days | Soft delete + 30d hard delete |
-| User-facing data | Per product requirement | User-initiated + automated expiry |
-| Backup data | 30 days | Automated rotation |
+| Data Type               | Retention                  | Deletion Method                      |
+| ----------------------- | -------------------------- | ------------------------------------ |
+| Logs (containing PII)   | 30 days hot / 90 days warm | Automated purge via retention policy |
+| Audit logs (anonymized) | 1 year                     | Archived, then deleted               |
+| Agent action history    | 90 days                    | Soft delete + 30d hard delete        |
+| User-facing data        | Per product requirement    | User-initiated + automated expiry    |
+| Backup data             | 30 days                    | Automated rotation                   |
 
 ### DPIA / RIPD Checklist
 
@@ -935,23 +953,27 @@ Use this checklist to assess how an existing repository maps to this template:
 
 ```markdown
 ## Governance
+
 - [ ] CLAUDE.md exists and is the behavioral contract for AI tooling
 - [ ] All significant decisions have ADRs in docs/adr/
 - [ ] Specs exist for all features before implementation (SDD)
 - [ ] CONTRIBUTING.md and CODE_OF_CONDUCT.md are present
 
 ## Documentation
+
 - [ ] README.md follows the minimum structure (Quick Start → API → Observability → On-call)
 - [ ] CHANGELOG.md maintained with every release
 - [ ] dependency-manifest.yaml with all deps, including AI dependencies
 - [ ] SBOM generated and signed in CI
 
 ## Change Management
+
 - [ ] RFC template exists and is used for Normal / Emergency changes
 - [ ] CAB process documented
 - [ ] deploy.sh, rollback.sh, smoke-test.sh are present and tested
 
 ## DevSecOps / Compliance
+
 - [ ] SAST (Semgrep / CodeQL) configured and blocking
 - [ ] DAST (OWASP ZAP) runs in staging pipeline
 - [ ] Secret scanning configured (Gitleaks / TruffleHog)
@@ -959,6 +981,7 @@ Use this checklist to assess how an existing repository maps to this template:
 - [ ] OWASP LLM Top 10 assessment documented
 
 ## AI Governance
+
 - [ ] HITL gateway implemented for all production agent actions
 - [ ] HOTL monitoring active for autonomous agent flows
 - [ ] Prompt injection guard implemented (LLM01)
@@ -969,6 +992,7 @@ Use this checklist to assess how an existing repository maps to this template:
 - [ ] EU AI Act compliance checklist completed
 
 ## Data Privacy
+
 - [ ] PII inventory documented (docs/privacy/pii-inventory.md)
 - [ ] PII masking applied before LLM ingestion, logging, and event publishing
 - [ ] DPIA completed (GDPR) and RIPD completed (LGPD) before production
@@ -977,6 +1001,7 @@ Use this checklist to assess how an existing repository maps to this template:
 - [ ] DPA references documented for all third-party processors
 
 ## SRE
+
 - [ ] slo.yaml committed with all services
 - [ ] Golden Signals dashboards created and linked from README
 - [ ] PRR checklist completed before every production deploy
@@ -985,6 +1010,7 @@ Use this checklist to assess how an existing repository maps to this template:
 - [ ] Error budget policy documented
 
 ## Testing
+
 - [ ] Unit test coverage ≥ 80%
 - [ ] Integration tests cover key service boundaries
 - [ ] Contract tests (Pact / OpenAPI) prevent breaking changes
@@ -993,6 +1019,7 @@ Use this checklist to assess how an existing repository maps to this template:
 - [ ] Chaos experiments run weekly in staging
 
 ## Async APIs
+
 - [ ] AsyncAPI spec exists for all event-driven interfaces
 - [ ] Dead Letter Queue configured for all consumers
 - [ ] Schema registry in use (Avro / JSON Schema)
@@ -1000,6 +1027,7 @@ Use this checklist to assess how an existing repository maps to this template:
 - [ ] Trace propagation enabled (W3C TraceContext in message headers)
 
 ## Scalability & Reliability
+
 - [ ] HPA configured for all stateless services
 - [ ] VPA configured (at least in recommendation mode)
 - [ ] PodDisruptionBudget set (minimum 2 pods available)
@@ -1010,5 +1038,5 @@ Use this checklist to assess how an existing repository maps to this template:
 
 ---
 
-*Template version: 2.0.0 — Last updated: 2026-05-24*  
-*Generic enterprise template — Agentic AI, DevSecOps, SRE, Privacy-first*
+_Template version: 2.0.0 — Last updated: 2026-05-24_  
+_Generic enterprise template — Agentic AI, DevSecOps, SRE, Privacy-first_

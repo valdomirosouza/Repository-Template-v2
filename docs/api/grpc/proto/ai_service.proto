@@ -1,0 +1,138 @@
+// ai_service.proto — gRPC contract for the AI Agent Service
+// -----------------------------------------------------------
+// This file is the source of truth for gRPC inter-service calls.
+// Do NOT hand-write client or server stubs — generate them:
+//
+//   Go:     make gen-proto-go
+//   Java:   mvn generate-sources  (protoc-maven-plugin)
+//   Python: make gen-proto-python (grpcio-tools)
+//
+// When adding a new RPC:
+//   1. Add the method and its request/response messages here.
+//   2. Re-generate stubs for every language that consumes this service.
+//   3. Update docs/api/grpc/README.md with the new method.
+//
+// Field numbering rules:
+//   - Never reuse a field number once it has been released.
+//   - Reserved numbers must be declared with `reserved` to prevent reuse.
+//   - Use google.protobuf.Timestamp (not int64) for all timestamps.
+
+syntax = "proto3";
+
+package ai.v1;
+
+option go_package = "github.com/yourorg/monorepo/api/grpc/ai/v1;aiv1";
+option java_package = "com.yourorg.ai.v1";
+option java_multiple_files = true;
+option java_outer_classname = "AiServiceProto";
+
+import "google/protobuf/timestamp.proto";
+
+// ── AgentService ─────────────────────────────────────────────────────────────
+
+// AgentService provides synchronous gRPC methods for direct agent invocation.
+// High-volume async flows use Kafka events (see asyncapi.yaml) instead.
+service AgentService {
+  // Submit a task to the agent and wait for a result (unary RPC).
+  // Returns immediately with HITL_REQUIRED if human approval is needed.
+  rpc SubmitTask(SubmitTaskRequest) returns (SubmitTaskResponse);
+
+  // Stream incremental progress updates for a long-running task (server streaming).
+  rpc WatchTask(WatchTaskRequest) returns (stream TaskProgressEvent);
+}
+
+// ── HITLService ───────────────────────────────────────────────────────────────
+
+// HITLService allows internal services to submit and poll HITL approval requests
+// via gRPC (alternative to the REST /v1/hitl endpoints).
+service HITLService {
+  rpc SubmitForApproval(HITLSubmitRequest) returns (HITLSubmitResponse);
+  rpc GetDecision(HITLGetDecisionRequest) returns (HITLGetDecisionResponse);
+}
+
+// ── Messages ──────────────────────────────────────────────────────────────────
+
+message SubmitTaskRequest {
+  // Caller-assigned correlation ID. Used for distributed tracing.
+  string request_id = 1;
+  // PII-masked prompt text (apply pii_filter before sending).
+  string prompt = 2;
+  // Opaque JSON context forwarded to the agent unchanged.
+  string context_json = 3;
+  // Caller's declared risk score [0.0–1.0]. Agent may override upward.
+  float caller_risk_score = 4;
+}
+
+message SubmitTaskResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    COMPLETED = 1;     // Agent finished — result is in `result_json`
+    HITL_REQUIRED = 2; // Risk score above threshold — `hitl_request_id` is set
+    REJECTED = 3;      // Prompt rejected by guardrails (injection / policy)
+  }
+
+  Status status = 1;
+  string task_id = 2;
+  // Present only when status == COMPLETED
+  string result_json = 3;
+  // Present only when status == HITL_REQUIRED
+  string hitl_request_id = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message WatchTaskRequest {
+  string task_id = 1;
+}
+
+message TaskProgressEvent {
+  enum Phase {
+    PHASE_UNSPECIFIED = 0;
+    PLANNING = 1;
+    EXECUTING = 2;
+    AWAITING_HITL = 3;
+    COMPLETED = 4;
+    FAILED = 5;
+  }
+
+  string task_id = 1;
+  Phase phase = 2;
+  // Human-readable progress message (already PII-masked).
+  string message = 3;
+  // Percentage complete [0–100]. -1 if unknown.
+  int32 progress_pct = 4;
+  google.protobuf.Timestamp timestamp = 5;
+}
+
+message HITLSubmitRequest {
+  string request_id = 1;
+  string action_type = 2;
+  // PII-masked payload JSON.
+  string payload_json = 3;
+  float risk_score = 4;
+  // ISO 8601 duration string, e.g. "PT5M" for 5 minutes.
+  string approval_timeout = 5;
+}
+
+message HITLSubmitResponse {
+  string hitl_request_id = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message HITLGetDecisionRequest {
+  string hitl_request_id = 1;
+}
+
+message HITLGetDecisionResponse {
+  enum Decision {
+    DECISION_UNSPECIFIED = 0;
+    PENDING = 1;
+    APPROVED = 2;
+    REJECTED = 3;
+    EXPIRED = 4;
+  }
+
+  Decision decision = 1;
+  string reviewer_id = 2;
+  string reason = 3;
+  google.protobuf.Timestamp decided_at = 4;
+}

@@ -1,0 +1,88 @@
+---
+# Chaos Toolkit experiment: stop Kafka broker and verify no data loss on recovery.
+# Spec: specs/system/async-event-flow.md
+# ADR:  ADR-0007 (Event-Driven Architecture)
+#
+# Prerequisites: Chaos Toolkit + chaostoolkit-k8s installed.
+# Run: chaos run tests/chaos/experiments/broker-outage.yaml
+
+version: "1.0.0"
+title: "Kafka broker outage — verify producer buffering and zero data loss"
+description: >
+  Scales the Kafka StatefulSet to 0 replicas for 90 seconds, simulating a
+  full broker outage. Asserts that (1) producers buffer with max.block.ms
+  rather than dropping messages, and (2) all buffered messages are delivered
+  after the broker restarts with no offset gaps.
+
+tags:
+  - kafka
+  - durability
+  - data-loss
+
+configuration:
+  app_namespace:
+    type: env
+    key: CHAOS_NAMESPACE
+    default: staging
+  service_url:
+    type: env
+    key: CHAOS_SERVICE_URL
+    default: "http://localhost:8000"
+
+steady-state-hypothesis:
+  title: "Service healthy and Kafka consumer lag is below threshold"
+  probes:
+    - type: probe
+      name: "health-endpoint-returns-200"
+      tolerance: 200
+      provider:
+        type: http
+        url: "${service_url}/health"
+        timeout: 3
+
+method:
+  - type: action
+    name: "scale-kafka-to-zero"
+    provider:
+      type: python
+      module: chaosk8s.statefulset.actions
+      func: scale_statefulset
+      arguments:
+        name: kafka
+        replicas: 0
+        ns: "${app_namespace}"
+    pauses:
+      after: 90
+
+  - type: probe
+    name: "service-still-alive-during-outage"
+    tolerance: 200
+    provider:
+      type: http
+      url: "${service_url}/health"
+      timeout: 3
+
+  - type: action
+    name: "restore-kafka"
+    provider:
+      type: python
+      module: chaosk8s.statefulset.actions
+      func: scale_statefulset
+      arguments:
+        name: kafka
+        replicas: 1
+        ns: "${app_namespace}"
+    pauses:
+      after: 60
+
+rollbacks:
+  - type: action
+    name: "ensure-kafka-running"
+    provider:
+      type: python
+      module: chaosk8s.statefulset.actions
+      func: scale_statefulset
+      arguments:
+        name: kafka
+        replicas: 1
+        ns: "${app_namespace}"

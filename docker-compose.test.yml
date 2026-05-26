@@ -1,0 +1,67 @@
+# docker-compose.test.yml — Integration Test Infrastructure
+# ----------------------------------------------------------
+# Lightweight stack used by integration tests only.
+# No Grafana, Prometheus, Jaeger, or flagd — just the services tests need.
+#
+# Usage:
+#   docker compose -f docker-compose.test.yml up -d
+#   pytest tests/integration/
+#   docker compose -f docker-compose.test.yml down -v
+
+services:
+  # ── PostgreSQL (test database) ───────────────────────────────────────────────
+  postgres-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpassword
+    ports:
+      - "5433:5432" # offset port — avoids conflict with dev postgres on 5432
+    tmpfs:
+      - /var/lib/postgresql/data # use RAM — no persistence, faster tests
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser -d testdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  # ── Redis (test instance) ────────────────────────────────────────────────────
+  redis-test:
+    image: redis:7-alpine
+    command: redis-server --save "" # disable persistence for speed
+    ports:
+      - "6380:6379" # offset port — avoids conflict with dev redis on 6379
+
+  # ── Kafka (KRaft mode — single broker, minimal config) ───────────────────────
+  kafka-test:
+    image: confluentinc/cp-kafka:7.7.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9093,CONTROLLER://:9095
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9093
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-test:9095
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: VGVzdENsdXN0ZXJJZA # fixed test cluster ID
+    ports:
+      - "9093:9093" # offset port — avoids conflict with dev kafka on 9092
+    tmpfs:
+      - /var/lib/kafka/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9093 --list"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
+networks:
+  default:
+    name: monorepo-test

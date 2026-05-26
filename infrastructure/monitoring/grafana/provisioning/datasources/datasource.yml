@@ -1,0 +1,32 @@
+# Grafana datasource provisioning
+# ---------------------------------
+# Loaded automatically by Grafana on startup.
+# Wires the local Prometheus instance as the default datasource
+# so all dashboards (golden-signals.json, sre-overview.json, CUJ-001) work
+# without manual configuration.
+#
+# Reference: https://grafana.com/docs/grafana/latest/administration/provisioning/
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      httpMethod: POST
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: jaeger
+
+  - name: Jaeger
+    type: jaeger
+    uid: jaeger
+    access: proxy
+    url: http://jaeger:16686
+    isDefault: false
+    editable: false

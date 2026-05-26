@@ -1,0 +1,74 @@
+---
+# Chaos Toolkit experiment: kill the agent service process and verify recovery.
+# Spec: specs/ai/agent-design.md (Resilience)
+# ADR:  ADR-0014 (Multi-Agent Harness Strategy)
+#
+# Prerequisites: Chaos Toolkit + chaostoolkit-k8s installed.
+# Run: chaos run tests/chaos/experiments/kill-agent.yaml
+
+version: "1.0.0"
+title: "Kill agent service — verify Golden Signals recovery within SLO"
+description: >
+  Terminates the agent-service pod and asserts that the Golden Signals
+  (error rate, latency p99, availability) return to healthy values within
+  the 60-second recovery window defined in the SLO.
+
+tags:
+  - availability
+  - recovery
+  - agent
+
+configuration:
+  app_namespace:
+    type: env
+    key: CHAOS_NAMESPACE
+    default: staging
+  service_url:
+    type: env
+    key: CHAOS_SERVICE_URL
+    default: "http://localhost:8000"
+
+steady-state-hypothesis:
+  title: "Golden Signals are healthy before and after the kill"
+  probes:
+    - type: probe
+      name: "health-endpoint-returns-200"
+      tolerance: 200
+      provider:
+        type: http
+        url: "${service_url}/health"
+        timeout: 3
+
+    - type: probe
+      name: "readiness-endpoint-returns-200"
+      tolerance: 200
+      provider:
+        type: http
+        url: "${service_url}/ready"
+        timeout: 3
+
+method:
+  - type: action
+    name: "terminate-agent-pod"
+    provider:
+      type: python
+      module: chaosk8s.pod.actions
+      func: terminate_pods
+      arguments:
+        label_selector: "app=agent-service"
+        ns: "${app_namespace}"
+        rand: true
+    pauses:
+      after: 30
+
+rollbacks:
+  - type: action
+    name: "ensure-deployment-scaled-up"
+    provider:
+      type: python
+      module: chaosk8s.deployment.actions
+      func: scale_deployment
+      arguments:
+        name: agent-service
+        replicas: 2
+        ns: "${app_namespace}"

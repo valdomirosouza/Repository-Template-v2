@@ -1,0 +1,183 @@
+name: CI — Go
+
+on:
+  push:
+    branches: ["main", "develop"]
+    paths:
+      - "services/**/*.go"
+      - "services/**/go.mod"
+      - "services/**/go.sum"
+      - "docs/api/grpc/proto/**"
+      - ".github/workflows/ci-go.yml"
+  pull_request:
+    branches: ["main", "develop"]
+    paths:
+      - "services/**/*.go"
+      - "services/**/go.mod"
+      - "services/**/go.sum"
+      - "docs/api/grpc/proto/**"
+      - ".github/workflows/ci-go.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: "1.23"
+
+jobs:
+  lint-go:
+    name: Go Lint & SAST
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+      - name: golangci-lint (staticcheck + errcheck + gosec + govet)
+        run: |
+          find services -name go.mod | while read gomod; do
+            dir=$(dirname "$gomod")
+            echo "Linting $dir..."
+            golangci-lint run "$dir/..."
+          done
+
+      - name: Verify proto stubs are up-to-date
+        run: |
+          # Install protoc and plugins
+          sudo apt-get install -y protobuf-compiler
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+          # Regenerate and check for diff
+          make gen-proto-go
+          git diff --exit-code api/ || (echo "::error::Generated gRPC stubs are out of date. Run 'make gen-proto-go' and commit." && exit 1)
+
+  test-go-unit:
+    name: Go Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint-go
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Unit tests (short mode — no external services)
+        run: |
+          find services -name go.mod | while read gomod; do
+            dir=$(dirname "$gomod")
+            service=$(basename "$dir")
+            echo "Testing $service (unit)..."
+            go test -short -race -coverprofile="coverage-${service}.out" "$dir/..."
+            go tool cover -func="coverage-${service}.out" | tail -1
+          done
+
+      - name: Enforce coverage threshold (≥ 80%)
+        run: |
+          find . -name "coverage-*.out" | while read cov; do
+            total=$(go tool cover -func="$cov" | grep total | awk '{print $3}' | tr -d '%')
+            if [ "$(echo "$total < 80" | bc)" -eq 1 ]; then
+              echo "::error::Coverage $total% is below 80% threshold in $cov"
+              exit 1
+            fi
+            echo "Coverage $total% OK"
+          done
+
+  test-go-integration:
+    name: Go Integration Tests
+    runs-on: ubuntu-latest
+    needs: test-go-unit
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: testdb
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U testuser -d testdb"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      kafka:
+        image: confluentinc/cp-kafka:7.7.0
+        ports:
+          - 9092:9092
+        env:
+          KAFKA_NODE_ID: 1
+          KAFKA_PROCESS_ROLES: broker,controller
+          KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9094
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9094
+          KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+          CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+        options: >-
+          --health-cmd "kafka-broker-api-versions --bootstrap-server localhost:9092"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Integration tests (full mode — external services available)
+        run: |
+          find services -name go.mod | while read gomod; do
+            dir=$(dirname "$gomod")
+            service=$(basename "$dir")
+            echo "Testing $service (integration)..."
+            go test -race -timeout 5m -run Integration "$dir/..."
+          done
+        env:
+          DATABASE_URL: postgres://testuser:testpassword@localhost:5432/testdb?sslmode=disable
+          REDIS_URL: redis://localhost:6379/0
+          KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+
+  build-go:
+    name: Go Build Image
+    runs-on: ubuntu-latest
+    needs: [test-go-unit]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build images (no push on PR)
+        run: |
+          find services -name go.mod | while read gomod; do
+            dir=$(dirname "$gomod")
+            service=$(basename "$dir")
+            if [ -f "$dir/Dockerfile" ]; then
+              echo "Building image for $service..."
+              docker build -f "$dir/Dockerfile" \
+                -t "ghcr.io/${{ github.repository_owner }}/${service}:${{ github.sha }}" \
+                "$dir"
+            fi
+          done

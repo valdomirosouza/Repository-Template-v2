@@ -1,7 +1,7 @@
 # <project-name>
 
 > Enterprise AI-powered system — production-ready monorepo template
-> **Version:** 0.1.0 | **Status:** Active
+> **Version:** 1.0.0 | **Status:** Active
 
 ---
 
@@ -172,17 +172,30 @@ Suas alterações **não devem degradar** nenhum SLO existente. O error budget a
 
 ```
 .
-├── CLAUDE.md              ← AI behavioral contract
+├── CLAUDE.md              ← AI behavioral contract (v2.0.0)
 ├── docs/                  ← Architecture, ADRs, SRE, Privacy docs
 ├── specs/                 ← Spec-Driven Development specs
 ├── src/                   ← Application source code
-│   ├── agents/            ← AI agents + HITL gateway
-│   ├── guardrails/        ← Safety controls (PII, injection, audit)
-│   └── observability/     ← Metrics, logs, traces
-├── tests/                 ← Full test pyramid
-├── infrastructure/        ← IaC (Terraform, Helm, monitoring)
-├── .github/workflows/     ← CI/CD pipelines
-└── skills/                ← Claude Code enterprise skills
+│   ├── agents/            ← AI agents + HITL gateway + HITL persistence store
+│   │   ├── hitl_gateway.py      ← HITL approval gateway (all agent actions)
+│   │   ├── hitl_store.py        ← Pluggable HITL persistence (Memory / Redis)
+│   │   ├── orchestrator/        ← Perception → Reason → Act loop
+│   │   └── harness/             ← Multi-agent harness (Planner/Generator/Evaluator)
+│   ├── guardrails/        ← Safety controls (PII, injection, audit, action limits)
+│   ├── observability/     ← Metrics, logs, traces (Golden Signals)
+│   └── shared/            ← Config, models, retry/circuit-breaker, DB pool, feature flags
+│       ├── config.py            ← Pydantic Settings (env-var driven)
+│       ├── retry.py             ← Exponential backoff + CircuitBreaker + jitter
+│       ├── db_client.py         ← ResilientDBPool (asyncpg + CB + retry)
+│       ├── llm_client.py        ← LLMClient Protocol + resilience wrappers
+│       └── feature_flags.py     ← OpenFeature SDK wrapper (autonomous-mode flag)
+├── tests/                 ← Full test pyramid (unit / integration / security / chaos)
+├── infrastructure/        ← IaC (Terraform, Helm, K8s manifests, monitoring, feature flags)
+│   ├── k8s/               ← Deployment, HPA (custom metrics), PDB, service
+│   ├── feature-flags/     ← flagd + autonomous-mode.yaml (OpenFeature / ADR-0015)
+│   └── monitoring/        ← Prometheus rules, Grafana dashboards (Golden Signals + CUJ-001)
+├── .github/workflows/     ← CI/CD pipelines + chaos-schedule (nightly)
+└── skills/                ← Claude Code enterprise skills catalog
 ```
 
 Full annotated tree: [`docs/repo-structure.md`](docs/repo-structure.md)
@@ -208,12 +221,14 @@ make asyncapi-ui   # AsyncAPI Studio at http://localhost:8081
 
 ## Observability
 
-| Signal                   | Stack                  | Dashboard                                                          |
-| ------------------------ | ---------------------- | ------------------------------------------------------------------ |
-| Metrics (Golden Signals) | Prometheus + Grafana   | `infrastructure/monitoring/grafana/dashboards/golden-signals.json` |
-| SLO / Error Budget       | Prometheus + Grafana   | `infrastructure/monitoring/grafana/dashboards/sre-overview.json`   |
-| Traces                   | OpenTelemetry + Jaeger | http://localhost:16686                                             |
-| Logs                     | Structured JSON + OTel | Aggregated via OTel Collector                                      |
+| Signal                   | Stack                  | Dashboard / Source                                                                       |
+| ------------------------ | ---------------------- | ---------------------------------------------------------------------------------------- |
+| Metrics (Golden Signals) | Prometheus + Grafana   | `infrastructure/monitoring/grafana/dashboards/golden-signals.json`                       |
+| SLO / Error Budget       | Prometheus + Grafana   | `infrastructure/monitoring/grafana/dashboards/sre-overview.json`                         |
+| CUJ-001 Dashboard        | Prometheus + Grafana   | `infrastructure/monitoring/grafana/cuj-dashboards/CUJ-001-user-request-processing.json`  |
+| Traces                   | OpenTelemetry + Jaeger | http://localhost:16686                                                                   |
+| Logs                     | Structured JSON + OTel | Aggregated via OTel Collector                                                            |
+| Alerting rules           | PrometheusRule         | `infrastructure/monitoring/prometheus/rules/golden-signals.yaml` (runbook_url per alert) |
 
 SLO definitions: [`docs/sre/slo/slo.yaml`](docs/sre/slo/slo.yaml)
 
@@ -226,6 +241,7 @@ SLO definitions: [`docs/sre/slo/slo.yaml`](docs/sre/slo/slo.yaml)
 | Runbooks             | [`docs/runbooks/`](docs/runbooks/)                                                   |
 | Rollback procedure   | [`docs/runbooks/rollback-procedure.md`](docs/runbooks/rollback-procedure.md)         |
 | Disaster recovery    | [`docs/runbooks/disaster-recovery.md`](docs/runbooks/disaster-recovery.md)           |
+| HITL recovery        | [`docs/runbooks/RB-003-hitl-recovery.md`](docs/runbooks/RB-003-hitl-recovery.md)     |
 | Post-mortem template | [`docs/postmortems/POSTMORTEM-TEMPLATE.md`](docs/postmortems/POSTMORTEM-TEMPLATE.md) |
 
 **Escalation:** On-call → Tech Lead → Engineering Manager
@@ -244,6 +260,8 @@ Key ADRs:
 - [ADR-0011](docs/adr/ADR-0011-hitl-hotl-model.md) — Human oversight model (HITL/HOTL)
 - [ADR-0012](docs/adr/ADR-0012-pii-masking-strategy.md) — PII masking strategy
 - [ADR-0013](docs/adr/ADR-0013-data-retention-policy.md) — Data retention policy
+- [ADR-0014](docs/adr/ADR-0014-multi-agent-harness-strategy.md) — Multi-agent harness strategy
+- [ADR-0015](docs/adr/ADR-0015-feature-flag-strategy.md) — Feature flag strategy (OpenFeature + flagd)
 
 ---
 
@@ -252,10 +270,26 @@ Key ADRs:
 This system incorporates AI agents with human oversight controls:
 
 - **HITL** (Human in the Loop): all agent actions with real-world effects require human approval via `src/agents/hitl_gateway.py`
-- **HOTL** (Human on the Loop): monitoring and classification flows are autonomous with override capability
+- **HOTL** (Human on the Loop): monitoring and classification flows are autonomous with override capability; controlled via the `autonomous-mode` feature flag (`src/shared/feature_flags.py`, ADR-0015)
+- **HITL persistence**: approval state survives pod restarts — `src/agents/hitl_store.py` uses Redis-backed store in production, in-memory for local dev (ADR-0011)
 - Guardrails: prompt injection defense (LLM01), PII filter (LLM06), action limits (LLM08), immutable audit log (LLM09)
+- Multi-agent harness: Planner → Generator → Evaluator loop with skepticism scoring and HITL escalation on max iterations (ADR-0014)
 
 Full AI governance docs: [`docs/ai-governance/`](docs/ai-governance/)
+
+---
+
+## Feature Flags
+
+Feature flags use the [OpenFeature](https://openfeature.dev/) SDK (CNCF standard) backed by [flagd](https://flagd.dev/) in Kubernetes. No external SaaS dependency — flags are YAML files in `infrastructure/feature-flags/flags/`.
+
+| Flag              | Default | Effect                                             |
+| ----------------- | ------- | -------------------------------------------------- |
+| `autonomous-mode` | `off`   | When `on`, enables HOTL (bypasses HITL for agents) |
+
+Changing a flag: edit the YAML in `infrastructure/feature-flags/flags/`, apply the ConfigMap. flagd reloads automatically. Governance approval required before enabling `autonomous-mode` in production (ADR-0015).
+
+Recovery runbook: [`docs/runbooks/RB-003-hitl-recovery.md`](docs/runbooks/RB-003-hitl-recovery.md)
 
 ---
 
@@ -271,9 +305,11 @@ Privacy docs: [`docs/privacy/`](docs/privacy/)
 
 ---
 
-## SDD Compliance Audit
+## Compliance Audits
 
-Audited **2026-05-24** across 5 Spec-Driven Development dimensions. Remediation was applied immediately after the audit.
+### SDD Compliance Audit (2026-05-24)
+
+Audited across 5 Spec-Driven Development dimensions. Remediation applied immediately.
 
 | Dimension           | Before          | After           | Key gaps closed                                                                                |
 | ------------------- | --------------- | --------------- | ---------------------------------------------------------------------------------------------- |
@@ -283,6 +319,23 @@ Audited **2026-05-24** across 5 Spec-Driven Development dimensions. Remediation 
 | Skills              | 6.5/10          | 9.0/10          | 4 new skill files (OTel, REST API, DevSecOps, SDD lifecycle); CI validates skill paths         |
 | Traceability        | 6.0/10          | 8.5/10          | Integration tests, API stubs, API contracts, orchestrator, module `Spec:`/`ADR:` docstrings    |
 | **Overall**         | **6.4/10 (B-)** | **9.0/10 (A-)** | 52 files changed in remediation commit                                                         |
+
+### Harness Engineering & Design Audit (2026-05-25)
+
+Audited across 8 harness engineering dimensions (D1–D8). Score 25/32 (78%) — production ready.
+
+| Dim | Dimension           | Score | Status | Key result                                                          |
+| --- | ------------------- | ----- | ------ | ------------------------------------------------------------------- |
+| D1  | Process Lifecycle   | 3/4   | 🟢     | startupProbe, preStop drain, terminationGracePeriod, lifespan       |
+| D2  | Resilience          | 3/4   | 🟡     | LLM + DB circuit breaker + retry; Redis calls lack CB (P1 item)     |
+| D3  | Observability       | 4/4   | 🟢     | Full Golden Signals, OTel, SLO burn-rate alerts, CUJ-001 dashboard  |
+| D4  | Resource Management | 3/4   | 🟡     | Pool bounds, semaphore, HITL cap; no idle timeout on DB pool        |
+| D5  | Config & Secrets    | 3/4   | 🟢     | Pydantic Settings, secretKeyRef, placeholder validator, flagd       |
+| D6  | Concurrency         | 3/4   | 🟡     | Semaphore + 503/Retry-After, asyncio.Lock; private attr access      |
+| D7  | Deployment Harness  | 4/4   | 🟢     | All probes, PDB, HPA (CPU + custom metrics), rolling update         |
+| D8  | Chaos Readiness     | 2/4   | 🟡     | 3 Chaos Toolkit experiments in CI; lacks toxiproxy + testcontainers |
+
+P1 remediation items tracked in `CHANGELOG.md` under `[Unreleased]`.
 
 Audit methodology: [`CLAUDE.md`](CLAUDE.md) — SDD Cycle (§2) and Inviolable Rules (§3).
 

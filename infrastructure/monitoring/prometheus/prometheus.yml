@@ -1,0 +1,91 @@
+# Prometheus scrape configuration
+# --------------------------------
+# Loaded by the `prometheus` service in docker-compose.yml.
+# Add a new job for every service that exposes /metrics.
+#
+# Metric naming conventions (Golden Signals — skills/sre/golden-signals.md):
+#   requests_total{method, path, status_code}        — Traffic
+#   request_duration_seconds{method, path}           — Latency (histogram)
+#   errors_total{method, path, error_type}           — Errors
+#   agent_semaphore_waiting                          — Saturation
+#   hitl_active_requests                             — HITL queue depth
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+  external_labels:
+    environment: development
+    cluster: local
+
+# Alerting rules (golden-signals.yaml)
+rule_files:
+  - /etc/prometheus/rules/*.yaml
+
+# Alertmanager (disabled by default in local dev — enable for staging/prod)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  # ── Prometheus self-telemetry ──────────────────────────────────────────────
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # ── OTel Collector self-telemetry ──────────────────────────────────────────
+  - job_name: otel-collector
+    static_configs:
+      - targets: ["otel-collector:8888"]
+
+  # ── Python / API Gateway ───────────────────────────────────────────────────
+  # FastAPI exposes /metrics via prometheus-fastapi-instrumentator.
+  # Port matches APP_PORT in .env.example (8000).
+  - job_name: api-gateway
+    static_configs:
+      - targets: ["host.docker.internal:8000"]
+    metrics_path: /metrics
+    relabel_configs:
+      - target_label: service
+        replacement: api-gateway
+      - target_label: language
+        replacement: python
+
+  # ── Java / Domain Service ──────────────────────────────────────────────────
+  # Spring Boot Actuator exposes /actuator/prometheus.
+  # Port matches SERVER_PORT for domain-service (8080).
+  - job_name: domain-service
+    static_configs:
+      - targets: ["host.docker.internal:8080"]
+    metrics_path: /actuator/prometheus
+    relabel_configs:
+      - target_label: service
+        replacement: domain-service
+      - target_label: language
+        replacement: java
+
+  # ── Go / Event Worker ─────────────────────────────────────────────────────
+  # Go service exposes /metrics via OTel Prometheus exporter.
+  # Port matches the worker's HTTP port (8090).
+  - job_name: event-worker
+    static_configs:
+      - targets: ["host.docker.internal:8090"]
+    metrics_path: /metrics
+    relabel_configs:
+      - target_label: service
+        replacement: event-worker
+      - target_label: language
+        replacement: go
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  # Requires postgres_exporter sidecar — add to docker-compose.yml if needed.
+  # - job_name: postgres
+  #   static_configs:
+  #     - targets: ["postgres-exporter:9187"]
+
+  # ── Kafka ──────────────────────────────────────────────────────────────────
+  # Requires kafka_exporter — add to docker-compose.yml if needed.
+  # - job_name: kafka
+  #   static_configs:
+  #     - targets: ["kafka-exporter:9308"]
