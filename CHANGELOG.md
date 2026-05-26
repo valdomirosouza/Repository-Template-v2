@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+---
+
+## [1.1.0] - 2026-05-26
+
 ### Added (multi-language template — Block 4)
 
 - `.github/workflows/ci-java.yml`: Java CI pipeline — `lint-java` (Checkstyle + SpotBugs + OWASP dependency-check), `test-java-unit` (JaCoCo ≥ 80%), `test-java-integration` (PostgreSQL + Redis + Kafka services), `build-java` (Spring Boot buildpack); auto-discovers all `services/*/pom.xml`; triggered only on Java/contract file changes
@@ -434,6 +438,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/org/project/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/org/project/compare/v0.1.0...v1.0.0
-[0.1.0]: https://github.com/org/project/releases/tag/v0.1.0
+[Unreleased]: https://github.com/valdomirosouza/template-monorepo/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/valdomirosouza/template-monorepo/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/valdomirosouza/template-monorepo/compare/v0.1.0...v1.0.0
+[0.1.0]: https://github.com/valdomirosouza/template-monorepo/releases/tag/v0.1.0
