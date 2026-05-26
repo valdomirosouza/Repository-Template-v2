@@ -14,7 +14,7 @@ application role so the audit log is immutable even at the SQL level.
 from __future__ import annotations
 
 import sqlalchemy as sa
-from alembic import op
+from alembic import context, op
 
 revision = "0001"
 down_revision = None
@@ -54,13 +54,31 @@ def upgrade() -> None:
         ["event_type", "created_at"],
     )
 
-    # Revoke mutable operations from the application role.
-    # Replace 'app_user' with the actual DB role used by the service.
-    op.execute("REVOKE UPDATE, DELETE ON audit_events FROM app_user")
+    # Revoke mutable operations from the application role to make the audit log immutable
+    # at the SQL level. The role name is read from alembic.ini (db_app_role key) so that
+    # adopters only need to change it in one place. A DO $$ guard emits a WARNING (not an
+    # error) when the role doesn't exist, preventing silent failure on fresh environments.
+    role = context.config.get_main_option("db_app_role", "app_user")
+    # role comes from alembic.ini (a config file, not user input).
+    op.execute(
+        f"""
+        DO $$
+        BEGIN
+          IF EXISTS (SELECT FROM pg_roles WHERE rolname = '{role}') THEN
+            REVOKE UPDATE, DELETE ON audit_events FROM {role};
+          ELSE
+            RAISE WARNING
+              'DB role {role} not found — audit_events REVOKE skipped.'
+              ' Set db_app_role in alembic.ini.';
+          END IF;
+        END
+        $$"""
+    )
 
 
 def downgrade() -> None:
-    op.execute("GRANT UPDATE, DELETE ON audit_events TO app_user")
+    role = context.config.get_main_option("db_app_role", "app_user")
+    op.execute(f"GRANT UPDATE, DELETE ON audit_events TO {role}")
     op.drop_index("ix_audit_events_type_created", table_name="audit_events")
     op.drop_index("ix_audit_events_agent_created", table_name="audit_events")
     op.drop_table("audit_events")

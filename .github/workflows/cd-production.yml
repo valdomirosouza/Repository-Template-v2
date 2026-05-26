@@ -25,10 +25,10 @@ jobs:
             --data-urlencode 'query=slo:error_budget_remaining:ratio{service="api-gateway"}' \
             | jq -r '.data.result[0].value[1]')
           echo "Remaining budget: $BUDGET"
-          if (( $(echo "$BUDGET < 0.10" | bc -l) )); then
+          python3 -c "import sys; sys.exit(0 if float('$BUDGET') >= 0.10 else 1)" || {
             echo "ERROR: Error budget < 10%. Deploy blocked."
             exit 1
-          fi
+          }
 
   deploy-canary:
     name: Canary — 5%
@@ -65,10 +65,14 @@ jobs:
             --data-urlencode 'query=histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))' \
             | jq -r '.data.result[0].value[1]')
           echo "Error rate: $ERROR_RATE | p99 latency: $P99s"
-          if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )) || (( $(echo "$P99 > 0.5" | bc -l) )); then
-            echo "Golden Signals gate FAILED at 5% canary"
-            exit 1
-          fi
+          python3 -c "
+import sys
+er = float('$ERROR_RATE')
+p99 = float('$P99')
+if er > 0.01 or p99 > 0.5:
+    print(f'Golden Signals gate FAILED at 5% canary: error_rate={er:.4f}, p99={p99:.3f}s')
+    sys.exit(1)
+"
 
   promote-canary-25:
     name: Canary — 25%
@@ -100,10 +104,14 @@ jobs:
           P99=$(curl -sf "${{ vars.PROMETHEUS_URL }}/api/v1/query" \
             --data-urlencode 'query=histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))' \
             | jq -r '.data.result[0].value[1]')
-          if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )) || (( $(echo "$P99 > 0.5" | bc -l) )); then
-            echo "Golden Signals gate FAILED at 25% canary"
-            exit 1
-          fi
+          python3 -c "
+import sys
+er = float('$ERROR_RATE')
+p99 = float('$P99')
+if er > 0.01 or p99 > 0.5:
+    print(f'Golden Signals gate FAILED at 25% canary: error_rate={er:.4f}, p99={p99:.3f}s')
+    sys.exit(1)
+"
 
   promote-canary-100:
     name: Full Deploy — 100%
