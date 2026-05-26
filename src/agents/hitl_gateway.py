@@ -200,6 +200,8 @@ class HITLGateway:
                 f"Request {decision.request_id} expired before decision was recorded"
             )
 
+        ACTIVE_HITL_REQUESTS.labels(request.agent_id).dec()
+
         wait_seconds = (decision.decided_at - request.created_at).total_seconds()
 
         await self._audit.log_event(

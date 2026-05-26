@@ -49,6 +49,19 @@ def _make_request(agent_id: str = "agent-test") -> HITLRequest:
     )
 
 
+# ── Init ──────────────────────────────────────────────────────────────────────
+
+
+class TestHITLGatewayInit:
+    def test_default_store_created_when_none_supplied(self):
+        from src.agents.hitl_store import InMemoryHITLStore
+
+        audit = MagicMock()
+        audit.log_event = AsyncMock()
+        gw = HITLGateway(audit_logger=audit, broker=None)
+        assert isinstance(gw._store, InMemoryHITLStore)
+
+
 # ── Hard cap ──────────────────────────────────────────────────────────────────
 
 
@@ -219,3 +232,60 @@ class TestHITLGatewayEviction:
 
         assert await gw._store.get_active(req.request_id) is None
         assert await gw._store.get(req.request_id) is not None
+
+
+# ── Gauge ─────────────────────────────────────────────────────────────────────
+
+
+class TestHITLGatewayGauge:
+    @pytest.mark.asyncio
+    async def test_gauge_decrements_on_approved_decision(self):
+        from unittest.mock import MagicMock, patch
+
+        gw = _make_gateway()
+        req = _make_request()
+        now = datetime.now(UTC)
+
+        with patch("src.agents.hitl_gateway.ACTIVE_HITL_REQUESTS") as mock_gauge:
+            mock_labels = MagicMock()
+            mock_gauge.labels.return_value = mock_labels
+
+            await gw.submit_for_approval(req)
+            await gw.record_decision(
+                HITLDecision(
+                    request_id=req.request_id,
+                    decision=HITLStatus.APPROVED,
+                    approver_id="reviewer-01",
+                    rationale="Approved.",
+                    decided_at=now,
+                )
+            )
+
+            mock_labels.inc.assert_called_once()
+            mock_labels.dec.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_gauge_decrements_on_rejected_decision(self):
+        from unittest.mock import MagicMock, patch
+
+        gw = _make_gateway()
+        req = _make_request()
+        now = datetime.now(UTC)
+
+        with patch("src.agents.hitl_gateway.ACTIVE_HITL_REQUESTS") as mock_gauge:
+            mock_labels = MagicMock()
+            mock_gauge.labels.return_value = mock_labels
+
+            await gw.submit_for_approval(req)
+            await gw.record_decision(
+                HITLDecision(
+                    request_id=req.request_id,
+                    decision=HITLStatus.REJECTED,
+                    approver_id="reviewer-01",
+                    rationale="Rejected.",
+                    decided_at=now,
+                )
+            )
+
+            mock_labels.inc.assert_called_once()
+            mock_labels.dec.assert_called_once()

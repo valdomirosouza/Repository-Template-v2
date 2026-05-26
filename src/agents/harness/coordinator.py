@@ -31,6 +31,7 @@ from src.agents.harness.models import (
 )
 from src.agents.harness.planner import PlannerAgent
 from src.guardrails.audit_logger import AuditLogger
+from src.guardrails.pii_filter import mask_dict, mask_text
 from src.observability.logger import get_logger
 from src.shared.config import settings
 from src.shared.models import AuditEvent
@@ -103,15 +104,20 @@ class HarnessCoordinator:
 
     async def _run_simplified(self, brief: TaskBrief) -> HarnessResult:
         """Generator + Evaluator only — no Planner, single sprint."""
+        masked_description = mask_text(brief.description)
+        criteria = brief.success_criteria or [
+            f"The response is non-empty and directly addresses the stated task: "
+            f"'{mask_text(brief.description[:200])}'"
+        ]
         contract = SprintContract(
             sprint_id=str(uuid.uuid4()),
-            objectives=[brief.description],
-            success_criteria=["The output directly addresses the task described in the brief."],
+            objectives=[masked_description],
+            success_criteria=criteria,
         )
 
         spec = ProductSpec(
             task_id=brief.task_id,
-            detailed_description=brief.description,
+            detailed_description=masked_description,
             sprint_contracts=[contract],
         )
 
@@ -223,14 +229,18 @@ class HarnessCoordinator:
         previous_score: EvaluatorScore | None,
     ) -> GeneratorArtifact:
         """Call the LLM to generate artifacts for a sprint contract."""
-        criteria_text = "\n".join(f"  - {c}" for c in contract.success_criteria)
-        objectives_text = "\n".join(f"  - {o}" for o in contract.objectives)
+        masked_objectives = [mask_text(o) for o in contract.objectives]
+        masked_criteria = [mask_text(c) for c in contract.success_criteria]
+
+        criteria_text = "\n".join(f"  - {c}" for c in masked_criteria)
+        objectives_text = "\n".join(f"  - {o}" for o in masked_objectives)
 
         feedback_section = ""
         if previous_score is not None:
+            masked_feedback = mask_text(previous_score.feedback)
             feedback_section = (
                 f"\n\nPrevious attempt scored {previous_score.average:.2f}/1.0 and FAILED.\n"
-                f"Evaluator feedback: {previous_score.feedback}\n"
+                f"Evaluator feedback: {masked_feedback}\n"
                 f"You must address this feedback in your new attempt."
             )
 
@@ -260,8 +270,6 @@ class HarnessCoordinator:
         score: EvaluatorScore,
     ) -> None:
         """Escalate to HITL gateway after max iterations without passing."""
-        import json
-
         await self._audit.log_event(
             AuditEvent(
                 event_type="agent.action.proposed",
@@ -297,6 +305,8 @@ class HarnessCoordinator:
                 "iteration": score.iteration,
             },
         }
+
+        hitl_payload = mask_dict(hitl_payload)
 
         logger.warning(
             "Harness escalating to HITL",
@@ -347,6 +357,7 @@ class HarnessCoordinator:
                 for c in spec.sprint_contracts
             ],
         }
+        spec_payload = mask_dict(spec_payload)
         now = datetime.now(UTC)
         request = HITLRequest(
             request_id=str(uuid.uuid4()),

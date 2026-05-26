@@ -51,25 +51,30 @@ When uncertain, escalate to DPO. Err towards the higher classification.
 
 ## Implementing Masking for a New Field
 
-Add the field name to the field registry in `pii_filter.py`:
+`mask_dict()` applies **value-pattern matching** — it scans each string value for known PII
+shapes (email, CPF, IP address, JWT, UUID). It does **not** check field names.
 
-```python
-# Field-name-based masking registry
-L2_FIELD_NAMES = {
-    "email", "full_name", "phone_number", "ip_address",
-    "new_field_name",  # add here
-}
-```
-
-Unit test using synthetic data:
+**Fields with detectable value patterns** (email, phone, CPF, IP, JWT, UUID): these are masked
+automatically. Confirm the field value matches one of the patterns in `pii_filter.py`, then
+write a unit test using synthetic data:
 
 ```python
 def test_masks_new_field():
     result = pii_filter.mask_dict({"new_field_name": "test@example.com"})
     assert result["new_field_name"] == "[EMAIL]"
-    # token depends on detected PII type; for an email value the token is [EMAIL]
+    # token is determined by the detected value type, not the key name
     # Never use real email addresses in tests
 ```
+
+**Fields with free-text values** (full name, home address, occupation): these are **not**
+caught by `mask_dict()` — there is no detectable format pattern. For these fields:
+
+- **Preferred:** don't store the raw value — pseudonymize at ingestion or store a reference
+  token that maps to the value in a dedicated, access-controlled store.
+- **If raw storage is required:** notify the DPO before adding the field — this is a new L2
+  processing activity that may require a DPIA/RIPD update.
+
+When uncertain about classification or masking coverage, escalate to the DPO.
 
 ---
 

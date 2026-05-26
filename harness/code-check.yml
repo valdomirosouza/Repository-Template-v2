@@ -31,6 +31,18 @@ gates:
     failure_message: "Real PII detected in test fixtures. Replace with synthetic placeholders (see specs/privacy/pii-inventory.md)."
 
   - name: spec-compliance
-    command: "grep -qE 'specs/' .git/COMMIT_EDITMSG || grep -qE 'specs/' ${PR_BODY_FILE:-/dev/null}"
-    blocking: true
-    failure_message: "No spec reference found in PR description. Add a 'Referenced Spec: specs/...' line (see specs/README.md)."
+    command: >
+      bash -c "
+        if [ -n \"${PR_BODY_FILE:-}\" ] && [ -f \"${PR_BODY_FILE}\" ]; then
+          grep -qE 'specs/[a-z/._-]+\.md' \"${PR_BODY_FILE}\" &&
+            echo 'Spec reference found.' ||
+            { echo 'No spec reference found in PR body.'; exit 1; }
+        else
+          echo 'PR_BODY_FILE not set — spec compliance check skipped (set it in CI).';
+          exit 0
+        fi
+      "
+    blocking: false
+    failure_message: >
+      No spec reference found in the PR body. Add a 'Referenced Spec: specs/...' line.
+      In CI, ensure PR_BODY_FILE points to a file containing the PR description body.

@@ -22,6 +22,7 @@ class TaskBrief:
     description: str
     complexity: Literal["low", "medium", "high"] = "medium"
     trace_id: str | None = None
+    success_criteria: list[str] | None = None
 
 
 @dataclass
