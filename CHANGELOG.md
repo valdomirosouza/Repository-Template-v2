@@ -15,6 +15,15 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [1.2.1] - 2026-05-26
+
+### Added
+
+- `docs/audit/expert-audit-2026-05-26.md`: audit summary document — 18 findings across four
+  severity tiers, per-commit breakdown, and test impact table (PR #7)
+
+---
+
 ## [1.2.0] - 2026-05-26
 
 ### Fixed
