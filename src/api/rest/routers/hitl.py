@@ -71,8 +71,7 @@ async def hitl_status(
     gateway: HITLGateway = Depends(get_hitl_gateway),
 ) -> HITLStatusResponse:
     """Return the HITL subsystem status and pending queue depth."""
-    async with gateway._lock:
-        pending = sum(1 for r in gateway._requests.values() if r.status == HITLStatus.PENDING)
+    pending = await gateway._store.pending_count()
     return HITLStatusResponse(
         status="operational",
         pending_count=pending,

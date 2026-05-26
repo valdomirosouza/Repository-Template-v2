@@ -13,6 +13,55 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Fixed
+
+- `src/api/rest/routers/hitl.py`: `hitl_status` endpoint replaced stale `gateway._requests`
+  dict access (AttributeError 500) with `gateway._store.pending_count()` — aligned with the
+  HITLStore protocol introduced in Wave 3b (ADR-0011)
+- `src/observability/metrics.py`: removed duplicate `ACTIVE_HITL_REQUESTS.dec()` from
+  `record_hitl_decision()` — gauge lifecycle is the gateway's responsibility; double-decrement
+  drove the gauge negative on every approved/rejected decision (ADR-0011)
+- `src/agents/hitl_gateway.py`: `record_decision()` now archives APPROVED/REJECTED requests
+  via `store.archive()` so `pending_count()` stays accurate and the hard cap is not inflated
+  by decided entries (ADR-0011)
+- `harness/doc-check.yml`: `spec-exists` and `adr-current` gates rewritten to use
+  `PR_BODY_FILE` (mirrors spec-compliance fix); removed `.git/MERGE_MSG` primary source which
+  is only populated during local merges and causes false-passes in PR CI (specs/ai/guardrails.md)
+- `src/agents/harness/coordinator.py`: PII masking applied pre-LLM (`_generate()`) and
+  pre-HITL (`_escalate_to_hitl()`, `_review_spec_with_hitl()`) via `mask_text` / `mask_dict`
+  — three mandatory interception points enforced (specs/ai/guardrails.md, ADR-0012)
+- `src/agents/hitl_gateway.py`: `ACTIVE_HITL_REQUESTS` gauge now decrements correctly on
+  APPROVED/REJECTED decisions — was only decrementing on EXPIRED (ADR-0011)
+- `harness/code-check.yml`: `spec-compliance` gate rewritten to use `PR_BODY_FILE` and avoid
+  false-pass when it is unset; set `blocking: false`
+- `src/agents/harness/coordinator.py` (`_run_simplified`): uses caller-supplied
+  `success_criteria` or a description-anchored fallback — removes vague generic criterion
+  (specs/ai/harness-design.md §2)
+- `skills/privacy/pii.md`: removed fictitious `L2_FIELD_NAMES` registry block; replaced with
+  accurate guidance — masking is value-pattern-based, not field-name-based (ADR-0012)
+- `src/agents/harness/models.py`: `TaskBrief` gains optional `success_criteria` field
+- `harness/code-check.yml`: SAST gate replaced `semgrep || true` with `bandit -r src/ -ll`
+  (authoritative SAST tool per `skills/devsecops/secret-scanning.md`)
+- `harness/code-check.yml` / `harness/staging-check.yml`: pii-scan gate `|| true` bypass
+  removed; staging-check regex fixed (`[^[]` instead of broken `[^\[MASKED]`)
+- `skills/ai/guardrails.md` / `skills/privacy/pii.md`: `[TOKEN]` reclassified from L3 to L2
+  (JWT/session tokens are Sensitive, not Internal) (ADR-0012)
+- `src/guardrails/prompt_injection_guard.py`: dead `_check_length()` method removed (was
+  defined but never called in `validate()`)
+
+### Added
+
+- `tests/unit/agents/test_hitl_gateway.py`: gauge-decrement tests (approved + rejected paths)
+  and archive tests (approved, rejected, pending count accuracy)
+- `tests/unit/guardrails/test_audit_logger.py`: 9 tests covering all 4 query filters, limit,
+  copy-on-append, event ID return, and `AuditWriteError` propagation
+- `tests/unit/guardrails/test_action_limits.py`: 8 tests for `check_scope_limit()` and the
+  unified `check()` guardrail (scope denial, rate limit denial, within-limits pass)
+- `tests/unit/api/test_hitl_router.py`: 4 tests covering HITL status endpoint (200 + 503)
+  and decision endpoint (404 unknown + 200 valid approval)
+- `tests/unit/agents/test_hitl_gateway.py`: `TestHITLGatewayInit` — verifies default
+  `InMemoryHITLStore` is created when no store is supplied
+
 ---
 
 ## [1.1.1] - 2026-05-26
