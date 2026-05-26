@@ -97,10 +97,6 @@ class PromptInjectionGuard:
             logger.error("Injection guard check failed — defaulting to reject", error=str(exc))
             return ValidationResult(is_valid=False, risk_score=1.0)
 
-    def _check_length(self, text: str) -> float:
-        ratio = len(text) / self._max_length
-        return min(ratio, 1.0)
-
     def _check_structural_anomaly(self, text: str) -> float:
         """Detect high density of imperative/directive structural markers."""
         if not text:

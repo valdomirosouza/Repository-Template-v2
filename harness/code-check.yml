@@ -14,9 +14,9 @@ gates:
     failure_message: "Unit tests failed or coverage < 80%. All tests must pass and coverage must be ≥ 80% before merge."
 
   - name: sast
-    command: "uv run semgrep --config p/python --config p/secrets src/ --error"
+    command: "uv run bandit -r src/ -ll -x tests/"
     blocking: true
-    failure_message: "SAST found HIGH or CRITICAL findings. Zero HIGH/CRITICAL findings required before merge."
+    failure_message: "Bandit found MEDIUM or HIGH severity findings. Address all findings before merge (see skills/devsecops/secret-scanning.md)."
 
   - name: secret-detection
     command: "detect-secrets scan --baseline .secrets.baseline"
@@ -26,7 +26,7 @@ gates:
   - name: pii-scan
     command: >
       uv run pytest tests/security/test_pii_leakage.py -q &&
-      grep -rE '(fake@example\.com|000\.000\.000-00|192\.0\.2\.[0-9])' tests/fixtures/ || true
+      ! grep -rqE '(fake@example\.com|000\.000\.000-00|192\.0\.2\.[0-9])' tests/fixtures/
     blocking: true
     failure_message: "Real PII detected in test fixtures. Replace with synthetic placeholders (see specs/privacy/pii-inventory.md)."
 

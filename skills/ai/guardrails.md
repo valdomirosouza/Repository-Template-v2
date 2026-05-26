@@ -34,7 +34,7 @@ masked_payload = pii_filter.mask_dict(raw_payload)
 # Only masked_payload flows forward — never raw_payload
 ```
 
-Masking tokens by type: `[CPF]`, `[CARD]` (L1); `[EMAIL]`, `[PHONE]`, `[IP]` (L2); `[TOKEN]`, `[UUID]` (L3)
+Masking tokens by type: `[CPF]`, `[CARD]` (L1); `[EMAIL]`, `[PHONE]`, `[IP]`, `[TOKEN]` (L2); `[UUID]` (L3)
 
 **Writing unit tests for PII masking — use synthetic data only:**
 

@@ -45,7 +45,7 @@ gates:
     command: >
       bash -c "
         FINDINGS=$(kubectl logs -n staging -l app=agent-service --since=1h
-          | grep -cE '\"(email|cpf|full_name|ip_address)\":\"[^\\[MASKED]' || echo 0);
+          | grep -cE '"(email|cpf|full_name|ip_address)":"[^[]' || echo 0);
         echo \"PII findings in logs: $FINDINGS\";
         [ \"$FINDINGS\" -eq 0 ]
       "

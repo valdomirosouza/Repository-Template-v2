@@ -8,12 +8,12 @@ Activate this skill for any code that reads, writes, transforms, or transmits pe
 
 ## Classification Levels
 
-| Level | Name      | Examples                                          | Masking token                |
-| ----- | --------- | ------------------------------------------------- | ---------------------------- |
-| L1    | Critical  | CPF, SSN, health records, biometric data          | `[CPF]`, `[CARD]`            |
-| L2    | Sensitive | Email, full name, phone, IP address, home address | `[EMAIL]`, `[PHONE]`, `[IP]` |
-| L3    | Internal  | User ID, session token, request ID                | `[TOKEN]`, `[UUID]`          |
-| L4    | Public    | Publicly available info                           | Pass through                 |
+| Level | Name      | Examples                                                         | Masking token                           |
+| ----- | --------- | ---------------------------------------------------------------- | --------------------------------------- |
+| L1    | Critical  | CPF, SSN, health records, biometric data                         | `[CPF]`, `[CARD]`                       |
+| L2    | Sensitive | Email, full name, phone, IP address, home address, session token | `[EMAIL]`, `[PHONE]`, `[IP]`, `[TOKEN]` |
+| L3    | Internal  | User ID, request ID                                              | `[UUID]`                                |
+| L4    | Public    | Publicly available info                                          | Pass through                            |
 
 Full field inventory: `docs/privacy/pii-inventory.md` and `specs/privacy/pii-inventory.md`
 
