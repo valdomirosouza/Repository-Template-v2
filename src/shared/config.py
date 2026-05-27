@@ -67,6 +67,12 @@ class Settings(BaseSettings):
     harness_planner_hitl_review: bool = False  # opt-in: HITL review of ProductSpec
     harness_patch_proposal_threshold: int = 2  # consecutive failures before PatchProposal (0=disabled)
 
+    # ── Agent Memory (ADR-0017) ───────────────────────────────────────────────
+    memory_session_ttl_seconds: int = 86400  # 24 h Redis session TTL
+    memory_vector_search_k: int = 5  # default top-k for similarity search
+    memory_embedding_dim: int = 256  # embedding vector dimension (must match embedder)
+    memory_docs_retention_days: int = 90  # vector doc retention (aligns with ADR-0013)
+
     # ── Observability ─────────────────────────────────────────────────────────
     otel_exporter_otlp_endpoint: str = "http://localhost:4317"
     otel_service_name: str = "template-service"

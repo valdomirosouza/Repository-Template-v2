@@ -15,6 +15,26 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ### Added
 
+- **B3 — Persistent Agent Memory** (`specs/ai/agent-memory.md`, ADR-0017):
+  - `src/memory/vector_store.py`: `VectorStore` protocol + `InMemoryVectorStore`
+    (cosine similarity, no external deps) + `PostgresVectorStore` (pgvector production);
+    `StubEmbedder` for tests; `Embedder` protocol for provider-agnostic embeddings
+  - `src/memory/document_indexer.py`: `DocumentIndexer` scans `specs/` and `docs/adr/`,
+    masks content via `pii_filter`, and upserts into the VectorStore
+  - `src/memory/session_memory.py`: `SessionMemory` Redis-backed per-session key-value
+    cache with TTL-based expiry (default: 24 h); full `get_all` and `delete_session`
+  - `src/memory/bug_history_store.py`: `BugHistoryStore` records HITL rejections as
+    searchable vector documents; `get_similar()` enables recall of past rejection patterns
+  - `src/shared/config.py`: added `memory_*` settings (TTL, k, embedding_dim, retention)
+  - `docs/adr/ADR-0017-agent-memory-architecture.md`: decision record (pgvector over
+    dedicated vector DB; Redis session cache; embedder-neutral protocol)
+  - `docs/privacy/dpia/dpia-agent-memory.md`: DPIA draft — **DPO sign-off required
+    before merge to main** (GDPR Art. 35 / LGPD Art. 38)
+  - `.github/workflows/index-docs.yml`: GitHub Action re-indexes specs and ADRs on
+    push to main when `.md` files under `specs/` or `docs/adr/` change
+  - 58 unit tests across all four memory components (InMemoryVectorStore,
+    StubEmbedder, SessionMemory via fakeredis, DocumentIndexer, BugHistoryStore)
+
 - **B4 — Self-Reflection & Auto-Correction** (`specs/ai/harness-design.md §9`):
   - `src/agents/harness/decision_tree_logger.py`: `DecisionTreeLogger` records every
     branching decision made during sprint execution to the immutable audit log
