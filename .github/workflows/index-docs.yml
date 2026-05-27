@@ -1,0 +1,78 @@
+name: Index Docs into Agent Memory
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "specs/**/*.md"
+      - "docs/adr/**/*.md"
+
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (log without writing to vector store)"
+        required: false
+        default: "false"
+
+jobs:
+  index:
+    name: Re-index specs and ADRs
+    runs-on: ubuntu-latest
+    # Only run when the memory service is available (skip in forks)
+    if: github.repository_owner == github.actor || github.event_name == 'workflow_dispatch'
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: template_db
+          POSTGRES_USER: template_user
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        options: >-
+          --health-cmd "pg_isready -U template_user"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run Alembic migrations
+        env:
+          DATABASE_URL: postgresql+asyncpg://template_user:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/template_db
+        run: uv run alembic upgrade head
+
+      - name: Index docs into agent memory
+        env:
+          DATABASE_URL: postgresql+asyncpg://template_user:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/template_db
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          uv run python -c "
+          import asyncio
+          from src.memory.document_indexer import DocumentIndexer
+          from src.memory.vector_store import StubEmbedder, InMemoryVectorStore
+
+          # Production: replace StubEmbedder with a real embedder and PostgresVectorStore.
+          # StubEmbedder is used here as a safe default until a production embedder is configured.
+          async def main():
+              store = InMemoryVectorStore()
+              embedder = StubEmbedder()
+              indexer = DocumentIndexer(vector_store=store, embedder=embedder)
+              count = await indexer.index_all()
+              print(f'Indexed {count} documents')
+
+          asyncio.run(main())
+          "
+
+      - name: Report indexed count
+        run: echo "Doc indexing complete — see job log for count."

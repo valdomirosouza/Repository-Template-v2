@@ -121,3 +121,47 @@ class HarnessResult:
     final_score: EvaluatorScore | None = None
     escalated_to_hitl: bool = False
     total_cost_usd: float | None = None
+
+
+@dataclass
+class DecisionPoint:
+    """A recorded branching decision made during sprint execution.
+
+    Spec: specs/ai/harness-design.md §9.1
+    """
+
+    decision_point: str
+    options_considered: list[str]
+    option_chosen: str
+    rationale: str
+
+
+@dataclass
+class PatchProposal:
+    """LLM self-reflection output proposing an alternative approach after repeated failures.
+
+    Spec: specs/ai/harness-design.md §9.2
+    """
+
+    sprint_id: str
+    iteration: int
+    previous_approach_summary: str
+    proposed_alternative: str
+    reasoning: str
+
+
+@dataclass
+class ExecutionSummary:
+    """Full record of a sprint's execution history — logged and attached to HITL escalations.
+
+    Spec: specs/ai/harness-design.md §9.3
+    """
+
+    task_id: str
+    sprint_id: str
+    total_iterations: int
+    failures: list[str]
+    patch_proposals_applied: int
+    final_score: EvaluatorScore | None
+    decisions: list[DecisionPoint]
+    generated_at: str

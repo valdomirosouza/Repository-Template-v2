@@ -67,6 +67,13 @@ class Settings(BaseSettings):
     harness_planner_enabled: bool = True  # disable to skip Planner in full mode
     harness_evaluator_enabled: bool = True  # disable to skip Evaluator (debug only)
     harness_planner_hitl_review: bool = False  # opt-in: HITL review of ProductSpec
+    harness_patch_proposal_threshold: int = 2  # consecutive failures before PatchProposal (0=disabled)
+
+    # ── Agent Memory (ADR-0017) ───────────────────────────────────────────────
+    memory_session_ttl_seconds: int = 86400  # 24 h Redis session TTL
+    memory_vector_search_k: int = 5  # default top-k for similarity search
+    memory_embedding_dim: int = 256  # embedding vector dimension (must match embedder)
+    memory_docs_retention_days: int = 90  # vector doc retention (aligns with ADR-0013)
 
     # ── Observability ─────────────────────────────────────────────────────────
     otel_exporter_otlp_endpoint: str = "http://localhost:4317"
@@ -77,7 +84,14 @@ class Settings(BaseSettings):
     # ── Feature flags ─────────────────────────────────────────────────────────
     feature_flag_provider: str = "local"
     feature_flag_sdk_key: str = ""
-    autonomous_mode_enabled: bool = False
+    autonomous_mode_enabled: bool = False  # fallback for legacy is_autonomous_mode_enabled()
+
+    # Granular autonomy thresholds (SPEC-autonomous-mode-levels)
+    autonomy_low_risk_threshold: float = 0.3    # risk_score below this → eligible for LOW_RISK
+    autonomy_medium_risk_threshold: float = 0.7  # risk_score at or below → eligible for MEDIUM_RISK
+    # Comma-separated lists configurable via env vars
+    autonomy_read_only_action_types: str = "read_file,search_code,list_files,get_status,read_spec,read_adr"
+    autonomy_test_action_types: str = "generate_test,run_test,check_coverage,lint_check"
 
     # ── Concurrency ───────────────────────────────────────────────────────────
     max_concurrent_agents: int = 20  # asyncio.Semaphore cap on simultaneous agent coroutines
