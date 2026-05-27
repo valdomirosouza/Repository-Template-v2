@@ -1,0 +1,47 @@
+# docker-compose.sandbox.yml — Agent Sandbox Execution Environment
+# -----------------------------------------------------------------
+# Defines the isolated container used by SandboxExecutor when running
+# agent-generated code before integration into the codebase.
+#
+# This file does NOT replace docker-compose.yml (dev infra stack).
+# It is used exclusively by src/agents/sandbox_executor.py at runtime.
+#
+# Security guarantees (spec: specs/ai/sandbox-execution.md §4.1):
+#   - network: none     → no external network access
+#   - no volumes shared with production or host home directory
+#   - no environment variables from host
+#   - CPU and memory caps enforced
+#
+# Usage (manual inspection / smoke test):
+#   docker compose -f docker-compose.sandbox.yml run --rm sandbox python -c "print('ok')"
+
+services:
+  sandbox:
+    image: ${SANDBOX_IMAGE:-python:3.13-slim}
+    network_mode: "none"
+    working_dir: /sandbox
+    volumes:
+      - sandbox_workdir:/sandbox
+    # No environment: block — zero host secrets passed in
+    environment: {}
+    deploy:
+      resources:
+        limits:
+          cpus: "${SANDBOX_CPU_LIMIT:-1.0}"
+          memory: "${SANDBOX_MEMORY_LIMIT:-512m}"
+    # No ports — sandbox has no network access
+    restart: "no"
+    # Container is always removed after execution (--rm equivalent for compose run)
+    # SandboxExecutor uses `docker run --rm` directly; compose file is for inspection only.
+
+volumes:
+  sandbox_workdir:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: size=256m,uid=1000
+
+networks:
+  default:
+    driver: none # reinforces network: none at the compose level

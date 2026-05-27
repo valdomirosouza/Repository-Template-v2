@@ -52,4 +52,5 @@ jobs:
           path: |
             sbom.cyclonedx.json
             sbom.spdx.json
+            docs/dependency-manifest.yaml
           retention-days: 90
