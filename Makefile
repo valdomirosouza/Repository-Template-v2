@@ -251,6 +251,28 @@ _scaffold-k8s-$(NAME):
 sbom: ## Generate signed Software Bill of Materials
 	syft . -o cyclonedx-json=sbom.cyclonedx.json
 
+agent-feedback-check: ## Check feedback loop convergence — queries Prometheus for HITL bias state
+	@echo "=== Agent Feedback Loop — Current Bias State ==="
+	@curl -sf "$(or $(PROMETHEUS_URL),http://localhost:9090)/api/v1/query?query=agent_feedback_bias_applied" \
+		| python3 -c "import sys,json; d=json.load(sys.stdin); \
+		  results=d.get('data',{}).get('result',[]); \
+		  [print(f\"  {r['metric'].get('action_type','?'):30s} bias={float(r['value'][1]):.2f}\") for r in results] \
+		  or print('  (no bias adjustments recorded yet)')"
+	@echo ""
+	@echo "=== HITL Rejection Rates ==="
+	@curl -sf "$(or $(PROMETHEUS_URL),http://localhost:9090)/api/v1/query?query=agent_feedback_rejection_rate" \
+		| python3 -c "import sys,json; d=json.load(sys.stdin); \
+		  results=d.get('data',{}).get('result',[]); \
+		  [print(f\"  {r['metric'].get('action_type','?'):30s} rejection_rate={float(r['value'][1]):.1%}\") for r in results] \
+		  or print('  (no data — Prometheus may not be running)')"
+	@echo ""
+	@echo "=== Adjustments Counter ==="
+	@curl -sf "$(or $(PROMETHEUS_URL),http://localhost:9090)/api/v1/query?query=agent_feedback_adjustments_total" \
+		| python3 -c "import sys,json; d=json.load(sys.stdin); \
+		  results=d.get('data',{}).get('result',[]); \
+		  [print(f\"  {r['metric'].get('action_type','?'):30s} dir={r['metric'].get('direction','?'):4s} count={r['value'][1]}\") for r in results] \
+		  or print('  (no adjustments made yet)')"
+
 clean: ## Remove all build artefacts and caches
 	rm -rf dist/ build/ htmlcov/ .pytest_cache/ .mypy_cache/ .ruff_cache/ coverage.out
 	find . -type d -name __pycache__ -exec rm -rf {} +

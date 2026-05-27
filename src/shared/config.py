@@ -96,6 +96,24 @@ class Settings(BaseSettings):
     pii_audit_log_enabled: bool = True
     data_retention_days: int = 30
 
+    # ── Feedback loop ─────────────────────────────────────────────────────────
+    feedback_loop_interval_seconds: int = 300
+    feedback_rejection_threshold: float = 0.30   # rejection rate above this triggers bias +0.1
+    feedback_approval_threshold: float = 0.80    # sustained approval rate below this prevents bias reduction
+    feedback_min_samples: int = 10               # minimum decisions before any adjustment is made
+    feedback_bias_step_up: float = 0.10          # amount added to bias on high rejection
+    feedback_bias_step_down: float = 0.05        # amount subtracted from bias on sustained approval
+    feedback_bias_max: float = 0.50              # hard cap on positive bias
+    feedback_prometheus_url: str = "http://localhost:9090"
+
+    # ── Sandbox execution ─────────────────────────────────────────────────────
+    sandbox_docker_image: str = "python:3.13-slim"
+    sandbox_exec_timeout_seconds: float = 30.0
+    sandbox_cpu_limit: str = "1.0"
+    sandbox_memory_limit: str = "512m"
+    sandbox_stdout_max_bytes: int = 65_536   # 64 KB
+    sandbox_stderr_max_bytes: int = 16_384   # 16 KB
+
     # ── FinOps ────────────────────────────────────────────────────────────────
     llm_monthly_token_budget: int = 1_000_000
     cost_alert_threshold_usd: float = 100.0

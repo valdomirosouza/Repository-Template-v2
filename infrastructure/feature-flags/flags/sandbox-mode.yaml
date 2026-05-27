@@ -1,0 +1,9 @@
+flags:
+  sandbox-mode:
+    state: ENABLED
+    variants:
+      enabled: "enabled"
+      hitl-required: "hitl-required"
+      disabled: "disabled"
+    defaultVariant: "enabled"
+    targeting: {}

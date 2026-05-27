@@ -13,6 +13,58 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- `docs/dependency-manifest.yaml`: canonical AI dependency manifest complementing SBOM —
+  documents Claude model IDs, API versions, onboarding dates, data classification, and
+  governance controls that Syft cannot derive automatically; uploaded as artifact in `sbom.yml`
+  (ADR-0010, ADR-0012)
+
+- `src/agents/sandbox_executor.py`: `SandboxExecutor` and `SandboxResult` — executes
+  agent-generated commands inside ephemeral Docker containers with `--network none`,
+  CPU/memory caps, zero host-environment leakage, and configurable timeout; controlled by
+  `sandbox-mode` OpenFeature flag (ADR-0016, SPEC-sandbox-execution)
+
+- `specs/ai/sandbox-execution.md`: specification for the agent sandbox execution policy
+  (ADR-0016)
+
+- `docs/adr/ADR-0016-agent-sandbox-execution-policy.md`: architectural decision for Docker-based
+  agent code isolation; documents threat model, flag variants, and HITL interaction (ADR-0016)
+
+- `infrastructure/feature-flags/flags/sandbox-mode.yaml`: OpenFeature flag with three variants —
+  `enabled`, `hitl-required`, `disabled` (development only)
+
+- `docker-compose.sandbox.yml`: isolated sandbox container definition for inspection and
+  smoke testing; uses `network_mode: none` and tmpfs volume (ADR-0016)
+
+- `src/agents/feedback_loop.py`: `FeedbackLoop` — queries Prometheus for HITL rejection/approval
+  rates per `action_type` and dynamically adjusts `risk_score` bias; publishes adjustments to
+  Kafka topic `agent.feedback.applied`; runs as asyncio background task (SPEC-feedback-loop)
+
+- `specs/ai/feedback-loop.md`: specification for telemetry-driven agent behavior adaptation
+
+- `src/observability/metrics.py`: three new feedback loop metrics — `agent_feedback_rejection_rate`
+  (Gauge), `agent_feedback_bias_applied` (Gauge), `agent_feedback_adjustments_total` (Counter)
+
+- `infrastructure/monitoring/grafana/dashboards/agent-feedback-loop.json`: Grafana dashboard
+  with 7 panels — bias state by action_type, rejection rate over time, adjustment counters,
+  convergence rate, overall HITL balance, and bias table (SPEC-feedback-loop)
+
+- `docs/api/asyncapi/v1/asyncapi.yaml`: `agent.feedback.applied` channel and
+  `AgentFeedbackAppliedPayload` schema added to AsyncAPI spec
+
+- `Makefile`: `agent-feedback-check` target — queries live Prometheus for current bias state,
+  rejection rates, and adjustment counters
+
+### Changed
+
+- `CLAUDE.md` §3.3: added rule — "NEVER execute agent-generated code outside
+  `src/agents/sandbox_executor.py` without explicit HITL approval" (ADR-0016)
+
+- `src/shared/config.py`: added `sandbox_*` settings (image, timeout, CPU/memory limits,
+  stdout/stderr size caps) and `feedback_*` settings (interval, thresholds, bias step
+  sizes, Prometheus URL)
+
 ---
 
 ## [1.2.1] - 2026-05-26
