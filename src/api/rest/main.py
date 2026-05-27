@@ -7,6 +7,7 @@ ADR:  ADR-0002 (Technology Stack), ADR-0003 (Async API Strategy)
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -90,6 +91,28 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
             )
         app.state.audit_logger = AuditLogger(InMemoryAuditStorage())
 
+    # Kafka broker — warn and continue if unavailable (local dev without Kafka).
+    # Falls back to InMemoryBroker so the app starts cleanly; events are captured in-process.
+    from src.shared.broker import InMemoryBroker, KafkaEventBroker
+
+    try:
+        _broker: KafkaEventBroker | InMemoryBroker = KafkaEventBroker(
+            bootstrap_servers=settings.kafka_bootstrap_servers
+        )
+        await asyncio.wait_for(_broker.start(), timeout=10.0)
+        app.state.broker = _broker
+    except Exception as exc:
+        logger.warning("Kafka producer unavailable — using InMemoryBroker: %s", exc)
+        app.state.broker = InMemoryBroker()
+
+    # Request store — Redis-backed when available; in-memory fallback for local dev.
+    from src.agents.request_store import InMemoryRequestStore, RedisRequestStore
+
+    if app.state.redis is not None:
+        app.state.request_store = RedisRequestStore(client=app.state.redis)
+    else:
+        app.state.request_store = InMemoryRequestStore()
+
     # HITL gateway — Redis-backed when available; in-memory fallback for local dev.
     # Production pods must always have Redis available (see RB-003-hitl-recovery.md).
     if app.state.redis is not None:
@@ -98,12 +121,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         hitl_store = InMemoryHITLStore()
     app.state.hitl_gateway = HITLGateway(
         audit_logger=app.state.audit_logger,
-        broker=None,
+        broker=app.state.broker,  # was always None; now wired to the real/in-memory broker
         store=hitl_store,
     )
 
     # Agent concurrency cap — limits simultaneous coroutines to prevent event-loop starvation
     app.state.agent_semaphore = asyncio.Semaphore(settings.max_concurrent_agents)
+
+    # Request consumer background task — drives AgentOrchestrator for each queued request.
+    # Skipped gracefully if Kafka is unavailable (consumer startup would fail the same way).
+    from src.workers.request_consumer import RequestConsumer
+
+    _consumer = RequestConsumer(
+        store=app.state.request_store,
+        audit_logger=app.state.audit_logger,
+        hitl_gateway=app.state.hitl_gateway,
+    )
+    app.state.consumer_task = asyncio.create_task(_consumer.run())
 
     yield
 
@@ -111,6 +145,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     # Brief sleep allows the load balancer to deregister this pod before
     # connections are torn down, preventing in-flight request drops.
     await asyncio.sleep(settings.shutdown_drain_seconds)
+
+    # Cancel the consumer task and stop the Kafka producer cleanly.
+    if hasattr(app.state, "consumer_task"):
+        app.state.consumer_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await app.state.consumer_task
+
+    from src.shared.broker import KafkaEventBroker
+
+    if isinstance(getattr(app.state, "broker", None), KafkaEventBroker):
+        await app.state.broker.stop()
 
     if app.state.db_pool is not None:
         await app.state.db_pool.close()

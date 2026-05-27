@@ -107,6 +107,22 @@ channels:
       message:
         $ref: "#/components/messages/DomainResultCompleted"
 
+  agent.feedback.applied:
+    description: |
+      Fired when the FeedbackLoop adjusts a risk_score bias for an action_type.
+      Consumers can use this to track convergence and audit automated risk adjustments.
+      No PII — action_type is an enum value, not user data (spec: specs/ai/feedback-loop.md §7).
+    subscribe:
+      operationId: onAgentFeedbackApplied
+      summary: Observability consumers track bias convergence
+      message:
+        $ref: "#/components/messages/AgentFeedbackApplied"
+    publish:
+      operationId: publishAgentFeedbackApplied
+      summary: FeedbackLoop publishes on every bias adjustment
+      message:
+        $ref: "#/components/messages/AgentFeedbackApplied"
+
   audit.event.written:
     description: Fired for every immutable audit record written by the Audit Logger.
     subscribe:
@@ -161,6 +177,13 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/DomainResultCompletedPayload"
+
+    AgentFeedbackApplied:
+      name: AgentFeedbackApplied
+      title: Agent Feedback Applied
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/AgentFeedbackAppliedPayload"
 
     AuditEventWritten:
       name: AuditEventWritten
@@ -312,6 +335,35 @@ components:
                 result_summary:
                   type: string
                   description: PII-masked result summary
+
+    AgentFeedbackAppliedPayload:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          required: [payload]
+          properties:
+            payload:
+              type: object
+              required:
+                [action_type, previous_bias, new_bias, direction, reason]
+              properties:
+                action_type:
+                  type: string
+                  description: Enum value identifying the agent action type — no PII
+                previous_bias:
+                  type: number
+                  minimum: 0.0
+                  maximum: 0.5
+                new_bias:
+                  type: number
+                  minimum: 0.0
+                  maximum: 0.5
+                direction:
+                  type: string
+                  enum: [up, down]
+                reason:
+                  type: string
+                  description: Human-readable explanation of why the bias was adjusted
 
     AuditEventWrittenPayload:
       allOf:

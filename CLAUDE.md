@@ -69,6 +69,7 @@ Step 10: UPDATE CHANGELOG.md with the change under the correct category.
 ### 3.3 AI Governance Rules
 
 - **ALL** agent actions with real-world effects **MUST** route through `src/agents/hitl_gateway.py`.
+- **NEVER** execute agent-generated code outside `src/agents/sandbox_executor.py` without explicit HITL approval (ADR-0016).
 - **NEVER** grant an agent permissions beyond what is documented in `specs/ai/guardrails.md`.
 - **ALWAYS** log every agent action via `guardrails/audit_logger.py` (immutable).
 - **NEVER** remove or weaken prompt injection guards.

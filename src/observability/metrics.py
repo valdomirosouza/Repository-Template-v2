@@ -101,6 +101,27 @@ DLQ_MESSAGES_COUNTER = Counter(
     ["consumer_group", "topic"],
 )
 
+# ── Feedback loop metrics ────────────────────────────────────────────────────
+# Spec: specs/ai/feedback-loop.md §6
+
+FEEDBACK_REJECTION_RATE = Gauge(
+    "agent_feedback_rejection_rate",
+    "Observed HITL rejection rate per action type (rolling window)",
+    ["action_type"],
+)
+
+FEEDBACK_BIAS_APPLIED = Gauge(
+    "agent_feedback_bias_applied",
+    "Current risk_score bias applied to each action type by the feedback loop",
+    ["action_type"],
+)
+
+FEEDBACK_ADJUSTMENTS_COUNTER = Counter(
+    "agent_feedback_adjustments_total",
+    "Total bias adjustments made by the feedback loop",
+    ["action_type", "direction"],  # direction: "up" | "down"
+)
+
 
 # ── Initialisation helpers ───────────────────────────────────────────────────
 

@@ -15,43 +15,26 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ### Added
 
-- **B3 — Persistent Agent Memory** (`specs/ai/agent-memory.md`, ADR-0017):
-  - `src/memory/vector_store.py`: `VectorStore` protocol + `InMemoryVectorStore`
-    (cosine similarity, no external deps) + `PostgresVectorStore` (pgvector production);
-    `StubEmbedder` for tests; `Embedder` protocol for provider-agnostic embeddings
-  - `src/memory/document_indexer.py`: `DocumentIndexer` scans `specs/` and `docs/adr/`,
-    masks content via `pii_filter`, and upserts into the VectorStore
-  - `src/memory/session_memory.py`: `SessionMemory` Redis-backed per-session key-value
-    cache with TTL-based expiry (default: 24 h); full `get_all` and `delete_session`
-  - `src/memory/bug_history_store.py`: `BugHistoryStore` records HITL rejections as
-    searchable vector documents; `get_similar()` enables recall of past rejection patterns
-  - `src/shared/config.py`: added `memory_*` settings (TTL, k, embedding_dim, retention)
-  - `docs/adr/ADR-0017-agent-memory-architecture.md`: decision record (pgvector over
-    dedicated vector DB; Redis session cache; embedder-neutral protocol)
-  - `docs/privacy/dpia/dpia-agent-memory.md`: DPIA draft — **DPO sign-off required
-    before merge to main** (GDPR Art. 35 / LGPD Art. 38)
-  - `.github/workflows/index-docs.yml`: GitHub Action re-indexes specs and ADRs on
-    push to main when `.md` files under `specs/` or `docs/adr/` change
-  - 58 unit tests across all four memory components (InMemoryVectorStore,
-    StubEmbedder, SessionMemory via fakeredis, DocumentIndexer, BugHistoryStore)
+- **A1 — AI Dependency Manifest**: `docs/dependency-manifest.yaml` — canonical AI dependency
+  manifest complementing SBOM; documents Claude model IDs, API versions, onboarding dates,
+  data classification, and governance controls (ADR-0010, ADR-0012); uploaded as artifact in `sbom.yml`
 
-- **B4 — Self-Reflection & Auto-Correction** (`specs/ai/harness-design.md §9`):
-  - `src/agents/harness/decision_tree_logger.py`: `DecisionTreeLogger` records every
-    branching decision made during sprint execution to the immutable audit log
-    (`action = "decision_bifurcation"`), enabling post-hoc decision tree reconstruction
-  - `src/agents/harness/models.py`: added `DecisionPoint`, `PatchProposal`, and
-    `ExecutionSummary` dataclasses
-  - `src/agents/harness/coordinator.py`: integrated `DecisionTreeLogger` into `_run_sprint`;
-    generates a `PatchProposal` via LLM self-reflection after
-    `harness_patch_proposal_threshold` (default: 2) consecutive failures; produces an
-    `ExecutionSummary` at sprint completion (pass or HITL escalation); includes
-    `ExecutionSummary` in HITL escalation payload for human reviewers
-  - `src/shared/config.py`: added `harness_patch_proposal_threshold: int = 2`
-  - `tests/unit/agents/harness/test_decision_tree_logger.py`: 11 tests (decision logging,
-    audit persistence, copy semantics, failure propagation)
-  - `tests/unit/agents/harness/test_coordinator_reflection.py`: 17 tests (decision
-    logging per iteration, PatchProposal threshold, ExecutionSummary on pass and
-    escalation, HITL payload attachment, failures list cap)
+- **A2 — Sandbox Executor** (ADR-0016, SPEC-sandbox-execution):
+  - `src/agents/sandbox_executor.py`: `SandboxExecutor` executes agent-generated commands inside
+    ephemeral Docker containers with `--network none`, CPU/memory caps, zero host-env leakage,
+    configurable timeout; controlled by `sandbox-mode` OpenFeature flag (3 variants)
+  - `specs/ai/sandbox-execution.md`, `docs/adr/ADR-0016-agent-sandbox-execution-policy.md`
+  - `infrastructure/feature-flags/flags/sandbox-mode.yaml`, `docker-compose.sandbox.yml`
+  - 28 unit tests (98% coverage)
+
+- **A3 — Feedback Loop** (SPEC-feedback-loop):
+  - `src/agents/feedback_loop.py`: `FeedbackLoop` queries Prometheus for HITL rejection/approval
+    rates per `action_type` and adjusts `risk_score` bias; publishes to Kafka `agent.feedback.applied`
+  - `src/observability/metrics.py`: 3 new feedback metrics (Gauge × 2, Counter × 1)
+  - `infrastructure/monitoring/grafana/dashboards/agent-feedback-loop.json`: 7-panel dashboard
+  - `docs/api/asyncapi/v1/asyncapi.yaml`: `agent.feedback.applied` channel added
+  - `Makefile`: `agent-feedback-check` target
+  - 21 unit tests (92% coverage)
 
 - **B1 — Granular Autonomy Levels** (`specs/ai/autonomous-mode-levels.md`, ADR-0015 rev):
   - `src/shared/feature_flags.py`: `get_autonomy_level(action_type, risk_score) → AutonomyLevel`
@@ -63,6 +46,30 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
   - `infrastructure/monitoring/grafana/dashboards/agent-supervision.json`: 11-panel Grafana
     dashboard (Active HITL Queue, HITL by Agent, Approval/Rejection Rate, Wait Time p50/p99,
     Action Latency, LLM Token Budget, Autonomous Resolution Rate, Jaeger trace deep-link)
+
+- **B4 — Self-Reflection & Auto-Correction** (`specs/ai/harness-design.md §9`):
+  - `src/agents/harness/decision_tree_logger.py`: `DecisionTreeLogger` records every
+    branching decision to the immutable audit log (`action = "decision_bifurcation"`)
+  - `src/agents/harness/models.py`: added `DecisionPoint`, `PatchProposal`, `ExecutionSummary`
+  - `src/agents/harness/coordinator.py`: PatchProposal via LLM self-reflection after
+    `harness_patch_proposal_threshold` failures; ExecutionSummary attached to HITL payloads
+  - 28 unit tests
+
+- **B3 — Persistent Agent Memory** (`specs/ai/agent-memory.md`, ADR-0017):
+  - `src/memory/vector_store.py`: `VectorStore` protocol + `InMemoryVectorStore` + `PostgresVectorStore`
+  - `src/memory/document_indexer.py`: indexes `specs/` and `docs/adr/` via `pii_filter`
+  - `src/memory/session_memory.py`: Redis-backed session cache, 24 h TTL default
+  - `src/memory/bug_history_store.py`: HITL rejection recall via semantic similarity
+  - `docs/privacy/dpia/dpia-agent-memory.md`: DPIA draft (DPO sign-off pending)
+  - `.github/workflows/index-docs.yml`: auto-indexes on push to main
+  - 58 unit tests
+
+### Changed
+
+- `CLAUDE.md` §3.3: added sandbox rule — "NEVER execute agent-generated code outside
+  `src/agents/sandbox_executor.py` without explicit HITL approval" (ADR-0016)
+- `src/shared/config.py`: added `sandbox_*`, `feedback_*`, `memory_*`, and
+  `harness_patch_proposal_threshold` settings
 
 ---
 
