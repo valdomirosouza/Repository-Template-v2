@@ -1,15 +1,16 @@
 """HarnessCoordinator — orchestrates the multi-agent harness pipeline.
 
-Spec: specs/ai/harness-design.md §1.4 (HarnessCoordinator)
+Spec: specs/ai/harness-design.md §1.4 (HarnessCoordinator), §9 (Self-Reflection)
 ADR:  ADR-0014 (Multi-Agent Harness Strategy)
 
 Three modes (selected via settings.harness_mode):
   solo:        Route directly to AgentOrchestrator (no harness overhead).
   simplified:  Generator + Evaluator only (no Planner; single-sprint).
-  full:        Planner → Generator → Evaluator with sprint decomposition.
+  full:        Planner → Generator + Evaluator with sprint decomposition.
 
-Escalation: if evaluator fails after harness_max_iterations, route to HITL gateway.
-Context resets: ContextManager decides compaction vs reset at each agent boundary.
+Self-reflection (§9): after harness_patch_proposal_threshold failures, generate
+a PatchProposal via LLM reflection before the final retry. Every sprint produces
+an ExecutionSummary that is audit-logged and included in HITL escalation payloads.
 """
 
 from __future__ import annotations
@@ -20,11 +21,14 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from src.agents.harness.context_manager import ContextManager
+from src.agents.harness.decision_tree_logger import DecisionTreeLogger
 from src.agents.harness.evaluator import EvaluatorAgent
 from src.agents.harness.models import (
     EvaluatorScore,
+    ExecutionSummary,
     GeneratorArtifact,
     HarnessResult,
+    PatchProposal,
     ProductSpec,
     SprintContract,
     TaskBrief,
@@ -178,17 +182,67 @@ class HarnessCoordinator:
     ) -> tuple[GeneratorArtifact, EvaluatorScore | None, int, bool]:
         """Run generate → evaluate → retry loop for a single sprint.
 
+        Self-reflection (§9): logs every decision bifurcation, generates a
+        PatchProposal after harness_patch_proposal_threshold failures, and
+        produces an ExecutionSummary at the end of the sprint regardless of outcome.
+
         Returns: (artifact, score, total_iterations, escalated_to_hitl)
         """
         last_artifact: GeneratorArtifact | None = None
         last_score: EvaluatorScore | None = None
+        failures: list[str] = []
+        patch_proposals_applied = 0
+        dt_logger = DecisionTreeLogger(
+            audit_logger=self._audit,
+            agent_id="harness.coordinator",
+            task_id=brief.task_id,
+        )
 
         for iteration in range(1, settings.harness_max_iterations + 1):
-            artifact = await self._generate(brief, contract, last_score)
+            # Self-reflection: generate PatchProposal once threshold is crossed
+            patch_proposal: PatchProposal | None = None
+            threshold = settings.harness_patch_proposal_threshold
+            if (
+                threshold > 0
+                and last_score is not None
+                and (iteration - 1) >= threshold
+            ):
+                patch_proposal = await self._generate_patch_proposal(
+                    contract, last_score, iteration
+                )
+                patch_proposals_applied += 1
+                await dt_logger.log(
+                    decision_point=f"patch_proposal_iteration_{iteration}",
+                    options_considered=["continue_with_feedback", "generate_patch_proposal"],
+                    option_chosen="generate_patch_proposal",
+                    rationale=(
+                        f"Failed {iteration - 1} iteration(s); applying structured "
+                        "self-reflection before retry."
+                    ),
+                    trace_id=brief.trace_id,
+                )
+            else:
+                await dt_logger.log(
+                    decision_point=f"generation_strategy_iteration_{iteration}",
+                    options_considered=["fresh_generation", "feedback_incorporation"],
+                    option_chosen="fresh_generation" if last_score is None else "feedback_incorporation",
+                    rationale=(
+                        "First attempt — no prior feedback available."
+                        if last_score is None
+                        else f"Incorporating evaluator feedback from iteration {iteration - 1}."
+                    ),
+                    trace_id=brief.trace_id,
+                )
+
+            artifact = await self._generate(brief, contract, last_score, patch_proposal)
             last_artifact = artifact
 
             if not settings.harness_evaluator_enabled:
                 logger.warning("Evaluator disabled via config — auto-passing sprint")
+                summary = self._build_execution_summary(
+                    brief, contract, iteration, failures, patch_proposals_applied, None, dt_logger
+                )
+                await self._log_execution_summary(summary, brief.trace_id)
                 return artifact, None, iteration, False
 
             score = await self._evaluator.evaluate(contract, artifact, iteration=iteration)
@@ -201,8 +255,16 @@ class HarnessCoordinator:
                     iteration=iteration,
                     average=round(score.average, 3),
                 )
+                summary = self._build_execution_summary(
+                    brief, contract, iteration, failures, patch_proposals_applied, score, dt_logger
+                )
+                await self._log_execution_summary(summary, brief.trace_id)
                 return artifact, score, iteration, False
 
+            failures.append(
+                f"iteration_{iteration}: score={score.average:.2f} "
+                f"feedback={score.feedback[:100]}"
+            )
             logger.info(
                 "Sprint failed — retrying",
                 sprint_id=contract.sprint_id,
@@ -215,7 +277,11 @@ class HarnessCoordinator:
                     "Max iterations reached — escalating to HITL",
                     sprint_id=contract.sprint_id,
                 )
-                await self._escalate_to_hitl(brief, contract, artifact, score)
+                summary = self._build_execution_summary(
+                    brief, contract, iteration, failures, patch_proposals_applied, score, dt_logger
+                )
+                await self._log_execution_summary(summary, brief.trace_id)
+                await self._escalate_to_hitl(brief, contract, artifact, score, summary)
                 return artifact, score, iteration, True
 
         # Should not be reachable, but satisfies the type checker
@@ -227,6 +293,7 @@ class HarnessCoordinator:
         brief: TaskBrief,
         contract: SprintContract,
         previous_score: EvaluatorScore | None,
+        patch_proposal: PatchProposal | None = None,
     ) -> GeneratorArtifact:
         """Call the LLM to generate artifacts for a sprint contract."""
         masked_objectives = [mask_text(o) for o in contract.objectives]
@@ -244,11 +311,22 @@ class HarnessCoordinator:
                 f"You must address this feedback in your new attempt."
             )
 
+        patch_section = ""
+        if patch_proposal is not None:
+            patch_section = (
+                f"\n\nSelf-reflection identified the following issue with the previous approach:\n"
+                f"  Previous approach: {patch_proposal.previous_approach_summary}\n"
+                f"  Proposed alternative: {patch_proposal.proposed_alternative}\n"
+                f"  Reasoning: {patch_proposal.reasoning}\n"
+                f"You MUST use the proposed alternative approach."
+            )
+
         prompt = (
             f"Implement the following sprint:\n\n"
             f"Objectives:\n{objectives_text}\n\n"
             f"Success Criteria:\n{criteria_text}"
             f"{feedback_section}"
+            f"{patch_section}"
         )
 
         response = await self._llm.complete(
@@ -262,12 +340,103 @@ class HarnessCoordinator:
             outputs={"implementation": response},
         )
 
+    async def _generate_patch_proposal(
+        self,
+        contract: SprintContract,
+        last_score: EvaluatorScore,
+        iteration: int,
+    ) -> PatchProposal:
+        """LLM self-reflection: summarise the failed approach and propose a concrete alternative."""
+        masked_feedback = mask_text(last_score.feedback)
+        criteria_text = "\n".join(f"  - {c}" for c in contract.success_criteria)
+
+        prompt = (
+            f"You are a senior engineer performing structured self-reflection on a failed sprint.\n\n"
+            f"The sprint has failed {iteration - 1} time(s).\n\n"
+            f"Success Criteria:\n{criteria_text}\n\n"
+            f"Last evaluator feedback:\n{masked_feedback}\n\n"
+            "Summarise the previous approach's failure in one sentence, then propose a "
+            "concretely different alternative approach.\n\n"
+            "Respond with valid JSON only:\n"
+            '{"previous_approach_summary": "...", "proposed_alternative": "...", "reasoning": "..."}'
+        )
+
+        response = await self._llm.complete(
+            system="You are a senior engineer performing structured self-reflection.",
+            user=prompt,
+            trace_id=None,
+        )
+
+        try:
+            data = json.loads(response)
+        except json.JSONDecodeError:
+            data = {
+                "previous_approach_summary": masked_feedback[:200],
+                "proposed_alternative": "Attempt a fundamentally different implementation strategy.",
+                "reasoning": "LLM reflection response could not be parsed; using fallback.",
+            }
+
+        return PatchProposal(
+            sprint_id=contract.sprint_id,
+            iteration=iteration,
+            previous_approach_summary=str(data.get("previous_approach_summary", "")),
+            proposed_alternative=str(data.get("proposed_alternative", "")),
+            reasoning=str(data.get("reasoning", "")),
+        )
+
+    def _build_execution_summary(
+        self,
+        brief: TaskBrief,
+        contract: SprintContract,
+        total_iterations: int,
+        failures: list[str],
+        patch_proposals_applied: int,
+        final_score: EvaluatorScore | None,
+        dt_logger: DecisionTreeLogger,
+    ) -> ExecutionSummary:
+        return ExecutionSummary(
+            task_id=brief.task_id,
+            sprint_id=contract.sprint_id,
+            total_iterations=total_iterations,
+            failures=list(failures),
+            patch_proposals_applied=patch_proposals_applied,
+            final_score=final_score,
+            decisions=dt_logger.get_decisions(),
+            generated_at=datetime.now(UTC).isoformat(),
+        )
+
+    async def _log_execution_summary(
+        self,
+        summary: ExecutionSummary,
+        trace_id: str | None = None,
+    ) -> None:
+        await self._audit.log_event(
+            AuditEvent(
+                event_type="agent.action.executed",
+                agent_id="harness.coordinator",
+                action="sprint_execution_summary",
+                outcome="EXECUTED",
+                metadata={
+                    "task_id": summary.task_id,
+                    "sprint_id": summary.sprint_id,
+                    "total_iterations": summary.total_iterations,
+                    "failures_count": len(summary.failures),
+                    "patch_proposals_applied": summary.patch_proposals_applied,
+                    "final_score": summary.final_score.average if summary.final_score else None,
+                    "final_passed": summary.final_score.passed if summary.final_score else None,
+                    "decision_count": len(summary.decisions),
+                },
+                trace_id=trace_id,
+            )
+        )
+
     async def _escalate_to_hitl(
         self,
         brief: TaskBrief,
         contract: SprintContract,
         artifact: GeneratorArtifact,
         score: EvaluatorScore,
+        summary: ExecutionSummary | None = None,
     ) -> None:
         """Escalate to HITL gateway after max iterations without passing."""
         await self._audit.log_event(
@@ -305,6 +474,16 @@ class HarnessCoordinator:
                 "iteration": score.iteration,
             },
         }
+
+        # Attach ExecutionSummary so the human reviewer has full iteration history
+        if summary is not None:
+            hitl_payload["execution_summary"] = {
+                "total_iterations": summary.total_iterations,
+                "failures_count": len(summary.failures),
+                "patch_proposals_applied": summary.patch_proposals_applied,
+                "decision_count": len(summary.decisions),
+                "failures": summary.failures[:10],  # cap for payload size
+            }
 
         hitl_payload = mask_dict(hitl_payload)
 

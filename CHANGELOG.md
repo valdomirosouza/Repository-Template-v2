@@ -13,6 +13,37 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **B4 — Self-Reflection & Auto-Correction** (`specs/ai/harness-design.md §9`):
+  - `src/agents/harness/decision_tree_logger.py`: `DecisionTreeLogger` records every
+    branching decision made during sprint execution to the immutable audit log
+    (`action = "decision_bifurcation"`), enabling post-hoc decision tree reconstruction
+  - `src/agents/harness/models.py`: added `DecisionPoint`, `PatchProposal`, and
+    `ExecutionSummary` dataclasses
+  - `src/agents/harness/coordinator.py`: integrated `DecisionTreeLogger` into `_run_sprint`;
+    generates a `PatchProposal` via LLM self-reflection after
+    `harness_patch_proposal_threshold` (default: 2) consecutive failures; produces an
+    `ExecutionSummary` at sprint completion (pass or HITL escalation); includes
+    `ExecutionSummary` in HITL escalation payload for human reviewers
+  - `src/shared/config.py`: added `harness_patch_proposal_threshold: int = 2`
+  - `tests/unit/agents/harness/test_decision_tree_logger.py`: 11 tests (decision logging,
+    audit persistence, copy semantics, failure propagation)
+  - `tests/unit/agents/harness/test_coordinator_reflection.py`: 17 tests (decision
+    logging per iteration, PatchProposal threshold, ExecutionSummary on pass and
+    escalation, HITL payload attachment, failures list cap)
+
+- **B1 — Granular Autonomy Levels** (`specs/ai/autonomous-mode-levels.md`, ADR-0015 rev):
+  - `src/shared/feature_flags.py`: `get_autonomy_level(action_type, risk_score) → AutonomyLevel`
+    with 5 graduated levels: FULL → MEDIUM_RISK → LOW_RISK → TESTS_ONLY → READ_ONLY → NONE
+  - Five new flagd flag definitions in `infrastructure/feature-flags/flags/`
+  - `tests/unit/shared/test_feature_flags.py`: 28 tests (was 6)
+
+- **B2 — Agent Supervision Dashboard** (`specs/observability/agent-supervision.md`):
+  - `infrastructure/monitoring/grafana/dashboards/agent-supervision.json`: 11-panel Grafana
+    dashboard (Active HITL Queue, HITL by Agent, Approval/Rejection Rate, Wait Time p50/p99,
+    Action Latency, LLM Token Budget, Autonomous Resolution Rate, Jaeger trace deep-link)
+
 ---
 
 ## [1.2.1] - 2026-05-26

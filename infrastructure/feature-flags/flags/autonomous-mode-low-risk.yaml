@@ -1,0 +1,8 @@
+flags:
+  autonomous-mode-low-risk:
+    state: DISABLED
+    variants:
+      "on": true
+      "off": false
+    defaultVariant: "off"
+    targeting: {}

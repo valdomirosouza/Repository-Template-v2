@@ -341,8 +341,85 @@ harness_total_cost_usd                                   gauge
 | Context manager     | `src/agents/harness/context_manager.py`      |
 | Planner agent       | `src/agents/harness/planner.py`              |
 | Evaluator agent     | `src/agents/harness/evaluator.py`            |
+| Decision logger     | `src/agents/harness/decision_tree_logger.py` |
 | Harness coordinator | `src/agents/harness/coordinator.py`          |
 | Harness skill       | `skills/ai/harness.md`                       |
 | Config fields       | `src/shared/config.py` (harness\_\* fields)  |
 | Unit tests          | `tests/unit/agents/harness/`                 |
 | Integration tests   | `tests/integration/test_harness_pipeline.py` |
+
+---
+
+## 9. Self-Reflection & Auto-Correction
+
+When repeated evaluator failures signal a systematic implementation error, the harness
+applies structured self-reflection before the final retry — avoiding pure repetition
+of the same failed approach.
+
+### 9.1 Decision Tree Logging
+
+Every branching decision made during sprint execution is recorded as a `DecisionPoint`
+and written to the audit log via `DecisionTreeLogger`:
+
+```python
+@dataclass
+class DecisionPoint:
+    decision_point: str           # identifier for this choice (e.g. "generation_strategy_iteration_2")
+    options_considered: list[str] # alternatives that were evaluated
+    option_chosen: str            # the selected option
+    rationale: str                # why this option was chosen
+```
+
+Decision points are logged with `action = "decision_bifurcation"` and `event_type =
+"agent.decision.bifurcation"` in the audit log, enabling post-hoc reconstruction of
+the full decision tree for any sprint.
+
+All decisions accumulated during a sprint are included in the `ExecutionSummary`.
+
+### 9.2 Patch Proposal
+
+After `harness_patch_proposal_threshold` consecutive failures (default: 2), the
+coordinator invokes a structured LLM self-reflection step that produces a `PatchProposal`:
+
+```python
+@dataclass
+class PatchProposal:
+    sprint_id: str
+    iteration: int
+    previous_approach_summary: str  # one-sentence summary of what failed
+    proposed_alternative: str       # concrete different approach
+    reasoning: str                  # why this alternative should succeed
+```
+
+The `PatchProposal` is injected into the next `_generate()` call alongside the
+evaluator feedback, giving the generator an explicitly different angle to try before
+the harness escalates to HITL.
+
+**Threshold config:** `settings.harness_patch_proposal_threshold` (default: `2`).
+Set to `0` to disable patch proposals (fallback to standard feedback-only retry).
+
+### 9.3 Execution Summary
+
+At the end of every sprint — whether it passes or escalates to HITL — the coordinator
+produces an `ExecutionSummary`:
+
+```python
+@dataclass
+class ExecutionSummary:
+    task_id: str
+    sprint_id: str
+    total_iterations: int
+    failures: list[str]             # one entry per failed iteration
+    patch_proposals_applied: int
+    final_score: EvaluatorScore | None
+    decisions: list[DecisionPoint]  # full decision tree for the sprint
+    generated_at: str               # ISO8601 UTC
+```
+
+The summary is:
+
+1. Logged via `audit_logger` with `action = "sprint_execution_summary"` (always).
+2. Included in the HITL escalation payload so the human reviewer sees the full
+   iteration history, all decision points, and which patch proposals were applied.
+
+**Audit invariant:** `_log_execution_summary()` is called before `_escalate_to_hitl()`.

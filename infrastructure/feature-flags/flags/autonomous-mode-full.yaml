@@ -1,0 +1,10 @@
+flags:
+  autonomous-mode-full:
+    # GOVERNANCE REQUIREMENT: enabling this flag bypasses HITL for ALL actions.
+    # Requires dual approval: AI Governance Lead + Security Lead (ADR-0015).
+    state: DISABLED
+    variants:
+      "on": true
+      "off": false
+    defaultVariant: "off"
+    targeting: {}

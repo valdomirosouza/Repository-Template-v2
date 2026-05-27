@@ -85,7 +85,29 @@ ensures the application remains functional without flagd running.
 
 ## Implementation Reference
 
-- `src/shared/feature_flags.py` — `is_autonomous_mode_enabled()` using OpenFeature SDK
-- `infrastructure/feature-flags/flags/autonomous-mode.yaml` — flag definition
+- `src/shared/feature_flags.py` — `is_autonomous_mode_enabled()` (legacy) and `get_autonomy_level()` (graduated)
+- `infrastructure/feature-flags/flags/autonomous-mode.yaml` — legacy flag definition
 - `infrastructure/feature-flags/flagd.yaml` — k8s Deployment + Service for flagd
 - `tests/unit/shared/test_feature_flags.py` — tests using `InMemoryProvider`
+
+---
+
+## Revision — Granular Autonomy Levels (2026-05-26)
+
+**Motivation:** The single `autonomous-mode` boolean proved too coarse — teams needed to
+grant read-only or test-only autonomy without enabling full write/deploy autonomy.
+
+**Change:** Added five graduated flags evaluated in priority order by `get_autonomy_level()`.
+The legacy `autonomous-mode` flag and `is_autonomous_mode_enabled()` are preserved unchanged.
+
+| Flag                          | Default  | Condition              | Effect                           |
+| ----------------------------- | -------- | ---------------------- | -------------------------------- |
+| `autonomous-mode-full`        | DISABLED | Any                    | No HITL — dual approval required |
+| `autonomous-mode-medium-risk` | DISABLED | `risk_score ≤ 0.7`     | HOTL monitoring                  |
+| `autonomous-mode-low-risk`    | DISABLED | `risk_score < 0.3`     | No HITL                          |
+| `autonomous-mode-tests-only`  | DISABLED | Test action types      | No HITL for tests                |
+| `autonomous-mode-read-only`   | DISABLED | Read-only action types | No HITL for reads                |
+
+**Spec:** `specs/ai/autonomous-mode-levels.md`
+**Governance:** Enabling any flag above `read-only` requires AI Governance Lead approval.
+`full` additionally requires Security Lead approval (dual approval unchanged from original ADR).
