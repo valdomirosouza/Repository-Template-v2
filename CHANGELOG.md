@@ -13,7 +13,34 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Changed
+
+- **Repository generalised from "Enterprise AI Monorepo" to "Enterprise Monorepo Template"**:
+  AI/agent capabilities are now an explicit opt-in extension rather than a core assumption.
+  - `README.md`, `pyproject.toml`, `MONOREPO-STRUCTURE-EN.md`: titles and descriptions updated
+  - `CLAUDE.md §1`: identity reframed as generic enterprise engineer; AI governance role marked conditional
+  - `CLAUDE.md §3.3`: AI Governance Rules wrapped with "only when AI Agents Module is enabled" gate
+  - `CLAUDE.md §4`: Skill table split into Core Skills and AI Agents Module Skills (opt-in)
+  - `CLAUDE.md §7–8`: PR checklist and file ownership table updated to mark AI-specific items conditional
+  - `docs/adr/README.md`: ADR index split into "Core Architecture" and "AI Agents Module (opt-in)" groups
+  - `specs/system/architecture.md`: Principle 5 (HITL) reframed as conditional on AI Agents Module
+  - `src/api/rest/main.py`: FastAPI title/description updated; HITL router annotated as optional
+  - `services.yaml`: api-gateway AI-module ADR references annotated as conditional
+  - `infrastructure/feature-flags/README.md`: noted as AI Agents Module dependency
+
 ### Added
+
+- **`docs/optional-extensions/ai-agents/README.md`** (new): canonical activation and removal
+  checklist for the AI Agents Module extension
+- **`docs/quickstart/ai-agents.md`** (new): step-by-step guide for HITL gateway, guardrails,
+  harness mode, and autonomous-mode feature flags
+- **`src/agents/README.md`** (new): module boundary documentation with governance rules and
+  removal instructions
+- **`specs/ai/README.md`** (new): scope marker clarifying that AI specs only apply when the
+  module is enabled
+- **`docs/ai-governance/README.md`** (new): optional marker with governance contacts table
+
+### Added (cont. — Wave 2 security)
 
 - **Database encryption at rest** (`src/shared/db_encryption.py`): AES-256-GCM
   field-level encryption for L1/L2 PII columns; `enc:v1:<base64>` wire format with
