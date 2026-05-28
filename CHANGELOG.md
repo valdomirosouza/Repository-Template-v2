@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+---
+
+## [1.7.0] — 2026-05-28
+
 ### Added
 
 - **`infrastructure/helm/api-gateway/`** — Helm chart for the API Gateway (Wave 2.1).
