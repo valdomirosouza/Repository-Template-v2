@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     # ── Redis ─────────────────────────────────────────────────────────────────
     redis_url: str = "redis://:placeholder-set-in-env@localhost:6379/0"
     redis_max_connections: int = 50
+    # TLS settings for Redis connections (ADR-0019).
+    # In production: set redis_tls_enabled=True and use rediss:// URL scheme.
+    redis_tls_enabled: bool = False
+    redis_tls_ca_cert: str = ""  # path to CA cert file; empty = use system CAs
 
     # ── Kafka ─────────────────────────────────────────────────────────────────
     kafka_bootstrap_servers: str = "localhost:9092"
@@ -105,6 +109,13 @@ class Settings(BaseSettings):
     allowed_origins: list[str] = ["http://localhost:3000"]
     rate_limit_requests_per_minute: int = 60
 
+    # ── Database Encryption at Rest (ADR-0018) ────────────────────────────────
+    # 64 hex characters = 32 bytes = AES-256 key.
+    # Generate: python -c "import secrets; print(secrets.token_hex(32))"
+    # In production this must come from Vault (ADR-0008); never commit a real key.
+    db_encryption_key: str = "placeholder-set-in-env"
+    db_encryption_enabled: bool = True  # set False only in local dev without Vault
+
     # ── Privacy ───────────────────────────────────────────────────────────────
     pii_masking_enabled: bool = True
     pii_audit_log_enabled: bool = True
@@ -149,6 +160,16 @@ class Settings(BaseSettings):
                     "SECRET_KEY must be at least 32 characters when using HS256. "
                     "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\". "
                     "Consider RS256 with asymmetric keys for stronger security."
+                )
+            if self.db_encryption_enabled and "placeholder" in self.db_encryption_key.lower():
+                raise ValueError(
+                    "DB_ENCRYPTION_KEY must be set via environment variable in production. "
+                    "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                )
+            if not self.redis_tls_enabled and not self.redis_url.startswith("rediss://"):
+                raise ValueError(
+                    "Redis TLS is required in production. "
+                    "Set REDIS_TLS_ENABLED=true and use a rediss:// URL (ADR-0019)."
                 )
         return self
 

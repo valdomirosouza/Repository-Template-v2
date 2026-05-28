@@ -1,14 +1,14 @@
-# Ideal Monorepo Structure — Enterprise AI-Powered Systems
+# Ideal Monorepo Structure — Enterprise Systems
 
-> **Template version:** 2.0.0  
-> **Last updated:** 2026-05-24  
-> **Scope:** Generic enterprise monorepo for AI-powered and Agentic AI systems
+> **Template version:** 2.0.0
+> **Last updated:** 2026-05-28
+> **Scope:** Generic enterprise monorepo template; AI/agent capabilities are an optional opt-in extension
 
 ---
 
 ## Executive Summary
 
-This document defines the ideal monorepo structure for **enterprise-grade, AI-powered systems** — including systems that incorporate Agentic AI, autonomous agents, LLM-based pipelines, and human-in-the-loop workflows.
+This document defines the ideal monorepo structure for **enterprise-grade systems** — including standard microservice backends, event-driven platforms, and optionally systems that incorporate Agentic AI, autonomous agents, LLM-based pipelines, and human-in-the-loop workflows.
 
 The template covers all dimensions of a modern, scalable, reliable, and secure software product:
 
@@ -31,15 +31,15 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 | **Feature Flags**        | Progressive delivery, A/B testing, autonomous-mode toggles, safe LLM model rollouts                        |
 | **FinOps**               | LLM token cost attribution, infrastructure cost per SLO met, budget alerts, cost-per-agent-action tracking |
 
-> **AI & Agentic AI note:** Every AI-governed component — LLM pipelines, autonomous agents,
-> multi-agent orchestration, or any system with delegated decision-making — must comply with
-> the AI Governance pillar (Section 9) and its associated ADRs, specs, guardrails, and HITL/HOTL controls.
+> **AI & Agentic AI (opt-in):** If your project includes AI-governed components — LLM pipelines,
+> autonomous agents, multi-agent orchestration, or any system with delegated decision-making — enable
+> the AI Agents extension (see `docs/optional-extensions/ai-agents/README.md`). All AI components must
+> comply with the AI Governance pillar (Section 9) and its associated ADRs, specs, guardrails, and HITL/HOTL controls.
 
 > **Privacy note:** Any system that processes personal data — regardless of volume — must
-> comply with the Data Privacy pillar (Section 10). This includes PII masking before LLM
-> ingestion, LGPD obligations for Brazilian data subjects, GDPR obligations for EU data
-> subjects, and DPIA/RIPD completion before any production release that handles real
-> personal data.
+> comply with the Data Privacy pillar (Section 10). This includes LGPD obligations for Brazilian data subjects,
+> GDPR obligations for EU data subjects, and DPIA/RIPD completion before any production release that handles
+> real personal data. When AI agents are enabled, PII masking before LLM ingestion is also mandatory.
 
 ---
 

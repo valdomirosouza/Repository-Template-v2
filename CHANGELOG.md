@@ -13,6 +13,84 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Changed
+
+- **Repository generalised from "Enterprise AI Monorepo" to "Enterprise Monorepo Template"**:
+  AI/agent capabilities are now an explicit opt-in extension rather than a core assumption.
+  - `README.md`, `pyproject.toml`, `MONOREPO-STRUCTURE-EN.md`: titles and descriptions updated
+  - `CLAUDE.md §1`: identity reframed as generic enterprise engineer; AI governance role marked conditional
+  - `CLAUDE.md §3.3`: AI Governance Rules wrapped with "only when AI Agents Module is enabled" gate
+  - `CLAUDE.md §4`: Skill table split into Core Skills and AI Agents Module Skills (opt-in)
+  - `CLAUDE.md §7–8`: PR checklist and file ownership table updated to mark AI-specific items conditional
+  - `docs/adr/README.md`: ADR index split into "Core Architecture" and "AI Agents Module (opt-in)" groups
+  - `specs/system/architecture.md`: Principle 5 (HITL) reframed as conditional on AI Agents Module
+  - `src/api/rest/main.py`: FastAPI title/description updated; HITL router annotated as optional
+  - `services.yaml`: api-gateway AI-module ADR references annotated as conditional
+  - `infrastructure/feature-flags/README.md`: noted as AI Agents Module dependency
+
+### Added
+
+- **`docs/optional-extensions/ai-agents/README.md`** (new): canonical activation and removal
+  checklist for the AI Agents Module extension
+- **`docs/quickstart/ai-agents.md`** (new): step-by-step guide for HITL gateway, guardrails,
+  harness mode, and autonomous-mode feature flags
+- **`src/agents/README.md`** (new): module boundary documentation with governance rules and
+  removal instructions
+- **`specs/ai/README.md`** (new): scope marker clarifying that AI specs only apply when the
+  module is enabled
+- **`docs/ai-governance/README.md`** (new): optional marker with governance contacts table
+
+### Added (cont. — Wave 2 security)
+
+- **Database encryption at rest** (`src/shared/db_encryption.py`): AES-256-GCM
+  field-level encryption for L1/L2 PII columns; `enc:v1:<base64>` wire format with
+  version prefix for zero-downtime key rotation; plaintext passthrough for rolling
+  migration; production guard in `Settings.reject_placeholder_secrets` (ADR-0018,
+  SPEC-db-encryption-at-rest)
+- **`PostgresVectorStore` encryption integration**: optional `EncryptedField`
+  dependency encrypts `content` on write and decrypts on read (`src/memory/vector_store.py`)
+- **Alembic migration 0002** (`enable_pgcrypto_vector`): enables `pgcrypto` and
+  `vector` PostgreSQL extensions
+- **Alembic migration 0003** (`create_agent_memory_documents`): creates
+  `agent_memory_documents` table with IVFFlat index for cosine similarity search
+- **`DB_ENCRYPTION_KEY` config** (`src/shared/config.py`): new `db_encryption_key`
+  and `db_encryption_enabled` settings; `.env.example` updated with generation instructions
+- **`cryptography>=42.0.0`** added as explicit dependency (`pyproject.toml`)
+
+### Fixed
+
+- **SQL injection** in `PostgresVectorStore._SEARCH`: `source_filter` was interpolated
+  directly into the SQL string; replaced with two separate parameterised queries
+  (`_SEARCH_ALL`, `_SEARCH_FILTERED`) using asyncpg `$3` binding (ADR-0018 §SQL
+  Injection Fix)
+
+### Added (cont.)
+
+- **Redis TLS connection support** (`src/api/rest/main.py`): `REDIS_TLS_ENABLED` and
+  `REDIS_TLS_CA_CERT` settings wire TLS into `redis.asyncio.from_url`; production
+  startup blocked when TLS is disabled (ADR-0019, SPEC-redis-tls)
+- **HITLRedisStore value encryption** (`src/agents/hitl_store.py`): full JSON payload
+  encrypted with AES-256-GCM via optional `EncryptedField` dependency; passthrough
+  path for unencrypted legacy rows; 11 new unit tests
+- **K8s Ingress TLS** (`infrastructure/k8s/ingress.yaml`): HTTPS termination via
+  cert-manager + Let's Encrypt, HSTS, HTTP→HTTPS redirect, security headers,
+  per-IP rate limiting; `ClusterIssuer` manifests for prod and staging
+- **Certificate rotation runbook** (`docs/sre/runbooks/cert-rotation.md`): routine
+  renewal, manual rotation, emergency revocation, encryption key rotation procedures;
+  alert thresholds and escalation matrix
+- **PRR-SEC-005 to PRR-SEC-008** (`docs/sre/prr/prr-checklist.yaml`): TLS
+  verification, `DB_ENCRYPTION_KEY` in Vault, key rotation schedule, cert expiry check
+- **ADR-0019** (`docs/adr/ADR-0019-redis-tls-value-encryption.md`): Redis TLS and
+  value encryption architectural decision
+
+### Changed
+
+- **CLAUDE.md §3.2**: four new inviolable security rules — TLS 1.2+ for all
+  endpoints, `EncryptedField` for L1/L2 PII at rest, no unencrypted HITL payloads
+  in Redis, production startup validation
+- **`skills/sre/prr.md`**: three new PRR blockers — TLS verification, encryption key,
+  certificate expiry
+
 ---
 
 ## [1.4.1] - 2026-05-28

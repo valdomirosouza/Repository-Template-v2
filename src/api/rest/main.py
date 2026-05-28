@@ -15,6 +15,7 @@ from contextlib import asynccontextmanager
 import asyncpg
 import redis.asyncio as redis_async
 from fastapi import FastAPI
+from src.shared.db_encryption import EncryptedField
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import make_asgi_app
 from slowapi import _rate_limit_exceeded_handler
@@ -64,13 +65,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         logger.warning("DB pool creation failed — readiness will return 503: %s", exc)
         app.state.db_pool = None
 
-    # Initialize Redis client (5 s ping timeout)
+    # Initialize Redis client with optional TLS (ADR-0019).
+    # TLS is enabled when REDIS_TLS_ENABLED=true or the URL uses rediss:// scheme.
     try:
-        _redis_client = redis_async.from_url(
-            settings.redis_url,
-            max_connections=settings.redis_max_connections,
-            decode_responses=True,
-        )
+        _redis_kwargs: dict[str, object] = {
+            "max_connections": settings.redis_max_connections,
+            "decode_responses": True,
+        }
+        if settings.redis_tls_enabled or settings.redis_url.startswith("rediss://"):
+            _redis_kwargs["ssl"] = True
+            if settings.redis_tls_ca_cert:
+                _redis_kwargs["ssl_ca_certs"] = settings.redis_tls_ca_cert
+        _redis_client = redis_async.from_url(settings.redis_url, **_redis_kwargs)
         await asyncio.wait_for(_redis_client.ping(), timeout=5.0)
         app.state.redis = _redis_client
     except Exception as exc:
@@ -115,8 +121,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
     # HITL gateway — Redis-backed when available; in-memory fallback for local dev.
     # Production pods must always have Redis available (see RB-003-hitl-recovery.md).
+    # Payloads are AES-256-GCM encrypted at rest when db_encryption_enabled=True (ADR-0019).
     if app.state.redis is not None:
-        hitl_store = HITLRedisStore(client=app.state.redis)
+        _hitl_encryption = (
+            EncryptedField(settings.db_encryption_key)
+            if settings.db_encryption_enabled
+            and "placeholder" not in settings.db_encryption_key.lower()
+            else None
+        )
+        hitl_store = HITLRedisStore(client=app.state.redis, encryption=_hitl_encryption)
     else:
         hitl_store = InMemoryHITLStore()
     app.state.hitl_gateway = HITLGateway(
@@ -165,9 +178,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
 
 app = FastAPI(
-    title="Enterprise AI System",
+    title="Enterprise API Gateway",
     version="0.1.0",
-    description="Production-ready AI-powered system with HITL oversight.",
+    description="Production-ready FastAPI gateway with optional AI Agents extension.",
     docs_url="/docs" if settings.app_env != "production" else None,
     redoc_url=None,
     lifespan=lifespan,
@@ -190,4 +203,5 @@ app.mount("/metrics", make_asgi_app())
 
 app.include_router(health.router)
 app.include_router(requests.router, prefix="/v1")
+# AI Agents Module — remove this router if src/agents/ is deleted
 app.include_router(hitl.router, prefix="/v1/hitl")

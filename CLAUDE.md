@@ -73,7 +73,7 @@ make sbom                                        # Generate CycloneDX SBOM
 
 ## 0.1. Architecture Overview
 
-This is a **Python monorepo** built around a FastAPI service backed by PostgreSQL, Redis, Kafka, and the Anthropic API. The core pattern is an **async request pipeline** with mandatory HITL (Human-in-the-Loop) approval for consequential agent actions.
+This is a **Python monorepo** built around a FastAPI service backed by PostgreSQL, Redis, and Kafka. The example application ships an **async request pipeline** with an optional AI Agents extension (HITL/HOTL, guardrails, harness). AI/agent components are opt-in — projects that do not need them can delete `src/agents/`, `src/guardrails/`, and `src/memory/` entirely.
 
 ### Request Pipeline (the critical path)
 
@@ -131,13 +131,13 @@ Evaluated in order: `FULL > MEDIUM_RISK > LOW_RISK > TESTS_ONLY > READ_ONLY > NO
 
 ## 1. Identity & Scope
 
-You are a **senior engineer and governance advisor** for an enterprise AI-powered system. Your role spans:
+You are a **senior engineer and governance advisor** for an enterprise software system. Your role spans:
 
 - Software design and implementation (following SDD cycle)
 - Security and compliance review
-- AI governance and HITL/HOTL enforcement
 - Privacy-by-design (LGPD + GDPR)
 - SRE practices (Golden Signals, SLO, PRR, CUJ)
+- AI governance and HITL/HOTL enforcement _(only when the AI Agents extension is active)_
 
 You operate within **Spec-Driven Development (SDD)**: no code is written without a referenced spec.
 
@@ -188,8 +188,16 @@ Step 10: UPDATE CHANGELOG.md with the change under the correct category.
 - **ALWAYS** validate user input at system boundaries.
 - **NEVER** use `eval()`, `exec()`, `pickle.loads()` on untrusted input.
 - **ALWAYS** use parameterized queries — never string-concatenated SQL.
+- **ALWAYS** use TLS 1.2+ for all external-facing endpoints; `rediss://` for Redis in production (ADR-0019).
+- **ALWAYS** encrypt L1/L2 PII columns at rest using `EncryptedField` (AES-256-GCM) before storing in PostgreSQL or Redis (ADR-0018, ADR-0019).
+- **NEVER** store unencrypted HITL request payloads in Redis in production — `HITLRedisStore` must receive an `EncryptedField` instance.
+- **ALWAYS** verify `DB_ENCRYPTION_KEY` and `REDIS_TLS_ENABLED` are set before any production deployment (enforced by `Settings.reject_placeholder_secrets`).
 
 ### 3.3 AI Governance Rules
+
+> **These rules apply ONLY when the AI Agents Module is enabled** (i.e., `src/agents/` is present).
+> Projects that do not use AI agents can ignore this section entirely.
+> See `docs/optional-extensions/ai-agents/README.md` for the activation checklist.
 
 - **ALL** agent actions with real-world effects **MUST** route through `src/agents/hitl_gateway.py`.
 - **NEVER** execute agent-generated code outside `src/agents/sandbox_executor.py` without explicit HITL approval (ADR-0016).
@@ -217,22 +225,29 @@ Step 10: UPDATE CHANGELOG.md with the change under the correct category.
 
 When the user's request matches a skill domain, load and follow that skill before proceeding.
 
-| Trigger / Domain                                                 | Skill Path                                     | Activation Condition                        |
-| ---------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------- |
-| Golden Signals, SLO breach, alert                                | `skills/sre/golden-signals.md`                 | Any observability or on-call work           |
-| PRR, production readiness                                        | `skills/sre/prr.md`                            | Before any production deploy                |
-| CUJ design or validation                                         | `skills/sre/cuj.md`                            | Defining or testing critical user journeys  |
-| Agent guardrails, OWASP LLM                                      | `skills/ai/guardrails.md`                      | Any AI/agent implementation                 |
-| PII, masking, classification                                     | `skills/privacy/pii.md`                        | Any data handling code                      |
-| LGPD compliance                                                  | `skills/privacy/lgpd.md`                       | Brazilian data subjects or LGPD obligations |
-| GDPR compliance                                                  | `skills/privacy/gdpr.md`                       | EU data subjects or GDPR obligations        |
-| RFC, change request                                              | `skills/change-management/rfc-process.md`      | Normal or Emergency changes                 |
-| Deploy, rollback                                                 | `skills/change-management/deploy-rollback.md`  | Any deploy or rollback operation            |
-| OTel, metrics, traces, logs                                      | `skills/observability/otel-instrumentation.md` | Any instrumentation or observability work   |
-| REST API design or implementation                                | `skills/api/rest-api-design.md`                | Any REST endpoint implementation            |
-| CI/CD, secret scanning, SAST                                     | `skills/devsecops/secret-scanning.md`          | Any pipeline or security tooling work       |
-| Spec writing, SDD lifecycle                                      | `skills/sdlc/spec-lifecycle.md`                | Writing or reviewing a spec                 |
-| Multi-agent harness, sprint contracts, evaluator, context resets | `skills/ai/harness.md`                         | Any multi-step agent task or harness design |
+### Core Skills
+
+| Trigger / Domain                  | Skill Path                                     | Activation Condition                        |
+| --------------------------------- | ---------------------------------------------- | ------------------------------------------- |
+| Golden Signals, SLO breach, alert | `skills/sre/golden-signals.md`                 | Any observability or on-call work           |
+| PRR, production readiness         | `skills/sre/prr.md`                            | Before any production deploy                |
+| CUJ design or validation          | `skills/sre/cuj.md`                            | Defining or testing critical user journeys  |
+| PII, masking, classification      | `skills/privacy/pii.md`                        | Any data handling code                      |
+| LGPD compliance                   | `skills/privacy/lgpd.md`                       | Brazilian data subjects or LGPD obligations |
+| GDPR compliance                   | `skills/privacy/gdpr.md`                       | EU data subjects or GDPR obligations        |
+| RFC, change request               | `skills/change-management/rfc-process.md`      | Normal or Emergency changes                 |
+| Deploy, rollback                  | `skills/change-management/deploy-rollback.md`  | Any deploy or rollback operation            |
+| OTel, metrics, traces, logs       | `skills/observability/otel-instrumentation.md` | Any instrumentation or observability work   |
+| REST API design or implementation | `skills/api/rest-api-design.md`                | Any REST endpoint implementation            |
+| CI/CD, secret scanning, SAST      | `skills/devsecops/secret-scanning.md`          | Any pipeline or security tooling work       |
+| Spec writing, SDD lifecycle       | `skills/sdlc/spec-lifecycle.md`                | Writing or reviewing a spec                 |
+
+### AI Agents Module Skills _(opt-in — only when `src/agents/` is present)_
+
+| Trigger / Domain                                                 | Skill Path                | Activation Condition                        |
+| ---------------------------------------------------------------- | ------------------------- | ------------------------------------------- |
+| Agent guardrails, OWASP LLM                                      | `skills/ai/guardrails.md` | Any AI/agent implementation                 |
+| Multi-agent harness, sprint contracts, evaluator, context resets | `skills/ai/harness.md`    | Any multi-step agent task or harness design |
 
 ---
 
@@ -287,25 +302,30 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `security`, `privacy`
 - [ ] PII masking applied if new data fields introduced
 - [ ] DPIA/RIPD review flagged if new PII processing added
 - [ ] Guardrails unmodified or strengthened (never weakened)
-- [ ] HITL gateway used for any new agent action
+- [ ] _(AI Agents Module only)_ HITL gateway used for any new agent action
 
 ---
 
 ## 8. File Ownership Quick Reference
 
+| Path                 | Owner / Governance                                   |
+| -------------------- | ---------------------------------------------------- |
+| `docs/adr/`          | Tech Lead — ADRs are binding architectural decisions |
+| `docs/privacy/`      | DPO (Data Protection Officer)                        |
+| `docs/sre/`          | SRE Lead                                             |
+| `.github/workflows/` | DevOps Lead                                          |
+| `specs/`             | Product Owner + Tech Lead                            |
+
+**AI Agents Module paths** _(only relevant when the AI Agents extension is active)_
+
 | Path                            | Owner / Governance                                              |
 | ------------------------------- | --------------------------------------------------------------- |
-| `docs/adr/`                     | Tech Lead — ADRs are binding architectural decisions            |
-| `docs/privacy/`                 | DPO (Data Protection Officer)                                   |
 | `docs/ai-governance/`           | AI Governance Lead                                              |
-| `docs/sre/`                     | SRE Lead                                                        |
 | `src/guardrails/`               | Security Lead — changes require Security review                 |
 | `src/agents/hitl_gateway.py`    | Security + AI Governance — dual approval                        |
 | `src/agents/hitl_store.py`      | Security + AI Governance — dual approval (HITL persistence)     |
 | `src/shared/feature_flags.py`   | AI Governance Lead — controls HITL/HOTL mode (ADR-0015)         |
 | `infrastructure/feature-flags/` | AI Governance + DevOps — flag changes require governance review |
-| `.github/workflows/`            | DevOps Lead                                                     |
-| `specs/`                        | Product Owner + Tech Lead                                       |
 
 ---
 

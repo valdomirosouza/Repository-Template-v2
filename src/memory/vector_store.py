@@ -1,7 +1,7 @@
 """VectorStore — semantic similarity search for agent memory.
 
 Spec: specs/ai/agent-memory.md §3.1
-ADR:  ADR-0017 (Agent Memory Architecture)
+ADR:  ADR-0017 (Agent Memory Architecture), ADR-0018 (Database Encryption at Rest)
 DPIA: docs/privacy/dpia/dpia-agent-memory.md
 
 PRIVACY INVARIANT: content passed to upsert() MUST be pii_filter-masked by the
@@ -11,6 +11,8 @@ the call site (DocumentIndexer, BugHistoryStore).
 Two implementations:
   InMemoryVectorStore  — cosine similarity; no external deps; for tests and local dev
   PostgresVectorStore  — pgvector extension; production use only
+                         Accepts an optional EncryptedField for AES-256-GCM at-rest
+                         encryption of the content column (ADR-0018).
 """
 
 from __future__ import annotations
@@ -25,6 +27,8 @@ from src.observability.logger import get_logger
 
 if TYPE_CHECKING:
     import asyncpg
+
+    from src.shared.db_encryption import EncryptedField
 
 logger = get_logger("memory.vector_store")
 
@@ -149,11 +153,16 @@ class InMemoryVectorStore:
 class PostgresVectorStore:
     """Production vector store backed by PostgreSQL + pgvector.
 
-    Requires the `vector` extension and the `agent_memory_documents` table
-    (see Alembic migration 0002_create_agent_memory_documents).
+    Requires migration 0002 (pgcrypto + vector extensions) and migration 0003
+    (agent_memory_documents table).
 
     Spec: specs/ai/agent-memory.md §3.1
-    ADR:  ADR-0017
+    ADR:  ADR-0017, ADR-0018 (Database Encryption at Rest)
+
+    Pass an EncryptedField instance to enable AES-256-GCM at-rest encryption
+    of the content column. When encryption is None the store operates without
+    encryption — only valid for local dev (blocked in app_env=production by
+    Settings.reject_placeholder_secrets).
     """
 
     _UPSERT = """
@@ -166,26 +175,43 @@ class PostgresVectorStore:
                 tags = EXCLUDED.tags
     """
 
-    _SEARCH = """
+    # Two separate parameterised queries — source_filter is $3 when present.
+    # Never interpolate source_filter into the SQL string (SQL injection risk).
+    _SEARCH_ALL = """
         SELECT id, content, embedding::text, source, tags, created_at
         FROM agent_memory_documents
-        {where}
+        ORDER BY embedding <=> $1::vector
+        LIMIT $2
+    """
+
+    _SEARCH_FILTERED = """
+        SELECT id, content, embedding::text, source, tags, created_at
+        FROM agent_memory_documents
+        WHERE source = $3
         ORDER BY embedding <=> $1::vector
         LIMIT $2
     """
 
     _DELETE = "DELETE FROM agent_memory_documents WHERE id = $1"
 
-    def __init__(self, pool: asyncpg.Pool) -> None:
+    def __init__(
+        self,
+        pool: asyncpg.Pool,
+        encryption: EncryptedField | None = None,
+    ) -> None:
         self._pool = pool
+        self._encryption = encryption
 
     async def upsert(self, doc: VectorDocument) -> str:
+        content = (
+            self._encryption.encrypt(doc.content) if self._encryption else doc.content
+        )
         embedding_str = f"[{','.join(str(x) for x in doc.embedding)}]"
         async with self._pool.acquire() as conn:
             await conn.execute(
                 self._UPSERT,
                 doc.id,
-                doc.content,
+                content,
                 embedding_str,
                 doc.source,
                 doc.tags,
@@ -201,16 +227,20 @@ class PostgresVectorStore:
         source_filter: str | None = None,
     ) -> list[VectorDocument]:
         embedding_str = f"[{','.join(str(x) for x in query_embedding)}]"
-        where = f"WHERE source = '{source_filter}'" if source_filter else ""
-        sql = self._SEARCH.format(where=where)
-
         async with self._pool.acquire() as conn:
-            rows = await conn.fetch(sql, embedding_str, k)
+            if source_filter is not None:
+                rows = await conn.fetch(self._SEARCH_FILTERED, embedding_str, k, source_filter)
+            else:
+                rows = await conn.fetch(self._SEARCH_ALL, embedding_str, k)
 
         return [
             VectorDocument(
                 id=row["id"],
-                content=row["content"],
+                content=(
+                    self._encryption.decrypt(row["content"])
+                    if self._encryption
+                    else row["content"]
+                ),
                 embedding=self._parse_vector(row["embedding"]),
                 source=row["source"],
                 tags=list(row["tags"] or []),
