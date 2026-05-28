@@ -1,8 +1,131 @@
-# CLAUDE.md — Behavioral Contract
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 > **Version:** 2.0.0 | **Last updated:** 2026-05-24
 > This file is the authoritative behavioral contract for Claude Code operating in this repository.
 > Claude must read this file at the start of every session and follow all rules without exception.
+
+---
+
+## 0. Development Commands
+
+### Setup & Infrastructure
+
+```bash
+make setup          # Install deps (uv sync), copy .env, start Docker stack, run DB migrations
+make infra-up       # Start PostgreSQL, Redis, Kafka, OTel, Grafana, flagd
+make infra-down     # Stop infra (preserves volumes)
+make infra-reset    # Stop infra AND wipe all volumes
+```
+
+Copy `.env.example` to `.env` and fill in the `[REQUIRED]` values before running `make setup`.
+
+### Running the API
+
+```bash
+make run            # FastAPI dev server with hot-reload on :8000
+                    # Swagger UI at http://localhost:8000/docs (non-production only)
+                    # Prometheus metrics at http://localhost:8000/metrics
+```
+
+### Testing
+
+```bash
+make test-unit-python       # Unit tests only — no Docker required
+make test-python            # Full suite: unit + integration (requires infra-up)
+make test-security-python   # Guardrail + PII leakage + OWASP-LLM checks
+
+# Run a single test file or test function:
+uv run pytest tests/unit/agents/test_hitl_gateway.py -q
+uv run pytest tests/unit/agents/test_hitl_gateway.py::test_function_name -q
+
+# Integration tests use an offset-port stack (see docker-compose.test.yml):
+make test-infra-up && make test-python && make test-infra-down
+```
+
+Test markers: `unit` (fast, no I/O), `integration` (real services), `security`, `chaos`.
+
+### Linting & Formatting
+
+```bash
+make lint-python    # ruff check + mypy strict + detect-secrets scan
+make format-python  # ruff format (auto-fix)
+```
+
+### Docs & API Contracts
+
+```bash
+make docs-serve     # MkDocs at http://localhost:8000
+make openapi-ui     # Swagger UI for REST spec on :8082
+make asyncapi-ui    # AsyncAPI Studio for event contracts on :8083
+```
+
+### Scaffolding & Utilities
+
+```bash
+make new-service NAME=foo LANG=python|java|go   # Scaffold a new service
+make agent-feedback-check                        # Query Prometheus for HITL bias state
+make sbom                                        # Generate CycloneDX SBOM
+```
+
+---
+
+## 0.1. Architecture Overview
+
+This is a **Python monorepo** built around a FastAPI service backed by PostgreSQL, Redis, Kafka, and the Anthropic API. The core pattern is an **async request pipeline** with mandatory HITL (Human-in-the-Loop) approval for consequential agent actions.
+
+### Request Pipeline (the critical path)
+
+```
+POST /v1/requests
+  └─ requests.py router
+      └─ Creates RequestState (Redis or InMemoryRequestStore)
+      └─ Publishes domain.request.created → Kafka (or InMemoryBroker)
+
+RequestConsumer (asyncio background task in lifespan)
+  └─ Polls request store for QUEUED requests
+      └─ AgentOrchestrator.run_cycle(context)
+          ├─ Perception: PII masking via pii_filter.py
+          ├─ Reason:     LLM call via AnthropicLLMClient (prompt_injection_guard first)
+          └─ Act:        Route through HITLGateway
+                          ├─ HITL (default): block, store request, wait for human decision via POST /v1/hitl/{id}/decide
+                          └─ HOTL (autonomous): execute if autonomy level allows (controlled by feature flags)
+```
+
+### Key Layers
+
+| Layer         | Path                                      | Role                                                                                                    |
+| ------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| API           | `src/api/rest/`                           | FastAPI routers; `/v1/requests`, `/v1/hitl`, `/health`                                                  |
+| Worker        | `src/workers/request_consumer.py`         | Asyncio task that drives the orchestrator                                                               |
+| Orchestrator  | `src/agents/orchestrator/orchestrator.py` | Perception → Reason → Act loop                                                                          |
+| Harness       | `src/agents/harness/`                     | Optional Planner→Generator→Evaluator wrapper (controlled by `harness_mode` setting)                     |
+| Guardrails    | `src/guardrails/`                         | PII filter, prompt injection guard, action limits, audit logger                                         |
+| HITL Gateway  | `src/agents/hitl_gateway.py`              | Approval store + decision routing; **all agent actions with real-world effects must pass through here** |
+| Feature Flags | `src/shared/feature_flags.py`             | OpenFeature/flagd-backed autonomy levels (NONE → LOW_RISK → MEDIUM_RISK → FULL)                         |
+| Config        | `src/shared/config.py`                    | Pydantic Settings; all env vars with documented defaults                                                |
+| Observability | `src/observability/`                      | OTel traces, Prometheus Golden Signals metrics, structured JSON logs                                    |
+
+### Infrastructure Fallback Pattern
+
+Every infrastructure dependency has an in-memory fallback so the app starts cleanly in local dev without a running stack:
+
+- Redis unavailable → `InMemoryHITLStore`, `InMemoryRequestStore`
+- Kafka unavailable → `InMemoryBroker`
+- DB unavailable → `InMemoryAuditStorage` (**blocked in `app_env=production`**)
+
+### Harness Modes (`settings.harness_mode`)
+
+| Mode         | Behaviour                                                                   |
+| ------------ | --------------------------------------------------------------------------- |
+| `solo`       | Direct to `AgentOrchestrator` — no harness overhead                         |
+| `simplified` | Generator + Evaluator loop (no Planner)                                     |
+| `full`       | Planner → sprint decomposition → Generator + Evaluator with self-reflection |
+
+### Autonomy Levels (feature flags in `infrastructure/feature-flags/`)
+
+Evaluated in order: `FULL > MEDIUM_RISK > LOW_RISK > TESTS_ONLY > READ_ONLY > NONE`. Default is `NONE` (all actions require HITL). Enabling `FULL` requires ADR-0015 governance sign-off.
 
 ---
 
