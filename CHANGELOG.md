@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+---
+
+## [1.9.0] — 2026-05-28
+
 ### Added
 
 - **`skills/sre/incident-response.md`** — Incident response skill (Wave 4.1). Severity levels (P0–P3), lifecycle (acknowledge → triage → mitigate → resolve → postmortem), HITL-specific incident procedure, and communication templates.
