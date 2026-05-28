@@ -1962,13 +1962,14 @@ wheels = [
 
 [[package]]
 name = "template-service"
-version = "1.1.0"
+version = "1.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "aiokafka" },
     { name = "alembic" },
     { name = "anthropic" },
     { name = "asyncpg" },
+    { name = "cryptography" },
     { name = "fastapi" },
     { name = "httpx" },
     { name = "openfeature-sdk" },
@@ -2010,6 +2011,7 @@ requires-dist = [
     { name = "anthropic", specifier = ">=0.28.0" },
     { name = "asyncpg", specifier = ">=0.29.0" },
     { name = "bandit", extras = ["toml"], marker = "extra == 'dev'", specifier = ">=1.7.9" },
+    { name = "cryptography", specifier = ">=42.0.0" },
     { name = "detect-secrets", marker = "extra == 'dev'", specifier = ">=1.5.0" },
     { name = "fakeredis", marker = "extra == 'dev'", specifier = ">=2.0.0" },
     { name = "fastapi", specifier = ">=0.115.0" },

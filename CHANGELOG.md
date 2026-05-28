@@ -13,6 +13,30 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **Database encryption at rest** (`src/shared/db_encryption.py`): AES-256-GCM
+  field-level encryption for L1/L2 PII columns; `enc:v1:<base64>` wire format with
+  version prefix for zero-downtime key rotation; plaintext passthrough for rolling
+  migration; production guard in `Settings.reject_placeholder_secrets` (ADR-0018,
+  SPEC-db-encryption-at-rest)
+- **`PostgresVectorStore` encryption integration**: optional `EncryptedField`
+  dependency encrypts `content` on write and decrypts on read (`src/memory/vector_store.py`)
+- **Alembic migration 0002** (`enable_pgcrypto_vector`): enables `pgcrypto` and
+  `vector` PostgreSQL extensions
+- **Alembic migration 0003** (`create_agent_memory_documents`): creates
+  `agent_memory_documents` table with IVFFlat index for cosine similarity search
+- **`DB_ENCRYPTION_KEY` config** (`src/shared/config.py`): new `db_encryption_key`
+  and `db_encryption_enabled` settings; `.env.example` updated with generation instructions
+- **`cryptography>=42.0.0`** added as explicit dependency (`pyproject.toml`)
+
+### Fixed
+
+- **SQL injection** in `PostgresVectorStore._SEARCH`: `source_filter` was interpolated
+  directly into the SQL string; replaced with two separate parameterised queries
+  (`_SEARCH_ALL`, `_SEARCH_FILTERED`) using asyncpg `$3` binding (ADR-0018 §SQL
+  Injection Fix)
+
 ---
 
 ## [1.4.1] - 2026-05-28

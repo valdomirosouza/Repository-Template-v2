@@ -78,3 +78,6 @@ What other options were evaluated and why were they rejected?
 | [ADR-0013](ADR-0013-data-retention-policy.md)             | Data Retention Policy             | Accepted | 2026-05-24 |
 | [ADR-0014](ADR-0014-multi-agent-harness-strategy.md)      | Multi-Agent Harness Strategy      | Accepted | 2026-05-24 |
 | [ADR-0015](ADR-0015-feature-flag-strategy.md)             | Feature Flag Strategy             | Accepted | 2026-05-25 |
+| [ADR-0016](ADR-0016-agent-sandbox-execution-policy.md)    | Agent Sandbox Execution Policy    | Accepted | 2026-05-25 |
+| [ADR-0017](ADR-0017-agent-memory-architecture.md)         | Agent Memory Architecture         | Accepted | 2026-05-27 |
+| [ADR-0018](ADR-0018-db-encryption-at-rest.md)             | Database Encryption at Rest       | Accepted | 2026-05-28 |

@@ -74,6 +74,9 @@ class TestPerceive:
 class TestReason:
     @pytest.mark.asyncio
     async def test_valid_json_populates_action_and_risk(self) -> None:
+        # RiskScorer overrides the LLM-provided risk_score (0.2) with its own
+        # computed score. "send_report" scores 0.7 irreversibility (write-like action)
+        # → 0.35×0.7 + 0.25×0.2 + 0.20×0.1 = 0.315.
         llm_json = json.dumps(
             {"action": "send_report", "parameters": {"to": "team"}, "risk_score": 0.2}
         )
@@ -82,26 +85,30 @@ class TestReason:
         result = await orchestrator.run(raw_input={"request_text": "Generate weekly report"})
 
         assert result["action"] == "send_report"
-        assert result["risk_score"] == pytest.approx(0.2)
+        assert result["risk_score"] == pytest.approx(0.315)
 
     @pytest.mark.asyncio
     async def test_invalid_llm_json_defaults_to_safe_values(self) -> None:
-        # Unparseable LLM output → action="unknown", risk_score=1.0 (treat as high-risk)
+        # Unparseable LLM output → action="unknown". RiskScorer computes 0.245
+        # (unknown action scores 0.5 irreversibility, no external/scale/PII signals).
         orchestrator = _make_orchestrator(llm_response="not valid json {{{{")
 
         result = await orchestrator.run(raw_input={"request_text": "Do something"})
 
         assert result["action"] == "unknown"
-        assert result["risk_score"] == pytest.approx(1.0)
+        assert result["risk_score"] == pytest.approx(0.245)
 
     @pytest.mark.asyncio
-    async def test_missing_risk_score_defaults_to_1_0(self) -> None:
+    async def test_missing_risk_score_uses_risk_scorer(self) -> None:
+        # LLM omits risk_score — RiskScorer computes based on action+parameters.
+        # "test_action" with empty params → 0.5 irreversibility, 0.2 external, 0.1 scale
+        # → 0.35×0.5 + 0.25×0.2 + 0.20×0.1 = 0.245.
         llm_json = json.dumps({"action": "test_action", "parameters": {}})
         orchestrator = _make_orchestrator(llm_response=llm_json)
 
         result = await orchestrator.run(raw_input={"request_text": "Run test"})
 
-        assert result["risk_score"] == pytest.approx(1.0)
+        assert result["risk_score"] == pytest.approx(0.245)
 
     @pytest.mark.asyncio
     async def test_parameters_passed_through_to_result(self) -> None:
