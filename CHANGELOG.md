@@ -15,6 +15,16 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [1.3.1] - 2026-05-27
+
+### Changed
+
+- **CLAUDE.md**: added Section 0 (development commands — setup, run, test, lint, docs) and
+  Section 0.1 (architecture overview — request pipeline, key layers, infrastructure fallback
+  pattern, harness modes, autonomy levels); updated file header to standard Claude Code prefix.
+
+---
+
 ## [1.3.0] - 2026-05-27
 
 ### Added
