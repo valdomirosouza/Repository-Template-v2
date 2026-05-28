@@ -1,7 +1,14 @@
 # System Architecture
 
-**Owner:** Tech Lead | **Last updated:** 2026-05-27
-**ADR references:** ADR-0001, ADR-0002, ADR-0003, ADR-0004, ADR-0010, ADR-0011
+**Owner:** Tech Lead | **Last updated:** 2026-05-28
+**ADR references:** ADR-0001, ADR-0002, ADR-0003, ADR-0004, ADR-0010\*, ADR-0011\*
+
+> **AI Agents Module is opt-in.** The _Agent Runtime_ subgraph (Orchestrator, Harness,
+> Guardrails, HITL Gateway, LLM) is only present when the AI Agents Module is enabled.
+> Projects that do not use AI agents will only have the API Layer, Infra, and Observability
+> subgraphs. See [`docs/optional-extensions/ai-agents/README.md`](optional-extensions/ai-agents/README.md).
+>
+> ADRs marked \* are binding only when the AI Agents Module is active.
 
 ---
 
@@ -22,7 +29,7 @@ graph TD
         flagd[flagd :8013\nOpenFeature Flags]
     end
 
-    subgraph Agent Runtime
+    subgraph Agent Runtime — AI Agents Module opt-in
         Worker[RequestConsumer\nasyncio background task]
         Orch[AgentOrchestrator\nPerception → Reason → Act]
         Harness[HarnessCoordinator\nPlanner / Generator / Evaluator]
@@ -73,7 +80,11 @@ graph TD
 
 ---
 
-## Request Lifecycle (Happy Path)
+## Request Lifecycle (Happy Path — with AI Agents Module enabled)
+
+> This diagram shows the full flow **when the AI Agents Module is active**.
+> Without it, the pipeline ends after the API publishes to Kafka and the
+> `RequestConsumer` processes the request directly without LLM/HITL involvement.
 
 ```mermaid
 sequenceDiagram
@@ -127,9 +138,10 @@ sequenceDiagram
 
 ---
 
-## Harness Mode Selection
+## Harness Mode Selection _(AI Agents Module only)_
 
-See `specs/ai/harness-design.md` for the full sprint loop diagram.
+> Only relevant when the AI Agents Module is enabled. See `specs/ai/harness-design.md`
+> for the full sprint loop diagram.
 
 | Mode         | When to use                          | Cost multiplier |
 | ------------ | ------------------------------------ | --------------- |
@@ -145,27 +157,35 @@ Controlled by `settings.harness_mode` (default: `solo`).
 
 Every infra dependency has an in-memory fallback for local dev:
 
-| Production             | Local fallback         | Blocked in production?          |
-| ---------------------- | ---------------------- | ------------------------------- |
-| `RedisRequestStore`    | `InMemoryRequestStore` | No                              |
-| `HITLRedisStore`       | `InMemoryHITLStore`    | No                              |
-| `KafkaEventBroker`     | `InMemoryBroker`       | No                              |
-| `PostgresAuditStorage` | `InMemoryAuditStorage` | **Yes** — raises `RuntimeError` |
+| Production             | Local fallback         | Blocked in production?          | Module             |
+| ---------------------- | ---------------------- | ------------------------------- | ------------------ |
+| `RedisRequestStore`    | `InMemoryRequestStore` | No                              | Core               |
+| `KafkaEventBroker`     | `InMemoryBroker`       | No                              | Core               |
+| `HITLRedisStore`       | `InMemoryHITLStore`    | No                              | AI Agents (opt-in) |
+| `PostgresAuditStorage` | `InMemoryAuditStorage` | **Yes** — raises `RuntimeError` | AI Agents (opt-in) |
 
 ---
 
 ## Key Module Map
 
+### Core
+
+| Layer         | Module                            | Role                              |
+| ------------- | --------------------------------- | --------------------------------- |
+| API           | `src/api/rest/main.py`            | FastAPI app, lifespan wiring      |
+| Routers       | `src/api/rest/routers/`           | `requests`, `health`              |
+| Worker        | `src/workers/request_consumer.py` | Asyncio background consumer       |
+| Config        | `src/shared/config.py`            | All settings via Pydantic         |
+| Observability | `src/observability/`              | OTel, Prometheus, structured logs |
+
+### AI Agents Module _(opt-in — only when `src/agents/` is present)_
+
 | Layer         | Module                                    | Role                                     |
 | ------------- | ----------------------------------------- | ---------------------------------------- |
-| API           | `src/api/rest/main.py`                    | FastAPI app, lifespan wiring             |
-| Routers       | `src/api/rest/routers/`                   | `requests`, `hitl`, `health`             |
-| Worker        | `src/workers/request_consumer.py`         | Asyncio background consumer              |
+| Routers       | `src/api/rest/routers/hitl.py`            | HITL approval endpoint                   |
 | Orchestrator  | `src/agents/orchestrator/orchestrator.py` | P→R→A loop                               |
 | Harness       | `src/agents/harness/coordinator.py`       | Planner/Generator/Evaluator              |
 | HITL          | `src/agents/hitl_gateway.py`              | Approval workflow                        |
 | Guardrails    | `src/guardrails/`                         | PII, injection, limits, audit            |
 | Memory        | `src/memory/`                             | Vector store, session cache, bug history |
 | Feature Flags | `src/shared/feature_flags.py`             | Autonomy levels via OpenFeature          |
-| Config        | `src/shared/config.py`                    | All settings via Pydantic                |
-| Observability | `src/observability/`                      | OTel, Prometheus, structured logs        |
