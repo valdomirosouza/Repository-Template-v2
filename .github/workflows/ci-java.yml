@@ -49,9 +49,22 @@ jobs:
       - name: SpotBugs (SAST)
         run: mvn spotbugs:check -pl $(find services -name pom.xml -not -path '*/target/*' | xargs dirname | tr '\n' ',')
 
-      - name: OWASP Dependency-Check
-        run: mvn dependency-check:check -pl $(find services -name pom.xml -not -path '*/target/*' | xargs dirname | tr '\n' ',')
-        continue-on-error: true # report only — block on CRITICAL in a separate step
+      - name: OWASP Dependency-Check (blocks on CVSS ≥ 7.0)
+        run: |
+          mvn dependency-check:check \
+            -pl $(find services -name pom.xml -not -path '*/target/*' | xargs dirname | tr '\n' ',') \
+            -Ddependency-check.failBuildOnCVSS=7 \
+            -Ddependency-check.suppressionFile=services/domain-service/dependency-check-suppressions.xml
+        # Fails the build when any dependency has a CVE with CVSS ≥ 7.0 (HIGH or CRITICAL).
+        # False positives must be documented in dependency-check-suppressions.xml with CVE ID and rationale.
+
+      - name: Upload Dependency-Check report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-check-report
+          path: "**/target/dependency-check-report.html"
+          retention-days: 14
 
   test-java-unit:
     name: Java Unit Tests

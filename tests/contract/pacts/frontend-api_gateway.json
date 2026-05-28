@@ -1,0 +1,333 @@
+{
+  "consumer": {
+    "name": "frontend"
+  },
+  "provider": {
+    "name": "api-gateway"
+  },
+  "interactions": [
+    {
+      "description": "a POST /v1/requests to submit a domain request",
+      "providerState": "the api-gateway is available and has capacity",
+      "request": {
+        "method": "POST",
+        "path": "/v1/requests",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request_text": "Process this task",
+          "priority": "normal"
+        }
+      },
+      "response": {
+        "status": 202,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request_id": "00000000-0000-0000-0000-000000000001",
+          "status": "queued",
+          "created_at": "2026-05-28T10:00:00+00:00",
+          "message": "Request accepted. Poll /v1/requests/00000000-0000-0000-0000-000000000001 for status."
+        },
+        "matchingRules": {
+          "$.body.request_id": {
+            "match": "type"
+          },
+          "$.body.status": {
+            "match": "regex",
+            "regex": "^queued$"
+          },
+          "$.body.created_at": {
+            "match": "type"
+          },
+          "$.body.message": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "a POST /v1/requests with an empty request_text",
+      "providerState": "the api-gateway is available",
+      "request": {
+        "method": "POST",
+        "path": "/v1/requests",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request_text": "",
+          "priority": "normal"
+        }
+      },
+      "response": {
+        "status": 422,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "detail": []
+        },
+        "matchingRules": {
+          "$.body.detail": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "a GET /v1/requests/{id} for a queued request",
+      "providerState": "request 00000000-0000-0000-0000-000000000001 exists with status queued",
+      "request": {
+        "method": "GET",
+        "path": "/v1/requests/00000000-0000-0000-0000-000000000001",
+        "headers": {}
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request_id": "00000000-0000-0000-0000-000000000001",
+          "status": "queued",
+          "created_at": "2026-05-28T10:00:00+00:00",
+          "updated_at": "2026-05-28T10:00:00+00:00",
+          "result": null,
+          "error": null,
+          "message": "Request is queued."
+        },
+        "matchingRules": {
+          "$.body.request_id": {
+            "match": "type"
+          },
+          "$.body.status": {
+            "match": "regex",
+            "regex": "^(queued|processing|completed|failed)$"
+          },
+          "$.body.created_at": {
+            "match": "type"
+          },
+          "$.body.updated_at": {
+            "match": "type"
+          },
+          "$.body.message": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "a GET /v1/requests/{id} for a completed request",
+      "providerState": "request 00000000-0000-0000-0000-000000000002 exists with status completed",
+      "request": {
+        "method": "GET",
+        "path": "/v1/requests/00000000-0000-0000-0000-000000000002",
+        "headers": {}
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request_id": "00000000-0000-0000-0000-000000000002",
+          "status": "completed",
+          "created_at": "2026-05-28T10:00:00+00:00",
+          "updated_at": "2026-05-28T10:01:00+00:00",
+          "result": {
+            "summary": "Task completed successfully."
+          },
+          "error": null,
+          "message": "Request is completed."
+        },
+        "matchingRules": {
+          "$.body.request_id": {
+            "match": "type"
+          },
+          "$.body.status": {
+            "match": "regex",
+            "regex": "^completed$"
+          },
+          "$.body.result": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "a GET /v1/requests/{id} for an unknown request_id",
+      "providerState": "no request exists with id 00000000-0000-0000-0000-000000000099",
+      "request": {
+        "method": "GET",
+        "path": "/v1/requests/00000000-0000-0000-0000-000000000099",
+        "headers": {}
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "detail": "Request 00000000-0000-0000-0000-000000000099 not found."
+        },
+        "matchingRules": {
+          "$.body.detail": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "a GET /v1/hitl/status when the gateway is operational",
+      "providerState": "the HITL gateway is operational with 3 pending requests",
+      "request": {
+        "method": "GET",
+        "path": "/v1/hitl/status",
+        "headers": {}
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "status": "operational",
+          "pending_count": 3,
+          "message": "HITL gateway is operational."
+        },
+        "matchingRules": {
+          "$.body.status": {
+            "match": "regex",
+            "regex": "^operational$"
+          },
+          "$.body.pending_count": {
+            "match": "integer"
+          },
+          "$.body.message": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "a POST /v1/hitl/requests/{id}/decision with APPROVED",
+      "providerState": "HITL request 00000000-0000-0000-0000-000000000010 is pending",
+      "request": {
+        "method": "POST",
+        "path": "/v1/hitl/requests/00000000-0000-0000-0000-000000000010/decision",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "decision": "APPROVED",
+          "rationale": "Action is safe and within approved scope.",
+          "approver_id": "operator-001"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request_id": "00000000-0000-0000-0000-000000000010",
+          "decision": "APPROVED",
+          "message": "Decision APPROVED recorded for request 00000000-0000-0000-0000-000000000010."
+        },
+        "matchingRules": {
+          "$.body.request_id": {
+            "match": "type"
+          },
+          "$.body.decision": {
+            "match": "regex",
+            "regex": "^(APPROVED|REJECTED)$"
+          },
+          "$.body.message": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "a POST /v1/hitl/requests/{id}/decision with REJECTED",
+      "providerState": "HITL request 00000000-0000-0000-0000-000000000011 is pending",
+      "request": {
+        "method": "POST",
+        "path": "/v1/hitl/requests/00000000-0000-0000-0000-000000000011/decision",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "decision": "REJECTED",
+          "rationale": "Action exceeds approved risk threshold for this environment.",
+          "approver_id": "operator-001"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request_id": "00000000-0000-0000-0000-000000000011",
+          "decision": "REJECTED",
+          "message": "Decision REJECTED recorded for request 00000000-0000-0000-0000-000000000011."
+        },
+        "matchingRules": {
+          "$.body.request_id": {
+            "match": "type"
+          },
+          "$.body.decision": {
+            "match": "regex",
+            "regex": "^(APPROVED|REJECTED)$"
+          },
+          "$.body.message": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "a POST /v1/hitl/requests/{id}/decision for an unknown or expired request",
+      "providerState": "no pending HITL request exists with id 00000000-0000-0000-0000-000000000099",
+      "request": {
+        "method": "POST",
+        "path": "/v1/hitl/requests/00000000-0000-0000-0000-000000000099/decision",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "decision": "APPROVED",
+          "rationale": "Attempting to approve an unknown request.",
+          "approver_id": "operator-001"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "detail": "Request 00000000-0000-0000-0000-000000000099 not found."
+        },
+        "matchingRules": {
+          "$.body.detail": {
+            "match": "type"
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "2.0.0"
+    },
+    "client": {
+      "name": "template-monorepo",
+      "version": "1.10.0"
+    }
+  }
+}

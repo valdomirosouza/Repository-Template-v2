@@ -1,0 +1,26 @@
+replicaCount: 3
+
+image:
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 768Mi
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+
+autoscaling:
+  minReplicas: 3
+  maxReplicas: 12
+  targetCPUUtilizationPercentage: 65
+
+pdb:
+  minAvailable: 2
+
+env:
+  SPRING_PROFILES_ACTIVE: production
+  JAVA_OPTS: "-XX:MaxRAMPercentage=75 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Xlog:gc*:stdout:time"
+  LOGGING_LEVEL_ROOT: WARN
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "never"

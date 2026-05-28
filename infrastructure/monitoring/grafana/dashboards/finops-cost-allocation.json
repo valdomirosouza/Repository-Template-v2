@@ -1,0 +1,415 @@
+{
+  "__requires__": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    { "type": "panel", "id": "stat", "name": "Stat", "version": "" },
+    { "type": "panel", "id": "gauge", "name": "Gauge", "version": "" },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    },
+    { "type": "panel", "id": "table", "name": "Table", "version": "" },
+    { "type": "panel", "id": "bargauge", "name": "Bar gauge", "version": "" }
+  ],
+  "__inputs__": [
+    {
+      "name": "datasource",
+      "label": "Prometheus Datasource",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "title": "FinOps — LLM Cost Allocation",
+  "uid": "finops-cost-allocation-v1",
+  "description": "LLM token consumption, budget utilisation, and cost-per-resolution by service and action_type. ADR-0020.",
+  "tags": ["finops", "llm", "cost", "budget", "agents"],
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "5m",
+  "time": { "from": "now-30d", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(llm_tokens_total, service)",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {}
+      },
+      {
+        "name": "action_type",
+        "label": "Action Type",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(agent_cost_per_resolution_tokens_bucket, action_type)",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Monthly Budget Utilisation",
+      "description": "Percentage of the 30d token budget consumed so far. Alert threshold: 80% (warning), 90% (critical). ADR-0020.",
+      "type": "gauge",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "green" },
+              { "value": 80, "color": "yellow" },
+              { "value": 90, "color": "red" }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "(\n  sum(increase(llm_tokens_total{service=~\"$service\"}[30d]))\n  / on() sum(llm_tokens_budget_total{service=~\"$service\"})\n) * 100",
+          "legendFormat": "Budget used %",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Estimated Days Until Budget Exhausted",
+      "description": "At the current burn rate, how many days until the monthly token budget is exhausted.",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "d",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "red" },
+              { "value": 5, "color": "yellow" },
+              { "value": 10, "color": "green" }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "(\n  sum(llm_tokens_budget_total{service=~\"$service\"})\n  - sum(increase(llm_tokens_total{service=~\"$service\"}[30d]))\n)\n/ clamp_min(\n  sum(rate(llm_tokens_total{service=~\"$service\"}[24h])) * 86400,\n  1\n) / 86400",
+          "legendFormat": "Days remaining",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Total Tokens (30d)",
+      "description": "Total tokens consumed in the current 30-day window (input + output combined).",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 3 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "decimals": 0 }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "sum(increase(llm_tokens_total{service=~\"$service\"}[30d]))",
+          "legendFormat": "Total tokens",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Monthly Budget (tokens)",
+      "description": "Configured monthly token budget. Adjust via llm_monthly_token_budget in Settings.",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 3 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "decimals": 0 }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "sum(llm_tokens_budget_total{service=~\"$service\"})",
+          "legendFormat": "Budget",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Input vs Output Tokens — Daily Trend",
+      "description": "Daily token consumption split by input (prompt) and output (completion). Output tokens are typically 3–5× more expensive per token.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "lineWidth": 2 } }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "sum(increase(llm_tokens_total{service=~\"$service\", token_type=\"input\"}[1d])) by (service)",
+          "legendFormat": "Input — {{ service }}",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "sum(increase(llm_tokens_total{service=~\"$service\", token_type=\"output\"}[1d])) by (service)",
+          "legendFormat": "Output — {{ service }}",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Token Consumption Rate (tokens/min)",
+      "description": "Real-time token burn rate. Compare to budget: budget / 43200 = sustainable rate per minute for a 30-day window.",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "green" },
+              { "value": 23, "color": "yellow" },
+              { "value": 46, "color": "red" }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "sum(rate(llm_tokens_total{service=~\"$service\"}[5m])) by (service) * 60",
+          "legendFormat": "{{ service }}",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "sum(llm_tokens_budget_total{service=~\"$service\"}) / 43200",
+          "legendFormat": "Sustainable rate (budget/30d)",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Cost Per Resolution — p50 / p95 / p99 by Action Type",
+      "description": "Token cost per autonomous resolution. SLO target: p95 ≤ 5 000 tokens. FinOps alert threshold: p99 > 10 000 tokens.",
+      "type": "table",
+      "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "options": { "sortBy": [{ "displayName": "p95 tokens", "desc": true }] },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "p95 tokens" },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "value": null, "color": "green" },
+                    { "value": 5000, "color": "yellow" },
+                    { "value": 10000, "color": "red" }
+                  ]
+                }
+              },
+              { "id": "custom.displayMode", "value": "color-background" }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "histogram_quantile(0.50, sum(rate(agent_cost_per_resolution_tokens_bucket{action_type=~\"$action_type\"}[30m])) by (action_type, le))",
+          "legendFormat": "{{action_type}}",
+          "refId": "A",
+          "instant": true,
+          "format": "table"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "histogram_quantile(0.95, sum(rate(agent_cost_per_resolution_tokens_bucket{action_type=~\"$action_type\"}[30m])) by (action_type, le))",
+          "legendFormat": "{{action_type}}",
+          "refId": "B",
+          "instant": true,
+          "format": "table"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "histogram_quantile(0.99, sum(rate(agent_cost_per_resolution_tokens_bucket{action_type=~\"$action_type\"}[30m])) by (action_type, le))",
+          "legendFormat": "{{action_type}}",
+          "refId": "C",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "Value #A": "p50 tokens",
+              "Value #B": "p95 tokens",
+              "Value #C": "p99 tokens",
+              "action_type": "Action Type"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Top Action Types by Total Token Cost (30d)",
+      "description": "Cumulative token spend per action_type over the last 30 days. Identifies the highest-cost agent behaviours.",
+      "type": "bargauge",
+      "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "valueMode": "color"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "green" },
+              { "value": 50000, "color": "yellow" },
+              { "value": 200000, "color": "red" }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "topk(10,\n  sum(increase(llm_tokens_total{service=~\"$service\"}[30d])) by (action_type)\n)",
+          "legendFormat": "{{ action_type }}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Budget Burn Rate vs Sustainable Rate",
+      "description": "Compares actual 30-day rolling token rate against the sustainable rate (budget / window). Values > 1.0 indicate overspend trajectory.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 22, "w": 24, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "green" },
+              { "value": 1.0, "color": "yellow" },
+              { "value": 1.5, "color": "red" }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "(\n  sum(rate(llm_tokens_total{service=~\"$service\"}[1h])) * 2592000\n)\n/ clamp_min(sum(llm_tokens_budget_total{service=~\"$service\"}), 1)",
+          "legendFormat": "Burn rate ratio (1h window)",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "1.0",
+          "legendFormat": "Sustainable (1.0×)",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "14.4",
+          "legendFormat": "Fast-burn alert threshold (14.4×)",
+          "refId": "C"
+        }
+      ]
+    }
+  ]
+}

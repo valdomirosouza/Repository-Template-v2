@@ -1,5 +1,5 @@
-version: "1.0"
-last_updated: "2026-05-24"
+version: "1.1"
+last_updated: "2026-05-28"
 owner: sre-lead
 
 services:
@@ -99,3 +99,107 @@ services:
           - window: 1h
             burn_rate: 14.4
             severity: critical
+
+  - name: hitl-system
+    description: "Human-in-the-Loop gateway and operator decision flow"
+    slos:
+      - name: hitl_availability
+        sli_type: availability
+        description: "Percentage of HITL decision submissions returning non-5xx"
+        target: 99.9
+        window: 30d
+        error_budget_minutes: 43.8
+        alert_burn_rates:
+          - window: 1h
+            burn_rate: 14.4
+            severity: critical
+            runbook: docs/sre/runbooks/hitl-queue-backlog.md
+          - window: 6h
+            burn_rate: 6.0
+            severity: warning
+            runbook: docs/sre/runbooks/hitl-queue-backlog.md
+
+      - name: hitl_decision_latency_p95
+        sli_type: latency
+        description: "95th percentile operator decision time from request creation"
+        target_ms: 300000
+        window: 30d
+        alert_burn_rates:
+          - window: 5m
+            threshold_ms: 240000
+            severity: warning
+            runbook: docs/sre/runbooks/hitl-queue-backlog.md
+          - window: 15m
+            threshold_ms: 180000
+            severity: critical
+            runbook: docs/sre/runbooks/hitl-queue-backlog.md
+
+      - name: hitl_queue_depth
+        sli_type: saturation
+        description: "Maximum number of pending HITL requests at any point in time"
+        target_max: 100
+        window: 30d
+        alert_burn_rates:
+          - window: 5m
+            threshold: 50
+            severity: warning
+            runbook: docs/sre/runbooks/hitl-queue-backlog.md
+          - window: 5m
+            threshold: 100
+            severity: critical
+            runbook: docs/sre/runbooks/hitl-queue-backlog.md
+
+      - name: audit_log_write_success
+        sli_type: availability
+        description: "100% of HITL decisions written to immutable audit log — hard invariant"
+        target: 100.0
+        window: 30d
+        alert_burn_rates:
+          - window: 1m
+            burn_rate: 1
+            severity: critical
+            runbook: docs/sre/runbooks/redis-connection-failure.md
+
+  - name: agent-autonomous
+    description: "Autonomous agent resolution path (HOTL mode)"
+    slos:
+      - name: autonomous_resolution_rate
+        sli_type: availability
+        description: "Percentage of eligible actions resolved without HITL escalation"
+        target: 80.0
+        window: 30d
+        alert_burn_rates:
+          - window: 30m
+            threshold: 0.75
+            severity: warning
+            runbook: docs/sre/runbooks/hitl-queue-backlog.md
+          - window: 30m
+            threshold: 0.60
+            severity: critical
+            runbook: docs/sre/runbooks/hitl-queue-backlog.md
+
+      - name: token_cost_p95
+        sli_type: latency
+        description: "95th percentile token cost per autonomous resolution"
+        target_max: 5000
+        window: 30d
+        alert_burn_rates:
+          - window: 15m
+            threshold: 8000
+            severity: warning
+            runbook: docs/sre/runbooks/hitl-queue-backlog.md
+          - window: 15m
+            threshold: 10000
+            severity: critical
+            runbook: docs/sre/runbooks/hitl-queue-backlog.md
+
+      - name: self_reflection_iterations_p99
+        sli_type: saturation
+        description: "99th percentile sprint iterations per resolution (runaway detection)"
+        target_max: 15
+        window: 30d
+        alert_burn_rates:
+          - window: 10m
+            threshold: 12
+            severity: warning
+            runbook: docs/sre/runbooks/hitl-queue-backlog.md

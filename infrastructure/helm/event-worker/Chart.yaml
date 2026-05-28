@@ -1,0 +1,13 @@
+apiVersion: v2
+name: event-worker
+description: Event Worker — Go Kafka consumer for domain event processing
+type: application
+version: 0.1.0
+appVersion: "1.13.0"
+keywords:
+  - go
+  - kafka
+  - event-worker
+  - consumer
+maintainers:
+  - name: platform-team

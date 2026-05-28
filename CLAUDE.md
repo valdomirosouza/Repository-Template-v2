@@ -281,20 +281,23 @@ When the user's request matches a skill domain, load and follow that skill befor
 
 ### Core Skills
 
-| Trigger / Domain                  | Skill Path                                     | Activation Condition                        |
-| --------------------------------- | ---------------------------------------------- | ------------------------------------------- |
-| Golden Signals, SLO breach, alert | `skills/sre/golden-signals.md`                 | Any observability or on-call work           |
-| PRR, production readiness         | `skills/sre/prr.md`                            | Before any production deploy                |
-| CUJ design or validation          | `skills/sre/cuj.md`                            | Defining or testing critical user journeys  |
-| PII, masking, classification      | `skills/privacy/pii.md`                        | Any data handling code                      |
-| LGPD compliance                   | `skills/privacy/lgpd.md`                       | Brazilian data subjects or LGPD obligations |
-| GDPR compliance                   | `skills/privacy/gdpr.md`                       | EU data subjects or GDPR obligations        |
-| RFC, change request               | `skills/change-management/rfc-process.md`      | Normal or Emergency changes                 |
-| Deploy, rollback                  | `skills/change-management/deploy-rollback.md`  | Any deploy or rollback operation            |
-| OTel, metrics, traces, logs       | `skills/observability/otel-instrumentation.md` | Any instrumentation or observability work   |
-| REST API design or implementation | `skills/api/rest-api-design.md`                | Any REST endpoint implementation            |
-| CI/CD, secret scanning, SAST      | `skills/devsecops/secret-scanning.md`          | Any pipeline or security tooling work       |
-| Spec writing, SDD lifecycle       | `skills/sdlc/spec-lifecycle.md`                | Writing or reviewing a spec                 |
+| Trigger / Domain                                | Skill Path                                     | Activation Condition                                      |
+| ----------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------- |
+| Golden Signals, SLO breach, alert               | `skills/sre/golden-signals.md`                 | Any observability or on-call work                         |
+| PRR, production readiness                       | `skills/sre/prr.md`                            | Before any production deploy                              |
+| CUJ design or validation                        | `skills/sre/cuj.md`                            | Defining or testing critical user journeys                |
+| PII, masking, classification                    | `skills/privacy/pii.md`                        | Any data handling code                                    |
+| LGPD compliance                                 | `skills/privacy/lgpd.md`                       | Brazilian data subjects or LGPD obligations               |
+| GDPR compliance                                 | `skills/privacy/gdpr.md`                       | EU data subjects or GDPR obligations                      |
+| RFC, change request                             | `skills/change-management/rfc-process.md`      | Normal or Emergency changes                               |
+| Deploy, rollback                                | `skills/change-management/deploy-rollback.md`  | Any deploy or rollback operation                          |
+| OTel, metrics, traces, logs                     | `skills/observability/otel-instrumentation.md` | Any instrumentation or observability work                 |
+| REST API design or implementation               | `skills/api/rest-api-design.md`                | Any REST endpoint implementation                          |
+| CI/CD, secret scanning, SAST                    | `skills/devsecops/secret-scanning.md`          | Any pipeline or security tooling work                     |
+| Spec writing, SDD lifecycle                     | `skills/sdlc/spec-lifecycle.md`                | Writing or reviewing a spec                               |
+| Aggregates, entities, repositories, DDD         | `skills/domain/domain-modeling.md`             | Any domain model design, new entity, or service layer     |
+| Test pyramid, coverage, markers, contract tests | `skills/engineering/testing-strategy.md`       | Writing, reviewing, or debugging tests in any language    |
+| Ethical AI review, bias audit, EU AI Act        | `skills/ethics/ethical-ai-review.md`           | Any AI/agent feature, new action_type, or autonomy change |
 
 ### AI Agents Module Skills _(opt-in — only when `src/agents/` is present)_
 

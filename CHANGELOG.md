@@ -15,6 +15,255 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [1.15.0] — 2026-05-28
+
+### Added
+
+- **`tests/e2e/test_hitl_operator_ui.py`** — HITL operator E2E tests (Wave 10.1). Covers
+  CUJ-002: HITL status endpoint reflecting queue depth, APPROVE decision removing request
+  from queue, REJECT decision with valid rationale, short-rationale 422, unknown-ID 404,
+  double-decision 404, and invalid decision enum 422. Uses FastAPI ASGI transport (no real
+  server required); set `BASE_URL` to run against a live server. Marked `e2e`.
+- **`tests/e2e/test_request_lifecycle.py`** — Request lifecycle E2E tests (Wave 10.2). Covers
+  CUJ-001 and CUJ-003: 202 Accepted on submit, request_id in message, valid priority values,
+  empty/oversized/invalid-priority 422, no-store 503, immediate status poll returning queued,
+  unknown-ID 404, all contracted fields present, PII not echoed in response, submit latency
+  < 500 ms, poll latency < 200 ms, 10 concurrent submissions all succeed with unique IDs.
+  Marked `e2e`.
+- **`tests/performance/k6/request-api-load.js`** — k6 load test for `POST /v1/requests`
+  (Wave 10.3). Three scenarios: ramp-up (1→50 VUs over 2 min), sustained (50 VUs for 5 min),
+  spike (200 VUs for 1 min). SLO-aligned thresholds: submit p99 < 500 ms, poll p99 < 200 ms,
+  error rate < 0.5%. Handles 429 with Retry-After backoff. `handleSummary` prints a concise
+  SLO pass/fail table.
+- **`tests/performance/k6/hitl-decision-load.js`** — k6 load test for HITL decision endpoint
+  (Wave 10.4). Two scenarios: operator baseline (5 concurrent operators, 3 min), operator surge
+  (15 operators, 1 min). Seeds pending requests via the submission endpoint. 80/20 approve/reject
+  split; tracks `decisions_submitted_total`, `approvals_total`, `rejections_total`. Thresholds:
+  decision p95 < 300 ms, decision p99 < 500 ms.
+- **`tests/performance/benchmarks/test_orchestrator_benchmarks.py`** — Orchestrator hot-path
+  benchmarks (Wave 10.5). Uses `time.perf_counter_ns()` for microsecond-resolution measurement
+  over 200–1 000 iterations. Covers: `mask_text` short/long (≤ 5/10 ms), `mask_dict` flat/nested/
+  clean (≤ 5/10/2 ms), `RiskScorer.score` low/high/PII-tokens (≤ 2 ms each), monotonicity
+  invariant (delete > read), `PromptInjectionGuard.check` clean/malicious/long-clean (≤ 5/5/10 ms),
+  and full sync pipeline PII→injection→risk (≤ 12 ms). Marked `benchmark`.
+- **`tests/contract/test_rest_pact_provider.py`** — Pact provider verification against the
+  Wave 6.5 consumer contracts (Wave 10.6). 9 test classes (one per Pact interaction), each
+  firing real HTTP requests through the FastAPI ASGI stack with direct store seeding for
+  provider state setup. Includes a coverage-contract test that fails when a new Pact interaction
+  lacks a provider test class. Marked `unit`.
+
+### Changed
+
+- **`pyproject.toml`** — Added two new pytest markers: `e2e` (full user journey; opt-in via
+  `BASE_URL`) and `benchmark` (latency assertions against SLO thresholds). `--strict-markers`
+  already enforced; new markers prevent spurious "unknown marker" warnings.
+
+---
+
+## [1.14.0] — 2026-05-28
+
+### Added
+
+- **`infrastructure/helm/domain-service/`** — Helm chart for the Java/Spring Boot domain-service
+  (Wave 9.1). 9 files: Chart.yaml, values.yaml, values-staging.yaml, values-production.yaml,
+  templates/\_helpers.tpl, deployment.yaml (Spring Actuator probes, readOnlyRootFilesystem,
+  tmpfs volume, Prometheus annotations), service.yaml, serviceaccount.yaml (IRSA annotation
+  support), hpa.yaml (CPU + memory metrics), pdb.yaml. Spring-specific: JAVA_OPTS JVM tuning,
+  `/actuator/health/liveness` and `/actuator/health/readiness` probes, 60 s graceful drain.
+- **`infrastructure/helm/event-worker/`** — Helm chart for the Go Kafka consumer (Wave 9.2).
+  10 files: Chart.yaml, values.yaml, values-staging.yaml, values-production.yaml,
+  templates/\_helpers.tpl, configmap.yaml (Kafka bootstrap, group ID, topics, timeouts),
+  deployment.yaml (WORKER_ID injected from pod name via Downward API, metrics port only),
+  service.yaml (metrics-only ClusterIP), serviceaccount.yaml, hpa.yaml (CPU + Kafka
+  consumer lag via prometheus-adapter, conservative 600 s scale-down window), pdb.yaml.
+- **`infrastructure/helm/frontend/`** — Helm chart for the Next.js frontend (Wave 9.3).
+  11 files: Chart.yaml, values.yaml, values-staging.yaml, values-production.yaml,
+  templates/_helpers.tpl, configmap.yaml (NEXT_PUBLIC_\* and server-side env vars; includes
+  build-time warning comment), deployment.yaml (checksum annotation for ConfigMap-triggered
+  rollouts, secretRef optional for pre-auth deployments), service.yaml, ingress.yaml
+  (TLS + cert-manager), serviceaccount.yaml, hpa.yaml (CPU), pdb.yaml.
+- **`infrastructure/terraform/modules/api-gateway/`** — Terraform application module for the
+  api-gateway (Wave 9.4). main.tf (IRSA role with WebIdentity trust, Secrets Manager read
+  policy scoped to `monorepo/{env}/api-gateway/*`, CloudWatch Logs write policy, Helm release
+  with local chart path, `lifecycle.ignore_changes` for image tag), variables.tf (OIDC inputs,
+  secrets ARNs, Helm values file path), outputs.tf (IRSA role ARN, Helm release status).
+- **`infrastructure/terraform/modules/domain-service/`** — Terraform application module for
+  the domain-service (Wave 9.5). Follows api-gateway pattern; adds db_secret_arn variable
+  granting explicit Secrets Manager access to the PostgreSQL credential secret (ADR-0018).
+- **`infrastructure/terraform/modules/event-worker/`** — Terraform application module for the
+  event-worker (Wave 9.5). Adds optional MSK cluster access policy (kafka-cluster:\* actions)
+  and optional SQS DLQ send policy; both conditioned on non-empty variable values so the
+  module works without MSK in local/staging environments.
+
+### Changed
+
+- **`infrastructure/terraform/environments/staging/main.tf`** — Wired the three new
+  application modules (api_gateway, domain_service, event_worker) into the staging environment.
+  Added `data.aws_caller_identity.current` for account ID resolution, `db_secret_arn` and
+  `image_tag` input variables, and IRSA role ARN outputs for all three services.
+
+---
+
+## [1.13.0] — 2026-05-28
+
+### Added
+
+- **`specs/security/rbac-model.md`** — HITL RBAC spec (Wave 8.1). Defines three roles
+  (`hitl:operator`, `hitl:supervisor`, `hitl:auditor`), an action type permission matrix
+  (operators cannot approve `deploy`, `database_write`, `delete_resource`, or `escalate_privilege`),
+  JWT claim requirements (`sub` as `approver_id`, `roles` claim, `iss`/`aud` validation),
+  enforcement points in api-gateway middleware and audit logger, and implementation status
+  tracking for each deferred component. Addresses threat-model REM-001.
+- **`specs/security/pentest-checklist.md`** — Pre-production penetration testing checklist
+  (Wave 8.2). 50 items across 10 sections aligned with the STRIDE threat model: authentication
+  (S), authorisation/privilege escalation (E), injection (T), data exposure (I), audit/repudiation
+  (R), denial of service (D), dependency vulnerabilities (supply chain), infrastructure
+  configuration, and OWASP LLM Top 10. Includes sign-off table for Security Lead PRR gate.
+
+### Changed
+
+- **`.github/workflows/ci-java.yml`** — OWASP Dependency-Check is now a **blocking gate**
+  (Wave 8.3). Removed `continue-on-error: true`; added `-Ddependency-check.failBuildOnCVSS=7`
+  (fails on CVSS ≥ 7.0, i.e. HIGH and CRITICAL). Suppression file (`dependency-check-suppressions.xml`)
+  explicitly wired. Report artifact uploaded on every run for audit. False positives must be
+  documented in the suppressions file with CVE ID and rationale.
+- **`.github/workflows/ci-go.yml`** — Added `govulncheck` as a **blocking gate** in the
+  `lint-go` job (Wave 8.4). Scans all Go service directories; fails on any reachable vulnerability
+  in the Go vulnerability database. Call-graph analysis means only actually-called vulnerable
+  code paths trigger a failure — not unreachable transitive dependencies.
+- **`.github/workflows/ci-frontend.yml`** — Added `pnpm audit --audit-level=high` as a
+  **blocking gate** in the `lint-frontend` job (Wave 8.5). Fails on HIGH or CRITICAL CVEs in
+  any direct or transitive Node.js dependency. Runs before ESLint so the build fails fast on
+  known-vulnerable packages.
+
+---
+
+## [1.12.0] — 2026-05-28
+
+### Added
+
+- **`docs/sre/runbooks/api-gateway-high-error-rate.md`** — Runbook (Wave 7.1). Five-step
+  triage procedure covering error severity classification, root-cause branches (recent deploy,
+  upstream dependency, LLM provider, resource exhaustion), containment, rollback, and
+  post-incident checklist. References `skills/change-management/deploy-rollback.md`.
+- **`docs/sre/runbooks/hitl-queue-backlog.md`** — Runbook (Wave 7.2). Covers operator
+  unavailability, portal failure, action-type flood, and risk-scorer over-escalation. Includes
+  governance-gated emergency drain procedure with required AI Governance Lead sign-off per
+  ADR-0011.
+- **`docs/sre/runbooks/kafka-consumer-lag.md`** — Runbook (Wave 7.3). Covers pod OOM,
+  broker degradation, slow consumer, and poison-pill messages. Documents partition rebalance,
+  poison-pill skip procedure (with data-loss declaration), and DLQ replay path.
+- **`docs/sre/runbooks/redis-connection-failure.md`** — Runbook (Wave 7.4). Covers pod
+  failure, network policy, TLS expiry, OOM, and auth failure. Documents production safety
+  rules (in-memory fallback blocked), data-loss communication protocol, and
+  GDPR/LGPD breach assessment trigger. ADR-0019.
+- **`docs/sre/cuj/CUJ-002-hitl-decision-flow.md`** — HITL operator CUJ (Wave 7.5). SLO
+  targets (p95 decision latency ≤ 300 s, queue depth ≤ 100, 100% audit write). Happy path,
+  dependency table, failure scenarios, degraded path procedure, and test coverage map.
+- **`docs/sre/cuj/CUJ-003-agent-autonomous-resolution.md`** — Autonomous resolution CUJ
+  (Wave 7.6). SLO targets (≥ 80% autonomous rate, p95 ≤ 5 000 tokens, p99 ≤ 15 iterations).
+  Full HOTL happy path, failure scenarios including runaway self-reflection, autonomy boundary
+  enforcement note, and test coverage map.
+- **`infrastructure/monitoring/prometheus/rules/slo-burn-rate.yaml`** — Multi-window SLO
+  burn-rate alert rules (Wave 7.8). Covers: HITL availability fast/slow burn (1h/6h),
+  HITL decision latency p95 warning/critical, HITL queue depth warning/critical, audit log
+  write failure (hard invariant, fires immediately), autonomous resolution rate warning/critical,
+  token cost p95 warning/critical, self-reflection iteration runaway, and API gateway
+  availability fast/slow burn. All rules linked to runbooks.
+- **`infrastructure/monitoring/grafana/dashboards/finops-cost-allocation.json`** — FinOps
+  cost allocation dashboard (Wave 7.9). Nine panels: monthly budget utilisation gauge,
+  estimated days until budget exhausted, total tokens stat, monthly budget stat, input/output
+  token daily trend, real-time consumption rate vs sustainable rate, cost-per-resolution
+  p50/p95/p99 table by action_type (with threshold colouring at 5k/10k), top-10 action types
+  by total 30d cost, and burn-rate ratio vs 1.0× and 14.4× thresholds. ADR-0020.
+
+### Changed
+
+- **`docs/sre/slo/slo.yaml`** — Version bumped to 1.1; added two new service blocks
+  (Wave 7.7): `hitl-system` (4 SLOs: availability, decision latency p95, queue depth, audit
+  write) and `agent-autonomous` (3 SLOs: autonomous resolution rate, token cost p95,
+  self-reflection iterations p99). All new SLOs carry multi-window burn-rate alert references
+  and runbook pointers.
+
+---
+
+## [1.11.0] — 2026-05-28
+
+### Added
+
+- **`infrastructure/proto/domain_service.proto`** — gRPC service contract for the Java
+  domain-service (Wave 6.1). Defines `DomainService` with four RPCs: `CreateEntity`,
+  `GetEntity`, `ListEntities`, `UpdateEntityStatus`. Includes `EntityMessage`,
+  `EntityStatus` enum, cursor-based pagination, and PII masking requirements per field.
+  ADR-0021, ADR-0024.
+- **`infrastructure/proto/event_worker.proto`** — gRPC service contract for the Go
+  event-worker (Wave 6.2). Defines `EventWorkerService` with three RPCs: `PublishEvent`
+  (ad-hoc replay/backfill), `GetEventStatus` (recent processing records), `DrainQueue`
+  (maintenance drain before rolling restarts). ADR-0021, ADR-0024.
+- **`docs/api/asyncapi/v2/migration-guide.md`** — AsyncAPI schema evolution guide (Wave 6.3).
+  Documents backwards-compatible vs breaking change rules, dual-publish migration process,
+  `x-stability` / `x-sunset-date` annotation schema, current v1 channel stability table,
+  and v2 planning candidates. ADR-0024.
+- **`docs/adr/ADR-0024-api-versioning-strategy.md`** — API versioning strategy ADR (Wave 6.4).
+  Unifies versioning rules across REST (URL-major), AsyncAPI/Kafka (topic rename + dual-publish),
+  and gRPC/Protobuf (field permanence + service-level deprecation). Includes consumer
+  compatibility requirements and governance sign-off table.
+- **`tests/contract/pacts/frontend-api_gateway.json`** — Pact v2 consumer contract file
+  (Wave 6.5). Nine interactions covering `POST /v1/requests`, `GET /v1/requests/{id}` (queued,
+  completed, not found), `GET /v1/hitl/status`, `POST /v1/hitl/requests/{id}/decision`
+  (APPROVED, REJECTED, not found). Uses matching rules for type and regex.
+- **`tests/contract/test_rest_pact_consumer.py`** — Provider-side REST contract tests (Wave 6.5).
+  Validates that `RequestOut`, `RequestStatusResponse`, `HITLStatusResponse`, and `DecisionOut`
+  Pydantic models satisfy the shapes declared in the Pact file. Includes cross-interaction
+  invariants (Content-Type headers, synthetic UUID format). Runs as `unit` tests with no I/O.
+  ADR-0022, ADR-0024.
+
+### Changed
+
+- **`docs/api/asyncapi/v1/asyncapi.yaml`** — Added `x-stability` and `x-sunset-date`
+  extension annotations to all 10 channels (Wave 6.3). Eight channels marked `stable`;
+  `agent.feedback.applied` and `agent.harness.state` marked `beta`. ADR-0024.
+
+---
+
+## [1.10.0] — 2026-05-28
+
+### Added
+
+- **`skills/domain/domain-modeling.md`** — Domain modeling skill (Wave 5.1). DDD tactical
+  patterns (entities, value objects, aggregates, repositories, domain events) with reference
+  examples from the Java domain-service and Python src/ layouts. Includes a new-concept
+  checklist and anti-pattern table.
+- **`skills/engineering/testing-strategy.md`** — Testing strategy skill (Wave 5.2). Test
+  pyramid with directory→marker→infrastructure mapping, coverage requirements, AAA convention,
+  fixture standards, contract/security/chaos layer guidance, and mutation testing targets.
+  References ADR-0022.
+- **`skills/ethics/ethical-ai-review.md`** — Ethical AI review skill (Wave 5.3). Pre-implementation
+  checklist (Human Oversight, Transparency, Fairness, Privacy, Accountability, Safety), prohibited
+  uses quick-reference, quarterly bias audit procedure, incident response steps, governance
+  sign-off matrix, and EU AI Act article cross-reference. References `specs/ethics/ethical-ai-principles.md`.
+- **`docs/adr/ADR-0022-testing-strategy.md`** — Testing strategy ADR (Wave 5.5). Documents test
+  pyramid layers, 80% coverage threshold rationale, branch coverage decision, Pact consumer-driven
+  contract testing selection, mutation testing tooling and targets, and multi-language coverage
+  expectations.
+- **`docs/adr/ADR-0023-frontend-architecture.md`** — Frontend architecture ADR (Wave 5.6).
+  Documents Next.js 14 / App Router selection, rendering strategy per view type (SSR, ISR,
+  client components, polling), API communication via generated TypeScript client, deferred
+  authentication design (OIDC + next-auth), and Jest + Playwright test split.
+
+### Changed
+
+- **`pyproject.toml`** — Added `[tool.coverage.run]` (branch=true, source=src, omit list) and
+  `[tool.coverage.report]` (fail_under=80, show_missing=true) sections (Wave 5.4). The 80%
+  coverage threshold is now enforced locally on every `make test-unit-python` run, not only in
+  the CI harness. ADR-0022.
+- **`CLAUDE.md §4` Skill Activation Table** — Added three trigger rows (Wave 5.7):
+  domain modeling → `skills/domain/domain-modeling.md`;
+  testing strategy → `skills/engineering/testing-strategy.md`;
+  ethical AI review → `skills/ethics/ethical-ai-review.md`.
+
+---
+
 ## [1.9.1] — 2026-05-28
 
 ### Changed

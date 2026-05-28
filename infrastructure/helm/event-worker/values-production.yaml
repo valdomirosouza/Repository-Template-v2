@@ -1,0 +1,29 @@
+replicaCount: 3
+
+image:
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+
+autoscaling:
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 65
+  kafkaLagTarget: "2000"
+
+pdb:
+  minAvailable: 2
+
+kafka:
+  bootstrapServers: "kafka.production:9092"
+  groupId: "event-worker-production"
+  # SASL credentials come from secretRef
+
+env:
+  LOG_LEVEL: warn

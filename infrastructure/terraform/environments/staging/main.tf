@@ -67,5 +67,60 @@ module "cache" {
   num_cache_nodes    = 1
 }
 
-output "cluster_endpoint"  { value = module.kubernetes.cluster_endpoint }
-output "redis_url"         { value = module.cache.redis_url; sensitive = true }
+module "api_gateway" {
+  source = "../../modules/api-gateway"
+
+  environment          = "staging"
+  cluster_name         = module.kubernetes.cluster_name
+  oidc_provider_arn    = module.kubernetes.oidc_provider_arn
+  oidc_provider_url    = module.kubernetes.oidc_provider_url
+  aws_account_id       = data.aws_caller_identity.current.account_id
+  aws_region           = var.aws_region
+  helm_values_file     = "infrastructure/helm/api-gateway/values-staging.yaml"
+  image_tag            = var.image_tag
+}
+
+module "domain_service" {
+  source = "../../modules/domain-service"
+
+  environment          = "staging"
+  oidc_provider_arn    = module.kubernetes.oidc_provider_arn
+  oidc_provider_url    = module.kubernetes.oidc_provider_url
+  aws_account_id       = data.aws_caller_identity.current.account_id
+  aws_region           = var.aws_region
+  db_secret_arn        = var.db_secret_arn
+  helm_values_file     = "infrastructure/helm/domain-service/values-staging.yaml"
+  image_tag            = var.image_tag
+}
+
+module "event_worker" {
+  source = "../../modules/event-worker"
+
+  environment          = "staging"
+  oidc_provider_arn    = module.kubernetes.oidc_provider_arn
+  oidc_provider_url    = module.kubernetes.oidc_provider_url
+  aws_account_id       = data.aws_caller_identity.current.account_id
+  aws_region           = var.aws_region
+  helm_values_file     = "infrastructure/helm/event-worker/values-staging.yaml"
+  image_tag            = var.image_tag
+}
+
+data "aws_caller_identity" "current" {}
+
+variable "db_secret_arn" {
+  description = "Secrets Manager ARN for the staging PostgreSQL credentials"
+  type        = string
+  default     = ""
+}
+
+variable "image_tag" {
+  description = "Container image tag to deploy for all services"
+  type        = string
+  default     = "latest"
+}
+
+output "cluster_endpoint"             { value = module.kubernetes.cluster_endpoint }
+output "redis_url"                    { value = module.cache.redis_url; sensitive = true }
+output "api_gateway_irsa_role_arn"    { value = module.api_gateway.irsa_role_arn }
+output "domain_service_irsa_role_arn" { value = module.domain_service.irsa_role_arn }
+output "event_worker_irsa_role_arn"   { value = module.event_worker.irsa_role_arn }

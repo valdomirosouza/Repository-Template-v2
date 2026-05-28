@@ -56,6 +56,13 @@ jobs:
           git diff --exit-code frontend/${{ matrix.app }}/src/lib/api/ || \
             (echo "::error::TypeScript API client is out of date. Run 'make gen-api-client-ts APP=${{ matrix.app }}' and commit." && exit 1)
 
+      - name: Dependency vulnerability audit (blocks on HIGH or CRITICAL)
+        working-directory: frontend/${{ matrix.app }}
+        run: pnpm audit --audit-level=high
+        # Fails the build when any direct or transitive dependency has a HIGH or CRITICAL CVE.
+        # To suppress a specific advisory after review: add it to .pnpmfile.cjs or use
+        # pnpm audit --ignore-registry-errors with a documented justification in this file.
+
       - name: ESLint
         working-directory: frontend/${{ matrix.app }}
         run: pnpm lint

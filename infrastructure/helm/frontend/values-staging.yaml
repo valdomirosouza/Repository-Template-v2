@@ -1,0 +1,31 @@
+replicaCount: 1
+
+image:
+  pullPolicy: Always
+
+ingress:
+  host: app.staging.example.com
+  clusterIssuer: letsencrypt-staging
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 3
+
+pdb:
+  minAvailable: 1
+
+publicEnv:
+  NEXT_PUBLIC_API_BASE_URL: "https://api.staging.example.com"
+  NEXT_PUBLIC_APP_ENV: staging
+
+env:
+  NODE_ENV: production
+  API_GATEWAY_INTERNAL_URL: "http://api-gateway.staging:8000"

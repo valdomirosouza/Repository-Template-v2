@@ -1,0 +1,12 @@
+apiVersion: v2
+name: domain-service
+description: Domain Service — Java/Spring Boot service for entity lifecycle management
+type: application
+version: 0.1.0
+appVersion: "1.13.0"
+keywords:
+  - java
+  - spring-boot
+  - domain-service
+maintainers:
+  - name: platform-team

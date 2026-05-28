@@ -1,0 +1,78 @@
+# Default values — override in values-staging.yaml / values-production.yaml
+# ADR-0023: Next.js 14 App Router, SSR, OIDC auth (deferred).
+
+replicaCount: 2
+
+image:
+  repository: ghcr.io/org/frontend
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+serviceAccount:
+  create: true
+  name: ""
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: true
+  className: nginx
+  host: app.example.com
+  tlsSecretName: frontend-tls
+  clusterIssuer: letsencrypt-prod
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+pdb:
+  minAvailable: 2
+
+# Runtime environment — injected via ConfigMap (NEXT_PUBLIC_* vars baked at build time).
+# Server-side env vars (without NEXT_PUBLIC_ prefix) are safe to inject at runtime.
+env:
+  NODE_ENV: production
+  # API base URL for server-side fetch calls (internal cluster DNS).
+  API_GATEWAY_INTERNAL_URL: "http://api-gateway:8000"
+
+# Public runtime config — rendered into a ConfigMap and mounted as env vars.
+# NEXT_PUBLIC_* vars must match what was used at build time (baked into JS bundles).
+publicEnv:
+  NEXT_PUBLIC_API_BASE_URL: "https://api.example.com"
+  NEXT_PUBLIC_APP_ENV: production
+
+# Secrets injected from Kubernetes Secret (OIDC client secret, etc.)
+secretRef: frontend-secrets
+
+probes:
+  liveness:
+    path: /api/health
+    initialDelaySeconds: 15
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    path: /api/health
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+terminationGracePeriodSeconds: 30

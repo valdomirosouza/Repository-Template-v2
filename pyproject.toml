@@ -7,7 +7,7 @@ packages = ["src"]
 
 [project]
 name = "template-service"
-version = "1.9.1"
+version = "1.15.0"
 description = "Enterprise monorepo template — production-ready, multi-language, with optional AI/agent components"
 requires-python = ">=3.13"
 dependencies = [
@@ -124,6 +124,29 @@ markers = [
     "integration: requires running services (postgres, redis, kafka)",
     "security: defensive validation tests",
     "chaos: game-day / fault injection tests",
+    "e2e: full user journey tests; set BASE_URL env var to run against a live server",
+    "benchmark: performance benchmark; measures latency against SLO thresholds",
+]
+
+# ── Coverage ──────────────────────────────────────────────────────────────────
+[tool.coverage.run]
+branch = true
+source = ["src"]
+omit = [
+    "src/shared/generated/*",   # generated gRPC stubs
+    "src/api/rest/main.py",     # lifespan/startup wiring — covered by integration tests
+    "alembic/*",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@(abc\\.)?abstractmethod",
 ]
 
 # ── Bandit ────────────────────────────────────────────────────────────────────

@@ -1,0 +1,32 @@
+replicaCount: 3
+
+image:
+  pullPolicy: IfNotPresent
+
+ingress:
+  host: app.example.com
+  clusterIssuer: letsencrypt-prod
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 384Mi
+  limits:
+    cpu: 1000m
+    memory: 768Mi
+
+autoscaling:
+  minReplicas: 3
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 65
+
+pdb:
+  minAvailable: 2
+
+publicEnv:
+  NEXT_PUBLIC_API_BASE_URL: "https://api.example.com"
+  NEXT_PUBLIC_APP_ENV: production
+
+env:
+  NODE_ENV: production
+  API_GATEWAY_INTERNAL_URL: "http://api-gateway:8000"

@@ -26,6 +26,8 @@ servers:
 channels:
   domain.request.created:
     description: Fired when a user submits a new domain request via the REST API.
+    x-stability: stable
+    x-sunset-date: null
     subscribe:
       operationId: onDomainRequestCreated
       summary: Agent Service consumes new requests
@@ -39,6 +41,8 @@ channels:
 
   agent.action.proposed:
     description: Fired when the agent proposes an action that requires HITL approval.
+    x-stability: stable
+    x-sunset-date: null
     subscribe:
       operationId: onAgentActionProposed
       summary: HITL Gateway consumes proposed actions
@@ -52,6 +56,8 @@ channels:
 
   agent.action.approved:
     description: Fired when a human reviewer approves a HITL request.
+    x-stability: stable
+    x-sunset-date: null
     subscribe:
       operationId: onAgentActionApproved
       message:
@@ -63,6 +69,8 @@ channels:
 
   agent.action.rejected:
     description: Fired when a human reviewer rejects a HITL request.
+    x-stability: stable
+    x-sunset-date: null
     subscribe:
       operationId: onAgentActionRejected
       message:
@@ -76,6 +84,8 @@ channels:
     description: |
       Fired when a HITL request expires without a human decision.
       Timeout always results in EXPIRED_AUTO_REJECTED — never auto-approval (ADR-0011).
+    x-stability: stable
+    x-sunset-date: null
     subscribe:
       operationId: onAgentActionExpired
       message:
@@ -87,6 +97,8 @@ channels:
 
   agent.action.executed:
     description: Fired after an agent action completes execution (HOTL or post-HITL approval).
+    x-stability: stable
+    x-sunset-date: null
     subscribe:
       operationId: onAgentActionExecuted
       message:
@@ -98,6 +110,8 @@ channels:
 
   domain.result.completed:
     description: Fired when the full domain request processing pipeline completes.
+    x-stability: stable
+    x-sunset-date: null
     subscribe:
       operationId: onDomainResultCompleted
       message:
@@ -112,6 +126,8 @@ channels:
       Fired when the FeedbackLoop adjusts a risk_score bias for an action_type.
       Consumers can use this to track convergence and audit automated risk adjustments.
       No PII — action_type is an enum value, not user data (spec: specs/ai/feedback-loop.md §7).
+    x-stability: beta
+    x-sunset-date: null
     subscribe:
       operationId: onAgentFeedbackApplied
       summary: Observability consumers track bias convergence
@@ -125,6 +141,8 @@ channels:
 
   audit.event.written:
     description: Fired for every immutable audit record written by the Audit Logger.
+    x-stability: stable
+    x-sunset-date: null
     subscribe:
       operationId: onAuditEventWritten
       message:
@@ -142,6 +160,8 @@ channels:
       Proto schema: infrastructure/proto/harness_state.proto (HarnessStateEnvelope).
       Spec: specs/ai/harness-design.md §2, §9. ADR-0013, ADR-0014.
       All user-content fields are PII-masked before publish.
+    x-stability: beta
+    x-sunset-date: null
     subscribe:
       operationId: onHarnessStateChanged
       summary: External consumers (dashboards, audit aggregators) track sprint state

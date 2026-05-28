@@ -1,0 +1,279 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: slo-burn-rate
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    role: alert-rules
+spec:
+  groups:
+    # ── HITL System — availability ────────────────────────────────────────────
+    # SLO: 99.9% of HITL decision submissions return non-5xx
+    # Error budget: 43.8 min / 30d window
+    # Burn rates: fast (1h / 14.4×) + slow (6h / 6.0×)
+    - name: slo.hitl.availability
+      interval: 30s
+      rules:
+        - alert: HITLAvailabilityFastBurn
+          expr: |
+            (
+              sum(rate(http_requests_total{route=~"/v1/hitl/.*", status=~"5.."}[1h]))
+              / sum(rate(http_requests_total{route=~"/v1/hitl/.*"}[1h]))
+            ) > (14.4 * 0.001)
+          for: 2m
+          labels:
+            severity: critical
+            slo: hitl_availability
+            burn_window: 1h
+          annotations:
+            summary: "HITL availability SLO — fast burn (1h window)"
+            description: >
+              HITL endpoint 5xx rate is {{ $value | humanizePercentage }}, burning
+              the error budget at 14.4× (exhaustion in ~2 days).
+              Action: check decision endpoint health, inspect api-gateway logs.
+            runbook_url: "docs/sre/runbooks/hitl-queue-backlog.md"
+
+        - alert: HITLAvailabilitySlowBurn
+          expr: |
+            (
+              sum(rate(http_requests_total{route=~"/v1/hitl/.*", status=~"5.."}[6h]))
+              / sum(rate(http_requests_total{route=~"/v1/hitl/.*"}[6h]))
+            ) > (6.0 * 0.001)
+          for: 15m
+          labels:
+            severity: warning
+            slo: hitl_availability
+            burn_window: 6h
+          annotations:
+            summary: "HITL availability SLO — slow burn (6h window)"
+            description: >
+              HITL endpoint 5xx rate is {{ $value | humanizePercentage }}, burning
+              the error budget at 6.0× (exhaustion in ~5 days).
+              Action: monitor closely; prepare rollback if trend continues.
+            runbook_url: "docs/sre/runbooks/hitl-queue-backlog.md"
+
+    # ── HITL System — decision latency ────────────────────────────────────────
+    # SLO: p95 operator decision time ≤ 300 s
+    - name: slo.hitl.latency
+      interval: 30s
+      rules:
+        - alert: HITLDecisionLatencyP95Critical
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(hitl_wait_seconds_bucket[15m])) by (le)
+            ) > 240
+          for: 5m
+          labels:
+            severity: critical
+            slo: hitl_decision_latency_p95
+          annotations:
+            summary: "HITL p95 decision latency critical — {{ $value | humanizeDuration }} (SLO: 300 s)"
+            description: >
+              p95 operator decision time is {{ $value | humanizeDuration }}.
+              SLO breach imminent (target: ≤ 300 s). Queue depth likely high.
+            runbook_url: "docs/sre/runbooks/hitl-queue-backlog.md"
+
+        - alert: HITLDecisionLatencyP95Warning
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(hitl_wait_seconds_bucket[15m])) by (le)
+            ) > 180
+          for: 5m
+          labels:
+            severity: warning
+            slo: hitl_decision_latency_p95
+          annotations:
+            summary: "HITL p95 decision latency elevated — {{ $value | humanizeDuration }}"
+            description: >
+              p95 operator decision time is {{ $value | humanizeDuration }}.
+              Approaching SLO threshold (300 s). Monitor operator throughput.
+            runbook_url: "docs/sre/runbooks/hitl-queue-backlog.md"
+
+    # ── HITL System — queue depth ─────────────────────────────────────────────
+    # SLO: ≤ 100 pending requests at any time
+    - name: slo.hitl.queue
+      interval: 30s
+      rules:
+        - alert: HITLQueueDepthCritical
+          expr: |
+            sum(hitl_active_requests) > 100
+          for: 2m
+          labels:
+            severity: critical
+            slo: hitl_queue_depth
+          annotations:
+            summary: "HITL queue depth critical — {{ $value }} pending (SLO: ≤ 100)"
+            description: >
+              {{ $value }} HITL requests are pending human review.
+              SLO max is 100. Operator throughput is insufficient or operators are unavailable.
+            runbook_url: "docs/sre/runbooks/hitl-queue-backlog.md"
+
+        - alert: HITLQueueDepthWarning
+          expr: |
+            sum(hitl_active_requests) > 50
+          for: 5m
+          labels:
+            severity: warning
+            slo: hitl_queue_depth
+          annotations:
+            summary: "HITL queue depth elevated — {{ $value }} pending"
+            description: >
+              {{ $value }} HITL requests pending (warning threshold: 50, SLO max: 100).
+              Monitor operator throughput; prepare escalation if trend continues.
+            runbook_url: "docs/sre/runbooks/hitl-queue-backlog.md"
+
+    # ── Audit log write — hard invariant ─────────────────────────────────────
+    # Every decision MUST be written; any write failure is a P1 invariant breach
+    - name: slo.audit.write
+      interval: 15s
+      rules:
+        - alert: AuditLogWriteFailure
+          expr: |
+            sum(increase(audit_log_write_errors_total[1m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+            slo: audit_log_write_success
+          annotations:
+            summary: "Audit log write failure — invariant breach"
+            description: >
+              {{ $value }} audit log write errors detected in the last minute.
+              This is a hard invariant violation — agent actions are blocked until
+              the audit log is restored. Immediate action required.
+            runbook_url: "docs/sre/runbooks/redis-connection-failure.md"
+
+    # ── Agent autonomous — resolution rate ────────────────────────────────────
+    # SLO: ≥ 80% of eligible actions resolved without HITL escalation
+    - name: slo.agent.autonomous
+      interval: 60s
+      rules:
+        - alert: AutonomousResolutionRateCritical
+          expr: |
+            agent_autonomous_resolution_rate < 0.60
+          for: 30m
+          labels:
+            severity: critical
+            slo: autonomous_resolution_rate
+          annotations:
+            summary: "Autonomous resolution rate critical — {{ $value | humanizePercentage }} (SLO: ≥ 80%)"
+            description: >
+              Only {{ $value | humanizePercentage }} of actions are resolving autonomously
+              for action_type={{ $labels.action_type }}.
+              Check feedback loop bias, risk scorer thresholds, and evaluator pass rate.
+            runbook_url: "docs/sre/runbooks/hitl-queue-backlog.md"
+
+        - alert: AutonomousResolutionRateWarning
+          expr: |
+            agent_autonomous_resolution_rate < 0.75
+          for: 30m
+          labels:
+            severity: warning
+            slo: autonomous_resolution_rate
+          annotations:
+            summary: "Autonomous resolution rate warning — {{ $value | humanizePercentage }}"
+            description: >
+              Autonomous resolution rate is {{ $value | humanizePercentage }} for
+              action_type={{ $labels.action_type }} (SLO: ≥ 80%).
+              Monitor feedback loop convergence.
+            runbook_url: "docs/sre/runbooks/hitl-queue-backlog.md"
+
+    # ── Agent autonomous — token cost ─────────────────────────────────────────
+    # SLO: p95 token cost per resolution ≤ 5 000 tokens
+    - name: slo.agent.cost
+      interval: 60s
+      rules:
+        - alert: TokenCostP95Critical
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(agent_cost_per_resolution_tokens_bucket[15m])) by (action_type, le)
+            ) > 10000
+          for: 15m
+          labels:
+            severity: critical
+            slo: token_cost_p95
+          annotations:
+            summary: "Token cost p95 critical for {{ $labels.action_type }} — {{ $value | humanize }} tokens"
+            description: >
+              p95 tokens-per-resolution for '{{ $labels.action_type }}' is {{ $value | humanize }}
+              (FinOps critical threshold: 10 000; SLO target: ≤ 5 000).
+              Likely cause: runaway self-reflection loop. Check evaluator pass rate
+              and sprint iteration count.
+            runbook_url: "docs/sre/runbooks/hitl-queue-backlog.md"
+
+        - alert: TokenCostP95Warning
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(agent_cost_per_resolution_tokens_bucket[15m])) by (action_type, le)
+            ) > 5000
+          for: 15m
+          labels:
+            severity: warning
+            slo: token_cost_p95
+          annotations:
+            summary: "Token cost p95 above SLO for {{ $labels.action_type }} — {{ $value | humanize }} tokens"
+            description: >
+              p95 tokens-per-resolution for '{{ $labels.action_type }}' is {{ $value | humanize }}
+              (SLO target: ≤ 5 000). Monitor self-reflection iteration count.
+            runbook_url: "docs/sre/runbooks/hitl-queue-backlog.md"
+
+    # ── Agent autonomous — self-reflection runaway ────────────────────────────
+    # SLO: p99 sprint iterations per resolution ≤ 15
+    - name: slo.agent.iterations
+      interval: 60s
+      rules:
+        - alert: SelfReflectionIterationsHigh
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(agent_sprint_iterations_bucket[10m])) by (action_type, le)
+            ) > 12
+          for: 10m
+          labels:
+            severity: warning
+            slo: self_reflection_iterations_p99
+          annotations:
+            summary: "Self-reflection p99 iteration count high for {{ $labels.action_type }}"
+            description: >
+              p99 sprint iterations for '{{ $labels.action_type }}' is {{ $value | humanize }}
+              (SLO cap: 15; warning at 12). Evaluator thresholds may be too strict
+              or generator is producing low-quality output.
+            runbook_url: "docs/sre/runbooks/hitl-queue-backlog.md"
+
+    # ── API gateway — multi-window burn rate ──────────────────────────────────
+    # SLO: 99.9% availability (existing) — adding slow-burn complement
+    - name: slo.api-gateway.availability
+      interval: 30s
+      rules:
+        - alert: APIGatewayAvailabilityFastBurn
+          expr: |
+            (
+              sum(rate(http_requests_total{service="api-gateway", status=~"5.."}[1h]))
+              / sum(rate(http_requests_total{service="api-gateway"}[1h]))
+            ) > (14.4 * 0.001)
+          for: 2m
+          labels:
+            severity: critical
+            slo: api_gateway_availability
+            burn_window: 1h
+          annotations:
+            summary: "API gateway availability SLO — fast burn (1h)"
+            description: >
+              Error rate {{ $value | humanizePercentage }} burning error budget at 14.4×.
+            runbook_url: "docs/sre/runbooks/api-gateway-high-error-rate.md"
+
+        - alert: APIGatewayAvailabilitySlowBurn
+          expr: |
+            (
+              sum(rate(http_requests_total{service="api-gateway", status=~"5.."}[6h]))
+              / sum(rate(http_requests_total{service="api-gateway"}[6h]))
+            ) > (6.0 * 0.001)
+          for: 15m
+          labels:
+            severity: warning
+            slo: api_gateway_availability
+            burn_window: 6h
+          annotations:
+            summary: "API gateway availability SLO — slow burn (6h)"
+            description: >
+              Error rate {{ $value | humanizePercentage }} burning error budget at 6.0×.
+            runbook_url: "docs/sre/runbooks/api-gateway-high-error-rate.md"

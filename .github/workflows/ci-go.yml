@@ -48,6 +48,20 @@ jobs:
             golangci-lint run "$dir/..."
           done
 
+      - name: govulncheck (blocks on known Go vulnerabilities)
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          find services -name go.mod | while read gomod; do
+            dir=$(dirname "$gomod")
+            service=$(basename "$dir")
+            echo "govulncheck: scanning $service..."
+            govulncheck "$dir/..."
+          done
+        # Fails the build when any imported package has a known vulnerability in the Go vuln DB.
+        # govulncheck only reports vulnerabilities reachable via the call graph — not transitive
+        # vulnerabilities that are not actually called. False positives can be suppressed with
+        # govulncheck -ignore (see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck).
+
       - name: Verify proto stubs are up-to-date
         run: |
           # Install protoc and plugins

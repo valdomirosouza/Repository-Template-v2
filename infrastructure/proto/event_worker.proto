@@ -1,0 +1,186 @@
+// event_worker.proto — gRPC service contract for the Go event-worker.
+//
+// Spec: specs/system/async-event-flow.md
+// ADR:  ADR-0021 (Agent Communication Protocol), ADR-0024 (API Versioning Strategy)
+// Service: services/event-worker/
+//
+// This file defines the gRPC management surface for the Go event-worker.
+// Event flow (Kafka pub/sub) is defined in docs/api/asyncapi/v1/asyncapi.yaml.
+// This gRPC contract covers operational RPCs: publishing ad-hoc events,
+// inspecting processing status, and draining the worker queue for maintenance.
+//
+// Codegen:
+//   make gen-proto-go      → services/event-worker/api/grpc/v1/
+//   make gen-proto-python  → src/shared/generated/grpc/  (for api-gateway calls)
+//
+// Versioning rules: see ADR-0021 §4.
+// Field numbers are permanent — never reuse a retired number.
+
+syntax = "proto3";
+
+package eventworker.v1;
+
+option java_package = "com.yourorg.eventworker.grpc.v1";
+option java_outer_classname = "EventWorkerProto";
+option go_package = "github.com/yourorg/monorepo/services/event-worker/api/grpc/v1;eventworkerv1";
+
+// ── Enums ─────────────────────────────────────────────────────────────────────
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED   = 0;
+  EVENT_TYPE_ENTITY_CREATED = 1;
+  EVENT_TYPE_ENTITY_UPDATED = 2;
+}
+
+enum ProcessingStatus {
+  PROCESSING_STATUS_UNSPECIFIED = 0;
+  PROCESSING_STATUS_PENDING     = 1;
+  PROCESSING_STATUS_PROCESSING  = 2;
+  PROCESSING_STATUS_COMPLETED   = 3;
+  PROCESSING_STATUS_FAILED      = 4;
+  PROCESSING_STATUS_DEAD_LETTERED = 5;
+}
+
+// ── Core messages ─────────────────────────────────────────────────────────────
+
+// EventRecord is the canonical representation of a processed event.
+// Maps to: services/event-worker/internal/domain/event.go::DomainEvent
+message EventRecord {
+  // Entity UUID the event relates to.
+  string entity_id = 1;
+
+  EventType event_type = 2;
+
+  // ISO-8601 UTC timestamp when the event was received by the worker.
+  string received_at = 3;
+
+  // ISO-8601 UTC timestamp when processing completed. Empty if still in progress.
+  string processed_at = 4;
+
+  ProcessingStatus status = 5;
+
+  // Worker instance that processed this event.
+  string worker_id = 6;
+
+  // W3C traceparent propagated from the Kafka message header.
+  string trace_id = 7;
+}
+
+// ── PublishEvent ──────────────────────────────────────────────────────────────
+
+// PublishEvent triggers ad-hoc event publication outside the normal Kafka consumer
+// path — used for replays, backfill jobs, and operational tooling.
+message PublishEventRequest {
+  // Entity UUID. Required.
+  string entity_id = 1;
+
+  // Event type to publish. Required; EVENT_TYPE_UNSPECIFIED returns INVALID_ARGUMENT.
+  EventType event_type = 2;
+
+  // JSON-serialised, PII-masked payload. Optional; defaults to "{}".
+  // Apply pii_filter.mask_dict() before setting.
+  string masked_payload_json = 3;
+
+  // Caller-supplied W3C traceparent. Optional.
+  string trace_id = 4;
+
+  // Correlation ID propagated from the originating request. Optional.
+  string correlation_id = 5;
+}
+
+message PublishEventResponse {
+  // Unique event ID assigned by the worker for tracking.
+  string event_id = 1;
+
+  // ISO-8601 UTC timestamp when the event was accepted.
+  string accepted_at = 2;
+
+  // Kafka topic the event was published to.
+  string topic = 3;
+}
+
+// ── GetEventStatus ────────────────────────────────────────────────────────────
+
+message GetEventStatusRequest {
+  // Entity UUID to query. Required.
+  string entity_id = 1;
+
+  // If set, return only events of this type. EVENT_TYPE_UNSPECIFIED returns all.
+  EventType event_type_filter = 2;
+
+  // Maximum number of events to return (1–50). Defaults to 10.
+  int32 limit = 3;
+
+  string trace_id = 4;
+}
+
+message GetEventStatusResponse {
+  repeated EventRecord events = 1;
+
+  // ISO-8601 UTC timestamp of the most recent event for this entity.
+  // Empty if no events found.
+  string last_event_at = 2;
+}
+
+// ── DrainQueue ────────────────────────────────────────────────────────────────
+
+// DrainQueue pauses consumption from Kafka and waits for in-flight events to
+// complete. Used before rolling restarts, schema migrations, and maintenance windows.
+message DrainQueueRequest {
+  // Worker instance to drain. Required.
+  string worker_id = 1;
+
+  // Maximum time to wait for in-flight events to complete (seconds).
+  // Defaults to 30. Maximum 300.
+  int32 drain_timeout_seconds = 2;
+
+  // If true, events that cannot complete within drain_timeout_seconds are
+  // moved to the dead-letter topic instead of blocking the drain.
+  bool allow_dead_letter_on_timeout = 3;
+
+  string trace_id = 4;
+}
+
+message DrainQueueResponse {
+  // Number of in-flight events that completed successfully.
+  int32 events_drained = 1;
+
+  // Number of events moved to the dead-letter topic (0 if none).
+  int32 events_dead_lettered = 2;
+
+  // Whether the drain completed before the timeout.
+  bool completed_before_timeout = 3;
+
+  // ISO-8601 UTC timestamp when the drain completed.
+  string completed_at = 4;
+}
+
+// ── EventWorkerService ────────────────────────────────────────────────────────
+
+// EventWorkerService exposes operational management RPCs for the event-worker.
+//
+// Callers: api-gateway (operational tooling), batch-jobs (replay/backfill).
+// Authentication: mTLS between services (ADR-0007, ADR-0008).
+//
+// The primary event flow (Kafka publish/consume) is defined in:
+//   docs/api/asyncapi/v1/asyncapi.yaml
+// This service covers operational concerns that sit outside the Kafka path.
+//
+// Error codes in use:
+//   NOT_FOUND        — entity_id has no recorded events
+//   INVALID_ARGUMENT — missing required field or out-of-range value
+//   UNAVAILABLE      — worker is not running or Kafka is unreachable
+//   INTERNAL         — unexpected server error; retry with exponential back-off
+service EventWorkerService {
+  // Publish an ad-hoc event outside the normal Kafka consumer path.
+  // Used for replays, backfill jobs, and operational tooling.
+  rpc PublishEvent(PublishEventRequest) returns (PublishEventResponse);
+
+  // Return recent processing records for a given entity.
+  // Returns NOT_FOUND if no events have been processed for the entity_id.
+  rpc GetEventStatus(GetEventStatusRequest) returns (GetEventStatusResponse);
+
+  // Pause consumption and drain in-flight events before maintenance.
+  // Returns UNAVAILABLE if the worker_id is not registered.
+  rpc DrainQueue(DrainQueueRequest) returns (DrainQueueResponse);
+}

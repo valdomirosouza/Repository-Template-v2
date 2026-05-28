@@ -1,0 +1,177 @@
+// domain_service.proto — gRPC service contract for the Java domain-service.
+//
+// Spec: specs/system/request-pipeline.md
+// ADR:  ADR-0021 (Agent Communication Protocol), ADR-0024 (API Versioning Strategy)
+// Service: services/domain-service/
+//
+// This file defines the gRPC surface for service-to-service calls into the domain-service.
+// REST callers (API gateway, frontend) use the OpenAPI contract instead.
+//
+// Codegen:
+//   make gen-proto-python   → src/shared/generated/grpc/
+//   make gen-proto-go       → api/grpc/  (event-worker integration)
+//
+// Versioning rules: see ADR-0021 §4.
+// Field numbers are permanent — never reuse a retired number.
+// PII masking: all name/payload fields containing user data must be masked
+// with pii_filter.mask_dict() before constructing request messages.
+
+syntax = "proto3";
+
+package domainservice.v1;
+
+option java_package = "com.yourorg.domainservice.grpc.v1";
+option java_outer_classname = "DomainServiceProto";
+option java_multiple_files = true;
+option go_package = "github.com/yourorg/monorepo/services/domain-service/api/grpc/v1;domainservicev1";
+
+// ── Enums ─────────────────────────────────────────────────────────────────────
+
+enum EntityStatus {
+  ENTITY_STATUS_UNSPECIFIED = 0;
+  ENTITY_STATUS_PENDING     = 1;
+  ENTITY_STATUS_ACTIVE      = 2;
+  ENTITY_STATUS_ARCHIVED    = 3;
+}
+
+// ── Core messages ─────────────────────────────────────────────────────────────
+
+// EntityMessage is the canonical wire representation of a domain entity.
+// Maps to: com.yourorg.domainservice.api.dto.EntityResponse
+message EntityMessage {
+  // UUID v4 assigned at creation.
+  string id = 1;
+
+  // PII-masked entity name (max 255 chars).
+  // Callers must apply pii_filter.mask_text() before setting this field.
+  string masked_name = 2;
+
+  EntityStatus status = 3;
+
+  // ISO-8601 UTC creation timestamp.
+  string created_at = 4;
+
+  // ISO-8601 UTC last-updated timestamp.
+  string updated_at = 5;
+}
+
+// ── CreateEntity ──────────────────────────────────────────────────────────────
+
+message CreateEntityRequest {
+  // PII-masked entity name (max 255 chars). Required.
+  // Apply pii_filter.mask_text() before setting.
+  string masked_name = 1;
+
+  // JSON-serialised, PII-masked entity payload (max 10 000 chars). Optional.
+  // Apply pii_filter.mask_dict() before setting.
+  string masked_payload_json = 2;
+
+  // Caller-supplied W3C traceparent for distributed tracing. Optional.
+  string trace_id = 3;
+
+  // Correlation ID propagated from the originating request. Optional.
+  string correlation_id = 4;
+}
+
+message CreateEntityResponse {
+  EntityMessage entity = 1;
+}
+
+// ── GetEntity ─────────────────────────────────────────────────────────────────
+
+message GetEntityRequest {
+  // UUID v4 of the entity to retrieve. Required.
+  string entity_id = 1;
+
+  string trace_id = 2;
+}
+
+message GetEntityResponse {
+  EntityMessage entity = 1;
+}
+
+// ── ListEntities ──────────────────────────────────────────────────────────────
+
+message ListEntitiesRequest {
+  // Filter by status. ENTITY_STATUS_UNSPECIFIED returns all statuses.
+  EntityStatus status_filter = 1;
+
+  // Maximum number of results to return (1–100). Defaults to 20.
+  int32 page_size = 2;
+
+  // Opaque pagination token from a previous ListEntitiesResponse.
+  // Empty string for the first page.
+  string page_token = 3;
+
+  string trace_id = 4;
+}
+
+message ListEntitiesResponse {
+  repeated EntityMessage entities = 1;
+
+  // Opaque token to retrieve the next page. Empty when no further pages exist.
+  string next_page_token = 2;
+
+  // Total number of entities matching the filter (across all pages).
+  int32 total_count = 3;
+}
+
+// ── UpdateEntityStatus ────────────────────────────────────────────────────────
+
+message UpdateEntityStatusRequest {
+  // UUID v4 of the entity to update. Required.
+  string entity_id = 1;
+
+  // New status. ENTITY_STATUS_UNSPECIFIED is rejected with INVALID_ARGUMENT.
+  EntityStatus new_status = 2;
+
+  // Operator or agent ID making the change — stored in the audit log.
+  string updated_by = 3;
+
+  // Human-readable rationale for the status change. Required.
+  // Min 10 chars; max 1000 chars.
+  string rationale = 4;
+
+  string trace_id = 5;
+  string correlation_id = 6;
+}
+
+message UpdateEntityStatusResponse {
+  EntityMessage entity = 1;
+}
+
+// ── DomainService ─────────────────────────────────────────────────────────────
+
+// DomainService exposes CRUD operations and status transitions for domain entities.
+//
+// Callers: api-gateway (via src/shared/generated/grpc/), event-worker (via Go stubs).
+// Authentication: mTLS between services (ADR-0007, ADR-0008).
+// Rate limiting: 500 RPS per caller (enforced by the service mesh — ADR-0007).
+//
+// Error codes in use:
+//   NOT_FOUND         — entity_id does not exist
+//   INVALID_ARGUMENT  — validation failure (empty name, bad status, etc.)
+//   ALREADY_EXISTS    — creation attempted with a duplicate correlation_id
+//   PERMISSION_DENIED — caller lacks the required role claim
+//   INTERNAL          — unexpected server error; retry with exponential back-off
+service DomainService {
+  // Create a new domain entity in PENDING status.
+  // On success, publishes a domain.entity.created Avro event to Kafka.
+  rpc CreateEntity(CreateEntityRequest) returns (CreateEntityResponse);
+
+  // Retrieve a single entity by its UUID.
+  // Returns NOT_FOUND if the entity does not exist or has been archived.
+  rpc GetEntity(GetEntityRequest) returns (GetEntityResponse);
+
+  // List entities with optional status filter and cursor-based pagination.
+  rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse);
+
+  // Transition an entity to a new status.
+  // Allowed transitions:
+  //   PENDING  → ACTIVE   (activate)
+  //   ACTIVE   → ARCHIVED (archive)
+  //   PENDING  → ARCHIVED (cancel)
+  // Any other transition returns INVALID_ARGUMENT.
+  // On success, publishes a domain.entity.status_updated Avro event to Kafka.
+  rpc UpdateEntityStatus(UpdateEntityStatusRequest) returns (UpdateEntityStatusResponse);
+}
