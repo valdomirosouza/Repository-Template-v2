@@ -13,6 +13,26 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **`scaffold/`** — Service scaffolding system ported from the abandoned `master` branch.
+  `scaffold/scaffold.py` plus templates for Python, Java, Go, and Next.js frontend services.
+  Implements the `make new-service NAME=foo LANG=python|java|go` command that CLAUDE.md
+  documented but `main` had never implemented.
+- **`infrastructure/terraform/modules/{database,message-broker,observability,vector-db}/`** —
+  Four Terraform modules ported from `master`. These were empty `.gitkeep` stubs in `main`
+  (main.tf + outputs.tf + variables.tf each). `terraform fmt`-normalised on import.
+- **`docs/adr/ADR-0025-language-selection.md`** — Language Selection for New Services, ported
+  from `master` (was ADR-0016 there; renumbered to avoid collision with `main`'s
+  ADR-0016-agent-sandbox-execution-policy). Decision matrix mapping workload type → runtime;
+  pairs with the scaffold system.
+
+### Changed
+
+- **`docs/adr/README.md`** — Added missing Core Architecture index rows for ADR-0022 (Testing
+  Strategy), ADR-0023 (Frontend Architecture), ADR-0024 (API Versioning Strategy), and the
+  new ADR-0025 (Language Selection).
+
 ---
 
 ## [1.15.0] — 2026-05-28
