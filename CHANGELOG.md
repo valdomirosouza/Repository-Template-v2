@@ -15,6 +15,17 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [1.5.1] — 2026-05-28
+
+### Changed
+
+- **`docs/architecture.md`**: reframed to treat Agent Runtime and HITL/HOTL as opt-in.
+  Added scope note, annotated Mermaid topology subgraph, marked sequence diagram as
+  "with AI Agents Module enabled", split Key Module Map into Core and AI Agents Module
+  sections, and added `Module` column to Infrastructure Fallback table.
+
+---
+
 ## [1.5.0] — 2026-05-28
 
 ### Changed
