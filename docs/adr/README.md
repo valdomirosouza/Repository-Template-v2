@@ -61,6 +61,10 @@ What other options were evaluated and why were they rejected?
 
 ## Master Index
 
+### Core Architecture
+
+These ADRs apply to every project using this template, regardless of whether the AI Agents Module is enabled.
+
 | ADR                                                       | Title                             | Status   | Date       |
 | --------------------------------------------------------- | --------------------------------- | -------- | ---------- |
 | [ADR-0001](ADR-0001-monorepo-structure-and-governance.md) | Monorepo Structure and Governance | Accepted | 2026-05-24 |
@@ -72,13 +76,21 @@ What other options were evaluated and why were they rejected?
 | [ADR-0007](ADR-0007-service-mesh.md)                      | Service Mesh                      | Proposed | 2026-05-24 |
 | [ADR-0008](ADR-0008-secrets-management.md)                | Secrets Management                | Accepted | 2026-05-24 |
 | [ADR-0009](ADR-0009-caching-strategy.md)                  | Caching Strategy                  | Accepted | 2026-05-24 |
-| [ADR-0010](ADR-0010-agent-framework-selection.md)         | Agent Framework Selection         | Accepted | 2026-05-24 |
-| [ADR-0011](ADR-0011-hitl-hotl-model.md)                   | HITL/HOTL Human Oversight Model   | Accepted | 2026-05-24 |
 | [ADR-0012](ADR-0012-pii-masking-strategy.md)              | PII Masking Strategy              | Accepted | 2026-05-24 |
 | [ADR-0013](ADR-0013-data-retention-policy.md)             | Data Retention Policy             | Accepted | 2026-05-24 |
-| [ADR-0014](ADR-0014-multi-agent-harness-strategy.md)      | Multi-Agent Harness Strategy      | Accepted | 2026-05-24 |
 | [ADR-0015](ADR-0015-feature-flag-strategy.md)             | Feature Flag Strategy             | Accepted | 2026-05-25 |
-| [ADR-0016](ADR-0016-agent-sandbox-execution-policy.md)    | Agent Sandbox Execution Policy    | Accepted | 2026-05-25 |
-| [ADR-0017](ADR-0017-agent-memory-architecture.md)         | Agent Memory Architecture         | Accepted | 2026-05-27 |
 | [ADR-0018](ADR-0018-db-encryption-at-rest.md)             | Database Encryption at Rest       | Accepted | 2026-05-28 |
 | [ADR-0019](ADR-0019-redis-tls-value-encryption.md)        | Redis TLS and Value Encryption    | Accepted | 2026-05-28 |
+
+### AI Agents Module _(opt-in)_
+
+These ADRs are **only binding when the AI Agents Module is enabled** (i.e., `src/agents/` is present in your project).
+See `docs/optional-extensions/ai-agents/README.md` for the activation checklist.
+
+| ADR                                                    | Title                           | Status   | Date       |
+| ------------------------------------------------------ | ------------------------------- | -------- | ---------- |
+| [ADR-0010](ADR-0010-agent-framework-selection.md)      | Agent Framework Selection       | Accepted | 2026-05-24 |
+| [ADR-0011](ADR-0011-hitl-hotl-model.md)                | HITL/HOTL Human Oversight Model | Accepted | 2026-05-24 |
+| [ADR-0014](ADR-0014-multi-agent-harness-strategy.md)   | Multi-Agent Harness Strategy    | Accepted | 2026-05-24 |
+| [ADR-0016](ADR-0016-agent-sandbox-execution-policy.md) | Agent Sandbox Execution Policy  | Accepted | 2026-05-25 |
+| [ADR-0017](ADR-0017-agent-memory-architecture.md)      | Agent Memory Architecture       | Accepted | 2026-05-27 |
