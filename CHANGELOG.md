@@ -15,6 +15,16 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [1.9.1] — 2026-05-28
+
+### Changed
+
+- **`README.md`** — updated to reflect v1.9.0 state: version badge, Python 3.13, 21 ADRs,
+  service scaffolds, Helm/Terraform IaC, agent alert rules, STRIDE/ethics/SDLC specs,
+  contract tests, full repository structure, CI/CD canary CD table, and new Security section.
+
+---
+
 ## [1.9.0] — 2026-05-28
 
 ### Added
