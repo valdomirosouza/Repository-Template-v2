@@ -10,7 +10,7 @@
 2. **Privacy-by-design** — PII masking is structural, not optional; applied at three mandatory interception points
 3. **Defence-in-depth** — multiple guardrail layers; no single point of trust failure
 4. **Observable-by-default** — every component emits Golden Signals; no dark services
-5. **HITL for consequential actions** — no autonomous execution of real-world effects
+5. **HITL for consequential actions** _(AI Agents Module only)_ — when AI agents are enabled, no autonomous execution of real-world effects without human approval or explicit HOTL governance sign-off (ADR-0011)
 6. **Spec-before-code** — no component is built without an approved spec
 
 ---
