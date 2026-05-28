@@ -15,6 +15,42 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [1.4.0] - 2026-05-28
+
+### Added
+
+- **Architecture diagrams** (7 Mermaid diagrams): system topology + request lifecycle
+  sequence (`docs/architecture.md`), request state machine, HITL/HOTL decision flowchart,
+  4-layer guardrail pipeline, Kafka event topology, multi-agent harness sprint loop
+- **RiskScorer** (`src/agents/risk_scorer.py`): deterministic 5-factor weighted risk scorer
+  (irreversibility 0.35, external effect 0.25, scale 0.20, data sensitivity 0.15, rejection
+  rate 0.05); replaces LLM self-reported `risk_score` in the orchestrator `_act` phase;
+  47 unit tests with 100% branch coverage
+- **Data retention job** (`src/jobs/retention_job.py`): `RetentionJob` enforces
+  `specs/privacy/data-retention.md` — deletes expired `agent_memory_documents`, archives
+  and hard-deletes aged `audit_events`, verifies compliance post-sweep
+- **Retention CronJob** (`infrastructure/k8s/retention-cronjob.yaml`): daily 02:00 UTC
+  K8s CronJob with dedicated `retention-job` ServiceAccount (DBA role for audit DELETE)
+- **HITL notification spec** (`specs/ai/hitl-notification.md`): webhook payload schema,
+  HMAC-SHA256 signature, 3-attempt retry policy, `NotificationService` protocol,
+  `MultiChannelNotificationService` fan-out, reviewer dashboard contract, observability
+- **CUSTOMISING.md**: full template adoption guide — minimum required changes, what to
+  remove per stack, SDD first-spec walkthrough, harness_mode selection guide, upstream sync
+- **Control loop specs**:
+  - `specs/ai/feedback-loop.md`: convergence contract, thresholds table, worked 7-cycle
+    example, rollback/override procedures, Mermaid control loop diagram
+  - `specs/ai/agent-memory.md`: memory recall sequence diagram showing explicit recall
+    in the Reason phase, injection API, and skip conditions
+
+### Changed
+
+- **README**: added 3-command end-to-end demo, `make infra-up` port/role table, health
+  check verification step (`/health` + `/ready`), and "what to remove" per-stack guidance
+- **`src/agents/orchestrator/orchestrator.py`**: `RiskScorer` injected as optional
+  dependency; authoritative `risk_score` computed in `_act` before HITL routing
+
+---
+
 ## [1.3.1] - 2026-05-27
 
 ### Changed
