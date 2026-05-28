@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+---
+
+## [1.6.0] — 2026-05-28
+
 ### Added
 
 - **`services/domain-service/`** — Java 21 / Spring Boot 3.3 scaffold (Wave 1.1).
@@ -26,6 +30,9 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
   HITL approval queue UI (`/hitl`), typed API client over the API Gateway REST spec,
   `ApprovalCard` component with approve/reject flow, Jest unit tests, Playwright config,
   multi-stage Dockerfile, committed `pnpm-lock.yaml`.
+
+### Changed
+
 - **`.github/workflows/ci-go.yml`** — added `go mod tidy` step before unit tests so
   the scaffold works in CI without a pre-committed `go.sum`.
 
