@@ -13,6 +13,22 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **`services/domain-service/`** — Java 21 / Spring Boot 3.3 scaffold (Wave 1.1).
+  Full CRUD REST API (`/v1/entities`), Kafka consumer for `request.created.v1`,
+  producers for `domain.entity.{created,updated}.v1`, Flyway migration, JaCoCo ≥ 80%,
+  Checkstyle, SpotBugs, OWASP dep-check, unit tests with MockMvc.
+- **`services/event-worker/`** — Go 1.23 scaffold (Wave 1.2).
+  Stateless Kafka consumer for entity domain events, publishes `event.processed.v1`,
+  Prometheus metrics endpoint, air hot-reload, golangci-lint config, handler unit tests.
+- **`frontend/frontend/`** — Next.js 14 / TypeScript scaffold (Wave 1.3).
+  HITL approval queue UI (`/hitl`), typed API client over the API Gateway REST spec,
+  `ApprovalCard` component with approve/reject flow, Jest unit tests, Playwright config,
+  multi-stage Dockerfile, committed `pnpm-lock.yaml`.
+- **`.github/workflows/ci-go.yml`** — added `go mod tidy` step before unit tests so
+  the scaffold works in CI without a pre-committed `go.sum`.
+
 ---
 
 ## [1.5.2] — 2026-05-28

@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: domain-service
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/appdb}
+    username: ${DATABASE_USER:appuser}
+    password: ${DATABASE_PASSWORD:placeholder-set-in-env}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:domain-service-group}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+server:
+  port: ${APP_PORT:8080}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+app:
+  kafka:
+    topics:
+      request-created: ${KAFKA_TOPIC_REQUEST_CREATED:request.created.v1}
+      entity-created: ${KAFKA_TOPIC_ENTITY_CREATED:domain.entity.created.v1}
+      entity-updated: ${KAFKA_TOPIC_ENTITY_UPDATED:domain.entity.updated.v1}

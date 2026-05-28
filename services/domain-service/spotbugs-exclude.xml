@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+  <!-- Exclude generated sources -->
+  <Match>
+    <Source name="~.*generated.*"/>
+  </Match>
+  <!-- Exclude test classes from SpotBugs -->
+  <Match>
+    <Source name="~.*Test\.java"/>
+  </Match>
+</FindBugsFilter>

@@ -70,6 +70,14 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
+      - name: Tidy modules
+        run: |
+          find services -name go.mod | while read gomod; do
+            dir=$(dirname "$gomod")
+            echo "Tidying $dir..."
+            cd "$dir" && go mod tidy && cd -
+          done
+
       - name: Unit tests (short mode — no external services)
         run: |
           find services -name go.mod | while read gomod; do

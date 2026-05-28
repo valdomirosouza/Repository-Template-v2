@@ -1,0 +1,16 @@
+[build]
+  cmd = "go build -o ./tmp/event-worker ./cmd/event-worker"
+  bin = "./tmp/event-worker"
+  delay = 1000
+  exclude_dir = ["tmp", "vendor"]
+  include_ext = ["go"]
+  kill_delay = "2s"
+
+[log]
+  time = true
+
+[color]
+  main = "magenta"
+  watcher = "cyan"
+  build = "yellow"
+  runner = "green"
