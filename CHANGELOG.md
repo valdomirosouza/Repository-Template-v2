@@ -64,6 +64,14 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
   - `.github/workflows/index-docs.yml`: auto-indexes on push to main
   - 58 unit tests
 
+- **D1 — Vibe-to-Agentic Onboarding Guide** (Issue #12):
+  - `docs/quickstart/vibe-to-agentic.md`: 3-level progressive onboarding guide
+    (Level 1 Vibe Mode — day one safe prompts; Level 2 Supervised Agentic — reading
+    `EvaluatorScore` / `ExecutionSummary`, HITL checkpoints; Level 3 Full Agentic —
+    configuring `AutonomyLevel` per action type, tuning `risk_score` thresholds,
+    interpreting audit log failure patterns, monitoring SLOs)
+  - Includes explicit developer-autonomy risk warning and SDD mandatory-cycle reminder
+
 - **C1 — Agent MTTD/MTTR Metrics** (`specs/observability/agent-performance.md`):
   - `src/observability/metrics.py`: 4 new metrics — `agent_mttd_seconds` (Histogram),
     `agent_mttr_seconds` (Histogram), `agent_autonomous_resolution_rate` (Gauge),
