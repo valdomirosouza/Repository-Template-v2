@@ -25,13 +25,15 @@ Closes #<!-- issue number -->
 ## Deploy Command
 
 ```bash
-# e.g. make deploy-staging VERSION=x.y.z
+# Python:   make deploy-staging SERVICE=api-gateway VERSION=x.y.z
+# Java:     make deploy-staging SERVICE=domain-service VERSION=x.y.z
+# Go:       make deploy-staging SERVICE=event-worker VERSION=x.y.z
 ```
 
 ## Rollback Plan
 
 <!-- How to revert this change if it causes issues in production -->
-<!-- e.g. helm rollback app --namespace production / feature flag off -->
+<!-- e.g. make rollback / helm rollback <service> --namespace production / feature flag off -->
 
 ## Privacy Impact
 
@@ -41,11 +43,15 @@ Closes #<!-- issue number -->
 
 ## PR Checklist
 
-- [ ] Tests written and passing (`make test`) — coverage ≥ 80%
+- [ ] Tests written and passing — coverage ≥ 80%
+  - Python: `make test-unit-python` · Java: `make test-unit-java SERVICE=<name>` · Go: `make test-unit-go SERVICE=<name>` · Frontend: `make test-unit-frontend`
 - [ ] No secrets or real PII in any changed file
 - [ ] `CHANGELOG.md` updated under `[Unreleased]`
 - [ ] Spec updated if implementation diverged from it
 - [ ] ADR filed if a new architectural decision was made
-- [ ] Guardrails unmodified or strengthened (never weakened)
-- [ ] HITL gateway used for any new agent action with real-world effects
+- [ ] `services.yaml` updated if a new service, port, or Kafka topic was added
+- [ ] Privacy: guardrails unmodified or strengthened (never weakened)
+- [ ] _(AI Agents Module only)_ HITL gateway used for any new agent action with real-world effects
 - [ ] `CODEOWNERS` reviewers have approved (auto-requested)
+
+> CI runs the same gates defined in `harness/code-check.yml` (lint, unit tests ≥ 80%, SAST, secret scan, PII scan). All blocking gates must pass before merge.
