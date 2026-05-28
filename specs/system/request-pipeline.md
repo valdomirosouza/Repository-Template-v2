@@ -151,6 +151,23 @@ request_result_ttl_hours: int = 24
 
 ---
 
+## Request State Diagram
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> queued : POST /v1/requests\nsave + publish event
+
+    queued --> processing : Consumer picks up\n(idempotency: skip if not queued)
+    processing --> completed : Orchestrator success\nresult persisted (TTL 24 h)
+    processing --> failed : Orchestrator raises\nerror string persisted
+
+    completed --> [*] : GET /v1/requests/:id\nreturns result
+    failed --> [*] : GET /v1/requests/:id\nreturns error
+```
+
+---
+
 ## Non-Goals (P4 scope boundary)
 
 - Avro / Schema Registry serialization — existing code uses JSON; Avro is infrastructure-level

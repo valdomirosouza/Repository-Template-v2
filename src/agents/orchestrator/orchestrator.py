@@ -20,6 +20,7 @@ from enum import StrEnum
 from typing import Any
 
 from src.agents.hitl_gateway import HITLGateway, HITLRequest, HITLStatus
+from src.agents.risk_scorer import RiskScorer
 from src.guardrails.action_limits import ActionLimiter
 from src.guardrails.audit_logger import AuditLogger, AuditWriteError
 from src.guardrails.pii_filter import mask_dict
@@ -73,6 +74,7 @@ class AgentOrchestrator:
         llm_client: LLMClient,
         injection_guard: PromptInjectionGuard | None = None,
         action_limiter: ActionLimiter | None = None,
+        risk_scorer: RiskScorer | None = None,
     ) -> None:
         self._agent_id = agent_id
         self._audit = audit_logger
@@ -80,6 +82,7 @@ class AgentOrchestrator:
         self._llm = llm_client
         self._injection_guard = injection_guard or PromptInjectionGuard()
         self._action_limiter = action_limiter
+        self._risk_scorer = risk_scorer or RiskScorer()
 
     async def run(self, raw_input: dict[str, Any], trace_id: str | None = None) -> dict[str, Any]:
         """Execute the full Perception → Reason → Act loop.
@@ -174,6 +177,26 @@ class AgentOrchestrator:
 
         if self._action_limiter is not None:
             await self._action_limiter.check(ctx.proposed_action or "", ctx.proposed_parameters)
+
+        # Compute authoritative risk_score via the 5-factor scorer (spec: specs/ai/hitl-hotl.md).
+        # This replaces the LLM-self-reported score — the LLM cannot reliably assess its own risk.
+        scored, components = self._risk_scorer.score(
+            ctx.proposed_action or "unknown", ctx.proposed_parameters
+        )
+        ctx.risk_score = scored
+        logger.info(
+            "Risk scored",
+            agent_id=ctx.agent_id,
+            action=ctx.proposed_action,
+            risk_score=ctx.risk_score,
+            components={
+                "irreversibility": components.irreversibility,
+                "external_effect": components.external_effect,
+                "scale": components.scale,
+                "data_sensitivity": components.data_sensitivity,
+                "rejection_rate": components.rejection_rate,
+            },
+        )
 
         # Write audit record BEFORE action execution (write-before-execute invariant)
         try:

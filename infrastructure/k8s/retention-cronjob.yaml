@@ -1,0 +1,104 @@
+# Data Retention CronJob
+#
+# Runs the retention sweep daily at 02:00 UTC.
+# Enforces specs/privacy/data-retention.md and ADR-0013.
+#
+# The job uses a dedicated ServiceAccount (retention-job) with its own DB
+# credentials (RETENTION_DATABASE_URL) that map to a DB role with DELETE
+# on audit_events. The application role (app_user) never has DELETE on
+# that table (immutability guarantee — see migration 0001).
+#
+# Deploy:
+#   kubectl apply -f infrastructure/k8s/retention-cronjob.yaml
+# Run manually:
+#   kubectl create job --from=cronjob/data-retention-job manual-retention-$(date +%s) -n <namespace>
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: data-retention-job
+  namespace: default
+  labels:
+    app: data-retention-job
+    component: compliance
+spec:
+  schedule: "0 2 * * *" # 02:00 UTC daily
+  timeZone: "UTC"
+  concurrencyPolicy: Forbid # never run two sweeps simultaneously
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 3600 # skip if missed by > 1 h (avoid stacking on restart)
+  jobTemplate:
+    spec:
+      backoffLimit: 2 # retry up to 2 times before marking failed
+      activeDeadlineSeconds: 1800 # hard kill after 30 min
+      template:
+        metadata:
+          labels:
+            app: data-retention-job
+        spec:
+          serviceAccountName: retention-job
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: retention
+              image: ghcr.io/org/template-service:latest # set to pinned version in production
+              imagePullPolicy: IfNotPresent
+              command:
+                - uv
+                - run
+                - python
+                - -m
+                - src.jobs.retention_job
+              env:
+                - name: APP_ENV
+                  value: "production"
+                - name: LOG_LEVEL
+                  value: "INFO"
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: retention-db-credentials # maps to DBA/retention DB role
+                      key: database_url
+                - name: MEMORY_DOCS_RETENTION_DAYS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: retention-config
+                      key: memory_docs_retention_days
+                      optional: true # falls back to settings default (90)
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "128Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "256Mi"
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: retention-job
+  namespace: default
+  labels:
+    app: data-retention-job
+
+---
+# ConfigMap for tunable retention parameters.
+# Override MEMORY_DOCS_RETENTION_DAYS here without rebuilding the image.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: retention-config
+  namespace: default
+data:
+  memory_docs_retention_days: "90"

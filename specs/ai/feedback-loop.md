@@ -96,7 +96,85 @@ via `asyncio.create_task`. Intervalo configurável via `feedback_loop_interval_s
 
 ---
 
-## 9. Aceitação
+## 9. Control Loop Diagram
+
+```mermaid
+flowchart LR
+    subgraph Observability
+        PROM[Prometheus\nhitl_approvals_total\nhitl_rejections_total]
+    end
+
+    subgraph FeedbackLoop["FeedbackLoop (every 5 min)"]
+        COLLECT[Collect rejection\nrates per action_type]
+        DECIDE{rejection_rate\n> 0.30?}
+        UP["Bias +0.10\n(max 0.50)"]
+        DOWN["Bias −0.05\n(min 0.0)"]
+        PUBLISH[Publish\nagent.feedback.applied\n→ Kafka]
+    end
+
+    subgraph RiskScorer
+        SCORE["effective_risk =\nmin(1.0, base + bias)"]
+    end
+
+    PROM -->|query every interval| COLLECT
+    COLLECT --> DECIDE
+    DECIDE -->|Yes AND samples ≥ 10| UP
+    DECIDE -->|"approval_rate > 0.80\nAND bias > 0"| DOWN
+    UP --> PUBLISH
+    DOWN --> PUBLISH
+    PUBLISH --> SCORE
+    SCORE -->|routes action| PROM
+```
+
+---
+
+## 10. Convergence Contract
+
+Convergence is reached when, for every `action_type` with ≥ 10 decisions, the bias
+is stable for 3 consecutive cycles (no adjustment triggered).
+
+**Example** — `send_notification` starting at 40% rejection rate:
+
+| Cycle | Rejection rate | Bias | Effective risk | Routing              |
+| ----- | -------------- | ---- | -------------- | -------------------- |
+| 0     | 0.40           | 0.00 | 0.30           | HOTL                 |
+| 1     | 0.40           | 0.10 | 0.40           | HITL                 |
+| 2     | 0.35           | 0.20 | 0.50           | HITL                 |
+| 4     | 0.10           | 0.15 | 0.45           | HITL                 |
+| 6     | 0.05           | 0.05 | 0.35           | HOTL                 |
+| 7     | 0.05           | 0.00 | 0.30           | HOTL — **converged** |
+
+---
+
+## 11. Rollback / Override
+
+**Check current state:**
+
+```bash
+make agent-feedback-check
+```
+
+**Emergency freeze** (stop all adjustments without a deploy):
+
+```bash
+kubectl set env deployment/agent-service FEEDBACK_LOOP_INTERVAL_SECONDS=999999
+# Biases freeze at current values. Restore with:
+kubectl set env deployment/agent-service FEEDBACK_LOOP_INTERVAL_SECONDS=300
+```
+
+**Reset all biases to zero** (e.g. after a model update):
+
+```bash
+kubectl set env deployment/agent-service FEEDBACK_BIAS_MAX=0
+# After one cycle, all biases decay to 0. Then restore:
+kubectl set env deployment/agent-service FEEDBACK_BIAS_MAX=0.5
+```
+
+Document any manual override in a postmortem entry under `docs/postmortems/`.
+
+---
+
+## 12. Aceitação
 
 - [ ] `FeedbackLoop.run_once()` retorna lista de `BiasAdjustment` sem lançar exceções
 - [ ] Bias aplicado quando taxa de rejeição > threshold

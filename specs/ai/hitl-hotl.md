@@ -104,6 +104,35 @@ If a reviewer triggers an override within the window:
 
 ---
 
+## Decision Flow Diagram
+
+```mermaid
+flowchart TD
+    A([Agent proposes action]) --> B{Always-HITL\naction type?}
+    B -->|Yes — regardless of score| D
+    B -->|No| C{Risk Score}
+
+    C -->|0.0 – 0.39\nLOW| HOTL
+    C -->|0.40 – 0.69\nMEDIUM| D
+    C -->|0.70 – 1.0\nHIGH| D
+
+    subgraph HOTL [HOTL — Human On The Loop]
+        H1[Execute immediately] --> H2[Notify reviewer async\nwithin 60 s]
+        H2 --> H3{Override within\n5-minute window?}
+        H3 -->|Yes| H4[Compensating action\nattempted + logged]
+        H3 -->|No| H5[Action confirmed\nimmutable audit]
+    end
+
+    subgraph D [HITL — Human In The Loop]
+        D1[Block execution\nCreate approval request\nTTL = 3 600 s] --> D2{Human decision?}
+        D2 -->|APPROVE| D3[Execute action\naudit: APPROVED]
+        D2 -->|REJECT| D4[Cancel action\naudit: REJECTED]
+        D2 -->|Timeout| D5[Auto-reject\naudit: EXPIRED_AUTO_REJECTED\n⚠ NEVER auto-approve]
+    end
+```
+
+---
+
 ## Risk Scoring Inputs
 
 The risk scorer considers:

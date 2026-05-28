@@ -131,7 +131,73 @@ class BugHistoryStore:
 
 ---
 
-## 4. Data Retention
+## 4. Memory Recall Sequence
+
+This diagram shows exactly when and how the orchestrator queries memory during
+the Reason phase, answering the question: _is recall automatic, or explicit?_
+
+**Answer:** Recall is explicit — the orchestrator calls `memory.search()` before
+constructing the LLM prompt. The results are injected as context, not retrieved
+by the LLM autonomously.
+
+```mermaid
+sequenceDiagram
+    participant O  as AgentOrchestrator
+    participant PII as PII Filter
+    participant VS  as VectorStore
+    participant BH  as BugHistoryStore
+    participant SM  as SessionMemory
+    participant LLM as Claude LLM
+
+    Note over O: Reason phase begins (masked context available)
+
+    O->>SM: get_all(session_id)
+    SM-->>O: {last_sprint_id, key_decisions, ...}
+
+    O->>PII: mask_text(query_context)
+    PII-->>O: masked_query
+
+    O->>VS: search(embed(masked_query), k=5)
+    VS-->>O: [relevant ADRs / specs]
+
+    O->>BH: get_similar(action_type, masked_query, k=3)
+    BH-->>O: [past HITL rejections for this action type]
+
+    Note over O: Build LLM prompt with:<br/>1. masked context<br/>2. relevant docs (ADRs/specs)<br/>3. past rejection patterns<br/>4. session key_decisions
+
+    O->>LLM: complete(system_prompt + enriched_context)
+    LLM-->>O: {action, parameters, risk_score}
+
+    Note over O: Act phase: RiskScorer overrides risk_score
+```
+
+### When memory recall is skipped
+
+- `harness_mode = solo` with no `VectorStore` injected — orchestrator falls back to
+  LLM-only reasoning (no spec recall, no rejection history)
+- `SessionMemory` returns empty — new session; orchestrator proceeds without prior context
+- `BugHistoryStore` returns empty — no similar past rejections; no impact on action
+
+### Injecting memory into the orchestrator
+
+```python
+orchestrator = AgentOrchestrator(
+    agent_id="my-agent",
+    audit_logger=audit,
+    hitl_gateway=gateway,
+    llm_client=llm,
+    vector_store=vector_store,        # optional — enables spec/ADR recall
+    bug_history_store=bug_history,    # optional — enables rejection pattern recall
+    session_memory=session_memory,    # optional — enables session continuity
+)
+```
+
+All three memory dependencies are optional. When absent, the orchestrator operates
+without recall (equivalent to pre-memory behaviour).
+
+---
+
+## 5. Data Retention
 
 - Vector store: 90 days from `created_at` (aligns with ADR-0013)
 - Session cache: TTL-evicted by Redis automatically

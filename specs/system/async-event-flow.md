@@ -93,6 +93,61 @@ DLQ messages are retained for 30 days. Engineering reviews and replays or discar
 
 ---
 
+## Event Topology Diagram
+
+```mermaid
+graph LR
+    subgraph Producers
+        APIGW[API Gateway]
+        AGTSVC[Agent Service]
+        HITLGW[HITL Gateway]
+    end
+
+    subgraph Topics["Kafka Topics  (7-day retention)"]
+        DC[domain.request.created]
+        DU[domain.updated]
+        DCMP[domain.completed]
+        AAP[agent.action.proposed]
+        AAA[agent.action.approved]
+        AAR[agent.action.rejected]
+        AAE[agent.action.executed]
+        AAEX[agent.action.expired]
+    end
+
+    subgraph Consumers
+        AGTSVC2[Agent Service]
+        AUDIT[Audit Logger]
+        NOTIF[Notifier]
+        HITLGW2[HITL Gateway]
+    end
+
+    APIGW --> DC
+    AGTSVC --> DU
+    AGTSVC --> DCMP
+    AGTSVC --> AAP
+    AGTSVC --> AAE
+    HITLGW --> AAA
+    HITLGW --> AAR
+    HITLGW --> AAEX
+
+    DC --> AGTSVC2
+    DC --> AUDIT
+    DU --> NOTIF
+    DU --> AUDIT
+    DCMP --> NOTIF
+    DCMP --> AUDIT
+    AAP --> HITLGW2
+    AAA --> AGTSVC2
+    AAR --> AGTSVC2
+    AAR --> AUDIT
+    AAE --> AUDIT
+    AAE --> NOTIF
+    AAEX --> AGTSVC2
+    AAEX --> AUDIT
+```
+
+---
+
 ## Observability
 
 | Signal             | Metric                                     | Alert                                     |

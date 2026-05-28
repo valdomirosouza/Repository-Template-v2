@@ -236,6 +236,42 @@ Continue from where the previous context left off.
 
 ## 5. Harness Modes
 
+### Sprint Loop Diagram
+
+```mermaid
+flowchart TD
+    TB([TaskBrief]) --> MODE{harness_mode}
+
+    MODE -->|solo| ORCH[AgentOrchestrator\ndirect P→R→A]
+    MODE -->|simplified| GEN
+    MODE -->|full| PLAN
+
+    PLAN["PlannerAgent\nTaskBrief → ProductSpec\n+ SprintContract list"]
+    PLAN --> GEN
+
+    GEN["GeneratorAgent\nSprintContract → Artifact\n(inner P→R→A loop)"]
+    GEN --> EVAL
+
+    EVAL["EvaluatorAgent\nScore on 4 dimensions:\nquality / originality\ncraft / functionality"]
+    EVAL --> PASS{"score ≥ threshold\non ALL dimensions?"}
+
+    PASS -->|Yes| SUMMARY["ExecutionSummary\nlogged to audit"]
+    PASS -->|No| ITER{"iteration ≥\npatch_threshold?"}
+
+    ITER -->|Yes| PATCH["PatchProposal\nLLM self-reflection\ninjected into next iter"]
+    ITER -->|No| MAXED{"iteration ==\nmax_iterations?"}
+
+    PATCH --> MAXED
+    MAXED -->|No| GEN
+    MAXED -->|Yes| ESCALATE["HITL Escalation\nExecutionSummary attached\nhuman reviews failure"]
+
+    SUMMARY --> MORE{"More sprints\nremaining?"}
+    MORE -->|Yes| GEN
+    MORE -->|No| RESULT([HarnessResult\nAll sprints complete])
+```
+
+---
+
 ### 5.1 solo
 
 - Bypasses all harness agents

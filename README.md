@@ -1,7 +1,7 @@
 # Enterprise AI Monorepo Template
 
 > Production-ready monorepo template for AI-powered systems.
-> **Version:** 1.1.0 | **Status:** Active | **License:** Proprietary
+> **Version:** 1.3.1 | **Status:** Active | **License:** Proprietary
 
 [![CI](https://github.com/valdomirosouza/template-monorepo/actions/workflows/ci.yml/badge.svg)](https://github.com/valdomirosouza/template-monorepo/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/valdomirosouza/template-monorepo)](https://github.com/valdomirosouza/template-monorepo/releases/latest)
@@ -18,6 +18,32 @@ cd my-project
 ```
 
 Then follow the **5-step setup** below to go from blank repo to running system.
+
+---
+
+## End-to-end demo in 3 commands
+
+See the full async pipeline fire — from HTTP request to agent execution — in under 2 minutes:
+
+```bash
+# 1. Start infra + API
+make infra-up && make run &
+
+# 2. Submit a request
+REQUEST_ID=$(curl -s -X POST http://localhost:8000/v1/requests \
+  -H "Content-Type: application/json" \
+  -d '{"context": {"task": "summarise quarterly report", "source": "internal"}}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['request_id'])")
+
+# 3. Poll for the result
+curl -s http://localhost:8000/v1/requests/$REQUEST_ID | python3 -m json.tool
+```
+
+Expected response shape: `{"status": "completed", "result": {...}, "request_id": "..."}`.
+If `status` is `"processing"` retry after a second. If the LLM API key is not set the
+orchestrator routes to HITL — approve at `POST /v1/hitl/<id>/decide`.
+
+> For architecture details see [`docs/architecture.md`](docs/architecture.md) and [`CLAUDE.md`](CLAUDE.md).
 
 ---
 
@@ -43,13 +69,25 @@ A production-ready scaffold for teams building AI-powered systems with human ove
 
 ```bash
 cp .env.example .env
-# Fill in: ANTHROPIC_API_KEY, SECRET_KEY
+# Fill in: ANTHROPIC_API_KEY, SECRET_KEY  (the only [REQUIRED] values)
 # Everything else has working local defaults
 
 make infra-up
-# Starts: PostgreSQL, Redis, Kafka, Schema Registry,
-#         OTel Collector, Jaeger, Prometheus, Grafana, flagd
 ```
+
+`make infra-up` starts these containers:
+
+| Container       | Port(s)     | Role                                     |
+| --------------- | ----------- | ---------------------------------------- |
+| PostgreSQL      | 5432        | Audit log, pgvector agent memory         |
+| Redis           | 6379        | HITL store, request store, session cache |
+| Kafka (KRaft)   | 9092        | Async event broker                       |
+| Schema Registry | 8081        | Avro schema validation                   |
+| OTel Collector  | 4317 (gRPC) | Traces, metrics, logs aggregator         |
+| Prometheus      | 9090        | Metrics scrape + alerting                |
+| Grafana         | 3000        | Dashboards (admin / admin)               |
+| Jaeger          | 16686       | Distributed trace UI                     |
+| flagd           | 8013        | OpenFeature flag server                  |
 
 ### Step 2 — Run database migrations
 
@@ -57,11 +95,23 @@ make infra-up
 make setup   # installs Python deps + runs Alembic migrations
 ```
 
+### Step 2b — Confirm everything is alive
+
+```bash
+make run &   # start the API in the background
+
+curl http://localhost:8000/health   # → {"status": "ok"}
+curl http://localhost:8000/ready    # → {"status": "ready"} once DB + Redis are up
+```
+
+If `/ready` returns `503`, check `docker compose ps` — PostgreSQL or Redis may still be starting.
+
 ### Step 3 — Verify baseline is green
 
 ```bash
-make test-python    # unit + integration + security
-make lint-python    # ruff + mypy + secret scan
+make test-unit-python   # fast, no Docker required — run this first
+make test-python        # full suite: unit + integration + security (needs infra-up)
+make lint-python        # ruff + mypy + detect-secrets
 ```
 
 ### Step 4 — Open your language quickstart
@@ -81,14 +131,29 @@ Also read after your language guide:
 
 ### Step 5 — Customise for your project
 
-| File                 | What to change                                              |
-| -------------------- | ----------------------------------------------------------- |
-| `services.yaml`      | Rename services, add your own, update ports and topic names |
-| `.env.example`       | Add project-specific environment variables                  |
-| `docs/adr/`          | Add ADRs for your own architectural decisions               |
-| `specs/`             | Write specs for features before implementing                |
-| `CLAUDE.md`          | Adjust AI behavioral contract for your team                 |
-| `.github/CODEOWNERS` | Set team ownership                                          |
+**Minimum required changes:**
+
+| File                 | What to change                                |
+| -------------------- | --------------------------------------------- |
+| `services.yaml`      | Rename services, update ports and topic names |
+| `.env.example`       | Add project-specific environment variables    |
+| `docs/adr/`          | Add ADRs for your own architectural decisions |
+| `specs/`             | Write specs for features before implementing  |
+| `CLAUDE.md`          | Adjust AI behavioral contract for your team   |
+| `.github/CODEOWNERS` | Set team ownership                            |
+
+**What to remove if you don't need it:**
+
+| If you don't need... | Delete                                                         |
+| -------------------- | -------------------------------------------------------------- |
+| Java services        | `services/` directory (or keep empty for future use)           |
+| Go services          | Remove Go targets from `Makefile`; delete `services/` Go dirs  |
+| Frontend             | `frontend/` directory                                          |
+| Multi-agent harness  | `src/agents/harness/` — set `harness_mode = solo` in `.env`    |
+| Agent memory         | `src/memory/` — remove pgvector from `docker-compose.yml`      |
+| Sandbox execution    | `src/agents/sandbox_executor.py`, `docker-compose.sandbox.yml` |
+
+See [`CUSTOMISING.md`](CUSTOMISING.md) for the full adoption guide.
 
 ---
 
