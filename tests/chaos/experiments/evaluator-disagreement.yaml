@@ -1,0 +1,112 @@
+---
+# Chaos Toolkit experiment: inject conflicting evaluator scores to verify the
+# coordinator triggers HITL escalation rather than accepting a split verdict.
+# Spec: specs/ai/harness-design.md §6 (Evaluator)
+# ADR:  ADR-0013 (Agent Harness Architecture)
+#
+# Prerequisites: Chaos Toolkit installed; harness running in staging with
+#   at least two evaluator replicas configured.
+# Run: chaos run tests/chaos/experiments/evaluator-disagreement.yaml
+
+version: "1.0.0"
+title: "Evaluator disagreement — verify HITL escalation on split verdict"
+description: >
+  Uses a feature flag to force evaluator replica-0 to return PASS and
+  replica-1 to return FAIL for the same sprint output. Asserts that
+  (1) the coordinator detects the disagreement, (2) escalates to HITL
+  (active_hitl_requests gauge increases), and (3) does not auto-accept
+  the PASS verdict without human confirmation.
+
+tags:
+  - evaluator
+  - hitl
+  - safety
+  - split-brain
+
+configuration:
+  app_namespace:
+    type: env
+    key: CHAOS_NAMESPACE
+    default: staging
+  service_url:
+    type: env
+    key: CHAOS_SERVICE_URL
+    default: "http://localhost:8000"
+  feature_flags_url:
+    type: env
+    key: CHAOS_FLAGS_URL
+    default: "http://localhost:8080"
+
+steady-state-hypothesis:
+  title: "No active HITL requests and evaluators agree"
+  probes:
+    - type: probe
+      name: "hitl-active-requests-zero"
+      tolerance:
+        type: jsonpath
+        path: "$.data[0].value[1]"
+        target: "0"
+      provider:
+        type: http
+        url: "${service_url}/metrics/query?query=sum(hitl_active_requests)"
+        timeout: 3
+
+method:
+  - type: action
+    name: "enable-evaluator-split-flag"
+    provider:
+      type: http
+      url: "${feature_flags_url}/api/v1/flags/chaos-evaluator-split"
+      method: PUT
+      headers:
+        Content-Type: application/json
+      arguments:
+        body:
+          enabled: true
+          replica_0_score: "PASS"
+          replica_1_score: "FAIL"
+    pauses:
+      after: 2
+
+  - type: action
+    name: "trigger-sprint-with-split-evaluator"
+    provider:
+      type: http
+      url: "${service_url}/api/v1/agent/sprint"
+      method: POST
+      headers:
+        Content-Type: application/json
+      arguments:
+        body:
+          task_id: "chaos-evaluator-split-001"
+          spec_ref: "specs/ai/harness-design.md"
+          autonomy_level: "LOW_RISK"
+    pauses:
+      after: 15
+
+  - type: probe
+    name: "hitl-escalation-triggered"
+    tolerance:
+      type: jsonpath
+      path: "$.data[0].value[1]"
+      target:
+        type: range
+        min: "1"
+        max: "100"
+    provider:
+      type: http
+      url: "${service_url}/metrics/query?query=sum(hitl_active_requests)"
+      timeout: 5
+
+rollbacks:
+  - type: action
+    name: "disable-evaluator-split-flag"
+    provider:
+      type: http
+      url: "${feature_flags_url}/api/v1/flags/chaos-evaluator-split"
+      method: PUT
+      headers:
+        Content-Type: application/json
+      arguments:
+        body:
+          enabled: false

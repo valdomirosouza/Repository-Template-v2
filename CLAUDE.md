@@ -183,3 +183,20 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `security`, `privacy`
 | `infrastructure/feature-flags/` | AI Governance + DevOps — flag changes require governance review |
 | `.github/workflows/`            | DevOps Lead                                                     |
 | `specs/`                        | Product Owner + Tech Lead                                       |
+
+---
+
+## 9. Hybrid Workflow Mode
+
+The hybrid workflow blends conversational exploration (Vibe Mode) with autonomous multi-agent execution (Agêntico Mode). Use it for all non-trivial features.
+
+| Phase             | Mode     | Autonomy Level         | HITL                             |
+| ----------------- | -------- | ---------------------- | -------------------------------- |
+| 1 — Explore       | Vibe     | n/a                    | No                               |
+| 2 — Supervised    | Agêntico | `LOW_RISK`             | Yes — every consequential action |
+| 3 — Autonomous    | Agêntico | `MEDIUM_RISK` / `FULL` | Threshold-based                  |
+| 4 — Review & Land | Human    | n/a                    | PR checklist (§7)                |
+
+**Full guide:** `docs/quickstart/hybrid-workflow.md`
+
+**Governance gate for Phase 3:** `autonomous-mode` feature flag requires ADR-0015 approval. Never enable `FULL` autonomy without explicit governance sign-off.

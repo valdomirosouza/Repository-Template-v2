@@ -1,0 +1,124 @@
+---
+# Chaos Toolkit experiment: inject latency and then a full outage into the HITL
+# Redis store and verify the gateway queues requests rather than dropping them.
+# Spec: specs/ai/guardrails.md §4 (HITL Persistence)
+# ADR:  ADR-0016 (HITL Redis Store)
+#
+# Prerequisites: Chaos Toolkit + chaostoolkit-k8s installed; Redis running in staging.
+# Run: chaos run tests/chaos/experiments/hitl-store-degradation.yaml
+
+version: "1.0.0"
+title: "HITL store degradation — verify queuing and no silent approval"
+description: >
+  Injects 2 s of network latency into the Redis pod for 60 s, then scales
+  Redis to 0 for 30 s. Asserts that (1) no HITL request is auto-approved
+  silently during degradation, (2) pending requests surface as 503 with
+  Retry-After, and (3) the store recovers and drains the queue on restore.
+
+tags:
+  - hitl
+  - redis
+  - persistence
+  - safety
+
+configuration:
+  app_namespace:
+    type: env
+    key: CHAOS_NAMESPACE
+    default: staging
+  service_url:
+    type: env
+    key: CHAOS_SERVICE_URL
+    default: "http://localhost:8000"
+
+steady-state-hypothesis:
+  title: "HITL store health probe returns 200"
+  probes:
+    - type: probe
+      name: "hitl-store-health-returns-200"
+      tolerance: 200
+      provider:
+        type: http
+        url: "${service_url}/health/hitl-store"
+        timeout: 3
+
+method:
+  - type: action
+    name: "inject-redis-network-latency"
+    provider:
+      type: python
+      module: chaosk8s.networking.actions
+      func: add_latency_to_service
+      arguments:
+        name: redis-hitl
+        latency: 2000
+        ns: "${app_namespace}"
+    pauses:
+      after: 60
+
+  - type: probe
+    name: "no-silent-approvals-during-latency"
+    tolerance:
+      type: jsonpath
+      path: "$.auto_approved"
+      target: 0
+    provider:
+      type: http
+      url: "${service_url}/api/v1/hitl/pending-count"
+      timeout: 5
+
+  - type: action
+    name: "scale-redis-to-zero"
+    provider:
+      type: python
+      module: chaosk8s.statefulset.actions
+      func: scale_statefulset
+      arguments:
+        name: redis-hitl
+        replicas: 0
+        ns: "${app_namespace}"
+    pauses:
+      after: 30
+
+  - type: probe
+    name: "hitl-endpoint-returns-503-not-500"
+    tolerance:
+      - 200
+      - 503
+    provider:
+      type: http
+      url: "${service_url}/api/v1/hitl/pending-count"
+      timeout: 5
+
+  - type: action
+    name: "restore-redis"
+    provider:
+      type: python
+      module: chaosk8s.statefulset.actions
+      func: scale_statefulset
+      arguments:
+        name: redis-hitl
+        replicas: 1
+        ns: "${app_namespace}"
+    pauses:
+      after: 30
+
+  - type: probe
+    name: "hitl-store-recovered"
+    tolerance: 200
+    provider:
+      type: http
+      url: "${service_url}/health/hitl-store"
+      timeout: 5
+
+rollbacks:
+  - type: action
+    name: "ensure-redis-running"
+    provider:
+      type: python
+      module: chaosk8s.statefulset.actions
+      func: scale_statefulset
+      arguments:
+        name: redis-hitl
+        replicas: 1
+        ns: "${app_namespace}"

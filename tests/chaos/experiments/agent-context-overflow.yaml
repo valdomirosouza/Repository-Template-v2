@@ -1,0 +1,89 @@
+---
+# Chaos Toolkit experiment: flood the harness coordinator with an oversized context
+# and verify it truncates gracefully without crashing or leaking PII.
+# Spec: specs/ai/harness-design.md §5 (Context Management)
+# ADR:  ADR-0013 (Agent Harness Architecture)
+#
+# Prerequisites: Chaos Toolkit installed; harness running in staging.
+# Run: chaos run tests/chaos/experiments/agent-context-overflow.yaml
+
+version: "1.0.0"
+title: "Agent context overflow — verify graceful truncation and no crash"
+description: >
+  Sends a SprintContract whose context payload is 4× the configured token budget,
+  simulating a runaway context accumulation scenario. Asserts that (1) the coordinator
+  truncates context to budget before the LLM call, (2) the service returns HTTP 200
+  or a structured 422 (not 500), and (3) no PII escapes the truncated content.
+
+tags:
+  - agent
+  - harness
+  - context
+  - truncation
+
+configuration:
+  app_namespace:
+    type: env
+    key: CHAOS_NAMESPACE
+    default: staging
+  service_url:
+    type: env
+    key: CHAOS_SERVICE_URL
+    default: "http://localhost:8000"
+
+steady-state-hypothesis:
+  title: "Harness health endpoint returns 200"
+  probes:
+    - type: probe
+      name: "health-endpoint-returns-200"
+      tolerance: 200
+      provider:
+        type: http
+        url: "${service_url}/health"
+        timeout: 3
+
+method:
+  - type: action
+    name: "submit-oversized-context-contract"
+    provider:
+      type: http
+      url: "${service_url}/api/v1/agent/sprint"
+      method: POST
+      headers:
+        Content-Type: application/json
+      arguments:
+        body:
+          task_id: "chaos-context-overflow-001"
+          spec_ref: "specs/ai/harness-design.md"
+          autonomy_level: "LOW_RISK"
+          context: "OVERFLOW_CONTENT_PLACEHOLDER_X10000"
+    pauses:
+      after: 5
+
+  - type: probe
+    name: "service-still-healthy-after-overflow"
+    tolerance: 200
+    provider:
+      type: http
+      url: "${service_url}/health"
+      timeout: 5
+
+  - type: probe
+    name: "no-500-errors-in-last-minute"
+    tolerance:
+      type: jsonpath
+      path: "$.data[0].value[1]"
+      target: "0"
+    provider:
+      type: http
+      url: "${service_url}/metrics/query?query=increase(http_requests_total%7Bstatus_code%3D%22500%22%7D%5B1m%5D)"
+      timeout: 5
+
+rollbacks:
+  - type: action
+    name: "drain-any-stuck-sprints"
+    provider:
+      type: http
+      url: "${service_url}/api/v1/agent/drain"
+      method: POST
+      timeout: 10

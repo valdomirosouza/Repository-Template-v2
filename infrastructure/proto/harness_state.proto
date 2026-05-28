@@ -1,0 +1,123 @@
+// harness_state.proto — Inter-agent state envelope for the multi-agent harness.
+//
+// Spec: specs/ai/harness-design.md §2, §9
+// ADR:  ADR-0013 (Agent Harness Architecture), ADR-0014 (Multi-Agent Harness Strategy)
+// AsyncAPI channel: agent.harness.state
+//
+// All string fields that could contain user content are PII-masked before
+// serialisation (pii_filter.mask_text). Never embed raw user input here.
+
+syntax = "proto3";
+
+package harness.v1;
+
+option java_package = "com.example.harness.v1";
+option java_outer_classname = "HarnessStateProto";
+option go_package = "github.com/example/harness/v1;harnessv1";
+
+// ── Enums ─────────────────────────────────────────────────────────────────────
+
+enum SprintStatus {
+  SPRINT_STATUS_UNSPECIFIED = 0;
+  SPRINT_STATUS_PENDING = 1;
+  SPRINT_STATUS_IN_PROGRESS = 2;
+  SPRINT_STATUS_PASSED = 3;
+  SPRINT_STATUS_FAILED = 4;
+  SPRINT_STATUS_ESCALATED = 5;
+}
+
+enum AutonomyLevel {
+  AUTONOMY_LEVEL_UNSPECIFIED = 0;
+  AUTONOMY_LEVEL_READ_ONLY = 1;
+  AUTONOMY_LEVEL_TESTS_ONLY = 2;
+  AUTONOMY_LEVEL_LOW_RISK = 3;
+  AUTONOMY_LEVEL_MEDIUM_RISK = 4;
+  AUTONOMY_LEVEL_FULL = 5;
+}
+
+// ── Core messages ─────────────────────────────────────────────────────────────
+
+// HarnessStateEnvelope is published to the agent.harness.state Kafka topic
+// after each significant state transition in a sprint.
+message HarnessStateEnvelope {
+  // Unique ID for this state event (UUID v4).
+  string event_id = 1;
+
+  // Propagated across all agents in a single user request. Required.
+  string correlation_id = 2;
+
+  // task_id ties back to the originating TaskBrief.
+  string task_id = 3;
+
+  // sprint_id identifies the specific SprintContract.
+  string sprint_id = 4;
+
+  // Current sprint status.
+  SprintStatus status = 5;
+
+  // Which iteration produced this state event (1-based).
+  int32 iteration = 6;
+
+  // ISO-8601 UTC timestamp of this state event.
+  string occurred_at = 7;
+
+  // Optional: forwarded from TaskBrief.trace_id for distributed tracing.
+  string trace_id = 8;
+
+  // Autonomy level active when this event was produced.
+  AutonomyLevel autonomy_level = 9;
+
+  // Embedded payload — exactly one of the following may be set.
+  oneof payload {
+    SprintStarted sprint_started = 10;
+    SprintEvaluated sprint_evaluated = 11;
+    PatchProposalApplied patch_proposal_applied = 12;
+    SprintEscalated sprint_escalated = 13;
+    SprintCompleted sprint_completed = 14;
+  }
+}
+
+// Emitted when the coordinator begins a new sprint iteration.
+message SprintStarted {
+  // Number of objectives in this sprint (not the objectives themselves — PII risk).
+  int32 objective_count = 1;
+  int32 criteria_count = 2;
+  bool patch_proposal_active = 3;
+}
+
+// Emitted after the evaluator scores a sprint attempt.
+message SprintEvaluated {
+  float quality = 1;
+  float originality = 2;
+  float craft = 3;
+  float functionality = 4;
+  float average = 5;
+  bool passed = 6;
+  // Masked evaluator feedback (max 500 chars).
+  string masked_feedback = 7;
+}
+
+// Emitted when a PatchProposal is generated and applied before the next iteration.
+message PatchProposalApplied {
+  // Masked one-sentence summary of the previous approach's failure.
+  string masked_previous_approach_summary = 1;
+  // Masked description of the proposed alternative.
+  string masked_proposed_alternative = 2;
+}
+
+// Emitted when the sprint is escalated to the HITL gateway.
+message SprintEscalated {
+  float final_score_average = 1;
+  int32 total_iterations = 2;
+  int32 patch_proposals_applied = 3;
+  // HITL request ID assigned by the gateway.
+  string hitl_request_id = 4;
+}
+
+// Emitted when the sprint passes evaluation.
+message SprintCompleted {
+  float final_score_average = 1;
+  int32 total_iterations = 2;
+  int32 patch_proposals_applied = 3;
+  int32 decision_count = 4;
+}

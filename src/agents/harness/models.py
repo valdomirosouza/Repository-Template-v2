@@ -22,6 +22,7 @@ class TaskBrief:
     description: str
     complexity: Literal["low", "medium", "high"] = "medium"
     trace_id: str | None = None
+    correlation_id: str | None = None
     success_criteria: list[str] | None = None
 
 
@@ -38,6 +39,7 @@ class SprintContract:
     sprint_id: str
     objectives: list[str]
     success_criteria: list[str]
+    correlation_id: str | None = None
 
 
 @dataclass
@@ -121,6 +123,7 @@ class HarnessResult:
     final_score: EvaluatorScore | None = None
     escalated_to_hitl: bool = False
     total_cost_usd: float | None = None
+    correlation_id: str | None = None
 
 
 @dataclass
@@ -165,3 +168,4 @@ class ExecutionSummary:
     final_score: EvaluatorScore | None
     decisions: list[DecisionPoint]
     generated_at: str
+    correlation_id: str | None = None

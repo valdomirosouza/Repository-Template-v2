@@ -117,6 +117,7 @@ class HarnessCoordinator:
             sprint_id=str(uuid.uuid4()),
             objectives=[masked_description],
             success_criteria=criteria,
+            correlation_id=brief.correlation_id,
         )
 
         spec = ProductSpec(
@@ -173,6 +174,7 @@ class HarnessCoordinator:
             artifacts=all_artifacts,
             final_score=final_score,
             escalated_to_hitl=escalated,
+            correlation_id=brief.correlation_id,
         )
 
     async def _run_sprint(
@@ -403,6 +405,7 @@ class HarnessCoordinator:
             final_score=final_score,
             decisions=dt_logger.get_decisions(),
             generated_at=datetime.now(UTC).isoformat(),
+            correlation_id=brief.correlation_id,
         )
 
     async def _log_execution_summary(
@@ -425,6 +428,7 @@ class HarnessCoordinator:
                     "final_score": summary.final_score.average if summary.final_score else None,
                     "final_passed": summary.final_score.passed if summary.final_score else None,
                     "decision_count": len(summary.decisions),
+                    "correlation_id": getattr(summary, "correlation_id", None),
                 },
                 trace_id=trace_id,
             )

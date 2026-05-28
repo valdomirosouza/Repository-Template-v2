@@ -123,6 +123,40 @@ FEEDBACK_ADJUSTMENTS_COUNTER = Counter(
 )
 
 
+# ── Agent performance metrics (MTTD / MTTR) ──────────────────────────────────
+# Spec: specs/observability/agent-performance.md
+
+_MTTD_BUCKETS = (1, 5, 10, 30, 60, 120, 300, 600)
+_MTTR_BUCKETS = (10, 30, 60, 120, 300, 600, 1800, 3600)
+_TOKEN_BUCKETS = (100, 500, 1000, 2000, 5000, 10000, 20000, 50000)
+
+AGENT_MTTD_SECONDS = Histogram(
+    "agent_mttd_seconds",
+    "Time from problem detection to agent action start",
+    ["action_type"],
+    buckets=_MTTD_BUCKETS,
+)
+
+AGENT_MTTR_SECONDS = Histogram(
+    "agent_mttr_seconds",
+    "Time from agent action start to verified resolution",
+    ["action_type"],
+    buckets=_MTTR_BUCKETS,
+)
+
+AGENT_AUTONOMOUS_RESOLUTION_RATE = Gauge(
+    "agent_autonomous_resolution_rate",
+    "Fraction of tasks resolved without HITL escalation",
+    ["action_type"],
+)
+
+AGENT_COST_PER_RESOLUTION_TOKENS = Histogram(
+    "agent_cost_per_resolution_tokens",
+    "Total LLM tokens consumed per resolved task",
+    ["action_type"],
+    buckets=_TOKEN_BUCKETS,
+)
+
 # ── Initialisation helpers ───────────────────────────────────────────────────
 
 
@@ -166,6 +200,22 @@ def record_hitl_decision(
     else:
         HITL_REJECTIONS_COUNTER.labels(agent_id, action_type).inc()
     HITL_WAIT_SECONDS.labels(agent_id).observe(wait_seconds)
+
+
+def record_agent_performance(
+    action_type: str,
+    mttd_seconds: float,
+    mttr_seconds: float,
+    resolved_autonomously: bool,
+    tokens_used: int,
+) -> None:
+    AGENT_MTTD_SECONDS.labels(action_type).observe(mttd_seconds)
+    AGENT_MTTR_SECONDS.labels(action_type).observe(mttr_seconds)
+    AGENT_AUTONOMOUS_RESOLUTION_RATE.labels(action_type).set(
+        1.0 if resolved_autonomously else 0.0
+    )
+    if resolved_autonomously:
+        AGENT_COST_PER_RESOLUTION_TOKENS.labels(action_type).observe(tokens_used)
 
 
 def record_llm_call(

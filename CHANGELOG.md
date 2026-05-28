@@ -64,10 +64,44 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
   - `.github/workflows/index-docs.yml`: auto-indexes on push to main
   - 58 unit tests
 
+- **C1 — Agent MTTD/MTTR Metrics** (`specs/observability/agent-performance.md`):
+  - `src/observability/metrics.py`: 4 new metrics — `agent_mttd_seconds` (Histogram),
+    `agent_mttr_seconds` (Histogram), `agent_autonomous_resolution_rate` (Gauge),
+    `agent_cost_per_resolution_tokens` (Histogram); `record_agent_performance()` helper
+  - `infrastructure/monitoring/grafana/dashboards/agent-performance.json`: 4-panel dashboard
+    (MTTD p50/p99, MTTR p50/p99, autonomous resolution rate gauge, cost per resolution p50/p99)
+  - SLO targets: MTTD p99 ≤ 60 s, MTTR p99 ≤ 600 s, resolution rate ≥ 80%, cost p99 ≤ 10 000 tokens
+  - 17 unit tests
+
+- **C2 — Hybrid Workflow Docs**:
+  - `docs/quickstart/hybrid-workflow.md`: 4-phase Vibe → Agêntico cycle guide
+    (Explore, Supervised Agêntico, Full Agêntico, Review & Land) with phase entry/exit conditions
+    and governance gates
+  - `CLAUDE.md §9`: Hybrid Workflow Mode section with phase table and ADR-0015 governance gate
+
+- **C3 — Agent Chaos Experiments**:
+  - `tests/chaos/experiments/agent-context-overflow.yaml`: oversized context truncation + no 500s
+  - `tests/chaos/experiments/hitl-store-degradation.yaml`: Redis latency + outage; no silent approval
+  - `tests/chaos/experiments/prompt-injection-under-load.yaml`: 50 concurrent injections; all blocked 400
+  - `tests/chaos/experiments/evaluator-disagreement.yaml`: split PASS/FAIL verdict triggers HITL
+  - `tests/chaos/experiments/llm-api-timeout.yaml`: Toxiproxy timeout; back-off + HITL escalation
+
+- **C4 — Inter-Agent Protocol** (`specs/ai/harness-design.md`):
+  - `infrastructure/proto/harness_state.proto`: `HarnessStateEnvelope` with `correlation_id`,
+    sprint status enum, `oneof` payload (SprintStarted, SprintEvaluated, PatchProposalApplied,
+    SprintEscalated, SprintCompleted)
+  - `docs/api/asyncapi/v1/asyncapi.yaml`: `agent.harness.state` channel +
+    `HarnessStateChanged` message + `HarnessStateChangedPayload` schema
+  - `src/agents/harness/models.py`: `correlation_id` added to `TaskBrief`, `SprintContract`,
+    `HarnessResult`, `ExecutionSummary`
+  - `src/agents/harness/coordinator.py`: propagates `correlation_id` through sprint lifecycle
+    and audit log events
+
 ### Changed
 
 - `CLAUDE.md` §3.3: added sandbox rule — "NEVER execute agent-generated code outside
   `src/agents/sandbox_executor.py` without explicit HITL approval" (ADR-0016)
+- `CLAUDE.md` §9: added Hybrid Workflow Mode section (C2)
 - `src/shared/config.py`: added `sandbox_*`, `feedback_*`, `memory_*`, and
   `harness_patch_proposal_threshold` settings
 

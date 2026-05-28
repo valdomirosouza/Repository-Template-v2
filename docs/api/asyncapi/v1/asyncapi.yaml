@@ -134,6 +134,25 @@ channels:
       message:
         $ref: "#/components/messages/AuditEventWritten"
 
+  agent.harness.state:
+    description: |
+      Published after each significant state transition in a multi-agent harness sprint
+      (started, evaluated, patch applied, escalated, completed). Consumers use this to
+      track sprint progress across agents without polling.
+      Proto schema: infrastructure/proto/harness_state.proto (HarnessStateEnvelope).
+      Spec: specs/ai/harness-design.md §2, §9. ADR-0013, ADR-0014.
+      All user-content fields are PII-masked before publish.
+    subscribe:
+      operationId: onHarnessStateChanged
+      summary: External consumers (dashboards, audit aggregators) track sprint state
+      message:
+        $ref: "#/components/messages/HarnessStateChanged"
+    publish:
+      operationId: publishHarnessStateChanged
+      summary: HarnessCoordinator publishes on every sprint state transition
+      message:
+        $ref: "#/components/messages/HarnessStateChanged"
+
 components:
   messages:
     DomainRequestCreated:
@@ -191,6 +210,13 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/AuditEventWrittenPayload"
+
+    HarnessStateChanged:
+      name: HarnessStateChanged
+      title: Harness State Changed
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/HarnessStateChangedPayload"
 
   schemas:
     EventEnvelope:
@@ -383,6 +409,94 @@ components:
                   type: string
                 outcome:
                   type: string
+
+    HarnessStateChangedPayload:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          required: [correlation_id, task_id, sprint_id, status, iteration]
+          properties:
+            correlation_id:
+              type: string
+              format: uuid
+              description: Propagated across all agents in a single user request
+            task_id:
+              type: string
+              description: Ties back to the originating TaskBrief
+            sprint_id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [PENDING, IN_PROGRESS, PASSED, FAILED, ESCALATED, COMPLETED]
+            iteration:
+              type: integer
+              minimum: 1
+            autonomy_level:
+              type: string
+              enum: [READ_ONLY, TESTS_ONLY, LOW_RISK, MEDIUM_RISK, FULL]
+            sprint_evaluated:
+              type: object
+              description: Present when status is PASSED or FAILED
+              properties:
+                quality:
+                  type: number
+                  minimum: 0.0
+                  maximum: 1.0
+                originality:
+                  type: number
+                  minimum: 0.0
+                  maximum: 1.0
+                craft:
+                  type: number
+                  minimum: 0.0
+                  maximum: 1.0
+                functionality:
+                  type: number
+                  minimum: 0.0
+                  maximum: 1.0
+                average:
+                  type: number
+                  minimum: 0.0
+                  maximum: 1.0
+                passed:
+                  type: boolean
+                masked_feedback:
+                  type: string
+                  description: PII-masked evaluator feedback (max 500 chars)
+            patch_proposal_applied:
+              type: object
+              description: Present when a PatchProposal was generated for this iteration
+              properties:
+                masked_previous_approach_summary:
+                  type: string
+                masked_proposed_alternative:
+                  type: string
+            sprint_escalated:
+              type: object
+              description: Present when status is ESCALATED
+              properties:
+                final_score_average:
+                  type: number
+                total_iterations:
+                  type: integer
+                patch_proposals_applied:
+                  type: integer
+                hitl_request_id:
+                  type: string
+                  format: uuid
+            sprint_completed:
+              type: object
+              description: Present when status is COMPLETED (evaluator passed)
+              properties:
+                final_score_average:
+                  type: number
+                total_iterations:
+                  type: integer
+                patch_proposals_applied:
+                  type: integer
+                decision_count:
+                  type: integer
 
   securitySchemes:
     saslScram:

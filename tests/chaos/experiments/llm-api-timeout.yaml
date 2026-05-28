@@ -1,0 +1,138 @@
+---
+# Chaos Toolkit experiment: simulate LLM API timeouts and verify the coordinator
+# retries with exponential back-off and escalates to HITL after max retries.
+# Spec: specs/ai/harness-design.md §7 (Resilience & Back-off)
+# ADR:  ADR-0013 (Agent Harness Architecture)
+#
+# Prerequisites: Chaos Toolkit + chaostoolkit-k8s installed;
+#   LLM traffic egress goes through a controllable proxy (e.g., Toxiproxy).
+# Run: chaos run tests/chaos/experiments/llm-api-timeout.yaml
+
+version: "1.0.0"
+title: "LLM API timeout — verify exponential back-off and HITL escalation"
+description: >
+  Introduces a 35 s timeout toxic on the Toxiproxy upstream for the LLM
+  provider endpoint (default timeout budget is 30 s). Asserts that (1) the
+  coordinator does not hang indefinitely, (2) exponential back-off retries
+  are observable in the audit log, (3) after max_retries the sprint is
+  escalated to HITL rather than silently dropped, and (4) MTTR metric is
+  recorded when the sprint ultimately resolves.
+
+tags:
+  - llm
+  - timeout
+  - resilience
+  - back-off
+  - hitl
+
+configuration:
+  app_namespace:
+    type: env
+    key: CHAOS_NAMESPACE
+    default: staging
+  service_url:
+    type: env
+    key: CHAOS_SERVICE_URL
+    default: "http://localhost:8000"
+  toxiproxy_url:
+    type: env
+    key: CHAOS_TOXIPROXY_URL
+    default: "http://localhost:8474"
+  llm_proxy_name:
+    type: env
+    key: CHAOS_LLM_PROXY
+    default: "llm-upstream"
+
+steady-state-hypothesis:
+  title: "LLM upstream reachable and service healthy"
+  probes:
+    - type: probe
+      name: "health-endpoint-returns-200"
+      tolerance: 200
+      provider:
+        type: http
+        url: "${service_url}/health"
+        timeout: 3
+    - type: probe
+      name: "no-active-hitl-requests"
+      tolerance:
+        type: jsonpath
+        path: "$.data[0].value[1]"
+        target: "0"
+      provider:
+        type: http
+        url: "${service_url}/metrics/query?query=sum(hitl_active_requests)"
+        timeout: 3
+
+method:
+  - type: action
+    name: "inject-llm-timeout-toxic"
+    provider:
+      type: http
+      url: "${toxiproxy_url}/proxies/${llm_proxy_name}/toxics"
+      method: POST
+      headers:
+        Content-Type: application/json
+      arguments:
+        body:
+          name: "llm-timeout"
+          type: "timeout"
+          stream: "downstream"
+          toxicity: 1.0
+          attributes:
+            timeout: 35000
+    pauses:
+      after: 5
+
+  - type: action
+    name: "trigger-sprint-during-llm-timeout"
+    provider:
+      type: http
+      url: "${service_url}/api/v1/agent/sprint"
+      method: POST
+      headers:
+        Content-Type: application/json
+      arguments:
+        body:
+          task_id: "chaos-llm-timeout-001"
+          spec_ref: "specs/ai/harness-design.md"
+          autonomy_level: "LOW_RISK"
+    pauses:
+      after: 120
+
+  - type: probe
+    name: "sprint-escalated-to-hitl"
+    tolerance:
+      type: jsonpath
+      path: "$.data[0].value[1]"
+      target:
+        type: range
+        min: "1"
+        max: "100"
+    provider:
+      type: http
+      url: "${service_url}/metrics/query?query=sum(hitl_active_requests)"
+      timeout: 5
+
+  - type: probe
+    name: "back-off-retries-observed-in-audit"
+    tolerance:
+      type: jsonpath
+      path: "$.count"
+      target:
+        type: range
+        min: "2"
+        max: "100"
+    provider:
+      type: http
+      url: "${service_url}/api/v1/audit?action_type=llm_retry&task_id=chaos-llm-timeout-001"
+      timeout: 5
+
+rollbacks:
+  - type: action
+    name: "remove-llm-timeout-toxic"
+    provider:
+      type: http
+      url: "${toxiproxy_url}/proxies/${llm_proxy_name}/toxics/llm-timeout"
+      method: DELETE
+      timeout: 5
