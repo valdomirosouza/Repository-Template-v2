@@ -178,9 +178,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
 
 app = FastAPI(
-    title="Enterprise AI System",
+    title="Enterprise API Gateway",
     version="0.1.0",
-    description="Production-ready AI-powered system with HITL oversight.",
+    description="Production-ready FastAPI gateway with optional AI Agents extension.",
     docs_url="/docs" if settings.app_env != "production" else None,
     redoc_url=None,
     lifespan=lifespan,
@@ -203,4 +203,5 @@ app.mount("/metrics", make_asgi_app())
 
 app.include_router(health.router)
 app.include_router(requests.router, prefix="/v1")
+# AI Agents Module — remove this router if src/agents/ is deleted
 app.include_router(hitl.router, prefix="/v1/hitl")

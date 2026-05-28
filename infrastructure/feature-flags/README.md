@@ -1,5 +1,9 @@
 # infrastructure/feature-flags/
 
+> **AI Agents Module dependency.** This directory contains flags that control AI agent autonomy
+> levels. If your project does not use the AI Agents Module, this directory can be removed.
+> See [`docs/optional-extensions/ai-agents/README.md`](../../docs/optional-extensions/ai-agents/README.md).
+
 Feature flag configuration using [OpenFeature](https://openfeature.dev/) SDK + [flagd](https://flagd.dev/).
 
 **ADR:** [ADR-0015 — Feature Flag Strategy](../../docs/adr/ADR-0015-feature-flag-strategy.md)

@@ -4,6 +4,10 @@
 # Every service that exposes an API, consumes a Kafka topic, or has a K8s deployment
 # must have an entry here.
 #
+# NOTE: The api-gateway entry below includes AI Agents Module ADRs (ADR-0010, 0011, 0014, 0015).
+# If your project does not use the AI Agents Module, remove those ADR references and the
+# hitl.decision.v1 topic. See docs/optional-extensions/ai-agents/README.md.
+#
 # Fields:
 #   name:        unique service identifier (used in make targets, K8s labels, log tags)
 #   language:    python | java | go | nodejs
@@ -19,7 +23,8 @@
 services:
   # ────────────────────────────────────────────────────────────────
   # API Gateway — Python/FastAPI
-  # Primary REST entry point + AI orchestration + HITL gateway
+  # Primary REST entry point; AI orchestration + HITL gateway are
+  # optional — see docs/optional-extensions/ai-agents/README.md
   # ────────────────────────────────────────────────────────────────
   - name: api-gateway
     language: python
