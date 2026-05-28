@@ -68,6 +68,36 @@ class TimeoutLLMClientWrapper:
         )
 
 
+class AnthropicLLMClient:
+    """Thin wrapper around the Anthropic SDK for production use.
+
+    Uses settings.anthropic_api_key and settings.anthropic_model.
+    Always wrap with TimeoutLLMClientWrapper in callers.
+    """
+
+    def __init__(self) -> None:
+        from anthropic import AsyncAnthropic
+
+        from src.shared.config import settings
+
+        self._client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+        self._model = settings.anthropic_model
+
+    async def complete(
+        self,
+        user: str,
+        system: str = "",
+        trace_id: str | None = None,
+    ) -> str:
+        message = await self._client.messages.create(
+            model=self._model,
+            max_tokens=4096,
+            system=system or "You are a helpful assistant.",
+            messages=[{"role": "user", "content": user}],
+        )
+        return message.content[0].text
+
+
 class StubLLMClient:
     """Minimal stub for unit tests — returns a configurable fixed response."""
 
