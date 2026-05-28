@@ -13,6 +13,25 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Changed
+
+- **`CLAUDE.md`** (v2.1.0): expanded with missing commands and corrected architecture framing.
+  - Architecture description corrected from "Python monorepo" to multi-language monorepo template (Python 3.13, Java/Spring Boot, Go, Node.js/Next.js).
+  - Added Java, Go, and Frontend `make` targets with `SERVICE=`/`APP=` parameter pattern.
+  - Added database migration commands (`alembic upgrade head`, `alembic revision --autogenerate`).
+  - Added code generation targets (proto stubs, Avro/OpenAPI clients).
+  - Added `make deploy-staging`, `make rollback`, and `make clean`.
+  - Documented `services.yaml` as canonical service registry and its AsyncAPI contract requirement.
+  - Documented pre-commit hooks (`.pre-commit-config.yaml`) and `harness/` PR gate specs.
+  - Referenced `CUSTOMISING.md` for project adoption guidance.
+  - Extended Key Layers table with `src/memory/`, `frontend/`, and `harness/` rows.
+- **`.github/pull_request_template.md`**: improved for multi-language monorepo.
+  - Per-language test commands (Python/Java/Go/Frontend) in checklist.
+  - Per-language deploy command examples.
+  - Added `services.yaml` checklist item for new services, ports, or Kafka topics.
+  - Scoped HITL checklist item to _(AI Agents Module only)_.
+  - Added footer referencing `harness/code-check.yml` CI gates.
+
 ---
 
 ## [1.5.1] — 2026-05-28
