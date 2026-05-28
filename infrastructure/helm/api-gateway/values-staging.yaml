@@ -1,0 +1,28 @@
+replicaCount: 1
+
+image:
+  pullPolicy: Always
+
+ingress:
+  host: api.staging.example.com
+  clusterIssuer: letsencrypt-staging
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 3
+
+pdb:
+  minAvailable: 1
+
+env:
+  APP_ENV: staging
+  LOG_LEVEL: DEBUG
+  HARNESS_MODE: solo

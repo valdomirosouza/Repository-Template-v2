@@ -1,0 +1,75 @@
+# Default values — override in values-staging.yaml / values-production.yaml
+
+replicaCount: 2
+
+image:
+  repository: ghcr.io/org/api-gateway
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+serviceAccount:
+  create: true
+  name: ""
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: true
+  className: nginx
+  host: api.example.com
+  tlsSecretName: api-gateway-tls
+  clusterIssuer: letsencrypt-prod
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+pdb:
+  minAvailable: 2
+
+env:
+  APP_ENV: production
+  LOG_LEVEL: INFO
+  HARNESS_MODE: solo
+
+# Secrets are injected from Kubernetes Secrets — never hardcode values here.
+# Create with: kubectl create secret generic api-gateway-secrets --from-env-file=.env
+secretRef: api-gateway-secrets
+
+probes:
+  liveness:
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    path: /ready
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+# Canary deployment support (controlled by CD workflow)
+canary:
+  enabled: false
+  weight: 0
+
+terminationGracePeriodSeconds: 30

@@ -56,7 +56,8 @@ jobs:
             --set environment=staging \
             --wait \
             --timeout 5m \
-            app ./infrastructure/helm/
+            app ./infrastructure/helm/api-gateway \
+            --values infrastructure/helm/api-gateway/values-staging.yaml
 
       - name: Run smoke tests
         run: |

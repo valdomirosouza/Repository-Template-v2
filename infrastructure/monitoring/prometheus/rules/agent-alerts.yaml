@@ -1,0 +1,205 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: agent-alerts
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    role: alert-rules
+spec:
+  groups:
+    # ── HITL ─────────────────────────────────────────────────────────────────
+    - name: agent.hitl
+      interval: 30s
+      rules:
+        - alert: HITLQueueDepthHigh
+          expr: |
+            sum(hitl_active_requests) by (agent_id) > 50
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "HITL queue depth high for {{ $labels.agent_id }}"
+            description: "{{ $labels.agent_id }} has {{ $value }} pending HITL requests (threshold: 50). Operator backlog may cause approval timeouts."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/RB-003-hitl-recovery.md"
+
+        - alert: HITLRejectionRateHigh
+          expr: |
+            sum(rate(hitl_rejections_total[10m])) by (action_type)
+            / (sum(rate(hitl_approvals_total[10m])) by (action_type) + sum(rate(hitl_rejections_total[10m])) by (action_type))
+            > 0.40
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "HITL rejection rate high for action_type={{ $labels.action_type }}"
+            description: "{{ $value | humanizePercentage }} of HITL decisions for '{{ $labels.action_type }}' are rejections (threshold: 40%). Spec or risk scorer may need tuning."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/RB-003-hitl-recovery.md"
+
+        - alert: HITLWaitTimeHigh
+          expr: |
+            histogram_quantile(0.90, sum(rate(hitl_wait_seconds_bucket[10m])) by (agent_id, le)) > 1800
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "HITL p90 wait time above 30 min for {{ $labels.agent_id }}"
+            description: "p90 HITL approval wait is {{ $value | humanizeDuration }} for {{ $labels.agent_id }}. Operator throughput may be insufficient."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/RB-003-hitl-recovery.md"
+
+        - alert: HITLNoApprovals
+          expr: |
+            sum(increase(hitl_approvals_total[30m])) by (agent_id) == 0
+            and sum(hitl_active_requests) by (agent_id) > 5
+          for: 30m
+          labels:
+            severity: critical
+          annotations:
+            summary: "No HITL approvals in 30 min — operator may be unavailable ({{ $labels.agent_id }})"
+            description: "{{ $labels.agent_id }} has pending HITL requests but zero approvals in the last 30 minutes. Escalate to on-call operator."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/RB-003-hitl-recovery.md"
+
+    # ── Feedback loop ────────────────────────────────────────────────────────
+    - name: agent.feedback
+      interval: 60s
+      rules:
+        - alert: FeedbackBiasAtMaximum
+          expr: |
+            agent_feedback_bias_applied >= 0.50
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Agent feedback bias at maximum for action_type={{ $labels.action_type }}"
+            description: "risk_score bias for '{{ $labels.action_type }}' has reached the hard cap of 0.50. Sustained high HITL rejection rate — review spec or action implementation."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+        - alert: FeedbackRejectionRateCritical
+          expr: |
+            agent_feedback_rejection_rate > 0.60
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Agent feedback rejection rate critical for action_type={{ $labels.action_type }}"
+            description: "{{ $value | humanizePercentage }} rejection rate for '{{ $labels.action_type }}' over the rolling window (threshold: 60%). Agent actions are consistently unsafe."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+        - alert: FeedbackLoopStalled
+          expr: |
+            increase(agent_feedback_adjustments_total[2h]) == 0
+            and sum(hitl_active_requests) > 0
+          for: 2h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Agent feedback loop has made no adjustments in 2 hours"
+            description: "The feedback loop has not adjusted any bias values in 2 hours despite active HITL requests. Check Prometheus connectivity and feedback_loop_interval_seconds."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+    # ── Agent performance ─────────────────────────────────────────────────────
+    - name: agent.performance
+      interval: 60s
+      rules:
+        - alert: AgentMTTDHigh
+          expr: |
+            histogram_quantile(0.99, sum(rate(agent_mttd_seconds_bucket[10m])) by (action_type, le)) > 60
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Agent MTTD p99 above 60s for action_type={{ $labels.action_type }}"
+            description: "p99 MTTD is {{ $value | humanizeDuration }} for '{{ $labels.action_type }}' (SLO target: ≤60s). Detection pipeline may be slow."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+        - alert: AgentMTTRHigh
+          expr: |
+            histogram_quantile(0.99, sum(rate(agent_mttr_seconds_bucket[10m])) by (action_type, le)) > 600
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Agent MTTR p99 above 10 min for action_type={{ $labels.action_type }}"
+            description: "p99 MTTR is {{ $value | humanizeDuration }} for '{{ $labels.action_type }}' (SLO target: ≤600s). Agent resolution rate may be degraded."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+        - alert: AgentAutonomousResolutionRateLow
+          expr: |
+            agent_autonomous_resolution_rate < 0.80
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Autonomous resolution rate below 80% for action_type={{ $labels.action_type }}"
+            description: "Only {{ $value | humanizePercentage }} of '{{ $labels.action_type }}' tasks resolved without HITL escalation (target: ≥80%). Review spec quality or evaluator thresholds."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+        - alert: AgentCostPerResolutionHigh
+          expr: |
+            histogram_quantile(0.99, sum(rate(agent_cost_per_resolution_tokens_bucket[30m])) by (action_type, le)) > 10000
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Agent token cost p99 above 10k tokens for action_type={{ $labels.action_type }}"
+            description: "p99 tokens-per-resolution for '{{ $labels.action_type }}' is {{ $value | humanize }} (FinOps threshold: 10k). Check for runaway self-reflection loops."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+    # ── Sandbox execution ─────────────────────────────────────────────────────
+    - name: agent.sandbox
+      interval: 30s
+      rules:
+        - alert: AgentSemaphoreSaturation
+          expr: |
+            agent_semaphore_waiting > 10
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Agent semaphore saturation — {{ $value }} requests waiting for a slot"
+            description: "{{ $value }} agent coroutines are queued waiting for a concurrency slot (threshold: 10). Consider increasing max_concurrent_agents or scaling pods."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+    # ── LLM ──────────────────────────────────────────────────────────────────
+    - name: agent.llm
+      interval: 60s
+      rules:
+        - alert: LLMCallLatencyHigh
+          expr: |
+            histogram_quantile(0.99, sum(rate(llm_call_duration_seconds_bucket[5m])) by (service, model, le)) > 10
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "LLM p99 call latency above 10s for {{ $labels.service }}/{{ $labels.model }}"
+            description: "p99 LLM call latency is {{ $value | humanizeDuration }} (threshold: 10s). Provider may be degraded or circuit breaker is suppressing calls."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+        - alert: LLMTokenBudgetExceeded90Percent
+          expr: |
+            (
+              sum(increase(llm_tokens_total[30d])) by (service)
+              / on(service) llm_tokens_budget_total
+            ) > 0.90
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "LLM token budget above 90% for {{ $labels.service }}"
+            description: "Token consumption has exceeded 90% of the monthly budget for {{ $labels.service }}. Service will be degraded when the budget is exhausted."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+    # ── Dead letter queue ────────────────────────────────────────────────────
+    - name: agent.dlq
+      interval: 60s
+      rules:
+        - alert: DLQMessagesGrowing
+          expr: |
+            increase(dlq_messages_total[15m]) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Dead Letter Queue receiving messages — {{ $labels.consumer_group }}/{{ $labels.topic }}"
+            description: "{{ $value }} messages routed to DLQ for {{ $labels.consumer_group }}/{{ $labels.topic }} in the last 15 minutes. Investigate consumer errors."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/disaster-recovery.md"

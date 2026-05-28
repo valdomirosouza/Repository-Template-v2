@@ -1,0 +1,25 @@
+replicaCount: 3
+
+ingress:
+  host: api.example.com
+  clusterIssuer: letsencrypt-prod
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: 2000m
+    memory: 1Gi
+
+autoscaling:
+  minReplicas: 3
+  maxReplicas: 20
+
+pdb:
+  minAvailable: 2
+
+env:
+  APP_ENV: production
+  LOG_LEVEL: INFO
+  HARNESS_MODE: solo

@@ -1,0 +1,12 @@
+apiVersion: v2
+name: api-gateway
+description: Enterprise API Gateway — FastAPI service with optional AI Agents extension
+type: application
+version: 0.1.0
+appVersion: "1.6.0"
+keywords:
+  - fastapi
+  - ai-agents
+  - hitl
+maintainers:
+  - name: platform-team

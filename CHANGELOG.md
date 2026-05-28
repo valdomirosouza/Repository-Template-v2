@@ -13,6 +13,38 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **`infrastructure/helm/api-gateway/`** — Helm chart for the API Gateway (Wave 2.1).
+  Parametrized templates for Deployment, Service, Ingress, HPA, PDB, and ServiceAccount.
+  Separate `values-staging.yaml` and `values-production.yaml` overrides. Canary
+  deployment toggle (`canary.enabled`, `canary.weight`) wired to CD workflows.
+- **`infrastructure/monitoring/prometheus/rules/agent-alerts.yaml`** — Agent-specific
+  Prometheus alert rules (Wave 2.2). Covers HITL queue depth, rejection rate, wait
+  time, operator absence; feedback loop bias ceiling and stall; MTTD/MTTR SLOs;
+  autonomous resolution rate; token cost per resolution; semaphore saturation; LLM
+  latency and budget; Dead Letter Queue growth.
+- **`infrastructure/terraform/modules/networking/`** — Terraform VPC module (Wave 2.5).
+  VPC, public/private subnets, NAT gateway (one per AZ), route tables, and three
+  security groups (ingress, app, data).
+- **`infrastructure/terraform/modules/kubernetes/`** — Terraform EKS module (Wave 2.5).
+  EKS cluster with KMS secrets encryption, managed node group, and IRSA-ready OIDC
+  output.
+- **`infrastructure/terraform/modules/cache/`** — Terraform ElastiCache Redis module
+  (Wave 2.5). TLS-only (port 6380, `rediss://`), at-rest KMS encryption, parameter
+  group enforcing ADR-0019.
+- **`infrastructure/terraform/environments/staging/main.tf`** and
+  **`infrastructure/terraform/environments/production/main.tf`** — Root environment
+  modules wiring networking + kubernetes + cache with S3 remote state backend.
+
+### Changed
+
+- **`cd-staging.yml`**, **`cd-production.yml`** — fixed Helm chart path from
+  `./infrastructure/helm/` to `./infrastructure/helm/api-gateway` and added
+  per-environment `--values` flag (Wave 2.1).
+- **`ci.yml`** — added `fail_ci_if_error: true` and `token` to the codecov upload step
+  so a failed upload blocks the PR rather than silently passing (Wave 2.4).
+
 ---
 
 ## [1.6.0] — 2026-05-28

@@ -103,6 +103,8 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           file: coverage.xml
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   test-integration:
     name: Integration Tests

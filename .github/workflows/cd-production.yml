@@ -52,7 +52,8 @@ jobs:
             --set canary.enabled=true \
             --set canary.weight=5 \
             --wait --timeout 5m \
-            app ./infrastructure/helm/
+            app ./infrastructure/helm/api-gateway \
+            --values infrastructure/helm/api-gateway/values-production.yaml
 
       - name: Wait and check Golden Signals (5%)
         run: |
@@ -88,8 +89,9 @@ if er > 0.01 or p99 > 0.5:
 
       - name: Promote to 25%
         run: |
-          helm upgrade app ./infrastructure/helm/ \
+          helm upgrade app ./infrastructure/helm/api-gateway \
             --namespace production \
+            --values infrastructure/helm/api-gateway/values-production.yaml \
             --reuse-values \
             --set canary.weight=25 \
             --wait --timeout 5m
@@ -127,8 +129,9 @@ if er > 0.01 or p99 > 0.5:
 
       - name: Promote to 100%
         run: |
-          helm upgrade app ./infrastructure/helm/ \
+          helm upgrade app ./infrastructure/helm/api-gateway \
             --namespace production \
+            --values infrastructure/helm/api-gateway/values-production.yaml \
             --set image.tag=${{ inputs.version }} \
             --set canary.enabled=false \
             --wait --timeout 10m
