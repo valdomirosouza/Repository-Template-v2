@@ -13,6 +13,14 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **Canonical Glossary** (`docs/glossary.md`): expanded from ~30 terms to 131 terms across
+  10 thematic sections — AI Governance & Agents, Privacy & Data Protection, Compliance & Legal,
+  Security, SRE & Reliability, Observability, Infrastructure & Middleware, APIs & Protocols,
+  Development Practices & SDLC, Python & Framework Stack. Covers all abbreviations and
+  domain terms used across specs, ADRs, skills, and source code.
+
 ---
 
 ## [1.4.0] - 2026-05-28
