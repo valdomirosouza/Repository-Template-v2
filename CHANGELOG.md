@@ -13,6 +13,35 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **`specs/security/threat-model.md`** — STRIDE threat model (Wave 3.1). Full attack
+  surface analysis across Spoofing, Tampering, Repudiation, Information Disclosure,
+  DoS, and Elevation of Privilege. Includes 4 prioritised remediations required before
+  production.
+- **`specs/ethics/ethical-ai-principles.md`** — Ethical AI principles (Wave 3.2).
+  Six core principles (Human Oversight, Transparency, Fairness, Privacy by Design,
+  Accountability, Safety), prohibited use table, quarterly bias monitoring procedure,
+  and ethical incident response playbook. Maps to EU AI Act Arts. 9–15 and LGPD Art. 20.
+- **`specs/sdlc/development-lifecycle.md`** — Development lifecycle spec (Wave 3.3).
+  Five-stage lifecycle (Spec → Implement → Verify → Stage → Produce) with explicit
+  entry conditions, gate criteria, canary promotion thresholds, hotfix path, and
+  Definition of Done.
+- **`docs/adr/ADR-0020-finops-cost-allocation.md`** — FinOps ADR (Wave 3.4).
+  Three-tier budget enforcement (80%/95%/100%), cost attribution by `action_type` via
+  Prometheus, harness iteration caps, and resolution of the SessionMemory encryption
+  deferral from ADR-0019.
+- **`docs/adr/ADR-0021-agent-communication-protocol.md`** — Agent communication
+  protocol ADR (Wave 3.5). Rationale for Protobuf over JSON/Avro for cross-process
+  messages, boundary policy (dataclasses in-process / proto on wire), versioning
+  strategy (field number permanence), PII masking invariant, and Kafka migration path.
+- **`tests/contract/test_harness_contracts.py`** — Harness contract tests (Wave 3.6).
+  32 tests across 8 classes covering `TaskBrief`, `SprintContract`, `GeneratorArtifact`,
+  `EvaluatorScore`, `HarnessResult`, `PatchProposal`, `ExecutionSummary`, and three
+  cross-boundary invariants (sprint_id propagation, task_id propagation,
+  escalated-result-has-no-passing-score). All 32 pass.
+- **`docs/adr/README.md`** — ADR-0020 and ADR-0021 added to the index.
+
 ---
 
 ## [1.7.0] — 2026-05-28

@@ -81,6 +81,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0015](ADR-0015-feature-flag-strategy.md)             | Feature Flag Strategy             | Accepted | 2026-05-25 |
 | [ADR-0018](ADR-0018-db-encryption-at-rest.md)             | Database Encryption at Rest       | Accepted | 2026-05-28 |
 | [ADR-0019](ADR-0019-redis-tls-value-encryption.md)        | Redis TLS and Value Encryption    | Accepted | 2026-05-28 |
+| [ADR-0020](ADR-0020-finops-cost-allocation.md)            | FinOps: LLM Cost Allocation       | Accepted | 2026-05-28 |
 
 ### AI Agents Module _(opt-in)_
 
@@ -94,3 +95,4 @@ See `docs/optional-extensions/ai-agents/README.md` for the activation checklist.
 | [ADR-0014](ADR-0014-multi-agent-harness-strategy.md)   | Multi-Agent Harness Strategy    | Accepted | 2026-05-24 |
 | [ADR-0016](ADR-0016-agent-sandbox-execution-policy.md) | Agent Sandbox Execution Policy  | Accepted | 2026-05-25 |
 | [ADR-0017](ADR-0017-agent-memory-architecture.md)      | Agent Memory Architecture       | Accepted | 2026-05-27 |
+| [ADR-0021](ADR-0021-agent-communication-protocol.md)   | Agent Communication Protocol    | Accepted | 2026-05-28 |
