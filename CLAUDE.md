@@ -188,6 +188,10 @@ Step 10: UPDATE CHANGELOG.md with the change under the correct category.
 - **ALWAYS** validate user input at system boundaries.
 - **NEVER** use `eval()`, `exec()`, `pickle.loads()` on untrusted input.
 - **ALWAYS** use parameterized queries — never string-concatenated SQL.
+- **ALWAYS** use TLS 1.2+ for all external-facing endpoints; `rediss://` for Redis in production (ADR-0019).
+- **ALWAYS** encrypt L1/L2 PII columns at rest using `EncryptedField` (AES-256-GCM) before storing in PostgreSQL or Redis (ADR-0018, ADR-0019).
+- **NEVER** store unencrypted HITL request payloads in Redis in production — `HITLRedisStore` must receive an `EncryptedField` instance.
+- **ALWAYS** verify `DB_ENCRYPTION_KEY` and `REDIS_TLS_ENABLED` are set before any production deployment (enforced by `Settings.reject_placeholder_secrets`).
 
 ### 3.3 AI Governance Rules
 

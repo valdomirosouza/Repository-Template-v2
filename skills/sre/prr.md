@@ -69,14 +69,17 @@ The `harness/release-check.yml` gate will verify all blocking PRR items are mark
 
 ## Common PRR Blockers and Resolutions
 
-| Blocker                    | Resolution                                                |
-| -------------------------- | --------------------------------------------------------- |
-| Coverage < 80%             | Add missing unit tests; re-run `make test`                |
-| No SLO dashboard           | Create Grafana dashboard; update `docs/sre/slo/slo.yaml`  |
-| DPIA not approved          | Submit to DPO with 5 business days lead time              |
-| SAST HIGH findings         | Fix or document accepted risk with Security Lead sign-off |
-| No runbook for new service | Create `docs/runbooks/<service>.md` using the template    |
-| HITL not tested            | Write integration test that exercises the approval flow   |
+| Blocker                    | Resolution                                                                             |
+| -------------------------- | -------------------------------------------------------------------------------------- |
+| Coverage < 80%             | Add missing unit tests; re-run `make test`                                             |
+| No SLO dashboard           | Create Grafana dashboard; update `docs/sre/slo/slo.yaml`                               |
+| DPIA not approved          | Submit to DPO with 5 business days lead time                                           |
+| SAST HIGH findings         | Fix or document accepted risk with Security Lead sign-off                              |
+| No runbook for new service | Create `docs/runbooks/<service>.md` using the template                                 |
+| HITL not tested            | Write integration test that exercises the approval flow                                |
+| TLS not verified           | Confirm `REDIS_TLS_ENABLED=true` and `rediss://` URL; verify Ingress TLS cert is valid |
+| Encryption key missing     | Set `DB_ENCRYPTION_KEY` in Vault; confirm `db_encryption_enabled=true`                 |
+| Cert expiry < 30 days      | Trigger manual renewal; see `docs/sre/runbooks/cert-rotation.md`                       |
 
 ---
 

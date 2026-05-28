@@ -130,6 +130,22 @@ checklist:
       - id: PRR-SEC-004
         description: "DAST: zero OWASP Top 10 critical findings in staging"
         blocking: true
+      - id: PRR-SEC-005
+        description: "TLS verified: REDIS_TLS_ENABLED=true, rediss:// URL, Ingress cert valid (not expired, correct domain)"
+        blocking: true
+        evidence_required: "Output of: echo | openssl s_client -connect <domain>:443 2>/dev/null | openssl x509 -noout -dates"
+      - id: PRR-SEC-006
+        description: "DB_ENCRYPTION_KEY set in Vault (not placeholder); db_encryption_enabled=true"
+        blocking: true
+        evidence_required: "Vault path confirmed: secret/data/app/db-encryption-key"
+      - id: PRR-SEC-007
+        description: "Encryption key rotation schedule on calendar (180-day cadence per ADR-0008)"
+        blocking: false
+        evidence_required: "Calendar reminder or Vault lease expiry reference"
+      - id: PRR-SEC-008
+        description: "TLS certificate expiry > 30 days; cert-manager ClusterIssuer healthy"
+        blocking: true
+        evidence_required: "kubectl get certificates -n default output"
 
   - category: capacity
     items:

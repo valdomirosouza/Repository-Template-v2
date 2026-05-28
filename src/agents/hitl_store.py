@@ -4,17 +4,20 @@ Implements InMemoryHITLStore (default, non-durable) and HITLRedisStore (producti
 survives pod restarts). Both satisfy the HITLStore Protocol defined in hitl_gateway.py.
 
 Spec: specs/ai/hitl-hotl.md
-ADR:  ADR-0011 (HITL/HOTL Human Oversight Model)
+ADR:  ADR-0011 (HITL/HOTL Human Oversight Model), ADR-0019 (Redis TLS and Value Encryption)
 """
 
 from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.agents.hitl_gateway import HITLRequest, HITLStatus
 from src.shared.config import settings
+
+if TYPE_CHECKING:
+    from src.shared.db_encryption import EncryptedField
 
 
 class InMemoryHITLStore:
@@ -55,16 +58,22 @@ class HITLRedisStore:
     """Redis-backed HITL store — survives pod restarts.
 
     Schema:
-      {prefix}:req:{id}      → JSON string; TTL = expires_at + grace_hours
+      {prefix}:req:{id}      → JSON string (AES-256-GCM encrypted when encryption set)
       {prefix}:pending       → Sorted Set; score = expires_at.timestamp()
-      {prefix}:expired:{id}  → JSON string; TTL = expired_ttl_days days
+      {prefix}:expired:{id}  → JSON string (AES-256-GCM encrypted when encryption set)
+
+    Pass an EncryptedField to encrypt the full request payload at rest (ADR-0019).
+    When encryption is None the store operates without encryption — only valid for
+    local dev. Production startup is blocked when db_encryption_enabled=False
+    (same guard as the DB encryption key).
     """
 
-    def __init__(self, client: Any) -> None:
+    def __init__(self, client: Any, encryption: EncryptedField | None = None) -> None:
         self._r = client
         self._prefix = settings.hitl_redis_key_prefix
         self._grace_hours = settings.hitl_redis_ttl_grace_hours
         self._expired_days = settings.hitl_expired_ttl_days
+        self._encryption = encryption
 
     # ── Key helpers ───────────────────────────────────────────────────────────
 
@@ -111,30 +120,40 @@ class HITLRedisStore:
             status=HITLStatus(d["status"]),
         )
 
+    def _to_redis(self, request: HITLRequest) -> str:
+        """Serialise and optionally encrypt before writing to Redis."""
+        payload = self._serialize(request)
+        return self._encryption.encrypt(payload) if self._encryption else payload
+
+    def _from_redis(self, data: str) -> HITLRequest:
+        """Optionally decrypt and deserialise after reading from Redis."""
+        payload = self._encryption.decrypt(data) if self._encryption else data
+        return self._deserialize(payload)
+
     # ── HITLStore protocol ────────────────────────────────────────────────────
 
     async def save(self, request: HITLRequest) -> None:
         grace = self._grace_hours * 3600
         ttl = max(int((request.expires_at - datetime.now(UTC)).total_seconds() + grace), 1)
         pipe = self._r.pipeline()
-        pipe.set(self._req_key(request.request_id), self._serialize(request), ex=ttl)
+        pipe.set(self._req_key(request.request_id), self._to_redis(request), ex=ttl)
         pipe.zadd(self._pending_key, {request.request_id: request.expires_at.timestamp()})
         await pipe.execute()
 
     async def get(self, request_id: str) -> HITLRequest | None:
         data = await self._r.get(self._req_key(request_id))
         if data is not None:
-            return self._deserialize(data)
+            return self._from_redis(data)
         data = await self._r.get(self._expired_key(request_id))
         if data is not None:
-            return self._deserialize(data)
+            return self._from_redis(data)
         return None
 
     async def get_active(self, request_id: str) -> HITLRequest | None:
         data = await self._r.get(self._req_key(request_id))
         if data is None:
             return None
-        return self._deserialize(data)
+        return self._from_redis(data)
 
     async def pending_count(self) -> int:
         return await self._r.zcard(self._pending_key)
@@ -148,7 +167,7 @@ class HITLRedisStore:
             data = await self._r.get(self._req_key(rid))
             if data is None:
                 continue
-            req = self._deserialize(data)
+            req = self._from_redis(data)
             if req.status == HITLStatus.PENDING:
                 requests.append(req)
         return requests
@@ -164,5 +183,5 @@ class HITLRedisStore:
         pipe = self._r.pipeline()
         pipe.zrem(self._pending_key, request_id)
         pipe.delete(self._req_key(request_id))
-        pipe.set(self._expired_key(request_id), self._serialize(request), ex=ttl)
+        pipe.set(self._expired_key(request_id), self._to_redis(request), ex=ttl)
         await pipe.execute()

@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     # ── Redis ─────────────────────────────────────────────────────────────────
     redis_url: str = "redis://:placeholder-set-in-env@localhost:6379/0"
     redis_max_connections: int = 50
+    # TLS settings for Redis connections (ADR-0019).
+    # In production: set redis_tls_enabled=True and use rediss:// URL scheme.
+    redis_tls_enabled: bool = False
+    redis_tls_ca_cert: str = ""  # path to CA cert file; empty = use system CAs
 
     # ── Kafka ─────────────────────────────────────────────────────────────────
     kafka_bootstrap_servers: str = "localhost:9092"
@@ -161,6 +165,11 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "DB_ENCRYPTION_KEY must be set via environment variable in production. "
                     "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                )
+            if not self.redis_tls_enabled and not self.redis_url.startswith("rediss://"):
+                raise ValueError(
+                    "Redis TLS is required in production. "
+                    "Set REDIS_TLS_ENABLED=true and use a rediss:// URL (ADR-0019)."
                 )
         return self
 

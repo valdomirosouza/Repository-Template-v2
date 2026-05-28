@@ -81,3 +81,4 @@ What other options were evaluated and why were they rejected?
 | [ADR-0016](ADR-0016-agent-sandbox-execution-policy.md)    | Agent Sandbox Execution Policy    | Accepted | 2026-05-25 |
 | [ADR-0017](ADR-0017-agent-memory-architecture.md)         | Agent Memory Architecture         | Accepted | 2026-05-27 |
 | [ADR-0018](ADR-0018-db-encryption-at-rest.md)             | Database Encryption at Rest       | Accepted | 2026-05-28 |
+| [ADR-0019](ADR-0019-redis-tls-value-encryption.md)        | Redis TLS and Value Encryption    | Accepted | 2026-05-28 |

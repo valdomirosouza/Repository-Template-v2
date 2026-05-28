@@ -41,8 +41,9 @@ class TestProductionSecretValidation:
             llm_api_key="sk-ant-real-key-xyz",
             secret_key="super-secret-value-abc123-long-enough",
             database_url="postgresql+asyncpg://appuser:real-db-pass@prod-db:5432/appdb",
-            redis_url="redis://:real-redis-pass@prod-redis:6379/0",
+            redis_url="rediss://:real-redis-pass@prod-redis:6379/0",  # rediss:// (ADR-0019)
             db_encryption_key="a" * 64,  # valid 32-byte hex key (ADR-0018)
+            redis_tls_enabled=True,       # required in production (ADR-0019)
         )
         assert s.app_env == "production"
 

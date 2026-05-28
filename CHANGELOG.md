@@ -37,6 +37,33 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
   (`_SEARCH_ALL`, `_SEARCH_FILTERED`) using asyncpg `$3` binding (ADR-0018 §SQL
   Injection Fix)
 
+### Added (cont.)
+
+- **Redis TLS connection support** (`src/api/rest/main.py`): `REDIS_TLS_ENABLED` and
+  `REDIS_TLS_CA_CERT` settings wire TLS into `redis.asyncio.from_url`; production
+  startup blocked when TLS is disabled (ADR-0019, SPEC-redis-tls)
+- **HITLRedisStore value encryption** (`src/agents/hitl_store.py`): full JSON payload
+  encrypted with AES-256-GCM via optional `EncryptedField` dependency; passthrough
+  path for unencrypted legacy rows; 11 new unit tests
+- **K8s Ingress TLS** (`infrastructure/k8s/ingress.yaml`): HTTPS termination via
+  cert-manager + Let's Encrypt, HSTS, HTTP→HTTPS redirect, security headers,
+  per-IP rate limiting; `ClusterIssuer` manifests for prod and staging
+- **Certificate rotation runbook** (`docs/sre/runbooks/cert-rotation.md`): routine
+  renewal, manual rotation, emergency revocation, encryption key rotation procedures;
+  alert thresholds and escalation matrix
+- **PRR-SEC-005 to PRR-SEC-008** (`docs/sre/prr/prr-checklist.yaml`): TLS
+  verification, `DB_ENCRYPTION_KEY` in Vault, key rotation schedule, cert expiry check
+- **ADR-0019** (`docs/adr/ADR-0019-redis-tls-value-encryption.md`): Redis TLS and
+  value encryption architectural decision
+
+### Changed
+
+- **CLAUDE.md §3.2**: four new inviolable security rules — TLS 1.2+ for all
+  endpoints, `EncryptedField` for L1/L2 PII at rest, no unencrypted HITL payloads
+  in Redis, production startup validation
+- **`skills/sre/prr.md`**: three new PRR blockers — TLS verification, encryption key,
+  certificate expiry
+
 ---
 
 ## [1.4.1] - 2026-05-28
