@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+---
+
+## [1.3.0] - 2026-05-27
+
 ### Added
 
 - **A1 — AI Dependency Manifest**: `docs/dependency-manifest.yaml` — canonical AI dependency
@@ -112,6 +116,20 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 - `CLAUDE.md` §9: added Hybrid Workflow Mode section (C2)
 - `src/shared/config.py`: added `sandbox_*`, `feedback_*`, `memory_*`, and
   `harness_patch_proposal_threshold` settings
+
+### Fixed
+
+- `src/shared/llm_client.py`: added `AnthropicLLMClient` — was imported by
+  `src/workers/request_consumer.py` at module level but never defined, causing
+  `ImportError` on worker startup (latent production bug)
+- `tests/unit/agents/test_request_consumer.py`: `RequestConsumer` now has 100%
+  unit test coverage (was 0%)
+
+### Privacy
+
+- `docs/privacy/dpia/dpia-agent-memory.md`: DPIA v1.1 — DPO sign-off complete
+  2026-05-27; all five §4 items approved; Agent Memory feature cleared for
+  production traffic (ADR-0017)
 
 ---
 
@@ -638,7 +656,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/template-monorepo/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/valdomirosouza/template-monorepo/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/valdomirosouza/template-monorepo/compare/v1.2.1...v1.3.0
+[1.2.1]: https://github.com/valdomirosouza/template-monorepo/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/valdomirosouza/template-monorepo/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/valdomirosouza/template-monorepo/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/valdomirosouza/template-monorepo/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/valdomirosouza/template-monorepo/compare/v0.1.0...v1.0.0
