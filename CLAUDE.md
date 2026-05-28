@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Version:** 2.0.0 | **Last updated:** 2026-05-24
+> **Version:** 2.1.0 | **Last updated:** 2026-05-28
 > This file is the authoritative behavioral contract for Claude Code operating in this repository.
 > Claude must read this file at the start of every session and follow all rules without exception.
 
@@ -53,6 +53,8 @@ make lint-python    # ruff check + mypy strict + detect-secrets scan
 make format-python  # ruff format (auto-fix)
 ```
 
+Pre-commit hooks (`.pre-commit-config.yaml`) auto-run ruff, mypy, detect-secrets, and bandit on every `git commit`. Install once with `uv run pre-commit install`. The same gates run as blocking checks in `harness/code-check.yml` during CI.
+
 ### Docs & API Contracts
 
 ```bash
@@ -61,19 +63,68 @@ make openapi-ui     # Swagger UI for REST spec on :8082
 make asyncapi-ui    # AsyncAPI Studio for event contracts on :8083
 ```
 
+### Other Languages (Java / Go / Frontend)
+
+All targets accept a `SERVICE=<name>` or `APP=<name>` parameter matching the folder under `services/` or `frontend/`:
+
+```bash
+make test-unit-java SERVICE=domain-service   # Java unit tests (no Testcontainers)
+make lint-java      SERVICE=domain-service   # Checkstyle + SpotBugs + OWASP dep-check
+make run-java       SERVICE=domain-service   # Spring Boot dev server
+
+make test-unit-go   SERVICE=event-worker     # Go unit tests (short mode)
+make lint-go        SERVICE=event-worker     # golangci-lint
+make run-go         SERVICE=event-worker     # air hot-reload
+
+make test-unit-frontend APP=frontend         # Jest unit tests
+make lint-frontend      APP=frontend         # ESLint + TypeScript type check
+make run-frontend       APP=frontend         # Next.js dev server on :3000
+```
+
+### Database Migrations
+
+```bash
+uv run alembic upgrade head                          # Apply all pending migrations
+uv run alembic revision --autogenerate -m "message"  # Generate a new migration
+```
+
+### Code Generation
+
+```bash
+make gen-proto-go                    # Regenerate Go gRPC stubs from proto files
+make gen-proto-python                # Regenerate Python gRPC stubs
+make gen-sources-java SERVICE=foo    # Run mvn generate-sources (OpenAPI stubs + Avro)
+make gen-api-client-ts  APP=frontend # Regenerate TypeScript REST client from OpenAPI spec
+make gen-api-client-python           # Regenerate Python REST client from OpenAPI spec
+```
+
+Event schemas (Avro) live in `infrastructure/message-broker/schema-registry/avro/`. Update them and re-run `gen-sources-java` when the event contract changes.
+
+### Deploy & Rollback
+
+```bash
+make deploy-staging SERVICE=<name>   # Build, push, and helm-upgrade to staging
+make rollback                        # Rollback the last staging deploy
+```
+
 ### Scaffolding & Utilities
 
 ```bash
 make new-service NAME=foo LANG=python|java|go   # Scaffold a new service
 make agent-feedback-check                        # Query Prometheus for HITL bias state
 make sbom                                        # Generate CycloneDX SBOM
+make clean                                       # Remove build artefacts and caches
 ```
+
+After scaffolding a new service, register it in `services.yaml` (the canonical service catalog) and add it to `.github/CODEOWNERS`.
 
 ---
 
 ## 0.1. Architecture Overview
 
-This is a **Python monorepo** built around a FastAPI service backed by PostgreSQL, Redis, and Kafka. The example application ships an **async request pipeline** with an optional AI Agents extension (HITL/HOTL, guardrails, harness). AI/agent components are opt-in — projects that do not need them can delete `src/agents/`, `src/guardrails/`, and `src/memory/` entirely.
+This is a **multi-language monorepo template** (Python 3.13, Java/Spring Boot, Go, Node.js/Next.js) with a Python/FastAPI service as the active core. The example application ships an **async request pipeline** with an optional AI Agents extension (HITL/HOTL, guardrails, harness). AI/agent components are opt-in — projects that do not need them can delete `src/agents/`, `src/guardrails/`, and `src/memory/` entirely. See `CUSTOMISING.md` for what to remove or rename when adopting this as a project foundation.
+
+`services.yaml` is the **canonical service registry** — every service with an API, Kafka topic, or K8s deployment must have an entry there. Topics defined in `services.yaml` must have a matching entry in `docs/api/asyncapi/v1/asyncapi.yaml`.
 
 ### Request Pipeline (the critical path)
 
@@ -106,6 +157,9 @@ RequestConsumer (asyncio background task in lifespan)
 | Feature Flags | `src/shared/feature_flags.py`             | OpenFeature/flagd-backed autonomy levels (NONE → LOW_RISK → MEDIUM_RISK → FULL)                         |
 | Config        | `src/shared/config.py`                    | Pydantic Settings; all env vars with documented defaults                                                |
 | Observability | `src/observability/`                      | OTel traces, Prometheus Golden Signals metrics, structured JSON logs                                    |
+| Memory        | `src/memory/`                             | Session memory, vector store, document indexer, bug history (opt-in, ADR-0017)                          |
+| Frontend      | `frontend/`                               | Next.js app; includes HITL operator approval UI                                                         |
+| PR Gates      | `harness/`                                | Claude Code harness specs (code-check, doc-check, release-check, staging-check)                         |
 
 ### Infrastructure Fallback Pattern
 
