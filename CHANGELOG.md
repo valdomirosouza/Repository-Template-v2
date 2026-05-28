@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+---
+
+## [1.4.1] - 2026-05-28
+
 ### Added
 
 - **Canonical Glossary** (`docs/glossary.md`): expanded from ~30 terms to 131 terms across
