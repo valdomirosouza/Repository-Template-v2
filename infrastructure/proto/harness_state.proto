@@ -1,11 +1,14 @@
-// harness_state.proto — Inter-agent state envelope for the multi-agent harness.
+// harness_state.proto — Inter-agent messages for the multi-agent harness.
 //
 // Spec: specs/ai/harness-design.md §2, §9
-// ADR:  ADR-0013 (Agent Harness Architecture), ADR-0014 (Multi-Agent Harness Strategy)
+// ADR:  ADR-0014 (Multi-Agent Harness Strategy), ADR-0021 (Agent Communication Protocol)
 // AsyncAPI channel: agent.harness.state
 //
 // All string fields that could contain user content are PII-masked before
 // serialisation (pii_filter.mask_text). Never embed raw user input here.
+//
+// Field number assignments are permanent — never reuse a retired number.
+// Versioning rules: see ADR-0021 §4.
 
 syntax = "proto3";
 
@@ -120,4 +123,161 @@ message SprintCompleted {
   int32 total_iterations = 2;
   int32 patch_proposals_applied = 3;
   int32 decision_count = 4;
+}
+
+// ── AgentContext ──────────────────────────────────────────────────────────────
+// Structured handoff payload used when the context manager resets agent state
+// between sprints. All fields containing user-derived content are masked.
+//
+// Corresponds to: src/agents/harness/models.py::ContextSnapshot
+// Spec: specs/ai/harness-design.md §4
+
+message AgentContext {
+  // Unique agent identifier.
+  string agent_id = 1;
+
+  // ISO-8601 UTC timestamp when this snapshot was created.
+  string created_at = 2;
+
+  // task_id ties back to the originating TaskBrief.
+  string task_id = 3;
+
+  // sprint_id of the last completed sprint before the reset. Empty if first sprint.
+  string last_sprint_id = 4;
+
+  // Masked key decisions recorded during the previous sprint (max 10).
+  // Each entry is a single masked sentence.
+  repeated string masked_key_decisions = 5;
+
+  // Propagated from TaskBrief for distributed trace correlation.
+  string correlation_id = 6;
+
+  // Autonomy level active at the time of the snapshot.
+  AutonomyLevel autonomy_level = 7;
+
+  // Whether this snapshot was triggered by a context utilisation threshold.
+  bool triggered_by_threshold = 8;
+
+  // Context utilisation ratio at the time of reset (0.0–1.0).
+  float context_utilisation = 9;
+}
+
+// ── HITLRequest ───────────────────────────────────────────────────────────────
+// Published to agent.harness.state when the HITL gateway submits an action
+// for human review. Operators consume this to render the approval UI.
+//
+// Corresponds to: src/agents/hitl_gateway.py::HITLRequest
+// Spec: specs/ai/hitl-hotl.md §3
+// ADR:  ADR-0011 (HITL/HOTL Human Oversight Model)
+//
+// IMPORTANT: action_parameters MUST NOT contain L1/L2 PII — enforce masking
+// before constructing this message. context_summary is likewise masked.
+
+message HITLRequestEnvelope {
+  // Unique request ID (UUID v4) assigned by the gateway.
+  string request_id = 1;
+
+  // Agent that proposed this action.
+  string agent_id = 2;
+
+  // Propagated for distributed trace correlation.
+  string correlation_id = 3;
+
+  // Action classification (e.g. write_file, deploy, send_notification).
+  string action_type = 4;
+
+  // JSON-serialised, PII-masked action parameters.
+  // Never embed raw user input — apply pii_filter.mask_dict() first.
+  string masked_action_parameters_json = 5;
+
+  // Computed risk score (0.0–1.0) from RiskScorer.
+  float risk_score = 6;
+
+  // Masked human-readable summary of the context for the approver.
+  string masked_context_summary = 7;
+
+  // ISO-8601 UTC creation timestamp.
+  string created_at = 8;
+
+  // ISO-8601 UTC expiry timestamp. After this the gateway auto-rejects.
+  string expires_at = 9;
+
+  // Current status.
+  HITLStatus status = 10;
+}
+
+// Status of a HITL request. Mirrors src/agents/hitl_gateway.py::HITLStatus.
+enum HITLStatus {
+  HITL_STATUS_UNSPECIFIED = 0;
+  HITL_STATUS_PENDING = 1;
+  HITL_STATUS_APPROVED = 2;
+  HITL_STATUS_REJECTED = 3;
+  HITL_STATUS_EXPIRED = 4;
+}
+
+// HITLDecisionEnvelope is published after an operator submits a decision.
+message HITLDecisionEnvelope {
+  string request_id = 1;
+  string agent_id = 2;
+  string correlation_id = 3;
+  HITLStatus decision = 4;
+  // Operator identifier (authenticated session ID — not raw user data).
+  string approver_id = 5;
+  // Operator rationale — stored in immutable audit log.
+  string rationale = 6;
+  // ISO-8601 UTC timestamp of the decision.
+  string decided_at = 7;
+  // Risk score from the original HITLRequestEnvelope (for audit correlation).
+  float risk_score = 8;
+}
+
+// ── AuditEvent ────────────────────────────────────────────────────────────────
+// Canonical audit record published to the audit.event.v1 Kafka topic and
+// written to the immutable PostgreSQL audit log.
+//
+// Corresponds to: src/shared/models.py::AuditEvent
+// Spec: specs/ai/guardrails.md §4
+// ADR:  ADR-0012 (PII Masking Strategy)
+//
+// This message is append-only — no delete or update path exists.
+
+message AuditEventEnvelope {
+  // Unique event ID (UUID v4).
+  string event_id = 1;
+
+  // ISO-8601 UTC timestamp.
+  string occurred_at = 2;
+
+  // Event category (e.g. agent.action.proposed, hitl.decision, sprint.completed).
+  string event_type = 3;
+
+  // Agent that generated this event. Empty for system-level events.
+  string agent_id = 4;
+
+  // Anonymised internal user identifier (L3). Never an L1/L2 identifier.
+  string user_id = 5;
+
+  // Verb describing what happened (e.g. write_file, deploy, decide).
+  string action = 6;
+
+  // Result of the action (completed | rejected | failed | pending_hitl).
+  string outcome = 7;
+
+  // JSON-serialised, PII-masked metadata. Apply mask_dict() before populating.
+  string masked_metadata_json = 8;
+
+  // W3C TraceContext trace_id for distributed trace correlation.
+  string trace_id = 9;
+
+  // Operator who approved or rejected (HITL events only).
+  string approver_id = 10;
+
+  // Risk score at the time of the event (0.0 if not applicable).
+  float risk_score = 11;
+
+  // Sprint ID if this event was generated within a harness sprint.
+  string sprint_id = 12;
+
+  // Correlation ID propagated from the originating TaskBrief.
+  string correlation_id = 13;
 }

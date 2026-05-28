@@ -62,6 +62,33 @@ jobs:
           fi
           echo "All spec paths present."
 
+      - name: Validate .env.example covers all Settings fields
+        run: |
+          python3 - <<'EOF'
+          import ast, sys, pathlib, re
+
+          config_src = pathlib.Path("src/shared/config.py").read_text()
+          tree = ast.parse(config_src)
+
+          fields = []
+          for node in ast.walk(tree):
+              if isinstance(node, ast.ClassDef) and node.name == "Settings":
+                  for item in node.body:
+                      if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
+                          fields.append(item.target.id.upper())
+
+          env_src = pathlib.Path(".env.example").read_text().upper()
+          missing = [f for f in fields if f not in env_src]
+
+          if missing:
+              print(f"::warning::These Settings fields are not documented in .env.example:")
+              for f in missing:
+                  print(f"  - {f}")
+              # Advisory only — warn, do not fail (new fields may be internal-only)
+          else:
+              print(f"All {len(fields)} Settings fields are documented in .env.example.")
+          EOF
+
   lint:
     name: Lint
     runs-on: ubuntu-latest

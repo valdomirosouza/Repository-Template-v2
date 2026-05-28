@@ -13,6 +13,20 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **`skills/sre/incident-response.md`** — Incident response skill (Wave 4.1). Severity levels (P0–P3), lifecycle (acknowledge → triage → mitigate → resolve → postmortem), HITL-specific incident procedure, and communication templates.
+- **`skills/sre/capacity-planning.md`** — Capacity planning skill (Wave 4.1). Key capacity signals with Prometheus queries, HPA tuning guide, Little's Law sizing worksheet, and load testing guidance.
+- **`skills/privacy/data-subject-rights.md`** — Data subject rights skill (Wave 4.1). GDPR/LGPD rights table with SLAs, step-by-step request handling, erasure SQL, downstream processor notification, and Art. 22 automated-decision compliance.
+- **`skills/change-management/cab-process.md`** — CAB process skill (Wave 4.1). Change type classification, Normal change workflow, emergency hotfix path, CAB escalation procedure.
+- **`infrastructure/monitoring/jaeger/jaeger-config.yaml`** and **`sampling-strategies.json`** — Jaeger collector config with sampling policy (Wave 4.3). HITL and request endpoints sampled at 100%; health/metrics at 0%.
+- **`infrastructure/proto/harness_state.proto`** — Three new message types (Wave 4.5): `AgentContext`, `HITLRequestEnvelope` + `HITLDecisionEnvelope`, `AuditEventEnvelope`.
+
+### Changed
+
+- **`docs/dependency-manifest.yaml`** — updated date; added ADR-0020 and ADR-0021 to governance references (Wave 4.4).
+- **`.github/workflows/ci.yml`** — advisory `.env.example` drift check against `Settings` fields (Wave 4.2).
+
 ---
 
 ## [1.8.0] — 2026-05-28

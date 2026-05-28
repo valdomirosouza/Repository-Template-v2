@@ -1,0 +1,50 @@
+{
+  "default_strategy": {
+    "type": "probabilistic",
+    "param": 0.1
+  },
+  "per_service_strategies": [
+    {
+      "service": "api-gateway",
+      "type": "probabilistic",
+      "param": 0.2,
+      "operation_strategies": [
+        {
+          "operation": "POST /v1/requests",
+          "type": "probabilistic",
+          "param": 1.0
+        },
+        {
+          "operation": "POST /v1/hitl/{id}/decide",
+          "type": "probabilistic",
+          "param": 1.0
+        },
+        {
+          "operation": "GET /health",
+          "type": "probabilistic",
+          "param": 0.0
+        },
+        {
+          "operation": "GET /ready",
+          "type": "probabilistic",
+          "param": 0.0
+        },
+        {
+          "operation": "GET /metrics",
+          "type": "probabilistic",
+          "param": 0.0
+        }
+      ]
+    },
+    {
+      "service": "domain-service",
+      "type": "probabilistic",
+      "param": 0.1
+    },
+    {
+      "service": "event-worker",
+      "type": "probabilistic",
+      "param": 0.05
+    }
+  ]
+}
