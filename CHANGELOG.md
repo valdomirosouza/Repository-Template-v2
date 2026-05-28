@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+---
+
+## [1.5.0] — 2026-05-28
+
 ### Changed
 
 - **Repository generalised from "Enterprise AI Monorepo" to "Enterprise Monorepo Template"**:
