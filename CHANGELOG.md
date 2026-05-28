@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+---
+
+## [1.5.2] — 2026-05-28
+
 ### Changed
 
 - **`CLAUDE.md`** (v2.1.0): expanded with missing commands and corrected architecture framing.
@@ -31,6 +35,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
   - Added `services.yaml` checklist item for new services, ports, or Kafka topics.
   - Scoped HITL checklist item to _(AI Agents Module only)_.
   - Added footer referencing `harness/code-check.yml` CI gates.
+- **`version.txt`**: corrected stale version (was `1.4.1`, now tracks `pyproject.toml`).
 
 ---
 
