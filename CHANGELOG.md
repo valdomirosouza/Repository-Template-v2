@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+---
+
+## [1.8.0] — 2026-05-28
+
 ### Added
 
 - **`specs/security/threat-model.md`** — STRIDE threat model (Wave 3.1). Full attack
