@@ -1,7 +1,7 @@
 # Enterprise Monorepo Template
 
 > Production-ready monorepo template for enterprise software systems. AI/agent capabilities are optional opt-in extensions.
-> **Version:** 1.3.1 | **Status:** Active | **License:** Proprietary
+> **Version:** 1.9.0 | **Status:** Active | **License:** Proprietary
 
 [![CI](https://github.com/valdomirosouza/template-monorepo/actions/workflows/ci.yml/badge.svg)](https://github.com/valdomirosouza/template-monorepo/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/valdomirosouza/template-monorepo)](https://github.com/valdomirosouza/template-monorepo/releases/latest)
@@ -51,15 +51,20 @@ orchestrator routes to HITL — approve at `POST /v1/hitl/<id>/decide`.
 
 A production-ready scaffold for enterprise teams. Everything is wired together from day one:
 
-| Layer                    | What's included                                                         |
-| ------------------------ | ----------------------------------------------------------------------- |
-| **Languages**            | Python 3.12 · Java 21 · Go 1.23 · Node 20 / Next.js 14                  |
-| **Infrastructure**       | PostgreSQL · Redis · Kafka (KRaft) · Schema Registry · flagd            |
-| **Observability**        | OpenTelemetry · Prometheus · Grafana (Golden Signals + CUJ) · Jaeger    |
-| **Governance**           | 19 ADRs · SDD cycle · privacy-by-design (LGPD + GDPR) · PRR checklist   |
-| **CI/CD**                | GitHub Actions for Python · Java · Go · Frontend — all path-filtered    |
-| **Dev experience**       | Devcontainer · `docker compose up -d` · per-language `make` targets     |
-| **AI/Agents** _(opt-in)_ | Anthropic Claude · HITL/HOTL gateway · multi-agent harness · guardrails |
+| Layer                    | What's included                                                                                 |
+| ------------------------ | ----------------------------------------------------------------------------------------------- |
+| **Languages**            | Python 3.13 · Java 21 · Go 1.23 · Node 20 / Next.js 14                                          |
+| **Service scaffolds**    | `services/domain-service/` (Spring Boot) · `services/event-worker/` (Go) · `frontend/frontend/` |
+| **Infrastructure**       | PostgreSQL · Redis · Kafka (KRaft) · Schema Registry · flagd                                    |
+| **IaC**                  | Helm chart for Kubernetes · Terraform modules for VPC, EKS, and ElastiCache Redis               |
+| **Observability**        | OpenTelemetry · Prometheus · Grafana (Golden Signals + CUJ) · Jaeger (with sampling policy)     |
+| **Alerting**             | Golden Signals rules + 14 agent-specific alert rules (HITL, feedback loop, MTTD/MTTR, LLM cost) |
+| **Governance**           | 21 ADRs · SDD cycle · STRIDE threat model · privacy-by-design (LGPD + GDPR) · PRR checklist     |
+| **Specs**                | System · AI/agents · Privacy · Security (STRIDE) · Ethics (EU AI Act) · SDLC lifecycle          |
+| **CI/CD**                | GitHub Actions for Python · Java · Go · Frontend — all path-filtered · canary CD with SLO gates |
+| **Testing**              | Unit · Integration · Security · Chaos · Contract tests (harness message schema invariants)      |
+| **Dev experience**       | Devcontainer · `docker compose up -d` · per-language `make` targets · skills catalog            |
+| **AI/Agents** _(opt-in)_ | Anthropic Claude · HITL/HOTL gateway · multi-agent harness · guardrails · ethical AI principles |
 
 ---
 
@@ -142,18 +147,20 @@ Also read after your language guide:
 | `specs/`             | Write specs for features before implementing  |
 | `CLAUDE.md`          | Adjust AI behavioral contract for your team   |
 | `.github/CODEOWNERS` | Set team ownership                            |
+| `version.txt`        | Reset to `0.1.0`                              |
 
 **What to remove if you don't need it:**
 
 | If you don't need...     | Delete                                                                                                                                                                                   |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Java services            | `services/` directory (or keep empty for future use)                                                                                                                                     |
-| Go services              | Remove Go targets from `Makefile`; delete `services/` Go dirs                                                                                                                            |
-| Frontend                 | `frontend/` directory                                                                                                                                                                    |
+| Java services            | `services/domain-service/` and `ci-java.yml`                                                                                                                                             |
+| Go services              | `services/event-worker/` and `ci-go.yml`                                                                                                                                                 |
+| Frontend                 | `frontend/` directory and `ci-frontend.yml`                                                                                                                                              |
 | **AI agents entirely**   | `src/agents/`, `src/guardrails/`, `src/memory/`, `specs/ai/`, `docs/ai-governance/` — see [`docs/optional-extensions/ai-agents/README.md`](docs/optional-extensions/ai-agents/README.md) |
-| Multi-agent harness only | `src/agents/harness/` — set `harness_mode = solo` in `.env`                                                                                                                              |
+| Multi-agent harness only | `src/agents/harness/` — set `HARNESS_MODE=solo` in `.env`                                                                                                                                |
 | Agent memory only        | `src/memory/` — remove pgvector from `docker-compose.yml`                                                                                                                                |
 | Sandbox execution only   | `src/agents/sandbox_executor.py`, `docker-compose.sandbox.yml`                                                                                                                           |
+| Terraform                | `infrastructure/terraform/` — keep only Helm if using an existing K8s cluster                                                                                                            |
 
 See [`CUSTOMISING.md`](CUSTOMISING.md) for the full adoption guide.
 
@@ -188,11 +195,19 @@ make infra-down        # stop (preserves volumes)
 make infra-reset       # stop + wipe all volumes
 make test-infra-up     # start lightweight test stack (offset ports)
 
+# Database
+uv run alembic upgrade head                          # apply migrations
+uv run alembic revision --autogenerate -m "message"  # generate new migration
+
 # Contracts
 make openapi-ui        # Swagger UI at http://localhost:8082
 make asyncapi-ui       # AsyncAPI Studio at http://localhost:8083
 make gen-api-client-ts # regenerate TypeScript client from OpenAPI
 make gen-proto-go      # regenerate Go gRPC stubs from proto
+
+# Deploy
+make deploy-staging SERVICE=api-gateway VERSION=x.y.z
+make rollback
 
 # Scaffold a new service
 make new-service NAME=my-service LANG=python   # or java / go
@@ -204,7 +219,7 @@ make new-service NAME=my-service LANG=python   # or java / go
 
 ```
 .
-├── CLAUDE.md                    ← AI behavioral contract (v2.0.0)
+├── CLAUDE.md                    ← AI behavioral contract (v2.1.0)
 ├── services.yaml                ← Service catalog (all languages, ports, topics)
 ├── docker-compose.yml           ← Full dev infrastructure stack
 ├── docker-compose.test.yml      ← Lightweight test stack (offset ports)
@@ -212,17 +227,21 @@ make new-service NAME=my-service LANG=python   # or java / go
 │
 ├── docs/
 │   ├── quickstart/              ← Role-specific onboarding guides (5 languages)
-│   ├── adr/                     ← Architecture Decision Records (ADR-0001–0015)
+│   ├── adr/                     ← Architecture Decision Records (ADR-0001–0021)
 │   ├── api/                     ← OpenAPI · AsyncAPI · gRPC proto contracts
 │   ├── privacy/                 ← PII inventory, DPIA/RIPD, data retention
 │   ├── sre/                     ← SLOs, error budget policy, PRR, CUJ
 │   ├── runbooks/                ← RB-003 HITL recovery + rollback + DR
-│   └── ai-governance/           ← Model card, EU AI Act, NIST AI RMF
+│   ├── ai-governance/           ← Model card, EU AI Act, NIST AI RMF
+│   └── dependency-manifest.yaml ← AI model versions, cost rates, governance metadata
 │
 ├── specs/                       ← Spec-Driven Development specs (write before code)
 │   ├── system/                  ← Vision, architecture, async event flow
 │   ├── ai/                      ← Agent design, HITL/HOTL, guardrails, harness
-│   └── privacy/                 ← PII, retention, DPIA/RIPD
+│   ├── privacy/                 ← PII, retention, DPIA/RIPD
+│   ├── security/                ← STRIDE threat model
+│   ├── ethics/                  ← Ethical AI principles (EU AI Act mapping)
+│   └── sdlc/                    ← Development lifecycle (5-stage with gate criteria)
 │
 ├── src/                         ← Python application code
 │   ├── agents/
@@ -235,20 +254,45 @@ make new-service NAME=my-service LANG=python   # or java / go
 │   ├── observability/           ← OTel setup, Prometheus metrics, structured logger
 │   └── shared/                  ← Config, models, retry, DB pool, feature flags
 │
-├── services/                    ← Java / Go service directories (add yours here)
-├── frontend/                    ← Next.js applications (add yours here)
+├── services/
+│   ├── domain-service/          ← Java 21 / Spring Boot 3.3 — CRUD API + Kafka consumer
+│   └── event-worker/            ← Go 1.23 — stateless Kafka consumer
+│
+├── frontend/
+│   └── frontend/                ← Next.js 14 / TypeScript — HITL approval UI
 │
 ├── infrastructure/
-│   ├── k8s/                     ← Deployment · Service · HPA · PDB manifests
+│   ├── helm/api-gateway/        ← Helm chart (Deployment · HPA · PDB · Ingress)
+│   ├── terraform/
+│   │   ├── modules/networking/  ← VPC, subnets, NAT GW, security groups (AWS)
+│   │   ├── modules/kubernetes/  ← EKS cluster with KMS encryption
+│   │   ├── modules/cache/       ← ElastiCache Redis with TLS + at-rest encryption
+│   │   └── environments/        ← staging/ and production/ root modules
+│   ├── k8s/                     ← Static manifests (Deployment · Service · HPA · PDB)
 │   ├── feature-flags/           ← flagd + autonomous-mode.yaml (OpenFeature)
 │   └── monitoring/
-│       ├── prometheus/          ← prometheus.yml scrape config + alert rules
-│       └── grafana/             ← Dashboards (Golden Signals · SRE · CUJ-001)
-│                                   + datasource & dashboard provisioning
+│       ├── prometheus/rules/    ← golden-signals.yaml + agent-alerts.yaml (14 rules)
+│       ├── grafana/             ← 5 dashboards (Golden Signals · SRE · Agent · CUJ)
+│       └── jaeger/              ← Collector config + per-service sampling strategy
 │
-├── tests/                       ← Unit · Integration · Security · Chaos
+├── tests/
+│   ├── unit/                    ← Fast, no I/O — all modules covered
+│   ├── integration/             ← Real services (Postgres, Redis, Kafka)
+│   ├── contract/                ← Harness message schema invariants (32 tests)
+│   ├── security/                ← OWASP LLM Top 10 + PII leakage
+│   └── chaos/experiments/       ← 8 fault-injection scenarios
+│
 ├── .github/workflows/           ← CI: Python · Java · Go · Frontend (path-filtered)
+│                                   CD: staging (auto) · production (canary, manual)
 └── skills/                      ← Claude Code enterprise skills catalog
+    ├── sre/                     ← golden-signals · prr · cuj · incident-response · capacity-planning
+    ├── privacy/                 ← pii · lgpd · gdpr · data-subject-rights
+    ├── change-management/       ← rfc-process · deploy-rollback · cab-process
+    ├── ai/                      ← guardrails · harness
+    ├── observability/           ← otel-instrumentation
+    ├── api/                     ← rest-api-design
+    ├── devsecops/               ← secret-scanning
+    └── sdlc/                    ← spec-lifecycle
 ```
 
 Full annotated tree: [`docs/repo-structure.md`](docs/repo-structure.md)
@@ -257,11 +301,12 @@ Full annotated tree: [`docs/repo-structure.md`](docs/repo-structure.md)
 
 ## API Contracts
 
-| Type   | Spec                                                                           | Description                            |
-| ------ | ------------------------------------------------------------------------------ | -------------------------------------- |
-| REST   | [`docs/api/openapi/v1/openapi.yaml`](docs/api/openapi/v1/openapi.yaml)         | Synchronous REST API (OpenAPI 3.1)     |
-| Events | [`docs/api/asyncapi/v1/asyncapi.yaml`](docs/api/asyncapi/v1/asyncapi.yaml)     | Kafka event contracts (AsyncAPI 2.6)   |
-| gRPC   | [`docs/api/grpc/proto/ai_service.proto`](docs/api/grpc/proto/ai_service.proto) | Inter-service calls (Protocol Buffers) |
+| Type   | Spec                                                                                   | Description                            |
+| ------ | -------------------------------------------------------------------------------------- | -------------------------------------- |
+| REST   | [`docs/api/openapi/v1/openapi.yaml`](docs/api/openapi/v1/openapi.yaml)                 | Synchronous REST API (OpenAPI 3.1)     |
+| Events | [`docs/api/asyncapi/v1/asyncapi.yaml`](docs/api/asyncapi/v1/asyncapi.yaml)             | Kafka event contracts (AsyncAPI 2.6)   |
+| gRPC   | [`docs/api/grpc/proto/ai_service.proto`](docs/api/grpc/proto/ai_service.proto)         | Inter-service calls (Protocol Buffers) |
+| Agents | [`infrastructure/proto/harness_state.proto`](infrastructure/proto/harness_state.proto) | Harness state + HITL + audit messages  |
 
 > **Rule:** Never write stubs by hand. Generate from the contracts — see [`docs/quickstart/contract-driven-dev.md`](docs/quickstart/contract-driven-dev.md).
 
@@ -269,16 +314,21 @@ Full annotated tree: [`docs/repo-structure.md`](docs/repo-structure.md)
 
 ## Observability
 
-| Signal                   | Stack                            | Location                                      |
-| ------------------------ | -------------------------------- | --------------------------------------------- |
-| Metrics (Golden Signals) | Prometheus + Grafana             | http://localhost:3001 (admin/admin)           |
-| Traces                   | OpenTelemetry + Jaeger           | http://localhost:16686                        |
-| Logs                     | Structured JSON + OTel Collector | —                                             |
-| SLO / Error Budget       | Prometheus + Grafana             | `sre-overview.json` dashboard                 |
-| CUJ-001 dashboard        | Prometheus + Grafana             | `cuj-dashboards/CUJ-001-*.json`               |
-| Alerting                 | PrometheusRule                   | `infrastructure/monitoring/prometheus/rules/` |
+| Signal                   | Stack                            | Location                                                         |
+| ------------------------ | -------------------------------- | ---------------------------------------------------------------- |
+| Metrics (Golden Signals) | Prometheus + Grafana             | http://localhost:3001 (admin/admin)                              |
+| Traces                   | OpenTelemetry + Jaeger           | http://localhost:16686                                           |
+| Logs                     | Structured JSON + OTel Collector | —                                                                |
+| SLO / Error Budget       | Prometheus + Grafana             | `sre-overview.json` dashboard                                    |
+| CUJ-001 dashboard        | Prometheus + Grafana             | `cuj-dashboards/CUJ-001-*.json`                                  |
+| Golden Signals alerts    | PrometheusRule                   | `infrastructure/monitoring/prometheus/rules/golden-signals.yaml` |
+| Agent-specific alerts    | PrometheusRule                   | `infrastructure/monitoring/prometheus/rules/agent-alerts.yaml`   |
+
+Agent alerts cover: HITL queue depth / rejection rate / wait time, feedback loop bias, MTTD/MTTR SLOs, autonomous resolution rate, LLM token budget, and DLQ growth.
 
 All dashboards and datasources are **provisioned automatically** — no manual import needed after `make infra-up`.
+
+Jaeger sampling policy: HITL and request submission endpoints sampled at 100%; health and metrics probes excluded. See [`infrastructure/monitoring/jaeger/sampling-strategies.json`](infrastructure/monitoring/jaeger/sampling-strategies.json).
 
 SLO definitions: [`docs/sre/slo/slo.yaml`](docs/sre/slo/slo.yaml)
 
@@ -306,6 +356,7 @@ await hitl_gateway.submit(HITLRequest(
 | PII masking              | `src/guardrails/pii_filter.py`             | Always on — blocks if disabled                      |
 | Prompt injection guard   | `src/guardrails/prompt_injection_guard.py` | Always on                                           |
 | Audit log                | `src/guardrails/audit_logger.py`           | Immutable — all agent actions logged                |
+| Ethical AI principles    | `specs/ethics/ethical-ai-principles.md`    | 6 principles, EU AI Act Arts. 9–15, LGPD Art. 20    |
 
 Full AI governance: [`docs/ai-governance/`](docs/ai-governance/)
 
@@ -325,33 +376,43 @@ To change a flag locally: edit `infrastructure/feature-flags/flags/autonomous-mo
 
 ## CI / CD
 
-Four path-filtered workflows — each language's CI only runs when its code changes:
+Four path-filtered CI workflows — each language's pipeline only runs when its code changes:
 
-| Workflow          | Triggered by                         | Key gates                                                           |
-| ----------------- | ------------------------------------ | ------------------------------------------------------------------- |
-| `ci.yml`          | all pushes                           | Python lint + unit ≥ 80% + integration + security + contract drift  |
-| `ci-java.yml`     | `services/**/*.java`, `**/pom.xml`   | Checkstyle · SpotBugs · JaCoCo ≥ 80% · Testcontainers               |
-| `ci-go.yml`       | `services/**/*.go`, `**/go.mod`      | golangci-lint · race detector · proto drift · 80% coverage          |
-| `ci-frontend.yml` | `frontend/**`, `docs/api/openapi/**` | ESLint · TS type-check · API client drift · Jest ≥ 80% · Playwright |
+| Workflow          | Triggered by                         | Key gates                                                                                   |
+| ----------------- | ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `ci.yml`          | all pushes                           | Governance checks · lint · unit ≥ 80% · integration · security · contract drift · env drift |
+| `ci-java.yml`     | `services/**/*.java`, `**/pom.xml`   | Checkstyle · SpotBugs · OWASP dep-check · JaCoCo ≥ 80% · Testcontainers                     |
+| `ci-go.yml`       | `services/**/*.go`, `**/go.mod`      | `go mod tidy` · golangci-lint · race detector · proto drift · 80% coverage                  |
+| `ci-frontend.yml` | `frontend/**`, `docs/api/openapi/**` | ESLint · TS type-check · API client drift · Jest ≥ 80% · Playwright                         |
 
-The `contract-drift` job in `ci.yml` verifies that OpenAPI/AsyncAPI specs parse, proto files compile, and all `services.yaml` schema references exist on disk.
+CD workflows:
+
+| Workflow            | Trigger         | Strategy                                                                      |
+| ------------------- | --------------- | ----------------------------------------------------------------------------- |
+| `cd-staging.yml`    | Merge to main   | Build + push image · Helm deploy · smoke tests                                |
+| `cd-production.yml` | Manual dispatch | Error budget check → 5% canary → 25% canary → 100% · auto-rollback on failure |
 
 ---
 
 ## Architecture Decisions
 
-All significant architectural decisions are recorded as ADRs in [`docs/adr/`](docs/adr/README.md).
+All 21 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
 
 | ADR                                                                | Decision                                               |
 | ------------------------------------------------------------------ | ------------------------------------------------------ |
 | [ADR-0001](docs/adr/ADR-0001-monorepo-structure-and-governance.md) | Monorepo structure and governance                      |
 | [ADR-0002](docs/adr/ADR-0002-technology-stack-selection.md)        | Technology stack selection (Python · Java · Go · Node) |
 | [ADR-0003](docs/adr/ADR-0003-async-api-strategy.md)                | Async-first — Kafka vs REST vs gRPC                    |
+| [ADR-0006](docs/adr/ADR-0006-deployment-strategy.md)               | Canary deployment strategy                             |
 | [ADR-0010](docs/adr/ADR-0010-agent-framework-selection.md)         | Agent framework selection                              |
 | [ADR-0011](docs/adr/ADR-0011-hitl-hotl-model.md)                   | Human oversight model (HITL / HOTL)                    |
 | [ADR-0012](docs/adr/ADR-0012-pii-masking-strategy.md)              | PII masking before LLM ingestion and logging           |
 | [ADR-0014](docs/adr/ADR-0014-multi-agent-harness-strategy.md)      | Multi-agent harness (Planner → Generator → Evaluator)  |
 | [ADR-0015](docs/adr/ADR-0015-feature-flag-strategy.md)             | Feature flags via OpenFeature + flagd                  |
+| [ADR-0018](docs/adr/ADR-0018-db-encryption-at-rest.md)             | Database encryption at rest (AES-256-GCM)              |
+| [ADR-0019](docs/adr/ADR-0019-redis-tls-value-encryption.md)        | Redis TLS and value encryption                         |
+| [ADR-0020](docs/adr/ADR-0020-finops-cost-allocation.md)            | LLM cost allocation and budget enforcement             |
+| [ADR-0021](docs/adr/ADR-0021-agent-communication-protocol.md)      | Agent communication protocol (Protobuf)                |
 
 ---
 
@@ -360,10 +421,21 @@ All significant architectural decisions are recorded as ADRs in [`docs/adr/`](do
 This template processes personal data subject to **LGPD** (Brazil) and **GDPR** (EU):
 
 - PII is classified L1–L4 and masked before LLM calls, logging, and event publishing
-- DPIA and RIPD templates are pre-filled in `docs/privacy/`
+- DPIA and RIPD documents are pre-filled in `docs/privacy/`
 - Data retention is automated per policy in `src/jobs/`
+- Data subject rights (access, erasure, portability) handled per `skills/privacy/data-subject-rights.md`
 
 Privacy docs: [`docs/privacy/`](docs/privacy/)
+
+---
+
+## Security
+
+STRIDE threat model covering all six attack categories is in [`specs/security/threat-model.md`](specs/security/threat-model.md).
+
+Key controls: JWT auth, TLS everywhere, AES-256-GCM at rest, PII masking, prompt injection guard, sandbox execution isolation, immutable audit log, SAST (Bandit + SpotBugs + gosec), secret scanning (detect-secrets), SBOM (Syft + Cosign attestation).
+
+To report a vulnerability: [`SECURITY.md`](SECURITY.md).
 
 ---
 
@@ -372,12 +444,6 @@ Privacy docs: [`docs/privacy/`](docs/privacy/)
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the SDD cycle, branch naming, commit conventions, and PR process.
 
 See [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) for community standards.
-
----
-
-## Security
-
-To report a vulnerability, see [`SECURITY.md`](SECURITY.md).
 
 ---
 
