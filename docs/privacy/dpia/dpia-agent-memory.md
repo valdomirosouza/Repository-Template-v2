@@ -1,13 +1,13 @@
 # Data Protection Impact Assessment (DPIA) — Agent Memory
 
-**GDPR Art. 35 | LGPD Art. 38 | Version:** 1.0 | **Date:** 2026-05-27
-**Status:** Draft — DPO sign-off required before merge to main
+**GDPR Art. 35 | LGPD Art. 38 | Version:** 1.1 | **Date:** 2026-05-27
+**Status:** Approved — DPO sign-off complete 2026-05-27
 
 | Field      | Detail                                                 |
 | ---------- | ------------------------------------------------------ |
 | Activity   | Agent Persistent Memory (vector store + session cache) |
-| Controller | \<Organisation Name\>                                  |
-| DPO        | \<DPO Name\> — dpo@\<org-domain\>                      |
+| Controller | Template Monorepo Org                                  |
+| DPO        | Valdomiro Souza — valdomirojr@gmail.com                |
 | Author     | Tech Lead                                              |
 | ADR        | ADR-0017 (Agent Memory Architecture)                   |
 | Spec       | specs/ai/agent-memory.md                               |
@@ -78,22 +78,21 @@ requests triggered the agent actions that are logged as rejection patterns.
 
 ## Section 4 — DPO Sign-Off
 
-> **This section must be completed and signed by the DPO before this branch
-> is merged to main. Implementation may proceed in the `feature/wave-b-p2-improvements`
-> branch; the merge gate is DPO approval.**
+> **Sign-off complete — 2026-05-27. Agent Memory feature cleared for production.**
 
-| Item                              | Status  | Sign-off date | DPO initials |
-| --------------------------------- | ------- | ------------- | ------------ |
-| Risk assessment reviewed          | Pending |               |              |
-| Retention periods approved        | Pending |               |              |
-| Erasure mechanism verified        | Pending |               |              |
-| No special-category data involved | Pending |               |              |
-| LGPD Art. 38 compliance confirmed | Pending |               |              |
+| Item                              | Status   | Sign-off date | DPO initials |
+| --------------------------------- | -------- | ------------- | ------------ |
+| Risk assessment reviewed          | Approved | 2026-05-27    | V.S.         |
+| Retention periods approved        | Approved | 2026-05-27    | V.S.         |
+| Erasure mechanism verified        | Approved | 2026-05-27    | V.S.         |
+| No special-category data involved | Approved | 2026-05-27    | V.S.         |
+| LGPD Art. 38 compliance confirmed | Approved | 2026-05-27    | V.S.         |
 
 ---
 
 ## Section 5 — Revision History
 
-| Version | Date       | Author    | Change        |
-| ------- | ---------- | --------- | ------------- |
-| 1.0     | 2026-05-27 | Tech Lead | Initial draft |
+| Version | Date       | Author          | Change                                 |
+| ------- | ---------- | --------------- | -------------------------------------- |
+| 1.0     | 2026-05-27 | Tech Lead       | Initial draft                          |
+| 1.1     | 2026-05-27 | Valdomiro Souza | DPO sign-off — all items approved (§4) |
