@@ -1,6 +1,6 @@
-# Enterprise AI Monorepo Template
+# Enterprise Monorepo Template
 
-> Production-ready monorepo template for AI-powered systems.
+> Production-ready monorepo template for enterprise software systems. AI/agent capabilities are optional opt-in extensions.
 > **Version:** 1.3.1 | **Status:** Active | **License:** Proprietary
 
 [![CI](https://github.com/valdomirosouza/template-monorepo/actions/workflows/ci.yml/badge.svg)](https://github.com/valdomirosouza/template-monorepo/actions/workflows/ci.yml)
@@ -49,17 +49,17 @@ orchestrator routes to HITL — approve at `POST /v1/hitl/<id>/decide`.
 
 ## What you get
 
-A production-ready scaffold for teams building AI-powered systems with human oversight. Everything is wired together from day one:
+A production-ready scaffold for enterprise teams. Everything is wired together from day one:
 
-| Layer              | What's included                                                         |
-| ------------------ | ----------------------------------------------------------------------- |
-| **Languages**      | Python 3.12 · Java 21 · Go 1.23 · Node 20 / Next.js 14                  |
-| **AI**             | Anthropic Claude · HITL/HOTL gateway · multi-agent harness · guardrails |
-| **Infrastructure** | PostgreSQL · Redis · Kafka (KRaft) · Schema Registry · flagd            |
-| **Observability**  | OpenTelemetry · Prometheus · Grafana (Golden Signals + CUJ) · Jaeger    |
-| **Governance**     | 15 ADRs · SDD cycle · privacy-by-design (LGPD + GDPR) · PRR checklist   |
-| **CI/CD**          | GitHub Actions for Python · Java · Go · Frontend — all path-filtered    |
-| **Dev experience** | Devcontainer · `docker compose up -d` · per-language `make` targets     |
+| Layer                    | What's included                                                         |
+| ------------------------ | ----------------------------------------------------------------------- |
+| **Languages**            | Python 3.12 · Java 21 · Go 1.23 · Node 20 / Next.js 14                  |
+| **Infrastructure**       | PostgreSQL · Redis · Kafka (KRaft) · Schema Registry · flagd            |
+| **Observability**        | OpenTelemetry · Prometheus · Grafana (Golden Signals + CUJ) · Jaeger    |
+| **Governance**           | 19 ADRs · SDD cycle · privacy-by-design (LGPD + GDPR) · PRR checklist   |
+| **CI/CD**                | GitHub Actions for Python · Java · Go · Frontend — all path-filtered    |
+| **Dev experience**       | Devcontainer · `docker compose up -d` · per-language `make` targets     |
+| **AI/Agents** _(opt-in)_ | Anthropic Claude · HITL/HOTL gateway · multi-agent harness · guardrails |
 
 ---
 
@@ -69,7 +69,8 @@ A production-ready scaffold for teams building AI-powered systems with human ove
 
 ```bash
 cp .env.example .env
-# Fill in: ANTHROPIC_API_KEY, SECRET_KEY  (the only [REQUIRED] values)
+# Fill in: SECRET_KEY  (the only always-required value)
+# ANTHROPIC_API_KEY only needed if using the AI Agents extension
 # Everything else has working local defaults
 
 make infra-up
@@ -144,14 +145,15 @@ Also read after your language guide:
 
 **What to remove if you don't need it:**
 
-| If you don't need... | Delete                                                         |
-| -------------------- | -------------------------------------------------------------- |
-| Java services        | `services/` directory (or keep empty for future use)           |
-| Go services          | Remove Go targets from `Makefile`; delete `services/` Go dirs  |
-| Frontend             | `frontend/` directory                                          |
-| Multi-agent harness  | `src/agents/harness/` — set `harness_mode = solo` in `.env`    |
-| Agent memory         | `src/memory/` — remove pgvector from `docker-compose.yml`      |
-| Sandbox execution    | `src/agents/sandbox_executor.py`, `docker-compose.sandbox.yml` |
+| If you don't need...     | Delete                                                                                                                                                                                   |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Java services            | `services/` directory (or keep empty for future use)                                                                                                                                     |
+| Go services              | Remove Go targets from `Makefile`; delete `services/` Go dirs                                                                                                                            |
+| Frontend                 | `frontend/` directory                                                                                                                                                                    |
+| **AI agents entirely**   | `src/agents/`, `src/guardrails/`, `src/memory/`, `specs/ai/`, `docs/ai-governance/` — see [`docs/optional-extensions/ai-agents/README.md`](docs/optional-extensions/ai-agents/README.md) |
+| Multi-agent harness only | `src/agents/harness/` — set `harness_mode = solo` in `.env`                                                                                                                              |
+| Agent memory only        | `src/memory/` — remove pgvector from `docker-compose.yml`                                                                                                                                |
+| Sandbox execution only   | `src/agents/sandbox_executor.py`, `docker-compose.sandbox.yml`                                                                                                                           |
 
 See [`CUSTOMISING.md`](CUSTOMISING.md) for the full adoption guide.
 
