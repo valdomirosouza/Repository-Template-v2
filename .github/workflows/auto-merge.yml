@@ -1,16 +1,19 @@
-# ⚠️ GOVERNANCE EXCEPTION — added 2026-05-29 at the repository owner's explicit request.
+# Scoped auto-merge — added 2026-05-29, narrowed 2026-05-29 (REM-005).
 #
-# This workflow AUTO-APPROVES and AUTO-MERGES pull requests targeting `main` once any
-# required status checks pass. It intentionally bypasses the human review gate described
-# in CLAUDE.md §7 and .github/CODEOWNERS. Delete this file to restore manual review.
+# Auto-approves and auto-merges a PR to `main` ONCE required status checks pass, but ONLY for
+# low-risk changes:
+#   • documentation-only PRs (all changed files under docs/ or *.md / *.markdown), or
+#   • dependency-bump PRs authored by Dependabot.
 #
-# SCOPE / SAFETY: it triggers on `pull_request` (NOT `pull_request_target`). PRs from
-# branches in this repo receive a write-scoped token and are auto-approved + merged.
-# PRs from forks receive only a read-only token, so the approve/merge steps cannot act
-# on them — untrusted fork contributions are therefore NOT auto-merged. The job also
-# never checks out or executes PR code (API calls only).
+# Any PR that touches application code, infrastructure, workflows, guardrails, etc. is SKIPPED
+# here and falls back to normal human review — restoring segregation of duties / four-eyes for
+# everything that matters (ISO 27001 A.5.3/A.8.32, SOC 2 CC8.1). See
+# docs/compliance/remediation-register.md (REM-005).
+#
+# SAFETY: triggers on `pull_request` (NOT `pull_request_target`), is gated to same-repo PRs
+# (forks get a read-only token), and never checks out or executes PR code (API calls only).
 
-name: Auto-merge PRs
+name: Auto-merge (docs & deps only)
 
 on:
   pull_request:
@@ -20,14 +23,12 @@ permissions:
   contents: write
   pull-requests: write
 
-# Avoid races when multiple events fire for the same PR.
 concurrency:
   group: auto-merge-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   auto-merge:
-    # Skip drafts and fork PRs (forks only get a read-only token and would fail anyway).
     if: >-
       github.event.pull_request.draft == false &&
       github.event.pull_request.head.repo.full_name == github.repository
@@ -36,14 +37,44 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       REPO: ${{ github.repository }}
+      PR_AUTHOR: ${{ github.event.pull_request.user.login }}
     steps:
+      - name: Determine eligibility (docs-only or Dependabot)
+        id: scope
+        run: |
+          if [ "$PR_AUTHOR" = "dependabot[bot]" ]; then
+            echo "Dependabot PR — eligible (dependency bump)."
+            echo "eligible=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          files=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json files --jq '.files[].path')
+          echo "Changed files:"; echo "$files"
+
+          ineligible=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              docs/*|*.md|*.markdown) ;;            # documentation only
+              *) echo "::notice::Non-docs change requires review: $f"; ineligible=1 ;;
+            esac
+          done <<< "$files"
+
+          if [ "$ineligible" -eq 1 ]; then
+            echo "PR touches non-docs files — auto-merge SKIPPED; manual review required (REM-005)."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Documentation-only PR — eligible."
+            echo "eligible=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Auto-approve
+        if: steps.scope.outputs.eligible == 'true'
         run: |
           gh pr review "$PR_NUMBER" --repo "$REPO" --approve \
-            --body "Auto-approved by the auto-merge workflow (governance exception)."
+            --body "Auto-approved: low-risk change (docs-only or Dependabot). Scoped per REM-005."
 
       - name: Enable auto-merge
-        # --auto merges as soon as required checks pass; with no required checks
-        # configured on `main`, the PR merges immediately.
+        if: steps.scope.outputs.eligible == 'true'
         run: |
           gh pr merge "$PR_NUMBER" --repo "$REPO" --squash --auto --delete-branch

@@ -71,7 +71,7 @@ class TimeoutLLMClientWrapper:
 class AnthropicLLMClient:
     """Thin wrapper around the Anthropic SDK for production use.
 
-    Uses settings.anthropic_api_key and settings.anthropic_model.
+    Uses settings.llm_api_key and settings.llm_model.
     Always wrap with TimeoutLLMClientWrapper in callers.
     """
 

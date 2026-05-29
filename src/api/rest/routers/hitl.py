@@ -22,6 +22,7 @@ from src.agents.hitl_gateway import (
     HITLGatewayError,
     HITLStatus,
 )
+from src.api.rest.auth import Principal, require_hitl_operator
 from src.observability.logger import get_logger
 
 logger = get_logger("api.hitl")
@@ -54,7 +55,9 @@ class HITLStatusResponse(BaseModel):
 class DecisionIn(BaseModel):
     decision: str = Field(..., pattern="^(APPROVED|REJECTED)$")
     rationale: str = Field(..., min_length=10, max_length=1000)
-    approver_id: str = Field(..., min_length=1)
+    # NOTE: approver_id is intentionally NOT accepted from the request body. The approver
+    # identity is taken from the authenticated JWT subject (REM-001) to prevent impersonation
+    # and audit-trail forgery.
 
 
 class DecisionOut(BaseModel):
@@ -88,25 +91,30 @@ async def submit_decision(
     request_id: str,
     body: DecisionIn,
     gateway: HITLGateway = Depends(get_hitl_gateway),
+    operator: Principal = Depends(require_hitl_operator),
 ) -> DecisionOut:
     """Record a human APPROVE or REJECT decision for a pending HITL request.
+
+    Requires a valid operator JWT (role ``hitl-operator``); the approver identity is taken
+    from the token subject, not the request body (REM-001).
 
     - APPROVED: the agent action proceeds
     - REJECTED: the action is cancelled; the rationale is audit-logged
 
-    Raises 404 if request_id is not found, already decided, or expired.
+    Raises 401/403 if the caller is not an authenticated operator, or 404 if request_id is
+    not found, already decided, or expired.
     """
     logger.info(
         "HITL decision submitted via API",
         request_id=request_id,
         decision=body.decision,
-        approver_id=body.approver_id,
+        approver_id=operator.sub,
     )
 
     decision = HITLDecision(
         request_id=request_id,
         decision=HITLStatus(body.decision),
-        approver_id=body.approver_id,
+        approver_id=operator.sub,
         rationale=body.rationale,
         decided_at=datetime.now(UTC),
     )

@@ -91,12 +91,12 @@ Internet ──▶ Ingress (nginx, TLS) ──▶ FastAPI (rate-limited)
 
 ## Remediations Required Before Production
 
-| ID      | Threat                           | Action                                                    | Owner         | Priority |
-| ------- | -------------------------------- | --------------------------------------------------------- | ------------- | -------- |
-| REM-001 | HITL operator impersonation      | Implement operator JWT/session for `/v1/hitl/{id}/decide` | Security Lead | P0       |
-| REM-002 | LLM cost exhaustion              | Wire `LLMTokenBudgetExceeded90Percent` alert to PagerDuty | SRE Lead      | P1       |
-| REM-003 | Kafka plaintext cluster-internal | Enable mTLS between pods (service mesh, ADR-0007)         | DevOps Lead   | P1       |
-| REM-004 | No DAST in CI pipeline           | Add OWASP ZAP or Nuclei scan to `ci.yml`                  | DevSecOps     | P2       |
+| ID      | Threat                           | Action                                                                                                          | Owner         | Priority |
+| ------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------- | -------- |
+| REM-001 | HITL operator impersonation      | ✅ **Done** — JWT bearer auth + `hitl-operator` role; `approver_id` from token subject (`src/api/rest/auth.py`) | Security Lead | ✅ Done  |
+| REM-002 | LLM cost exhaustion              | Wire `LLMTokenBudgetExceeded90Percent` alert to PagerDuty                                                       | SRE Lead      | P1       |
+| REM-003 | Kafka plaintext cluster-internal | Enable mTLS between pods (service mesh, ADR-0007)                                                               | DevOps Lead   | P1       |
+| REM-004 | No DAST in CI pipeline           | Add OWASP ZAP or Nuclei scan to `ci.yml`                                                                        | DevSecOps     | P2       |
 
 ---
 

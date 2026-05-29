@@ -13,6 +13,20 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Security
+
+- **HITL operator authentication (REM-001).** `POST /v1/hitl/requests/{id}/decision` now
+  requires a JWT **bearer** token carrying the `hitl-operator` role, and the approver identity
+  is taken from the **verified token subject** instead of the request body — closing an
+  impersonation / audit-forgery hole (anyone could previously approve agent actions and assert
+  any `approver_id`). New `src/api/rest/auth.py`; `PyJWT` dependency added; `hitl_operator_role`
+  setting added. Unit tests cover missing/invalid/expired token → 401, wrong role → 403, and
+  identity-from-token (a spoofed body `approver_id` is ignored).
+- **Scoped auto-merge (REM-005).** `.github/workflows/auto-merge.yml` now only auto-approves +
+  merges **documentation-only** PRs or **Dependabot** dependency bumps; any PR touching code,
+  infrastructure, workflows, or guardrails falls back to mandatory human review — restoring
+  segregation of duties / four-eyes (ISO 27001 A.5.3/A.8.32, SOC 2 CC8.1).
+
 ### Added
 
 - **`docs/compliance/`** — compliance & control-mapping package for enterprise vendor-risk

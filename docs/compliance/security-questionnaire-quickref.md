@@ -19,22 +19,22 @@
 
 ## Secure SDLC & change management
 
-| Question                                              | Answer                | Evidence                                                                                                                                  |
-| ----------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Is security integrated into your SDLC?                | Yes                   | `CLAUDE.md` SDD cycle, `harness/` gates, pre-commit                                                                                       |
-| Do all code changes require peer review before merge? | **Partial (REM-005)** | CODEOWNERS + branch protection; the optional `auto-merge.yml` bypasses review and must be disabled/constrained for enterprise deployments |
-| Are there automated quality/security gates in CI?     | Yes                   | `harness/code-check.yml`: lint, ≥80% coverage, SAST, secret scan, PII scan                                                                |
-| Is there a formal change-management / CAB process?    | Yes (design)          | `skills/change-management/`, `docs/change-management/` (RFC + CAB)                                                                        |
-| Separate dev/test/prod environments?                  | Yes                   | `infrastructure/terraform/environments/{dev,staging,production}`                                                                          |
+| Question                                              | Answer       | Evidence                                                                                                                                                                |
+| ----------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Is security integrated into your SDLC?                | Yes          | `CLAUDE.md` SDD cycle, `harness/` gates, pre-commit                                                                                                                     |
+| Do all code changes require peer review before merge? | Yes          | CODEOWNERS + branch protection + required checks; `auto-merge.yml` is scoped to docs-only / Dependabot PRs, so all code/infra changes require human review (REM-005 ✅) |
+| Are there automated quality/security gates in CI?     | Yes          | `harness/code-check.yml`: lint, ≥80% coverage, SAST, secret scan, PII scan                                                                                              |
+| Is there a formal change-management / CAB process?    | Yes (design) | `skills/change-management/`, `docs/change-management/` (RFC + CAB)                                                                                                      |
+| Separate dev/test/prod environments?                  | Yes          | `infrastructure/terraform/environments/{dev,staging,production}`                                                                                                        |
 
 ## Access control & authentication
 
-| Question                         | Answer                | Evidence                                                    |
-| -------------------------------- | --------------------- | ----------------------------------------------------------- |
-| Is access least-privilege?       | Partial               | IRSA per-service (Terraform), CODEOWNERS, branch protection |
-| Are all endpoints authenticated? | **Partial (REM-001)** | JWT on API; HITL operator endpoint auth being implemented   |
-| MFA for privileged access?       | Org                   | Identity-provider / org responsibility                      |
-| Periodic access reviews?         | Org                   | Process org-level                                           |
+| Question                         | Answer  | Evidence                                                                                                                                                                 |
+| -------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Is access least-privilege?       | Partial | IRSA per-service (Terraform), CODEOWNERS, branch protection                                                                                                              |
+| Are all endpoints authenticated? | Partial | The HITL operator decision endpoint now requires a JWT bearer token + operator role (REM-001 ✅); remaining public API endpoints are being brought under the same scheme |
+| MFA for privileged access?       | Org     | Identity-provider / org responsibility                                                                                                                                   |
+| Periodic access reviews?         | Org     | Process org-level                                                                                                                                                        |
 
 ## Data protection & privacy
 

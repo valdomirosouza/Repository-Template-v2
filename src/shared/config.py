@@ -110,6 +110,8 @@ class Settings(BaseSettings):
     # For multi-service or public-key verification use RS256 or ES256.
     jwt_algorithm: str = "HS256"
     jwt_expiry_seconds: int = 3600
+    # Role claim required to submit HITL approval decisions (REM-001, ADR-0011).
+    hitl_operator_role: str = "hitl-operator"
     allowed_origins: list[str] = ["http://localhost:3000"]
     rate_limit_requests_per_minute: int = 60
 

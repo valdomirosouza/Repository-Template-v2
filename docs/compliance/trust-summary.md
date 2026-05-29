@@ -34,12 +34,17 @@
 ## Known, tracked gaps (transparency)
 
 We track every open item in the [remediation register](remediation-register.md). The two we
-prioritise for any enterprise engagement:
+previously prioritised for enterprise engagement were **remediated on 2026-05-29**:
 
-1. **Operator authentication on the human-approval endpoint** (REM-001) — being implemented.
-2. **Restoring mandatory human review on changes** (REM-005) — the template ships an optional
-   auto-merge workflow that, if enabled, bypasses four-eyes; enterprise deployments disable or
-   constrain it.
+1. **Operator authentication on the human-approval endpoint** (REM-001 ✅) — the HITL decision
+   endpoint now requires a JWT bearer token with an operator role; the approver identity is
+   taken from the verified token, not the request body.
+2. **Mandatory human review on changes** (REM-005 ✅) — auto-merge is now scoped to
+   documentation-only and Dependabot PRs; all code, infrastructure, and workflow changes require
+   human review.
+
+Remaining open items (e.g. supplier-role sign-off, supply-chain hardening to SLSA L2+) are
+prioritised in the register.
 
 ## Where to go deeper
 
