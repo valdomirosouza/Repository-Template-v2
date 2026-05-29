@@ -1,0 +1,27 @@
+replicaCount: 1
+
+image:
+  pullPolicy: Always
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 1
+  kafkaLagTarget: "10000"
+
+pdb:
+  minAvailable: 0
+
+kafka:
+  bootstrapServers: "kafka.dev:9092"
+  groupId: "event-worker-dev"
+
+env:
+  LOG_LEVEL: debug
