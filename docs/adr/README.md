@@ -65,23 +65,27 @@ What other options were evaluated and why were they rejected?
 
 These ADRs apply to every project using this template, regardless of whether the AI Agents Module is enabled.
 
-| ADR                                                       | Title                             | Status   | Date       |
-| --------------------------------------------------------- | --------------------------------- | -------- | ---------- |
-| [ADR-0001](ADR-0001-monorepo-structure-and-governance.md) | Monorepo Structure and Governance | Accepted | 2026-05-24 |
-| [ADR-0002](ADR-0002-technology-stack-selection.md)        | Technology Stack Selection        | Accepted | 2026-05-24 |
-| [ADR-0003](ADR-0003-async-api-strategy.md)                | Async API Strategy                | Accepted | 2026-05-24 |
-| [ADR-0004](ADR-0004-observability-stack.md)               | Observability Stack               | Accepted | 2026-05-24 |
-| [ADR-0005](ADR-0005-message-broker-selection.md)          | Message Broker Selection          | Accepted | 2026-05-24 |
-| [ADR-0006](ADR-0006-deployment-strategy.md)               | Deployment Strategy               | Accepted | 2026-05-24 |
-| [ADR-0007](ADR-0007-service-mesh.md)                      | Service Mesh                      | Proposed | 2026-05-24 |
-| [ADR-0008](ADR-0008-secrets-management.md)                | Secrets Management                | Accepted | 2026-05-24 |
-| [ADR-0009](ADR-0009-caching-strategy.md)                  | Caching Strategy                  | Accepted | 2026-05-24 |
-| [ADR-0012](ADR-0012-pii-masking-strategy.md)              | PII Masking Strategy              | Accepted | 2026-05-24 |
-| [ADR-0013](ADR-0013-data-retention-policy.md)             | Data Retention Policy             | Accepted | 2026-05-24 |
-| [ADR-0015](ADR-0015-feature-flag-strategy.md)             | Feature Flag Strategy             | Accepted | 2026-05-25 |
-| [ADR-0018](ADR-0018-db-encryption-at-rest.md)             | Database Encryption at Rest       | Accepted | 2026-05-28 |
-| [ADR-0019](ADR-0019-redis-tls-value-encryption.md)        | Redis TLS and Value Encryption    | Accepted | 2026-05-28 |
-| [ADR-0020](ADR-0020-finops-cost-allocation.md)            | FinOps: LLM Cost Allocation       | Accepted | 2026-05-28 |
+| ADR                                                       | Title                               | Status   | Date       |
+| --------------------------------------------------------- | ----------------------------------- | -------- | ---------- |
+| [ADR-0001](ADR-0001-monorepo-structure-and-governance.md) | Monorepo Structure and Governance   | Accepted | 2026-05-24 |
+| [ADR-0002](ADR-0002-technology-stack-selection.md)        | Technology Stack Selection          | Accepted | 2026-05-24 |
+| [ADR-0003](ADR-0003-async-api-strategy.md)                | Async API Strategy                  | Accepted | 2026-05-24 |
+| [ADR-0004](ADR-0004-observability-stack.md)               | Observability Stack                 | Accepted | 2026-05-24 |
+| [ADR-0005](ADR-0005-message-broker-selection.md)          | Message Broker Selection            | Accepted | 2026-05-24 |
+| [ADR-0006](ADR-0006-deployment-strategy.md)               | Deployment Strategy                 | Accepted | 2026-05-24 |
+| [ADR-0007](ADR-0007-service-mesh.md)                      | Service Mesh                        | Proposed | 2026-05-24 |
+| [ADR-0008](ADR-0008-secrets-management.md)                | Secrets Management                  | Accepted | 2026-05-24 |
+| [ADR-0009](ADR-0009-caching-strategy.md)                  | Caching Strategy                    | Accepted | 2026-05-24 |
+| [ADR-0012](ADR-0012-pii-masking-strategy.md)              | PII Masking Strategy                | Accepted | 2026-05-24 |
+| [ADR-0013](ADR-0013-data-retention-policy.md)             | Data Retention Policy               | Accepted | 2026-05-24 |
+| [ADR-0015](ADR-0015-feature-flag-strategy.md)             | Feature Flag Strategy               | Accepted | 2026-05-25 |
+| [ADR-0018](ADR-0018-db-encryption-at-rest.md)             | Database Encryption at Rest         | Accepted | 2026-05-28 |
+| [ADR-0019](ADR-0019-redis-tls-value-encryption.md)        | Redis TLS and Value Encryption      | Accepted | 2026-05-28 |
+| [ADR-0020](ADR-0020-finops-cost-allocation.md)            | FinOps: LLM Cost Allocation         | Accepted | 2026-05-28 |
+| [ADR-0022](ADR-0022-testing-strategy.md)                  | Testing Strategy                    | Accepted | 2026-05-28 |
+| [ADR-0023](ADR-0023-frontend-architecture.md)             | Frontend Architecture               | Accepted | 2026-05-28 |
+| [ADR-0024](ADR-0024-api-versioning-strategy.md)           | API Versioning Strategy             | Accepted | 2026-05-28 |
+| [ADR-0025](ADR-0025-language-selection.md)                | Language Selection for New Services | Accepted | 2026-05-24 |
 
 ### AI Agents Module _(opt-in)_
 
