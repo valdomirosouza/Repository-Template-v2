@@ -40,6 +40,17 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
   from `master` (was ADR-0016 there; renumbered to avoid collision with `main`'s
   ADR-0016-agent-sandbox-execution-policy). Decision matrix mapping workload type → runtime;
   pairs with the scaffold system.
+- **`infrastructure/terraform/README.md`** and per-module `README.md` files for all 11
+  Terraform modules (`networking`, `kubernetes`, `database`, `cache`, `message-broker`,
+  `vector-db`, `observability`, `api-gateway`, `domain-service`, `event-worker`, `frontend`).
+  The Terraform tree previously had zero documentation. The top-level README covers
+  prerequisites, provider pinning, quick start, the EKS-OIDC bootstrapping order
+  (`-target=module.networking -target=module.kubernetes` on first apply), remote-state setup,
+  and a dev/staging/production comparison table. Each module README follows `terraform-docs`
+  style (Purpose · Resources · Inputs · Outputs · Usage) and documents key gotchas: dev omits
+  `database`/`message-broker`, the `event-worker` MSK/DLQ IAM policies are conditional on their
+  ARN inputs, and `default_replication_factor` must be ≤ broker count. Docs-only — no `.tf`
+  changes.
 
 ### Changed
 
