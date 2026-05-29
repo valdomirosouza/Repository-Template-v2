@@ -67,6 +67,23 @@ module "cache" {
   num_cache_nodes    = 1
 }
 
+# ── Database ──────────────────────────────────────────────────────────────────
+module "database" {
+  source = "../../modules/database"
+
+  name_prefix                = "monorepo-staging"
+  vpc_id                     = module.networking.vpc_id
+  subnet_ids                 = module.networking.private_subnet_ids
+  allowed_security_group_ids = [module.networking.sg_app_id]
+  instance_class             = "db.t3.medium"
+  allocated_storage_gb       = 20
+  max_allocated_storage_gb   = 100
+  multi_az                   = false
+  deletion_protection        = false
+  backup_retention_days      = 7
+  tags                       = { Project = "monorepo", Environment = "staging", ManagedBy = "terraform" }
+}
+
 module "api_gateway" {
   source = "../../modules/api-gateway"
 
@@ -88,7 +105,7 @@ module "domain_service" {
   oidc_provider_url    = module.kubernetes.oidc_provider_url
   aws_account_id       = data.aws_caller_identity.current.account_id
   aws_region           = var.aws_region
-  db_secret_arn        = var.db_secret_arn
+  db_secret_arn        = module.database.secret_arn
   helm_values_file     = "infrastructure/helm/domain-service/values-staging.yaml"
   image_tag            = var.image_tag
 }
@@ -194,12 +211,6 @@ module "vector_db" {
 
 data "aws_caller_identity" "current" {}
 
-variable "db_secret_arn" {
-  description = "Secrets Manager ARN for the staging PostgreSQL credentials"
-  type        = string
-  default     = ""
-}
-
 variable "image_tag" {
   description = "Container image tag to deploy for all services"
   type        = string
@@ -208,6 +219,8 @@ variable "image_tag" {
 
 output "cluster_endpoint"               { value = module.kubernetes.cluster_endpoint }
 output "redis_url"                      { value = module.cache.redis_url; sensitive = true }
+output "db_endpoint"                    { value = module.database.endpoint }
+output "db_secret_arn"                  { value = module.database.secret_arn }
 output "kafka_bootstrap_brokers"        { value = module.message_broker.bootstrap_brokers_sasl_scram; sensitive = true }
 output "kafka_credentials_secret_arn"   { value = module.message_broker.credentials_secret_arn }
 output "vector_db_endpoint"             { value = module.vector_db.collection_endpoint }
