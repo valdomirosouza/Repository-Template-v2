@@ -15,6 +15,15 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ### Added
 
+- **`alembic/versions/0004_create_requests.py`** and **`0005_create_hitl_archive.py`** —
+  Two migrations ported from the abandoned `master` branch (were `0002`/`0003` there).
+  Renumbered to chain onto `main`'s head (`0001→0002→0003→0004→0005`, single head verified
+  with `alembic heads`). `0004` creates the `requests` table (durable fallback when Redis TTL
+  evicts in-flight request state); `0005` creates the append-only `hitl_requests_archive`
+  table (long-term HITL audit record beyond Redis TTL; REVOKEs UPDATE/DELETE from the app
+  role). Both are additive — no table-name conflict with `main`'s existing schema. Note: no
+  ORM models read these tables yet; they are schema-only until a persistent request/HITL
+  store is wired in `src/`.
 - **`docs/quickstart/local-dev-setup.md`** — Local development environment setup guide,
   ported from the `docs/template-improvements` branch. Covers devcontainer setup, required
   tool versions, IDE extensions, and common-error troubleshooting — a gap `main`'s quickstart
