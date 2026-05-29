@@ -103,7 +103,7 @@ Per `specs/api/async-api-design.md` §Consumer Implementation Requirements:
 4. **Success path** — update state to `completed`, persist result dict
 5. **Failure path** — update state to `failed`, persist error string; log and continue (no crash)
 6. **OTel span** — create child span with `event_id` and `trace_id` attributes
-7. **DLQ** — out of scope for P4; document as future P5 item
+7. **DLQ** — messages that fail all retries are published to `domain.request.dlq`; see §DLQ below
 
 ---
 
@@ -168,9 +168,52 @@ stateDiagram-v2
 
 ---
 
+## DLQ — Dead Letter Queue (REM-012)
+
+Failed messages that exhaust all retry attempts are routed to `domain.request.dlq`.
+
+### Retry policy
+
+```
+kafka_consumer_max_retries = 3        # attempts before DLQ routing
+kafka_consumer_retry_backoff_seconds = 1.0  # base delay, doubles each attempt
+```
+
+Backoff schedule: 1 s → 2 s → 4 s (total wait: 7 s before DLQ).
+
+### DLQ envelope
+
+The original event envelope is re-published to `domain.request.dlq` with one extra field:
+
+```json
+{
+  "event_id": "<original>",
+  "event_type": "domain.request.created",
+  "...",
+  "dlq_error": "RuntimeError: LLM unavailable after 3 attempts"
+}
+```
+
+### Offset safety
+
+`enable_auto_commit=False`. The Kafka offset is committed **only after** `_handle()` returns,
+whether the message succeeded or was routed to the DLQ. This prevents:
+
+- **Silent loss**: auto-commit advancing the offset before processing completes.
+- **Infinite reprocessing**: failed messages stay in the DLQ topic, not the original topic.
+
+### Consumer heartbeat (REM-013)
+
+`CONSUMER_HEARTBEAT_TIMESTAMP` (Gauge) is set to the current epoch after each committed message.
+Alert: `time() - consumer_heartbeat_timestamp_seconds > 300 AND kafka_consumer_lag > 0`
+
+Runbook: `docs/sre/runbooks/dlq-accumulating.md`
+
+---
+
 ## Non-Goals (P4 scope boundary)
 
 - Avro / Schema Registry serialization — existing code uses JSON; Avro is infrastructure-level
-- DLQ consumer — document but do not implement (P5)
-- `domain.result.completed` publish — consumer logs completion; event publish is P5
+- DLQ consumer (replay API) — document in runbook; automated replay is a future item
+- `domain.result.completed` publish — consumer logs completion; event publish is a future item
 - Separate worker process / Kubernetes Deployment manifests

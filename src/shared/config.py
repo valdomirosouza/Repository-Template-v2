@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     kafka_bootstrap_servers: str = "localhost:9092"
     kafka_consumer_group: str = "template-consumer-group"
     kafka_schema_registry_url: str = "http://localhost:8081"
+    kafka_dlq_topic: str = "domain.request.dlq"  # topic for unrecoverable messages (REM-012)
+    kafka_consumer_max_retries: int = 3  # attempts before routing to DLQ (REM-012)
+    kafka_consumer_retry_backoff_seconds: float = 1.0  # base delay; doubles each attempt
 
     # ── LLM / AI ──────────────────────────────────────────────────────────────
     llm_provider: str = "anthropic"

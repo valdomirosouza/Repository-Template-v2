@@ -101,6 +101,13 @@ DLQ_MESSAGES_COUNTER = Counter(
     ["consumer_group", "topic"],
 )
 
+CONSUMER_HEARTBEAT_TIMESTAMP = Gauge(
+    "consumer_heartbeat_timestamp_seconds",
+    "Unix epoch of last message committed by the consumer (0 = never). "
+    "Alert: time() - this > 300 AND kafka_consumer_lag > 0 (REM-013)",
+    ["consumer_group"],
+)
+
 # ── Feedback loop metrics ────────────────────────────────────────────────────
 # Spec: specs/ai/feedback-loop.md §6
 

@@ -15,6 +15,37 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ### Security
 
+- **Consumer runtime integrity — DLQ + safe offset commit (REM-012).** Set
+  `enable_auto_commit=False` on the Kafka request consumer — offsets are now committed only
+  after `_handle()` completes (success or DLQ-routed), eliminating the window where
+  auto-commit could advance the offset before processing finished (silent message loss) or
+  where a crashed consumer would reprocess the same message indefinitely without a circuit
+  break (poison-message loop). Added a configurable retry loop (`kafka_consumer_max_retries=3`,
+  exponential backoff) inside `_handle()`; messages that exhaust all attempts are published to
+  `domain.request.dlq` via the injected broker, `DLQ_MESSAGES_COUNTER` is incremented, and the
+  request status is set to `failed`. `RequestConsumer.__init__` now accepts `broker:
+EventBrokerProtocol`. New config keys: `kafka_dlq_topic`, `kafka_consumer_max_retries`,
+  `kafka_consumer_retry_backoff_seconds`. `domain.request.dlq` channel registered in AsyncAPI
+  spec and `services.yaml`. New runbook `docs/sre/runbooks/dlq-accumulating.md`. Spec updated.
+  35 unit tests (all passing). ISO 8.16, SOC 2 CC7.2/CC9.
+- **Consumer heartbeat metric (REM-013).** Added `CONSUMER_HEARTBEAT_TIMESTAMP` Gauge (epoch
+  seconds) to `src/observability/metrics.py`. Updated in `run()` after every committed message.
+  Alert rule: `time() - consumer_heartbeat_timestamp_seconds > 300 AND kafka_consumer_lag > 0`
+  fires only when silent for 5 min while the queue is non-empty, preventing false positives
+  during quiet periods. ISO 8.16, SOC 2 CC7.2.
+
+### Added
+
+- `docs/compliance/hardening-plan.md` — full waved hardening plan (Waves A–E) with per-wave
+  severity, owner, blocker notes, and ISO/SOC 2 control mappings. Defines Wave B (Prometheus
+  alerting rules, REM-014), Wave C (mTLS/NetworkPolicy REM-003, DAST REM-004, SLSA L3 REM-011),
+  Wave D (CODEOWNERS/DPIA REM-009), and Wave E (Redis HA, key rotation, per-user rate limits).
+- `docs/sre/runbooks/dlq-accumulating.md` — DLQ accumulation runbook: triage, root-cause
+  playbooks (LLM outage, DB failure, injection-guard rejection), replay procedure, escalation
+  matrix.
+
+### Security
+
 - **Governance enforcement (REM-008) + version single-source-of-truth (REM-010).** Added
   `.github/workflows/pr-governance.yml` enforcing a **Conventional-Commit PR title**, a
   **CHANGELOG `[Unreleased]` entry** (docs-only / `skip-changelog` / Dependabot exempt), and a

@@ -152,6 +152,27 @@ channels:
       message:
         $ref: "#/components/messages/AuditEventWritten"
 
+  domain.request.dlq:
+    description: |
+      Dead Letter Queue for domain requests that exhausted all retry attempts.
+      Published by the request consumer after kafka_consumer_max_retries failures.
+      Messages are identical to domain.request.created envelopes plus a dlq_error field.
+      Operators replay by re-publishing the original payload to domain.request.created
+      (after resetting the request status to "queued" in the request store).
+      Spec: specs/system/request-pipeline.md §DLQ. REM-012.
+    x-stability: stable
+    x-sunset-date: null
+    subscribe:
+      operationId: onDomainRequestDlq
+      summary: Ops tooling / replay consumers monitor unrecoverable failures
+      message:
+        $ref: "#/components/messages/DomainRequestFailed"
+    publish:
+      operationId: publishDomainRequestDlq
+      summary: Request consumer publishes after exhausting all retry attempts
+      message:
+        $ref: "#/components/messages/DomainRequestFailed"
+
   agent.harness.state:
     description: |
       Published after each significant state transition in a multi-agent harness sprint
@@ -230,6 +251,13 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/AuditEventWrittenPayload"
+
+    DomainRequestFailed:
+      name: DomainRequestFailed
+      title: Domain Request Failed (DLQ)
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/DomainRequestFailedPayload"
 
     HarnessStateChanged:
       name: HarnessStateChanged
@@ -429,6 +457,25 @@ components:
                   type: string
                 outcome:
                   type: string
+
+    DomainRequestFailedPayload:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          required: [payload, dlq_error]
+          properties:
+            payload:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  format: uuid
+                request_text:
+                  type: string
+                  description: PII-masked request text (unchanged from original envelope)
+            dlq_error:
+              type: string
+              description: Error message from the final failed attempt
 
     HarnessStateChangedPayload:
       allOf:

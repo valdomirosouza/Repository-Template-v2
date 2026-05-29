@@ -150,6 +150,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         store=app.state.request_store,
         audit_logger=app.state.audit_logger,
         hitl_gateway=app.state.hitl_gateway,
+        broker=app.state.broker,  # REM-012: needed for DLQ publishing on exhausted retries
     )
     app.state.consumer_task = asyncio.create_task(_consumer.run())
 
