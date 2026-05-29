@@ -69,6 +69,28 @@ EventBrokerProtocol`. New config keys: `kafka_dlq_topic`, `kafka_consumer_max_re
   Alertmanager block uncommented in `prometheus.yml`. `PAGERDUTY_INTEGRATION_KEY` added to
   `.env.example` (placeholder; alerts silently dropped in local dev). ISO 8.16, SOC 2 CC7.2.
 
+- **CODEOWNERS governance closure — REM-009 (partial).** Replaced all `@org/*` placeholder
+  teams in `.github/CODEOWNERS` with `@valdomirosouza` (the real repo owner), eliminating the
+  silent reviewer-assignment failures that kept ~4 ISO controls at "Partial". Added a
+  `Validate CODEOWNERS has no @org/ placeholder teams` step to the `governance` CI job that
+  fails the build if any `@org/` patterns are re-introduced — making correct CODEOWNERS a hard
+  gate. Adopters: follow `docs/governance/owner-onboarding.md` to replace `@valdomirosouza`
+  with real org teams before enterprise engagement. ISO control 5.2 (roles & responsibilities)
+  updated to ✅ Implemented. ISO 5.2/5.31, SOC 2 CC5.2.
+
+- **DPIA sign-off workflow formalised.** Section 5 of `docs/privacy/dpia/dpia-v1.md` expanded
+  with: a DPO sign-off checklist (8 items covering Art. 35.7 requirements), an explicit
+  supervisory-authority consultation determination (GDPR Art. 36 — not required; residual risks
+  all Low), and a status gate note linking to the onboarding guide. DPIA remains **Draft**
+  pending real DPO signature — ISO 5.31 stays Partial until that step is complete.
+
+### Added
+
+- `docs/governance/owner-onboarding.md` — step-by-step playbook for adopters: create GitHub
+  Org, create the 7 required teams (with ISO/SOC 2 rationale per role), update CODEOWNERS,
+  configure branch protection, obtain DPO sign-off, and flip ISO matrix rows to Implemented.
+  Includes a final checklist and the verification procedure for HITL dual-approval.
+
 - **Governance enforcement (REM-008) + version single-source-of-truth (REM-010).** Added
   `.github/workflows/pr-governance.yml` enforcing a **Conventional-Commit PR title**, a
   **CHANGELOG `[Unreleased]` entry** (docs-only / `skip-changelog` / Dependabot exempt), and a

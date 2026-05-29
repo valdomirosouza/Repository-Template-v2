@@ -84,18 +84,44 @@
 
 ## Section 5 — Consultation and Approval
 
-| Role                                        | Name         | Date              | Decision                                               |
-| ------------------------------------------- | ------------ | ----------------- | ------------------------------------------------------ |
-| DPO consulted                               | \<DPO Name\> | \<Date\>          | \<Approved / Approved with conditions / Not approved\> |
-| DPO conditions (if any)                     |              |                   | \<Conditions\>                                         |
-| Supervisory authority consultation required |              |                   | No — residual risks are low                            |
-| Final approval date                         |              | \<Date\>          |                                                        |
-| Next review date                            |              | \<Date + 1 year\> |                                                        |
+**Requirement:** GDPR Art. 35.7 requires the DPO to be consulted when carrying out a DPIA
+(Art. 38). The DPO must be provided with the completed assessment and given enough time to
+review Sections 1–4 before sign-off.
+
+**DPO sign-off checklist** (complete before changing Status from Draft → Approved):
+
+- [ ] Section 1: controller identity and DPA reference confirmed correct
+- [ ] Section 2: necessity/proportionality judgements agreed
+- [ ] Section 3: all risks identified; likelihood and impact scores validated
+- [ ] Section 4: technical and organisational measures confirmed in place
+- [ ] Third-country transfer mechanism (SCCs) reviewed and in force
+- [ ] Data subject rights SLA (15 business days) operationally achievable
+- [ ] Breach notification procedure (72-hour GDPR window) confirmed in runbooks
+- [ ] Supervisory-authority consultation determination made (see below)
+
+**Supervisory-authority consultation (GDPR Art. 36):**
+Required only when residual risk remains HIGH after mitigation measures. All risks in
+Section 3 score ≤ 6 with low residual risk — **consultation is not required** unless the
+competent DPA has issued AI-specific guidance mandating consultation for this processing type.
+The DPO must re-assess this determination if regulatory guidance changes.
+
+| Role                                                     | Name         | Date                       | Decision                                               |
+| -------------------------------------------------------- | ------------ | -------------------------- | ------------------------------------------------------ |
+| DPO consulted                                            | \<DPO Name\> | \<Date\>                   | \<Approved / Approved with conditions / Not approved\> |
+| DPO conditions (if any)                                  |              |                            | \<List conditions or "None"\>                          |
+| Supervisory authority consultation required              |              |                            | No — all residual risks are Low (see above)            |
+| Final approval date                                      |              | \<Date\>                   |                                                        |
+| Next review date (GDPR Art. 35 requires periodic review) |              | \<Approval date + 1 year\> |                                                        |
+
+> **Status gate:** This DPIA must reach **Approved** status before any production deployment
+> handling real data subjects. The CODEOWNERS DPO role (`docs/privacy/`) enforces a DPO review
+> on every change to this file. See `docs/governance/owner-onboarding.md` Step 5.
 
 ---
 
 ## Section 6 — Version History
 
-| Version | Date       | Author     | Changes                          |
-| ------- | ---------- | ---------- | -------------------------------- |
-| 1.0     | 2026-05-24 | \<Author\> | Initial DPIA for v0.1.0 scaffold |
+| Version | Date       | Author          | Changes                                                                         |
+| ------- | ---------- | --------------- | ------------------------------------------------------------------------------- |
+| 1.0     | 2026-05-24 | \<Author\>      | Initial DPIA for v0.1.0 scaffold                                                |
+| 1.1     | 2026-05-29 | Valdomiro Souza | Enhanced Section 5: DPO checklist, Art. 36 determination, status gate (REM-009) |

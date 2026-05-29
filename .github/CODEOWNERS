@@ -1,57 +1,76 @@
 # CODEOWNERS
-# Reviewers are auto-requested when matching paths are changed in a PR.
-# Last updated: 2026-05-24
+# -----------
+# Auto-assigns reviewers when matching paths are changed in a PR.
+# GitHub enforces review requirements when this file is committed to the default branch
+# and branch protection is configured with "Require review from Code Owners".
+#
+# REM-009: all @org/* placeholders replaced with real reviewers (2026-05-29).
+# Adopters: replace @valdomirosouza with your GitHub usernames or @your-org/team-name.
+# Run: gh api repos/{owner}/{repo}/collaborators to list current contributors.
+#
+# Role index (update when your team grows):
+#   Tech Lead / product steward  → @valdomirosouza
+#   DPO (Data Protection Officer) → @valdomirosouza  ← assign to real DPO before enterprise engagement
+#   Security Lead                → @valdomirosouza  ← assign to real security engineer before SOC 2
+#   AI Governance Lead           → @valdomirosouza
+#   SRE Lead                     → @valdomirosouza
+#   DevOps Lead                  → @valdomirosouza
 
-# Global fallback — all files not matched below
-*                                    @org/engineering-team
+# ── Global fallback ───────────────────────────────────────────────────────────
+# All files not matched by a more-specific rule below.
+*                                    @valdomirosouza
 
 # ── Governance ────────────────────────────────────────────────────────────────
-CLAUDE.md                            @org/tech-lead
-docs/adr/                            @org/tech-lead
-specs/                               @org/tech-lead @org/product-owner
-CHANGELOG.md                         @org/tech-lead
+CLAUDE.md                            @valdomirosouza
+docs/adr/                            @valdomirosouza
+specs/                               @valdomirosouza
+CHANGELOG.md                         @valdomirosouza
 
 # ── Privacy — DPO approval required ──────────────────────────────────────────
-docs/privacy/                        @org/dpo @org/tech-lead
-specs/privacy/                       @org/dpo @org/tech-lead
-PRIVACY.md                           @org/dpo
+# Replace @valdomirosouza with your DPO before any GDPR/LGPD assessment.
+docs/privacy/                        @valdomirosouza
+specs/privacy/                       @valdomirosouza
+PRIVACY.md                           @valdomirosouza
 
 # ── AI Governance ─────────────────────────────────────────────────────────────
-docs/ai-governance/                  @org/ai-governance-lead @org/tech-lead
-specs/ai/                            @org/ai-governance-lead @org/tech-lead
+docs/ai-governance/                  @valdomirosouza
+specs/ai/                            @valdomirosouza
 
 # ── Security — Security Lead required ────────────────────────────────────────
-src/guardrails/                      @org/security-lead @org/tech-lead
-docs/security/                       @org/security-lead
-SECURITY.md                          @org/security-lead
-.github/workflows/                   @org/devops-lead @org/security-lead
-tests/security/                      @org/security-lead
+# Replace @valdomirosouza with your Security Lead before SOC 2 audit.
+src/guardrails/                      @valdomirosouza
+docs/security/                       @valdomirosouza
+SECURITY.md                          @valdomirosouza
+.github/workflows/                   @valdomirosouza
+tests/security/                      @valdomirosouza
 
 # ── Compliance & Control Mapping ─────────────────────────────────────────────
-docs/compliance/                     @org/security-lead @org/tech-lead
+docs/compliance/                     @valdomirosouza
 
 # ── HITL Gateway — dual approval required ────────────────────────────────────
-src/agents/hitl_gateway.py           @org/security-lead @org/ai-governance-lead
+# This path requires two distinct reviewers for segregation of duties.
+# With a single owner this is nominal; add a second reviewer when team grows.
+src/agents/hitl_gateway.py           @valdomirosouza
 
 # ── Agent source ──────────────────────────────────────────────────────────────
-src/agents/                          @org/ai-governance-lead @org/tech-lead
-src/observability/                   @org/sre-lead
-src/shared/                          @org/tech-lead
+src/agents/                          @valdomirosouza
+src/observability/                   @valdomirosouza
+src/shared/                          @valdomirosouza
 
 # ── SRE & Infrastructure ──────────────────────────────────────────────────────
-docs/sre/                            @org/sre-lead
-infrastructure/                      @org/devops-lead @org/sre-lead
-harness/                             @org/devops-lead
-infrastructure/scripts/deploy/       @org/devops-lead @org/sre-lead
+docs/sre/                            @valdomirosouza
+infrastructure/                      @valdomirosouza
+harness/                             @valdomirosouza
+infrastructure/scripts/deploy/       @valdomirosouza
 
 # ── Change Management ─────────────────────────────────────────────────────────
-docs/change-management/              @org/tech-lead @org/sre-lead
-docs/runbooks/                       @org/sre-lead
+docs/change-management/              @valdomirosouza
+docs/runbooks/                       @valdomirosouza
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
-tests/                               @org/engineering-team
-tests/chaos/                         @org/sre-lead
-tests/contract/                      @org/tech-lead
+tests/                               @valdomirosouza
+tests/chaos/                         @valdomirosouza
+tests/contract/                      @valdomirosouza
 
 # ── Skills (Claude Code behavior) ────────────────────────────────────────────
-skills/                              @org/tech-lead
+skills/                              @valdomirosouza

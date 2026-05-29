@@ -91,6 +91,25 @@ jobs:
           else:
               print(f"All {len(fields)} Settings fields are documented in .env.example.")
           EOF
+      - name: Validate CODEOWNERS has no @org/ placeholder teams (REM-009)
+        # Fails if any @org/ patterns remain — these are unresolved template placeholders
+        # that won't resolve on GitHub, silently breaking reviewer auto-assignment.
+        # See docs/governance/owner-onboarding.md for how to assign real owners.
+        # ISO 5.2/5.31, SOC 2 CC5.2.
+        run: |
+          # Exclude comment lines (lines starting with #) so that documentation
+          # references to the old @org/* pattern don't trigger a false positive.
+          if grep -v '^#' .github/CODEOWNERS | grep -qE '@org/'; then
+            echo "::error file=.github/CODEOWNERS::CODEOWNERS contains unresolved @org/ placeholder teams."
+            echo "These patterns silently fail GitHub reviewer auto-assignment."
+            echo "Replace each @org/<role> with a real GitHub username or @your-org/team-name."
+            echo "See docs/governance/owner-onboarding.md for the step-by-step guide."
+            grep -v '^#' .github/CODEOWNERS | grep -nE '@org/' | while read -r line; do
+              echo "  $line"
+            done
+            exit 1
+          fi
+          echo "CODEOWNERS: no @org/ placeholder teams found in non-comment lines."
 
   lint:
     name: Lint
