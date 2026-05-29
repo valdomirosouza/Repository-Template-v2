@@ -23,6 +23,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
   (was `1.9.1`; it's read by `config.py`/`Makefile`) and added a **version-consistency** gate that
   fails any PR changing `version.txt` or `pyproject.toml` without keeping them equal
   (release-please bot exempt). ISO 5.36, SOC 2 CC5.
+  Made the four gates **merge-blocking** by adding them to `main` branch protection's required
+  status checks — the nine required contexts are now the five existing `ci.yml` jobs plus the four
+  `pr-governance` jobs — and enabled **strict mode** (branches must be up-to-date with `main`
+  before merge). Branch-protection config is GitHub-side state, not in the repo.
 
 - **CI/release supply-chain hardening (REM-006, REM-007).** Added a **Trivy** image CVE scan to
   `ci.yml` (fails the build on fixable CRITICAL/HIGH; ISO 8.7, SOC 2 CC6.8). **SHA-pinned all 17
