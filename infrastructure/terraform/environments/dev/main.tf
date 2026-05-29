@@ -125,6 +125,54 @@ module "frontend" {
   image_tag            = var.image_tag
 }
 
+# ── Observability ─────────────────────────────────────────────────────────────
+# One instance per service: log groups + Golden Signal alarms.
+# Thresholds are loosened for dev (5% error rate, 1s P99) to reduce noise.
+
+locals {
+  obs_tags = { Project = "monorepo", Environment = "dev", ManagedBy = "terraform" }
+}
+
+module "obs_api_gateway" {
+  source      = "../../modules/observability"
+  name_prefix = "monorepo-dev"
+  service_name             = "api-gateway"
+  log_retention_days       = 7
+  error_rate_threshold     = 5.0
+  p99_latency_threshold_ms = 1000
+  tags                     = local.obs_tags
+}
+
+module "obs_domain_service" {
+  source      = "../../modules/observability"
+  name_prefix = "monorepo-dev"
+  service_name             = "domain-service"
+  log_retention_days       = 7
+  error_rate_threshold     = 5.0
+  p99_latency_threshold_ms = 1000
+  tags                     = local.obs_tags
+}
+
+module "obs_event_worker" {
+  source      = "../../modules/observability"
+  name_prefix = "monorepo-dev"
+  service_name             = "event-worker"
+  log_retention_days       = 7
+  error_rate_threshold     = 5.0
+  p99_latency_threshold_ms = 1000
+  tags                     = local.obs_tags
+}
+
+module "obs_frontend" {
+  source      = "../../modules/observability"
+  name_prefix = "monorepo-dev"
+  service_name             = "frontend"
+  log_retention_days       = 7
+  error_rate_threshold     = 5.0
+  p99_latency_threshold_ms = 1000
+  tags                     = local.obs_tags
+}
+
 data "aws_caller_identity" "current" {}
 
 variable "db_secret_arn" {
@@ -145,3 +193,7 @@ output "api_gateway_irsa_role_arn"    { value = module.api_gateway.irsa_role_arn
 output "domain_service_irsa_role_arn" { value = module.domain_service.irsa_role_arn }
 output "event_worker_irsa_role_arn"   { value = module.event_worker.irsa_role_arn }
 output "frontend_irsa_role_arn"       { value = module.frontend.irsa_role_arn }
+output "obs_api_gateway_sns_arn"      { value = module.obs_api_gateway.sns_topic_arn }
+output "obs_domain_service_sns_arn"   { value = module.obs_domain_service.sns_topic_arn }
+output "obs_event_worker_sns_arn"     { value = module.obs_event_worker.sns_topic_arn }
+output "obs_frontend_sns_arn"         { value = module.obs_frontend.sns_topic_arn }
