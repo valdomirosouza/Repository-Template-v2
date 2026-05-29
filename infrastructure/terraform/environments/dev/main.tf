@@ -173,6 +173,19 @@ module "obs_frontend" {
   tags                     = local.obs_tags
 }
 
+# ── Vector DB ─────────────────────────────────────────────────────────────────
+# OpenSearch Serverless — opt-in AI Agents Module component (ADR-0010).
+# Access granted to api-gateway and domain-service IRSA roles.
+module "vector_db" {
+  source      = "../../modules/vector-db"
+  name_prefix = "monorepo-dev"
+  allowed_principal_arns = [
+    module.api_gateway.irsa_role_arn,
+    module.domain_service.irsa_role_arn,
+  ]
+  tags = { Project = "monorepo", Environment = "dev", ManagedBy = "terraform" }
+}
+
 data "aws_caller_identity" "current" {}
 
 variable "db_secret_arn" {
@@ -189,6 +202,8 @@ variable "image_tag" {
 
 output "cluster_endpoint"             { value = module.kubernetes.cluster_endpoint }
 output "redis_url"                    { value = module.cache.redis_url; sensitive = true }
+output "vector_db_endpoint"           { value = module.vector_db.collection_endpoint }
+output "vector_db_arn"               { value = module.vector_db.collection_arn }
 output "api_gateway_irsa_role_arn"    { value = module.api_gateway.irsa_role_arn }
 output "domain_service_irsa_role_arn" { value = module.domain_service.irsa_role_arn }
 output "event_worker_irsa_role_arn"   { value = module.event_worker.irsa_role_arn }
