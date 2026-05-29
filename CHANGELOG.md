@@ -47,6 +47,17 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
   Strategy), ADR-0023 (Frontend Architecture), ADR-0024 (API Versioning Strategy), and the
   new ADR-0025 (Language Selection).
 
+### Security
+
+- **`.github/workflows/auto-merge.yml`** — ⚠️ **Governance exception (owner-requested).**
+  Added a workflow that auto-approves and auto-merges pull requests targeting `main` once
+  required checks pass, and enabled the repo `allow_auto_merge` / `delete_branch_on_merge`
+  settings plus "Actions may approve PRs". This **intentionally bypasses** the human review
+  gate in CLAUDE.md §7 and `.github/CODEOWNERS`. It triggers on `pull_request` (not
+  `pull_request_target`) and is gated to same-repo PRs, so fork PRs — which receive only a
+  read-only token — are **not** auto-merged. The job never checks out or executes PR code
+  (API calls only). Delete the workflow file to restore manual review.
+
 ---
 
 ## [1.15.0] — 2026-05-28

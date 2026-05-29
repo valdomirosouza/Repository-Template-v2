@@ -1,0 +1,49 @@
+# ⚠️ GOVERNANCE EXCEPTION — added 2026-05-29 at the repository owner's explicit request.
+#
+# This workflow AUTO-APPROVES and AUTO-MERGES pull requests targeting `main` once any
+# required status checks pass. It intentionally bypasses the human review gate described
+# in CLAUDE.md §7 and .github/CODEOWNERS. Delete this file to restore manual review.
+#
+# SCOPE / SAFETY: it triggers on `pull_request` (NOT `pull_request_target`). PRs from
+# branches in this repo receive a write-scoped token and are auto-approved + merged.
+# PRs from forks receive only a read-only token, so the approve/merge steps cannot act
+# on them — untrusted fork contributions are therefore NOT auto-merged. The job also
+# never checks out or executes PR code (API calls only).
+
+name: Auto-merge PRs
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Avoid races when multiple events fire for the same PR.
+concurrency:
+  group: auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  auto-merge:
+    # Skip drafts and fork PRs (forks only get a read-only token and would fail anyway).
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Auto-approve
+        run: |
+          gh pr review "$PR_NUMBER" --repo "$REPO" --approve \
+            --body "Auto-approved by the auto-merge workflow (governance exception)."
+
+      - name: Enable auto-merge
+        # --auto merges as soon as required checks pass; with no required checks
+        # configured on `main`, the PR merges immediately.
+        run: |
+          gh pr merge "$PR_NUMBER" --repo "$REPO" --squash --auto --delete-branch
