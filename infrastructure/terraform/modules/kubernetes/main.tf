@@ -117,3 +117,17 @@ resource "aws_eks_node_group" "main" {
     aws_iam_role_policy_attachment.node_ecr,
   ]
 }
+
+# ── OIDC provider for IRSA ────────────────────────────────────────────────────
+# Required so service modules can bind IAM roles to Kubernetes ServiceAccounts.
+
+data "tls_certificate" "eks" {
+  url = aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
+
+resource "aws_iam_openid_connect_provider" "eks" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
+  url             = aws_eks_cluster.main.identity[0].oidc[0].issuer
+  tags            = local.common_tags
+}

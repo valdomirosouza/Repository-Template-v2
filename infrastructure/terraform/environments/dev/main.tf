@@ -12,10 +12,30 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.13"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.30"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
   }
   # Local backend — no remote state needed for dev.
   # Switch to an S3 backend when sharing state across a team.
   backend "local" {}
+}
+
+locals {
+  cluster_name = "monorepo-dev"
 }
 
 provider "aws" {
@@ -27,6 +47,31 @@ provider "aws" {
       ManagedBy   = "terraform"
     }
   }
+}
+
+# NOTE: helm and kubernetes providers require the EKS cluster to exist.
+# On first apply, run: terraform apply -target=module.kubernetes
+# then: terraform apply
+data "aws_eks_cluster" "main" {
+  name = local.cluster_name
+}
+
+data "aws_eks_cluster_auth" "main" {
+  name = local.cluster_name
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = data.aws_eks_cluster.main.endpoint
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.main.certificate_authority[0].data)
+    token                  = data.aws_eks_cluster_auth.main.token
+  }
+}
+
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.main.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.main.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.main.token
 }
 
 variable "aws_region" {
