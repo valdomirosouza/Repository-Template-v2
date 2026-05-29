@@ -1,0 +1,79 @@
+# Alertmanager configuration
+# --------------------------
+# Routes Prometheus alerts to notification receivers.
+# In local dev this config is loaded but PagerDuty delivery is disabled
+# (PAGERDUTY_INTEGRATION_KEY is a placeholder). Set a real key in staging/prod.
+#
+# To enable: set PAGERDUTY_INTEGRATION_KEY in .env and uncomment the alertmanager
+# block in infrastructure/monitoring/prometheus/prometheus.yml (already done in REM-014).
+#
+# PagerDuty integration key docs:
+#   https://support.pagerduty.com/docs/services-and-integrations#create-a-generic-events-api-integration
+#
+# REM-002: LLMTokenBudgetExceeded90Percent and all severity=critical alerts route to PagerDuty.
+
+global:
+  resolve_timeout: 5m
+  pagerduty_url: https://events.pagerduty.com/v2/enqueue
+
+# ── Routing tree ──────────────────────────────────────────────────────────────
+route:
+  group_by: [alertname, severity, service]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: "null" # default: drop (local dev safety — no accidental pages)
+
+  routes:
+    # Critical alerts → PagerDuty (staging / prod only)
+    - match:
+        severity: critical
+      receiver: pagerduty-critical
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # Warning alerts → Slack (template; configure SLACK_WEBHOOK_URL for staging)
+    - match:
+        severity: warning
+      receiver: "null" # replace with slack-warning when webhook is configured
+
+# ── Inhibition ────────────────────────────────────────────────────────────────
+inhibit_rules:
+  # Suppress warning if a critical for the same alert is already firing.
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal: [alertname]
+
+# ── Receivers ─────────────────────────────────────────────────────────────────
+receivers:
+  - name: "null"
+    # No-op receiver for local dev. All alerts are silently dropped.
+
+  - name: pagerduty-critical
+    pagerduty_configs:
+      - service_key: "${PAGERDUTY_INTEGRATION_KEY}"
+        # Use Events API v2 (service_key is the integration key, not routing key)
+        send_resolved: true
+        description: |
+          {{ range .Alerts }}
+          [{{ .Labels.severity | toUpper }}] {{ .Annotations.summary }}
+          {{ .Annotations.description }}
+          Runbook: {{ .Annotations.runbook_url }}
+          {{ end }}
+        details:
+          environment: "{{ .CommonLabels.environment }}"
+          cluster: "{{ .CommonLabels.cluster }}"
+          service: "{{ .CommonLabels.service }}"
+        # Severity mapping: all critical alerts page immediately
+        severity: critical
+
+  # Uncomment and set SLACK_WEBHOOK_URL to enable Slack warnings
+  # - name: slack-warning
+  #   slack_configs:
+  #     - api_url: "${SLACK_WEBHOOK_URL}"
+  #       channel: "#alerts-warning"
+  #       send_resolved: true
+  #       title: "[{{ .Status | toUpper }}] {{ .CommonAnnotations.summary }}"
+  #       text: "{{ .CommonAnnotations.description }}"

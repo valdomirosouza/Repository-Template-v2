@@ -46,6 +46,29 @@ EventBrokerProtocol`. New config keys: `kafka_dlq_topic`, `kafka_consumer_max_re
 
 ### Security
 
+- **Prometheus alerting rules — observability closure (REM-014).** Added
+  `infrastructure/monitoring/prometheus/rules/resilience-alerts.yaml` with four new alert rules:
+  `CircuitBreakerOpen` (fires when `circuit_breaker_state == 1` for ≥1 min — fast-fail in
+  progress), `CircuitBreakerHalfOpen` (fires when probing for ≥5 min — upstream still
+  degraded), `ConsumerStale` (heartbeat + lag guard — consumer hung while queue grows; depends
+  on Wave A `consumer_heartbeat_timestamp_seconds` metric), and `ConsumerLagCritical` (>50k
+  messages behind). Added `CIRCUIT_BREAKER_STATE` Gauge to `src/observability/metrics.py`;
+  `CircuitBreaker` now accepts a `name` parameter and emits 0.0/0.5/1.0 on CLOSED/HALF_OPEN/OPEN
+  transitions. `ResilientLLMClientWrapper` defaults to `name="llm"`, `ResilientDBPool` to
+  `name="db"`. Added two missing SLO burn-rate groups to `slo-burn-rate.yaml`: agent action
+  success rate (fast 1h/14.4× + slow 6h/6.0× using `agent_actions_total`) and event consumer
+  DLQ proxy (`EventConsumerDLQBudgetBurning`). 5 new circuit-breaker state metric unit tests,
+  all passing. ISO 8.16, SOC 2 CC7.2.
+
+- **Alertmanager + PagerDuty wiring (REM-002).** `LLMTokenBudgetExceeded90Percent` and all
+  other `severity=critical` alerts now route to PagerDuty when
+  `PAGERDUTY_INTEGRATION_KEY` is set. Added `infrastructure/monitoring/alertmanager/alertmanager.yml`
+  with PagerDuty receiver, `null` default receiver (local dev safety), inhibition rules
+  (critical suppresses same-name warning), and commented Slack stub. Alertmanager service
+  (`prom/alertmanager:v0.27.0`) added to `docker-compose.yml` with `alertmanager_data` volume.
+  Alertmanager block uncommented in `prometheus.yml`. `PAGERDUTY_INTEGRATION_KEY` added to
+  `.env.example` (placeholder; alerts silently dropped in local dev). ISO 8.16, SOC 2 CC7.2.
+
 - **Governance enforcement (REM-008) + version single-source-of-truth (REM-010).** Added
   `.github/workflows/pr-governance.yml` enforcing a **Conventional-Commit PR title**, a
   **CHANGELOG `[Unreleased]` entry** (docs-only / `skip-changelog` / Dependabot exempt), and a

@@ -35,6 +35,7 @@ from tenacity import (
 )
 
 from src.observability.logger import get_logger
+from src.observability.metrics import CIRCUIT_BREAKER_STATE
 from src.shared.config import settings
 from src.shared.llm_client import LLMClient, TimeoutLLMClientWrapper
 
@@ -89,40 +90,53 @@ class CircuitBreaker:
       CLOSED:    Normal operation. Failures increment _failure_count.
       OPEN:      Fast-fail all calls. Entered after _threshold consecutive failures.
       HALF_OPEN: One probe call allowed. Success → CLOSED; failure → OPEN.
+
+    The `name` parameter labels the `circuit_breaker_state` Prometheus Gauge
+    so each client (e.g. "llm", "db") is tracked independently (REM-014).
     """
 
     def __init__(
         self,
+        name: str = "unknown",
         threshold: int | None = None,
         reset_seconds: float | None = None,
     ) -> None:
+        self._name = name
         self._threshold = threshold or settings.llm_circuit_breaker_threshold
         self._reset = reset_seconds or settings.llm_circuit_breaker_reset_seconds
         self._failure_count = 0
         self._opened_at: float | None = None
         self._half_open = False
+        CIRCUIT_BREAKER_STATE.labels(self._name).set(0.0)  # starts CLOSED
 
     @property
     def is_open(self) -> bool:
         if self._opened_at is None:
             return False
         if time.monotonic() - self._opened_at >= self._reset:
-            self._half_open = True
+            self._enter_half_open()
             return False
         return True
+
+    def _enter_half_open(self) -> None:
+        self._half_open = True
+        CIRCUIT_BREAKER_STATE.labels(self._name).set(0.5)
 
     def record_success(self) -> None:
         self._failure_count = 0
         self._opened_at = None
         self._half_open = False
+        CIRCUIT_BREAKER_STATE.labels(self._name).set(0.0)
 
     def record_failure(self) -> None:
         self._failure_count += 1
         if self._failure_count >= self._threshold or self._half_open:
             self._opened_at = time.monotonic()
             self._half_open = False
+            CIRCUIT_BREAKER_STATE.labels(self._name).set(1.0)
             logger.warning(
                 "Circuit breaker OPENED",
+                client=self._name,
                 threshold=self._threshold,
                 failure_count=self._failure_count,
             )
@@ -148,7 +162,7 @@ class ResilientLLMClientWrapper:
             client,
             timeout_seconds=timeout_seconds or settings.llm_call_timeout_seconds,
         )
-        self._cb = circuit_breaker or CircuitBreaker()
+        self._cb = circuit_breaker or CircuitBreaker(name="llm")
 
     async def complete(
         self,

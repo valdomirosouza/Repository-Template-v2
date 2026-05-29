@@ -54,7 +54,7 @@ class ResilientDBPool:
     ) -> None:
         self._pool = pool
         self._timeout = timeout
-        self._cb = circuit_breaker or CircuitBreaker()
+        self._cb = circuit_breaker or CircuitBreaker(name="db")
 
     # ── Public interface ──────────────────────────────────────────────────────
 

@@ -77,6 +77,12 @@ KAFKA_CONSUMER_LAG = Gauge(
     ["consumer_group", "topic", "partition"],
 )
 
+CIRCUIT_BREAKER_STATE = Gauge(
+    "circuit_breaker_state",
+    "Current circuit breaker state: 0=CLOSED, 0.5=HALF_OPEN, 1=OPEN (REM-014)",
+    ["client"],
+)
+
 ACTIVE_HITL_REQUESTS = Gauge(
     "hitl_active_requests",
     "Number of HITL requests currently pending human review",

@@ -172,6 +172,25 @@ services:
       - prometheus
     restart: unless-stopped
 
+  # ── Alertmanager (REM-002, REM-014) ─────────────────────────────────────────
+  # Routes Prometheus alerts to PagerDuty (severity=critical) and Slack (warning).
+  # Requires PAGERDUTY_INTEGRATION_KEY in .env for real paging.
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    volumes:
+      - ./infrastructure/monitoring/alertmanager:/etc/alertmanager:ro
+      - alertmanager_data:/alertmanager
+    environment:
+      PAGERDUTY_INTEGRATION_KEY: "${PAGERDUTY_INTEGRATION_KEY:-placeholder-set-in-env}"
+    ports:
+      - "9093:9093"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
   # ── flagd (OpenFeature flag server) ─────────────────────────────────────────
   flagd:
     image: ghcr.io/open-feature/flagd:v0.10.1
@@ -192,6 +211,7 @@ volumes:
   kafka_data:
   prometheus_data:
   grafana_data:
+  alertmanager_data:
 
 networks:
   default:

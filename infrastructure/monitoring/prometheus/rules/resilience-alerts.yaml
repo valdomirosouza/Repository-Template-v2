@@ -1,0 +1,89 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: resilience-alerts
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    role: alert-rules
+spec:
+  groups:
+    # ── Circuit breaker (REM-014) ─────────────────────────────────────────────
+    # Metric: circuit_breaker_state{client}
+    #   0.0 = CLOSED (normal), 0.5 = HALF_OPEN (probing), 1.0 = OPEN (fast-fail)
+    # Source: src/shared/retry.py CircuitBreaker class
+    - name: resilience.circuit_breaker
+      interval: 15s
+      rules:
+        - alert: CircuitBreakerOpen
+          expr: |
+            circuit_breaker_state == 1
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Circuit breaker OPEN for client={{ $labels.client }}"
+            description: >
+              The {{ $labels.client }} circuit breaker has been OPEN for at least 1 minute.
+              All calls to this dependency are being fast-failed.
+              Check upstream health: LLM provider status or database connectivity.
+              The circuit will probe again after llm_circuit_breaker_reset_seconds (default 60 s).
+            runbook_url: "docs/sre/runbooks/api-gateway-high-error-rate.md"
+
+        - alert: CircuitBreakerHalfOpen
+          expr: |
+            circuit_breaker_state == 0.5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Circuit breaker HALF_OPEN — probe calls for client={{ $labels.client }}"
+            description: >
+              The {{ $labels.client }} circuit breaker is in HALF_OPEN state for >5 min.
+              Recovery probe calls are being made but the circuit has not yet closed.
+              Upstream may still be degraded.
+            runbook_url: "docs/sre/runbooks/api-gateway-high-error-rate.md"
+
+    # ── Consumer heartbeat (REM-012 / REM-013) ────────────────────────────────
+    # Metric: consumer_heartbeat_timestamp_seconds{consumer_group}
+    # Updated by RequestConsumer.run() after each committed Kafka offset (Wave A, PR #27).
+    # Note: this metric is emitted by the Wave A change (REM-012/013). This rule will
+    # have "no data" until Wave A is merged and deployed.
+    - name: resilience.consumer
+      interval: 30s
+      rules:
+        - alert: ConsumerStale
+          expr: |
+            (
+              (time() - consumer_heartbeat_timestamp_seconds) > 300
+            )
+            and on(consumer_group) (
+              sum(kafka_consumer_lag) by (consumer_group) > 0
+            )
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Request consumer stale — queue growing, no commits ({{ $labels.consumer_group }})"
+            description: >
+              Consumer group {{ $labels.consumer_group }} has not committed a Kafka offset
+              in {{ $value | humanizeDuration }} while the consumer lag is non-zero.
+              The consumer process may be hung (async for loop blocked) or the pod may have crashed
+              while appearing healthy to the readiness probe.
+              Action: check consumer task logs, pod restarts, and Kafka broker connectivity.
+            runbook_url: "docs/sre/runbooks/dlq-accumulating.md"
+
+        - alert: ConsumerLagCritical
+          expr: |
+            sum(kafka_consumer_lag) by (consumer_group, topic) > 50000
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Kafka consumer lag critical — {{ $value | humanize }} messages behind ({{ $labels.consumer_group }})"
+            description: >
+              Consumer group {{ $labels.consumer_group }} on topic {{ $labels.topic }}
+              has {{ $value | humanize }} unprocessed messages (critical threshold: 50k).
+              Combined with ConsumerStale this likely indicates a hung or crashed consumer.
+              Check orchestrator error rate and LLM circuit breaker state.
+            runbook_url: "docs/sre/runbooks/kafka-consumer-lag.md"

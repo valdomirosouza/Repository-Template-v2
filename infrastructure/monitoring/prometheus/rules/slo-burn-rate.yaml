@@ -277,3 +277,73 @@ spec:
             description: >
               Error rate {{ $value | humanizePercentage }} burning error budget at 6.0×.
             runbook_url: "docs/sre/runbooks/api-gateway-high-error-rate.md"
+
+    # ── Agent service — action success rate ───────────────────────────────────
+    # SLO: 99.5% of agent actions complete without error
+    # Error budget: 0.5% = 0.005
+    # Burn rates: fast (1h / 14.4×) + slow (6h / 6.0×)
+    # Source metric: agent_actions_total{result="error"|"success"} (metrics.py)
+    - name: slo.agent.action-success
+      interval: 30s
+      rules:
+        - alert: AgentActionSuccessRateFastBurn
+          expr: |
+            (
+              sum(rate(agent_actions_total{result="error"}[1h])) by (agent_id)
+              / sum(rate(agent_actions_total[1h])) by (agent_id)
+            ) > (14.4 * 0.005)
+          for: 2m
+          labels:
+            severity: critical
+            slo: agent_action_success_rate
+            burn_window: 1h
+          annotations:
+            summary: "Agent action success rate SLO — fast burn (1h) for {{ $labels.agent_id }}"
+            description: >
+              Agent {{ $labels.agent_id }} error rate is {{ $value | humanizePercentage }},
+              burning the error budget at 14.4× (SLO: 99.5%; exhaustion in ~2 days).
+              Check LLM provider health, circuit breaker state, and orchestrator logs.
+            runbook_url: "docs/sre/runbooks/api-gateway-high-error-rate.md"
+
+        - alert: AgentActionSuccessRateSlowBurn
+          expr: |
+            (
+              sum(rate(agent_actions_total{result="error"}[6h])) by (agent_id)
+              / sum(rate(agent_actions_total[6h])) by (agent_id)
+            ) > (6.0 * 0.005)
+          for: 15m
+          labels:
+            severity: warning
+            slo: agent_action_success_rate
+            burn_window: 6h
+          annotations:
+            summary: "Agent action success rate SLO — slow burn (6h) for {{ $labels.agent_id }}"
+            description: >
+              Agent {{ $labels.agent_id }} error rate is {{ $value | humanizePercentage }},
+              burning the error budget at 6.0× (SLO: 99.5%; exhaustion in ~5 days).
+              Monitor closely and prepare rollback if trend continues.
+            runbook_url: "docs/sre/runbooks/api-gateway-high-error-rate.md"
+
+    # ── Event consumer — DLQ rate as success proxy ────────────────────────────
+    # SLO: 99.9% of consumed events processed without DLQ routing (slo.yaml)
+    # Note: a proper burn-rate SLO requires a total-consumed counter. This group
+    # provides a P1 proxy: any DLQ growth is a budget-burning event.
+    # A future item will add MESSAGES_CONSUMED_COUNTER for a proper ratio alert.
+    - name: slo.event-consumer.dlq
+      interval: 60s
+      rules:
+        - alert: EventConsumerDLQBudgetBurning
+          expr: |
+            sum(increase(dlq_messages_total[1h])) by (consumer_group) > 0
+          for: 0m
+          labels:
+            severity: critical
+            slo: consumer_processing_success_rate
+          annotations:
+            summary: "Event consumer DLQ activity — SLO budget burning ({{ $labels.consumer_group }})"
+            description: >
+              {{ $value | humanize }} messages were routed to the Dead Letter Queue by
+              {{ $labels.consumer_group }} in the last hour. Each DLQ message represents a
+              failed processing attempt that burned the 99.9% success-rate error budget.
+              Investigate root cause before budget exhaustion.
+            runbook_url: "docs/sre/runbooks/dlq-accumulating.md"

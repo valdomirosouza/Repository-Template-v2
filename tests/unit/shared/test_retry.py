@@ -14,6 +14,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from src.observability.metrics import CIRCUIT_BREAKER_STATE
 from src.shared.retry import (
     CircuitBreaker,
     CircuitBreakerError,
@@ -84,6 +85,45 @@ class TestResilientLLMClientWrapperCircuitBreaker:
         with pytest.raises(ValueError):
             await wrapper.complete(user="ping")
         assert cb._failure_count == 1
+
+
+class TestCircuitBreakerStateMetric:
+    """Verify circuit_breaker_state Gauge is updated on state transitions (REM-014)."""
+
+    def test_new_circuit_breaker_initialises_gauge_to_closed(self) -> None:
+        CircuitBreaker(name="test-cb-init")
+        value = CIRCUIT_BREAKER_STATE.labels("test-cb-init")._value.get()
+        assert value == pytest.approx(0.0)
+
+    def test_record_failure_at_threshold_sets_gauge_to_open(self) -> None:
+        cb = CircuitBreaker(name="test-cb-open", threshold=2)
+        cb.record_failure()
+        cb.record_failure()  # hits threshold → OPEN
+        value = CIRCUIT_BREAKER_STATE.labels("test-cb-open")._value.get()
+        assert value == pytest.approx(1.0)
+
+    def test_record_success_resets_gauge_to_closed(self) -> None:
+        cb = CircuitBreaker(name="test-cb-close", threshold=1)
+        cb.record_failure()  # opens circuit
+        assert CIRCUIT_BREAKER_STATE.labels("test-cb-close")._value.get() == pytest.approx(1.0)
+        cb.record_success()
+        assert CIRCUIT_BREAKER_STATE.labels("test-cb-close")._value.get() == pytest.approx(0.0)
+
+    def test_half_open_transition_sets_gauge_to_half(self) -> None:
+        import time
+
+        cb = CircuitBreaker(name="test-cb-half", threshold=1, reset_seconds=0.01)
+        cb.record_failure()  # opens
+        time.sleep(0.02)  # wait past reset window
+        _ = cb.is_open  # triggers half-open transition
+        assert CIRCUIT_BREAKER_STATE.labels("test-cb-half")._value.get() == pytest.approx(0.5)
+
+    def test_llm_wrapper_uses_named_llm_circuit_breaker(self) -> None:
+        """ResilientLLMClientWrapper defaults to CircuitBreaker(name='llm')."""
+        ResilientLLMClientWrapper(_make_client())
+        # Default CB is named "llm" — gauge label must be present
+        value = CIRCUIT_BREAKER_STATE.labels("llm")._value.get()
+        assert value == pytest.approx(0.0)  # starts CLOSED
 
 
 class TestResilientLLMClientWrapperErrorWrapping:

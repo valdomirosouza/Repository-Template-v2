@@ -22,11 +22,12 @@ global:
 rule_files:
   - /etc/prometheus/rules/*.yaml
 
-# Alertmanager (disabled by default in local dev — enable for staging/prod)
-# alerting:
-#   alertmanagers:
-#     - static_configs:
-#         - targets: ["alertmanager:9093"]
+# Alertmanager — wired for PagerDuty routing (REM-002, REM-014).
+# Set PAGERDUTY_INTEGRATION_KEY in .env before starting the alertmanager service.
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
 
 scrape_configs:
   # ── Prometheus self-telemetry ──────────────────────────────────────────────
