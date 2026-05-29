@@ -43,8 +43,9 @@ full contents into the prompt, and wait for completion before proceeding.
 | 11  | `011-prompt.md` | Validation + Summary report                                            | 0 files (read-only) | None         |
 | 12  | `012-prompt.md` | Postmortem template                                                    | 1 file              | None         |
 | 13  | `013-prompt.md` | Resilience + persistence layer (retry, HITL store, feature flags, K8s) | 14 files            | None         |
+| 14  | `014-prompt.md` | Security & resilience hardening v1.17.0 (Waves A–E)                    | 28 files            | None         |
 
-**Total target:** ~170 files across ~82 directories.
+**Total target:** ~198 files across ~85 directories.
 
 ---
 
@@ -277,6 +278,42 @@ Expected final status: **SCAFFOLD COMPLETE** or **SCAFFOLD COMPLETE WITH MINOR G
         tests/chaos/experiments/kill-agent.yaml
         tests/chaos/experiments/broker-outage.yaml
         tests/chaos/experiments/network-partition.yaml
+
+014  →  src/workers/__init__.py
+        src/workers/request_consumer.py             ← DLQ + safe offset commit (REM-012, REM-013)
+        src/api/rest/auth.py                        ← HITL operator JWT auth (REM-001)
+        src/api/rest/security_headers.py            ← HTTP security headers middleware
+        docs/adr/ADR-0016-agent-sandbox-execution-policy.md
+        docs/adr/ADR-0017-agent-memory-architecture.md
+        docs/adr/ADR-0018-db-encryption-at-rest.md
+        docs/adr/ADR-0019-redis-tls-value-encryption.md
+        docs/adr/ADR-0020-finops-cost-allocation.md
+        docs/adr/ADR-0021-agent-communication-protocol.md
+        docs/adr/ADR-0022-testing-strategy.md
+        docs/adr/ADR-0023-frontend-architecture.md
+        docs/adr/ADR-0024-api-versioning-strategy.md
+        docs/adr/ADR-0025-language-selection.md
+        docs/compliance/README.md
+        docs/compliance/hardening-plan.md
+        docs/compliance/remediation-register.md
+        docs/compliance/iso27001-annex-a-control-matrix.md
+        docs/compliance/soc2-tsc-mapping.md
+        docs/compliance/slsa-supply-chain-assessment.md
+        docs/compliance/trust-summary.md
+        docs/compliance/security-questionnaire-quickref.md
+        docs/governance/owner-onboarding.md
+        docs/sre/runbooks/dlq-accumulating.md
+        docs/sre/runbooks/redis-ha.md
+        docs/sre/runbooks/db-key-rotation.md
+        infrastructure/k8s/network-policies/README.md
+        infrastructure/k8s/network-policies/default-deny-ingress.yaml
+        infrastructure/k8s/network-policies/api-gateway.yaml
+        infrastructure/k8s/network-policies/monitoring.yaml
+        infrastructure/k8s/network-policies/istio-peer-auth.yaml
+        infrastructure/monitoring/alertmanager/alertmanager.yml
+        .github/workflows/codeql.yml
+        .github/workflows/pr-governance.yml
+        .trivyignore
 ```
 
 ---
@@ -293,4 +330,4 @@ Expected final status: **SCAFFOLD COMPLETE** or **SCAFFOLD COMPLETE WITH MINOR G
 
 ---
 
-_Template version: 2.2.0 — Reference: `MONOREPO-STRUCTURE-EN.md`_
+_Template version: 2.3.0 — Reference: `MONOREPO-STRUCTURE-EN.md`_
