@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     # In production: set redis_tls_enabled=True and use rediss:// URL scheme.
     redis_tls_enabled: bool = False
     redis_tls_ca_cert: str = ""  # path to CA cert file; empty = use system CAs
+    # Redis High Availability — Sentinel mode (see docs/sre/runbooks/redis-ha.md).
+    # When redis_sentinel_enabled=True, redis_url is used as a fallback only;
+    # the Sentinel cluster manages primary discovery automatically.
+    redis_sentinel_enabled: bool = False
+    redis_sentinel_master_name: str = "mymaster"
+    redis_sentinel_hosts: str = ""  # comma-separated "host:port" pairs
 
     # ── Kafka ─────────────────────────────────────────────────────────────────
     kafka_bootstrap_servers: str = "localhost:9092"

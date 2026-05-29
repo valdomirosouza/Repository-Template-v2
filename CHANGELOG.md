@@ -118,6 +118,47 @@ EventBrokerProtocol`. New config keys: `kafka_dlq_topic`, `kafka_consumer_max_re
   the existing image CVE scan (REM-006). Skips `.venv`, `node_modules`, `target`, `.gradle`.
   ISO 5.14/8.20, SOC 2 CC6.8.
 
+- **HTTP security headers on every response.** New `SecurityHeadersMiddleware`
+  (`src/api/rest/security_headers.py`) added to `main.py`. Headers applied unconditionally:
+  `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+  `Referrer-Policy: strict-origin-when-cross-origin`,
+  `Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=()`,
+  `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; form-action 'none'`.
+  `Strict-Transport-Security` (2-year max-age, includeSubDomains, preload) added only when
+  `APP_ENV=production` so local HTTP development is not broken. 5 unit tests.
+
+- **Per-JWT-subject rate limiting.** `src/api/rest/_limiter.py` key function upgraded from
+  `get_remote_address` (per-IP) to `_get_rate_limit_key`: when a `Bearer` token is present,
+  decodes it (without signature verification — intentionally, for bucketing only) and uses the
+  JWT `sub` claim as the rate-limit key; falls back to IP for unauthenticated requests.
+  Prevents a single IP from exhausting limits across multiple user accounts.
+
+- **CodeQL SAST workflow.** New `.github/workflows/codeql.yml` runs GitHub-native CodeQL
+  analysis on Python with `security-extended` queries (OWASP Top 10 + common Python
+  vulnerability patterns). Runs on push/PR to main and on a weekly Monday schedule. Results
+  surface in GitHub Security → Code scanning alerts.
+
+- **Container base image pinned to patch version.** `Dockerfile` both stages changed from
+  `python:3.13-slim` (floating minor) to `python:3.13.7-slim`. Eliminates reproducibility
+  drift from upstream image rebuilds. Comment documents how to obtain the full digest for
+  stronger pinning when needed.
+
+### Added
+
+- `DB_POOL_CONNECTIONS_ACQUIRED` / `DB_POOL_CONNECTIONS_AVAILABLE` Gauges in
+  `src/observability/metrics.py`, emitted by `ResilientDBPool._call()` after every successful
+  query. Enables a pool-exhaustion alert: `db_pool_connections_available == 0`.
+
+- Redis Sentinel HA config: three new settings (`redis_sentinel_enabled`,
+  `redis_sentinel_master_name`, `redis_sentinel_hosts`) in `src/shared/config.py` and
+  `.env.example`. New runbook `docs/sre/runbooks/redis-ha.md` covers Sentinel setup on
+  Kubernetes via Bitnami Helm chart, failover verification, and manual emergency promotion.
+
+- `docs/sre/runbooks/db-key-rotation.md` — zero-downtime key-rotation procedure for
+  `DB_ENCRYPTION_KEY`: dual-key decryption pattern, re-encryption migration script, emergency
+  rotation steps, and post-rotation verification. Leverages the existing `enc:v1:` wire-format
+  version prefix in `EncryptedField`.
+
 - **Governance enforcement (REM-008) + version single-source-of-truth (REM-010).** Added
   `.github/workflows/pr-governance.yml` enforcing a **Conventional-Commit PR title**, a
   **CHANGELOG `[Unreleased]` entry** (docs-only / `skip-changelog` / Dependabot exempt), and a

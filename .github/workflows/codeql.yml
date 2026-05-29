@@ -1,0 +1,60 @@
+name: CodeQL Analysis
+
+# GitHub-native SAST — deeper analysis than Bandit; catches more complex
+# vulnerability patterns across the Python codebase.
+# REM-007 supply-chain pattern: pin action SHAs; Dependabot updates weekly.
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main", "develop"]
+  schedule:
+    # Weekly full scan on Monday at 02:00 UTC (off-peak)
+    - cron: "0 2 * * 1"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write # required to upload SARIF results to the Security tab
+
+jobs:
+  codeql:
+    name: CodeQL — Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        # TODO: pin to SHA once SHA is known for the version in use.
+        # Pattern: github/codeql-action/init@<sha> # v3.x.y
+        # Dependabot will keep this up to date.
+        with:
+          languages: python
+          # CodeQL query suites:
+          #   security-extended  — OWASP top 10 + common Python vulnerabilities
+          #   security-and-quality — broader (may produce more noise)
+          queries: security-extended
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        # CodeQL needs the project installed so it can resolve imports during analysis.
+        run: uv sync --frozen
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:python"
+          # SARIF results uploaded to GitHub Security tab → Code scanning alerts.
+          # Alert threshold: any HIGH or CRITICAL finding blocks PRs when branch
+          # protection includes "Code scanning results / CodeQL" as a required check.

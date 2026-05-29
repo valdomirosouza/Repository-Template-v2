@@ -101,6 +101,17 @@ AGENT_SEMAPHORE_WAITING = Gauge(
     ["service"],
 )
 
+DB_POOL_CONNECTIONS_ACQUIRED = Gauge(
+    "db_pool_connections_acquired",
+    "Database pool connections currently acquired (in use). "
+    "Alert when close to db_pool_size to detect pool exhaustion.",
+)
+
+DB_POOL_CONNECTIONS_AVAILABLE = Gauge(
+    "db_pool_connections_available",
+    "Database pool connections currently idle (available for use).",
+)
+
 DLQ_MESSAGES_COUNTER = Counter(
     "dlq_messages_total",
     "Total messages routed to Dead Letter Queue",

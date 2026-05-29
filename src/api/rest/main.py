@@ -25,6 +25,7 @@ from src.agents.hitl_gateway import HITLGateway
 from src.agents.hitl_store import HITLRedisStore, InMemoryHITLStore
 from src.api.rest._limiter import limiter
 from src.api.rest.routers import health, hitl, requests
+from src.api.rest.security_headers import SecurityHeadersMiddleware
 from src.guardrails.audit_logger import AuditLogger, InMemoryAuditStorage, PostgresAuditStorage
 from src.observability.metrics import init_budget_gauge
 from src.observability.otel_setup import setup_telemetry
@@ -199,6 +200,9 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+# Security headers on every response (X-Content-Type-Options, X-Frame-Options,
+# CSP, Referrer-Policy, Permissions-Policy; HSTS in production only).
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Prometheus metrics scrape endpoint — required for Golden Signals alert rules
 app.mount("/metrics", make_asgi_app())

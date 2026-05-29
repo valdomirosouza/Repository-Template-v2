@@ -26,6 +26,7 @@ import asyncio
 from typing import TYPE_CHECKING, Any
 
 from src.observability.logger import get_logger
+from src.observability.metrics import DB_POOL_CONNECTIONS_ACQUIRED, DB_POOL_CONNECTIONS_AVAILABLE
 from src.shared.retry import CircuitBreaker, CircuitBreakerError, TransientError, with_retry
 
 if TYPE_CHECKING:
@@ -82,6 +83,16 @@ class ResilientDBPool:
         """Gracefully close the underlying pool."""
         await self._pool.close()
 
+    def _emit_pool_metrics(self) -> None:
+        """Update pool saturation gauges after each successful operation."""
+        try:
+            total = self._pool.get_size()
+            idle = self._pool.get_idle_size()
+            DB_POOL_CONNECTIONS_ACQUIRED.set(total - idle)
+            DB_POOL_CONNECTIONS_AVAILABLE.set(idle)
+        except Exception:  # noqa: S110 — metric emission must never raise
+            pass
+
     # ── Internal ──────────────────────────────────────────────────────────────
 
     @with_retry()
@@ -93,6 +104,7 @@ class ResilientDBPool:
         try:
             result = await asyncio.wait_for(method(*args), timeout=self._timeout)
             self._cb.record_success()
+            self._emit_pool_metrics()
             return result
         except TimeoutError as exc:
             self._cb.record_failure()
