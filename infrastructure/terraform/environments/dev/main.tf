@@ -112,6 +112,19 @@ module "event_worker" {
   image_tag            = var.image_tag
 }
 
+# ── Frontend ──────────────────────────────────────────────────────────────────
+module "frontend" {
+  source = "../../modules/frontend"
+
+  environment          = "dev"
+  oidc_provider_arn    = module.kubernetes.oidc_provider_arn
+  oidc_provider_url    = module.kubernetes.oidc_provider_url
+  aws_account_id       = data.aws_caller_identity.current.account_id
+  aws_region           = var.aws_region
+  helm_values_file     = "infrastructure/helm/frontend/values-dev.yaml"
+  image_tag            = var.image_tag
+}
+
 data "aws_caller_identity" "current" {}
 
 variable "db_secret_arn" {
@@ -131,3 +144,4 @@ output "redis_url"                    { value = module.cache.redis_url; sensitiv
 output "api_gateway_irsa_role_arn"    { value = module.api_gateway.irsa_role_arn }
 output "domain_service_irsa_role_arn" { value = module.domain_service.irsa_role_arn }
 output "event_worker_irsa_role_arn"   { value = module.event_worker.irsa_role_arn }
+output "frontend_irsa_role_arn"       { value = module.frontend.irsa_role_arn }

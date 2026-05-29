@@ -66,5 +66,72 @@ module "cache" {
   num_cache_nodes    = 3
 }
 
-output "cluster_endpoint"  { value = module.kubernetes.cluster_endpoint }
-output "redis_url"         { value = module.cache.redis_url; sensitive = true }
+module "api_gateway" {
+  source = "../../modules/api-gateway"
+
+  environment          = "production"
+  cluster_name         = module.kubernetes.cluster_name
+  oidc_provider_arn    = module.kubernetes.oidc_provider_arn
+  oidc_provider_url    = module.kubernetes.oidc_provider_url
+  aws_account_id       = data.aws_caller_identity.current.account_id
+  aws_region           = var.aws_region
+  helm_values_file     = "infrastructure/helm/api-gateway/values-production.yaml"
+  image_tag            = var.image_tag
+}
+
+module "domain_service" {
+  source = "../../modules/domain-service"
+
+  environment          = "production"
+  oidc_provider_arn    = module.kubernetes.oidc_provider_arn
+  oidc_provider_url    = module.kubernetes.oidc_provider_url
+  aws_account_id       = data.aws_caller_identity.current.account_id
+  aws_region           = var.aws_region
+  db_secret_arn        = var.db_secret_arn
+  helm_values_file     = "infrastructure/helm/domain-service/values-production.yaml"
+  image_tag            = var.image_tag
+}
+
+module "event_worker" {
+  source = "../../modules/event-worker"
+
+  environment          = "production"
+  oidc_provider_arn    = module.kubernetes.oidc_provider_arn
+  oidc_provider_url    = module.kubernetes.oidc_provider_url
+  aws_account_id       = data.aws_caller_identity.current.account_id
+  aws_region           = var.aws_region
+  helm_values_file     = "infrastructure/helm/event-worker/values-production.yaml"
+  image_tag            = var.image_tag
+}
+
+module "frontend" {
+  source = "../../modules/frontend"
+
+  environment          = "production"
+  oidc_provider_arn    = module.kubernetes.oidc_provider_arn
+  oidc_provider_url    = module.kubernetes.oidc_provider_url
+  aws_account_id       = data.aws_caller_identity.current.account_id
+  aws_region           = var.aws_region
+  helm_values_file     = "infrastructure/helm/frontend/values-production.yaml"
+  image_tag            = var.image_tag
+}
+
+data "aws_caller_identity" "current" {}
+
+variable "db_secret_arn" {
+  description = "Secrets Manager ARN for the production PostgreSQL credentials"
+  type        = string
+}
+
+variable "image_tag" {
+  description = "Container image tag to deploy for all services"
+  type        = string
+  default     = "latest"
+}
+
+output "cluster_endpoint"             { value = module.kubernetes.cluster_endpoint }
+output "redis_url"                    { value = module.cache.redis_url; sensitive = true }
+output "api_gateway_irsa_role_arn"    { value = module.api_gateway.irsa_role_arn }
+output "domain_service_irsa_role_arn" { value = module.domain_service.irsa_role_arn }
+output "event_worker_irsa_role_arn"   { value = module.event_worker.irsa_role_arn }
+output "frontend_irsa_role_arn"       { value = module.frontend.irsa_role_arn }
