@@ -49,4 +49,12 @@ nav:
       - Overview: change-management/README.md
       - RFC Template: change-management/RFC-TEMPLATE.md
       - CAB Process: change-management/CAB-PROCESS.md
+  - Compliance:
+      - Overview: compliance/README.md
+      - ISO 27001 Control Matrix: compliance/iso27001-annex-a-control-matrix.md
+      - SOC 2 Mapping: compliance/soc2-tsc-mapping.md
+      - SLSA Supply Chain: compliance/slsa-supply-chain-assessment.md
+      - Remediation Register: compliance/remediation-register.md
+      - Trust Summary: compliance/trust-summary.md
+      - Questionnaire Quick-Ref: compliance/security-questionnaire-quickref.md
   - Postmortems: postmortems/POSTMORTEM-TEMPLATE.md

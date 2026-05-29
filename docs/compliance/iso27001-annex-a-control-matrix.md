@@ -1,0 +1,148 @@
+# ISO/IEC 27001:2022 Annex A — Control Matrix
+
+> Self-assessment of all **93 controls** across the four 2022 themes. Status taxonomy and scope
+> are defined in [`README.md`](README.md). Evidence paths are repo-relative. Gaps (🟡/⏳) are
+> tracked in [`remediation-register.md`](remediation-register.md).
+>
+> **Last updated:** 2026-05-29 · **Assessed against:** `main`
+
+**Summary (of the 93 controls):** the substance sits in the **Organizational (A.5)** and
+**Technological (A.8)** themes. **People (A.6)** and **Physical (A.7)** controls are largely
+**⬜ N/A** for a software template — owned by the adopting organization or inherited from the
+cloud provider. The headline gaps an enterprise auditor will care about: **A.5.3 / A.8.32**
+(segregation of duties & change management are undermined by the `auto-merge.yml` workflow) and
+**A.5.15 / A.8.5** (HITL operator endpoint lacks authentication — REM-001, P0).
+
+---
+
+## A.5 — Organizational controls (37)
+
+| #    | Control                                                    | Status               | Evidence                                                                                     | Notes                                                                                                          |
+| ---- | ---------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| 5.1  | Policies for information security                          | 🟡 Partial           | `SECURITY.md`, `CLAUDE.md` (§1–§9), `docs/adr/`                                              | Behavioural/governance contract exists; not a formally ratified ISMS policy set.                               |
+| 5.2  | Information security roles & responsibilities              | 🟡 Partial           | `.github/CODEOWNERS`, `CLAUDE.md` §8 (file-ownership table)                                  | Roles defined but reference **placeholder `@org/*` teams** — must be filled with real owners.                  |
+| 5.3  | Segregation of duties                                      | 🟡 **Partial / Gap** | CODEOWNERS dual-approval on `src/agents/hitl_gateway.py`; branch protection on `main`        | **`.github/workflows/auto-merge.yml` auto-approves+merges PRs, bypassing four-eyes.** See REM-005 in register. |
+| 5.4  | Management responsibilities                                | ⬜ N/A               | —                                                                                            | Org-level; adopting organization owns.                                                                         |
+| 5.5  | Contact with authorities                                   | ⬜ N/A               | —                                                                                            | Org-level.                                                                                                     |
+| 5.6  | Contact with special interest groups                       | ⬜ N/A               | —                                                                                            | Org-level.                                                                                                     |
+| 5.7  | Threat intelligence                                        | 🟡 Partial           | `specs/security/threat-model.md`; dep-vuln feeds (pip-audit, govulncheck, OWASP dep-check)   | Vuln intel automated; no formal threat-intel program.                                                          |
+| 5.8  | Information security in project management                 | ✅ Implemented       | `CLAUDE.md` §2 (SDD cycle), `specs/`, `docs/adr/`, `docs/sre/prr/`                           | Security built into the SDD lifecycle and PRR.                                                                 |
+| 5.9  | Inventory of information & associated assets               | 🟡 Partial           | `services.yaml`, `docs/privacy/pii-inventory.md`, `docs/privacy/data-processing-register.md` | Service + data inventory exist; no unified asset register.                                                     |
+| 5.10 | Acceptable use of information & associated assets          | ⏳ Planned           | —                                                                                            | No acceptable-use policy artifact.                                                                             |
+| 5.11 | Return of assets                                           | ⬜ N/A               | —                                                                                            | HR/org-level.                                                                                                  |
+| 5.12 | Classification of information                              | ✅ Implemented       | `docs/privacy/pii-inventory.md` (L1–L4 scheme)                                               | Four-tier PII classification defined.                                                                          |
+| 5.13 | Labelling of information                                   | 🟡 Partial           | `docs/privacy/pii-inventory.md`                                                              | Classification labels per field; no automated labelling.                                                       |
+| 5.14 | Information transfer                                       | 🟡 Partial           | TLS (ADR-0019), PII masking before broker (`src/guardrails/pii_filter.py`)                   | In-transit encryption + masking; mTLS between pods pending (REM-003).                                          |
+| 5.15 | Access control                                             | 🟡 **Partial / Gap** | `specs/security/rbac-model.md`, CODEOWNERS, JWT auth                                         | **HITL operator endpoint lacks auth (REM-001, P0).**                                                           |
+| 5.16 | Identity management                                        | 🟡 Partial           | JWT `sub` identity; IRSA per-service (Terraform)                                             | Application/infra identity; no central IdP integration documented.                                             |
+| 5.17 | Authentication information                                 | 🟡 Partial           | ADR-0008 (Vault + cloud secret managers), Secrets Manager (Terraform)                        | Secrets strategy strong; operator auth gap (REM-001).                                                          |
+| 5.18 | Access rights                                              | 🟡 Partial           | CODEOWNERS, branch protection, IRSA least-privilege                                          | Provisioning/review of rights is org-level.                                                                    |
+| 5.19 | Information security in supplier relationships             | ⬜ N/A               | —                                                                                            | Org/legal-level.                                                                                               |
+| 5.20 | Addressing information security within supplier agreements | ⬜ N/A               | —                                                                                            | Org/legal-level.                                                                                               |
+| 5.21 | Managing information security in the ICT supply chain      | 🟡 Partial           | SBOM (`sbom.yml`, `release.yml` via Syft), Cosign attestation, dep scanning                  | SLSA L2+ targeted; hardening gaps (SHA-pinning, OIDC) — see SLSA assessment.                                   |
+| 5.22 | Monitoring & change mgmt of supplier services              | ⬜ N/A               | —                                                                                            | Org-level.                                                                                                     |
+| 5.23 | Information security for use of cloud services             | 🟡 Partial           | `infrastructure/terraform/` (VPC, KMS, TLS, encryption), ADR-0019                            | IaC-encoded; cloud-config review is org-level.                                                                 |
+| 5.24 | Incident management planning & preparation                 | ✅ Implemented       | `docs/runbooks/`, `docs/sre/slo/error-budget-policy.md`, on-call/escalation                  | Runbooks + escalation + post-mortem cadence defined.                                                           |
+| 5.25 | Assessment & decision on security events                   | 🟡 Partial           | Prometheus alerts, burn-rate alerts, Golden Signals                                          | Detection strong; formal triage/severity workflow lighter.                                                     |
+| 5.26 | Response to information security incidents                 | ✅ Implemented       | `docs/runbooks/rollback-procedure.md` (RB-001), auto-rollback                                | Documented + automated response.                                                                               |
+| 5.27 | Learning from information security incidents               | ✅ Implemented       | Post-mortem process (within 48h P1 / 5d P2), `docs/postmortems/`                             | Blameless post-mortem cadence defined.                                                                         |
+| 5.28 | Collection of evidence                                     | 🟡 Partial           | `src/guardrails/audit_logger.py` (append-only), `docs/security/pentest-reports/`             | Immutable audit trail; no forensic-evidence procedure.                                                         |
+| 5.29 | Information security during disruption                     | 🟡 Partial           | Multi-AZ prod (Terraform), feature-flag kill switches                                        | DR plan referenced in PRR; not fully exercised.                                                                |
+| 5.30 | ICT readiness for business continuity                      | 🟡 Partial           | Multi-AZ, RDS backups, Helm rollback                                                         | BC/DR testing is org-level.                                                                                    |
+| 5.31 | Legal, statutory, regulatory & contractual requirements    | 🟡 Partial           | `docs/privacy/` (DPIA/RIPD), `docs/ai-governance/eu-ai-act-compliance.md`, `PRIVACY.md`      | Strong privacy/AI-Act mapping; DPIA still **Draft** (no DPO sign-off).                                         |
+| 5.32 | Intellectual property rights                               | 🟡 Partial           | SBOM (component licences via Syft)                                                           | Licence inventory via SBOM; no IPR/licence-compliance policy.                                                  |
+| 5.33 | Protection of records                                      | 🟡 Partial           | Append-only audit log, `docs/privacy/data-retention-policy.md`                               | Retention defined; records-protection policy lighter.                                                          |
+| 5.34 | Privacy & protection of PII                                | ✅ Implemented       | `src/guardrails/pii_filter.py`, DPIA/RIPD, retention job, masking at 3 interception points   | Privacy-by-design enforced in code + CI PII gate.                                                              |
+| 5.35 | Independent review of information security                 | 🟡 Partial           | `docs/audit/expert-audit-2026-05-26.md`, `specs/security/pentest-checklist.md`               | One expert audit on record; no recurring independent audit cadence.                                            |
+| 5.36 | Compliance with policies, rules & standards                | 🟡 Partial           | `harness/code-check.yml` gates, CI governance job                                            | Some controls CI-enforced; many are advisory (see SDD enforcement gaps).                                       |
+| 5.37 | Documented operating procedures                            | ✅ Implemented       | `docs/runbooks/`, `skills/`, `Makefile`, `CLAUDE.md`                                         | Extensive operational documentation.                                                                           |
+
+## A.6 — People controls (8)
+
+| #   | Control                                                    | Status     | Evidence                                               | Notes                                                                   |
+| --- | ---------------------------------------------------------- | ---------- | ------------------------------------------------------ | ----------------------------------------------------------------------- |
+| 6.1 | Screening                                                  | ⬜ N/A     | —                                                      | HR/org-level (pre-employment screening).                                |
+| 6.2 | Terms and conditions of employment                         | ⬜ N/A     | —                                                      | HR/org-level.                                                           |
+| 6.3 | Information security awareness, education & training       | ⏳ Planned | `skills/` (internal enablement content)                | Skills library exists; no formal training program.                      |
+| 6.4 | Disciplinary process                                       | ⬜ N/A     | —                                                      | HR/org-level.                                                           |
+| 6.5 | Responsibilities after termination or change of employment | ⬜ N/A     | —                                                      | HR/org-level.                                                           |
+| 6.6 | Confidentiality or non-disclosure agreements               | ⬜ N/A     | —                                                      | Legal/org-level.                                                        |
+| 6.7 | Remote working                                             | ⬜ N/A     | —                                                      | Org-level policy.                                                       |
+| 6.8 | Information security event reporting                       | 🟡 Partial | `SECURITY.md` (vulnerability disclosure policy + SLAs) | Disclosure channel defined; internal event-reporting process org-level. |
+
+## A.7 — Physical controls (14)
+
+| #    | Control                                               | Status | Notes                                                                                   |
+| ---- | ----------------------------------------------------- | ------ | --------------------------------------------------------------------------------------- |
+| 7.1  | Physical security perimeters                          | ⬜ N/A | **Inherited** — AWS shared-responsibility model; covered by provider SOC 2 / ISO 27001. |
+| 7.2  | Physical entry                                        | ⬜ N/A | Inherited (AWS).                                                                        |
+| 7.3  | Securing offices, rooms and facilities                | ⬜ N/A | Inherited / org-level.                                                                  |
+| 7.4  | Physical security monitoring                          | ⬜ N/A | Inherited (AWS).                                                                        |
+| 7.5  | Protecting against physical and environmental threats | ⬜ N/A | Inherited (AWS).                                                                        |
+| 7.6  | Working in secure areas                               | ⬜ N/A | Org-level.                                                                              |
+| 7.7  | Clear desk and clear screen                           | ⬜ N/A | Org-level.                                                                              |
+| 7.8  | Equipment siting and protection                       | ⬜ N/A | Inherited (AWS).                                                                        |
+| 7.9  | Security of assets off-premises                       | ⬜ N/A | Org-level.                                                                              |
+| 7.10 | Storage media                                         | ⬜ N/A | Inherited (AWS) / org-level.                                                            |
+| 7.11 | Supporting utilities                                  | ⬜ N/A | Inherited (AWS).                                                                        |
+| 7.12 | Cabling security                                      | ⬜ N/A | Inherited (AWS).                                                                        |
+| 7.13 | Equipment maintenance                                 | ⬜ N/A | Inherited (AWS).                                                                        |
+| 7.14 | Secure disposal or re-use of equipment                | ⬜ N/A | Inherited (AWS); media sanitisation per provider.                                       |
+
+## A.8 — Technological controls (34)
+
+| #    | Control                                                   | Status               | Evidence                                                                                                     | Notes                                                                         |
+| ---- | --------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| 8.1  | User end point devices                                    | ⬜ N/A               | —                                                                                                            | Org-level (device management).                                                |
+| 8.2  | Privileged access rights                                  | 🟡 Partial           | CODEOWNERS dual-approval; IRSA least-privilege (Terraform service modules)                                   | Cloud privilege scoped per service; human privileged-access review org-level. |
+| 8.3  | Information access restriction                            | 🟡 Partial           | `specs/security/rbac-model.md`, `EncryptedField` (AES-256-GCM)                                               | RBAC modelled; enforcement partial.                                           |
+| 8.4  | Access to source code                                     | 🟡 **Partial / Gap** | CODEOWNERS, branch protection, required checks                                                               | **`auto-merge.yml` bypasses code review (REM-005).**                          |
+| 8.5  | Secure authentication                                     | 🟡 **Partial / Gap** | JWT (`sub`-based identity)                                                                                   | **HITL operator endpoint lacks authentication (REM-001, P0).**                |
+| 8.6  | Capacity management                                       | 🟡 Partial           | HPA + PodDisruptionBudget (PRR), load-test gate                                                              | Autoscaling configured; capacity review org-level.                            |
+| 8.7  | Protection against malware                                | 🟡 Partial           | Dependency scanning; container scan (Trivy) **required by PRR but not yet in CI**                            | REM-006 — add image CVE scan to CI.                                           |
+| 8.8  | Management of technical vulnerabilities                   | ✅ Implemented       | `pip-audit`, `govulncheck`, OWASP Dependency-Check, `pnpm audit` (all CI-gated)                              | Multi-language dep-vuln gating with severity thresholds.                      |
+| 8.9  | Configuration management                                  | 🟡 Partial           | Terraform (IaC), Helm charts, versioned feature flags                                                        | Config-as-code; drift detection partial.                                      |
+| 8.10 | Information deletion                                      | 🟡 Partial           | `src/jobs/retention_job.py`, `docs/privacy/data-retention-policy.md`                                         | Retention/deletion implemented; end-to-end verification ongoing.              |
+| 8.11 | Data masking                                              | ✅ Implemented       | `src/guardrails/pii_filter.py`                                                                               | Masking enforced before logs, LLM calls, and broker publish.                  |
+| 8.12 | Data leakage prevention                                   | 🟡 Partial           | PII masking, `detect-secrets`, PII-leakage tests (`tests/security/`)                                         | Strong DLP primitives; no egress DLP.                                         |
+| 8.13 | Information backup                                        | 🟡 Partial           | RDS automated backups (Terraform `database` module)                                                          | Backups configured; restore testing org-level.                                |
+| 8.14 | Redundancy of information processing facilities           | 🟡 Partial           | Multi-AZ (prod), replica counts (Terraform/Helm)                                                             | HA in prod; failover testing org-level.                                       |
+| 8.15 | Logging                                                   | ✅ Implemented       | `src/observability/logger.py` (structured JSON), `audit_logger.py`, OTel                                     | Structured + immutable audit logging.                                         |
+| 8.16 | Monitoring activities                                     | ✅ Implemented       | Golden Signals metrics, Prometheus alerts, Grafana dashboards                                                | Comprehensive monitoring + alerting.                                          |
+| 8.17 | Clock synchronization                                     | ⬜ N/A               | —                                                                                                            | Inherited (cloud/k8s node NTP).                                               |
+| 8.18 | Use of privileged utility programs                        | 🟡 Partial           | `src/agents/sandbox_executor.py` (Docker `--network=none`)                                                   | Sandboxed execution; broader controls org-level.                              |
+| 8.19 | Installation of software on operational systems           | 🟡 Partial           | Helm releases, signed images (`release.yml`)                                                                 | Controlled deploys; signature _verification_ at admission pending.            |
+| 8.20 | Networks security                                         | 🟡 Partial           | Terraform `networking` (layered SGs), TLS                                                                    | mTLS between pods pending (REM-003).                                          |
+| 8.21 | Security of network services                              | 🟡 Partial           | SG rules per tier, TLS endpoints                                                                             | —                                                                             |
+| 8.22 | Segregation of networks                                   | ✅ Implemented       | Terraform `networking` (public/private subnets, ingress→app→data SG layers)                                  | Network segmentation encoded in IaC.                                          |
+| 8.23 | Web filtering                                             | ⬜ N/A               | —                                                                                                            | Not applicable to backend services.                                           |
+| 8.24 | Use of cryptography                                       | ✅ Implemented       | `EncryptedField` (AES-256-GCM), TLS 1.2+ (ADR-0019), KMS (Terraform), Cosign                                 | Crypto at rest + in transit + artifact signing.                               |
+| 8.25 | Secure development life cycle                             | ✅ Implemented       | `CLAUDE.md` (SDD), `harness/` gates, pre-commit                                                              | SDLC security is first-class.                                                 |
+| 8.26 | Application security requirements                         | 🟡 Partial           | `specs/`, `src/guardrails/`, OWASP-LLM-Top-10 tests                                                          | Requirements specified; coverage growing.                                     |
+| 8.27 | Secure system architecture & engineering principles       | ✅ Implemented       | `docs/adr/` (defense-in-depth, fallback pattern, ADR-0001/0011/0016)                                         | Documented, binding architectural principles.                                 |
+| 8.28 | Secure coding                                             | ✅ Implemented       | ruff (incl. bandit `S` rules), mypy strict, Bandit SAST, SpotBugs, gosec — all CI-gated                      | Multi-language secure-coding gates.                                           |
+| 8.29 | Security testing in development & acceptance              | ✅ Implemented       | `tests/security/`, SAST in CI, DAST (OWASP ZAP) in `harness/staging-check.yml`                               | SAST + DAST + security unit tests.                                            |
+| 8.30 | Outsourced development                                    | ⬜ N/A               | —                                                                                                            | Org-level.                                                                    |
+| 8.31 | Separation of development, test & production environments | ✅ Implemented       | `infrastructure/terraform/environments/{dev,staging,production}` (separate state, VPCs)                      | Cleanly separated environments.                                               |
+| 8.32 | Change management                                         | 🟡 **Partial / Gap** | RFC/CAB process (`skills/change-management/`, `docs/change-management/`), branch protection, required checks | **`auto-merge.yml` bypasses the documented review/CAB gate (REM-005).**       |
+| 8.33 | Test information                                          | ✅ Implemented       | Synthetic-PII standard + CI gate blocking real PII in fixtures (`harness/code-check.yml` `pii-scan`)         | No real PII permitted in test data.                                           |
+| 8.34 | Protection of information systems during audit testing    | 🟡 Partial           | Chaos experiments restricted to staging (`chaos-schedule.yml`, `environment: staging`)                       | Destructive testing isolated from prod.                                       |
+
+---
+
+## Status roll-up
+
+| Theme                   | Implemented | Partial | Planned | N/A    |
+| ----------------------- | ----------- | ------- | ------- | ------ |
+| A.5 Organizational (37) | 7           | 22      | 2       | 6      |
+| A.6 People (8)          | 0           | 1       | 1       | 6      |
+| A.7 Physical (14)       | 0           | 0       | 0       | 14     |
+| A.8 Technological (34)  | 13          | 18      | 0       | 3      |
+| **Total (93)**          | **20**      | **41**  | **3**   | **29** |
+
+> Of the 64 controls in scope for the template (excluding the 29 N/A), **20 are fully
+> implemented and 41 partial** — a strong substrate. The partials are predominantly
+> _enforcement_ and _unfilled-role_ gaps rather than missing design. The two highest-risk
+> items for an enterprise review are **A.5.3 / A.8.32** (segregation of duties / change
+> management, undermined by auto-merge) and **A.5.15 / A.8.5** (HITL operator authentication).
+> Both are tracked in [`remediation-register.md`](remediation-register.md).

@@ -27,6 +27,9 @@ SECURITY.md                          @org/security-lead
 .github/workflows/                   @org/devops-lead @org/security-lead
 tests/security/                      @org/security-lead
 
+# ── Compliance & Control Mapping ─────────────────────────────────────────────
+docs/compliance/                     @org/security-lead @org/tech-lead
+
 # ── HITL Gateway — dual approval required ────────────────────────────────────
 src/agents/hitl_gateway.py           @org/security-lead @org/ai-governance-lead
 

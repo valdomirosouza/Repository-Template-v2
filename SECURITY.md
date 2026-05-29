@@ -8,6 +8,16 @@
 
 ---
 
+## Compliance & Control Mapping
+
+Our security control posture — mapped to **ISO/IEC 27001:2022**, **SOC 2** Trust Services
+Criteria, and **SLSA** — along with a prospect-facing trust summary and reusable
+security-questionnaire answers, is maintained in
+[`docs/compliance/`](docs/compliance/README.md). Known gaps are tracked openly in the
+[remediation register](docs/compliance/remediation-register.md).
+
+---
+
 ## Reporting a Vulnerability
 
 **Do not report security vulnerabilities through public GitHub issues.**

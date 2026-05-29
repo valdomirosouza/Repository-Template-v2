@@ -13,6 +13,19 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **`docs/compliance/`** — compliance & control-mapping package for enterprise vendor-risk
+  reviews. Includes the full **ISO/IEC 27001:2022 Annex A** control matrix (93 controls with
+  status + evidence), a **SOC 2** Trust Services Criteria mapping, a **SLSA v1.0** supply-chain
+  assessment, a prioritised **remediation register** (unified with the threat model's `REM-`
+  backlog; new items REM-005–010), a prospect-facing **trust summary**, and a
+  **security-questionnaire quick-reference**. Wired into `.github/CODEOWNERS`
+  (`@org/security-lead @org/tech-lead`), `SECURITY.md`, and the MkDocs nav. This is a
+  self-assessment, not a certification; it openly tracks gaps — notably segregation-of-duties
+  vs. the `auto-merge.yml` workflow (REM-005) and the unauthenticated HITL operator endpoint
+  (REM-001).
+
 ### Fixed
 
 - **CI green-up (`Lint` + `Contract Drift Check`).** `main`'s CI was red, which blocked
