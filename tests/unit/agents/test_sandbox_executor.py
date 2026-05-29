@@ -18,7 +18,6 @@ from src.agents.sandbox_executor import (
     _get_sandbox_mode_variant,
 )
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
@@ -43,11 +42,15 @@ def _make_proc(stdout: bytes = b"", stderr: bytes = b"", returncode: int = 0):
 
 class TestSandboxResult:
     def test_succeeded_true_on_zero_exit(self):
-        r = SandboxResult(exit_code=0, stdout="ok", stderr="", timed_out=False, duration_seconds=0.1)
+        r = SandboxResult(
+            exit_code=0, stdout="ok", stderr="", timed_out=False, duration_seconds=0.1
+        )
         assert r.succeeded is True
 
     def test_succeeded_false_on_nonzero_exit(self):
-        r = SandboxResult(exit_code=1, stdout="", stderr="err", timed_out=False, duration_seconds=0.1)
+        r = SandboxResult(
+            exit_code=1, stdout="", stderr="err", timed_out=False, duration_seconds=0.1
+        )
         assert r.succeeded is False
 
     def test_succeeded_false_when_timed_out(self):
@@ -76,7 +79,9 @@ class TestCommandValidation:
 
     def test_accepts_safe_command(self):
         ex = _make_executor()
-        ex._validate_command(["python", "-c", "print('hello')"])  # parens are NOT shell metacharacters in argv-mode
+        ex._validate_command(
+            ["python", "-c", "print('hello')"]
+        )  # parens are NOT shell metacharacters in argv-mode
 
     def test_accepts_python_script(self):
         ex = _make_executor()
@@ -89,14 +94,18 @@ class TestCommandValidation:
 class TestPolicyEnforcement:
     def test_disabled_allowed_in_development(self):
         ex = _make_executor()
-        with patch("src.agents.sandbox_executor._get_sandbox_mode_variant", return_value="disabled"):
+        with patch(
+            "src.agents.sandbox_executor._get_sandbox_mode_variant", return_value="disabled"
+        ):
             with patch("src.agents.sandbox_executor.settings") as mock_settings:
                 mock_settings.app_env = "development"
                 ex._enforce_policy(risk_score=0.1)  # must not raise
 
     def test_disabled_raises_in_production(self):
         ex = _make_executor()
-        with patch("src.agents.sandbox_executor._get_sandbox_mode_variant", return_value="disabled"):
+        with patch(
+            "src.agents.sandbox_executor._get_sandbox_mode_variant", return_value="disabled"
+        ):
             with patch("src.agents.sandbox_executor.settings") as mock_settings:
                 mock_settings.app_env = "production"
                 with pytest.raises(SandboxPolicyError, match="not 'development'"):
@@ -109,7 +118,9 @@ class TestPolicyEnforcement:
 
     def test_hitl_required_logs_warning_below_threshold(self, caplog):
         ex = _make_executor()
-        with patch("src.agents.sandbox_executor._get_sandbox_mode_variant", return_value="hitl-required"):
+        with patch(
+            "src.agents.sandbox_executor._get_sandbox_mode_variant", return_value="hitl-required"
+        ):
             with patch("src.agents.sandbox_executor.settings") as mock_settings:
                 mock_settings.hitl_risk_threshold = 0.4
                 ex._enforce_policy(risk_score=0.1)  # below threshold → warning, no raise
@@ -155,7 +166,9 @@ class TestTruncation:
     def test_stdout_truncated_at_limit(self):
         ex = _make_executor()
         big_stdout = "x" * 100_000
-        result = SandboxResult(exit_code=0, stdout=big_stdout, stderr="", timed_out=False, duration_seconds=0.1)
+        result = SandboxResult(
+            exit_code=0, stdout=big_stdout, stderr="", timed_out=False, duration_seconds=0.1
+        )
         with patch("src.agents.sandbox_executor.settings") as s:
             s.sandbox_stdout_max_bytes = 64
             s.sandbox_stderr_max_bytes = 16
@@ -166,7 +179,9 @@ class TestTruncation:
     def test_stderr_truncated_at_limit(self):
         ex = _make_executor()
         big_stderr = "e" * 50_000
-        result = SandboxResult(exit_code=1, stdout="", stderr=big_stderr, timed_out=False, duration_seconds=0.1)
+        result = SandboxResult(
+            exit_code=1, stdout="", stderr=big_stderr, timed_out=False, duration_seconds=0.1
+        )
         with patch("src.agents.sandbox_executor.settings") as s:
             s.sandbox_stdout_max_bytes = 65536
             s.sandbox_stderr_max_bytes = 16
@@ -175,7 +190,9 @@ class TestTruncation:
 
     def test_no_truncation_within_limit(self):
         ex = _make_executor()
-        result = SandboxResult(exit_code=0, stdout="hello", stderr="world", timed_out=False, duration_seconds=0.1)
+        result = SandboxResult(
+            exit_code=0, stdout="hello", stderr="world", timed_out=False, duration_seconds=0.1
+        )
         with patch("src.agents.sandbox_executor.settings") as s:
             s.sandbox_stdout_max_bytes = 65536
             s.sandbox_stderr_max_bytes = 16384
@@ -246,7 +263,9 @@ class TestRunMocked:
     @pytest.mark.asyncio
     async def test_policy_disabled_in_production_blocks_execution(self):
         ex = _make_executor()
-        with patch("src.agents.sandbox_executor._get_sandbox_mode_variant", return_value="disabled"):
+        with patch(
+            "src.agents.sandbox_executor._get_sandbox_mode_variant", return_value="disabled"
+        ):
             with patch("src.agents.sandbox_executor.settings") as mock_settings:
                 mock_settings.app_env = "production"
                 with pytest.raises(SandboxPolicyError, match="not 'development'"):

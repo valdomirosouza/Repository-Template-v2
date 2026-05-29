@@ -12,8 +12,6 @@ Test markers: unit (no I/O, no external services)
 
 from __future__ import annotations
 
-import pytest
-
 from src.agents.harness.models import (
     EvaluatorScore,
     ExecutionSummary,
@@ -23,7 +21,6 @@ from src.agents.harness.models import (
     SprintContract,
     TaskBrief,
 )
-
 
 # ── TaskBrief ─────────────────────────────────────────────────────────────────
 

@@ -9,11 +9,10 @@ No real Redis required.
 
 from __future__ import annotations
 
-import pytest
 import fakeredis.aioredis
+import pytest
 
 from src.memory.session_memory import SessionMemory
-
 
 # ── fixture ───────────────────────────────────────────────────────────────────
 
@@ -130,9 +129,7 @@ class TestSessionMemoryDeleteSession:
         assert await memory.get("session-keep", "key") == "safe"
 
     @pytest.mark.asyncio
-    async def test_delete_nonexistent_session_does_not_raise(
-        self, memory: SessionMemory
-    ) -> None:
+    async def test_delete_nonexistent_session_does_not_raise(self, memory: SessionMemory) -> None:
         await memory.delete_session("ghost-session")  # must not raise
 
     @pytest.mark.asyncio

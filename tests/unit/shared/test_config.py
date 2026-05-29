@@ -43,7 +43,7 @@ class TestProductionSecretValidation:
             database_url="postgresql+asyncpg://appuser:real-db-pass@prod-db:5432/appdb",
             redis_url="rediss://:real-redis-pass@prod-redis:6379/0",  # rediss:// (ADR-0019)
             db_encryption_key="a" * 64,  # valid 32-byte hex key (ADR-0018)
-            redis_tls_enabled=True,       # required in production (ADR-0019)
+            redis_tls_enabled=True,  # required in production (ADR-0019)
         )
         assert s.app_env == "production"
 

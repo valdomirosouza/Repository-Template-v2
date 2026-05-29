@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 from openfeature import api
 from openfeature.provider.in_memory_provider import InMemoryFlag, InMemoryProvider
 
@@ -20,7 +19,6 @@ from src.shared.feature_flags import (
     get_autonomy_level,
     is_autonomous_mode_enabled,
 )
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -207,9 +205,7 @@ class TestGetAutonomyLevelMediumRisk:
     def test_medium_risk_takes_priority_over_low_risk(self, monkeypatch):
         monkeypatch.setattr("src.shared.feature_flags.settings.autonomy_low_risk_threshold", 0.3)
         monkeypatch.setattr("src.shared.feature_flags.settings.autonomy_medium_risk_threshold", 0.7)
-        _set_provider(
-            **{"autonomous-mode-medium-risk": True, "autonomous-mode-low-risk": True}
-        )
+        _set_provider(**{"autonomous-mode-medium-risk": True, "autonomous-mode-low-risk": True})
         # risk_score 0.2 qualifies for BOTH medium-risk and low-risk;
         # MEDIUM_RISK is evaluated first → wins
         assert get_autonomy_level("deploy", 0.2) == AutonomyLevel.MEDIUM_RISK

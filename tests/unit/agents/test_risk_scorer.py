@@ -16,7 +16,6 @@ from src.agents.risk_scorer import (
     _score_sensitivity,
 )
 
-
 # ── Factor: irreversibility ───────────────────────────────────────────────────
 
 
@@ -199,7 +198,7 @@ class TestRiskScorer:
 
     def test_unknown_action_defaults_to_medium(self) -> None:
         scorer = RiskScorer()
-        score, components = scorer.score("process_data", {})
+        _, components = scorer.score("process_data", {})
         assert components.irreversibility == 0.5
 
     @pytest.mark.parametrize(

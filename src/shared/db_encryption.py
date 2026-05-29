@@ -37,7 +37,7 @@ class EncryptedField:
             raise ValueError(
                 f"DB_ENCRYPTION_KEY must be {_KEY_BYTES * 2} hex characters "
                 f"({_KEY_BYTES} bytes for AES-256). "
-                "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                'Generate with: python -c "import secrets; print(secrets.token_hex(32))"'
             )
         self._aesgcm = AESGCM(raw)
 
@@ -56,7 +56,7 @@ class EncryptedField:
         """
         if not value.startswith(_PREFIX):
             return value
-        data = base64.b64decode(value[len(_PREFIX):])
+        data = base64.b64decode(value[len(_PREFIX) :])
         nonce, ciphertext = data[:_NONCE_BYTES], data[_NONCE_BYTES:]
         return self._aesgcm.decrypt(nonce, ciphertext, None).decode("utf-8")
 

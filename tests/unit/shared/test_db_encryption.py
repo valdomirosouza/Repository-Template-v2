@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 from cryptography.exceptions import InvalidTag
 
-from src.shared.db_encryption import EncryptedField, _KEY_BYTES, _PREFIX
+from src.shared.db_encryption import _KEY_BYTES, _PREFIX, EncryptedField
 
 # A valid 32-byte test key (never use in production).
 _TEST_KEY = "a" * 64  # 64 hex chars = 32 bytes
@@ -84,7 +84,7 @@ class TestTamperDetection:
     def test_corrupted_ciphertext_raises_invalid_tag(self) -> None:
         ct = self.ef.encrypt("sensitive data")
         # Flip a byte in the base64 payload to corrupt the authentication tag.
-        payload = ct[len(_PREFIX):]
+        payload = ct[len(_PREFIX) :]
         corrupted_payload = payload[:-4] + ("A" if payload[-4] != "A" else "B") + payload[-3:]
         corrupted = _PREFIX + corrupted_payload
         with pytest.raises((InvalidTag, Exception)):

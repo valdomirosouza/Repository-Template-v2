@@ -20,7 +20,6 @@ import pytest
 from src.agents.request_store import InMemoryRequestStore, RequestState
 from src.workers.request_consumer import RequestConsumer
 
-
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 

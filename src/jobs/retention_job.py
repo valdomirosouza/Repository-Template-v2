@@ -137,7 +137,9 @@ class RetentionJob:
                     """
                 )
                 if not col_exists:
-                    logger.info("audit_events.archived column not yet present — skipping archive step")
+                    logger.info(
+                        "audit_events.archived column not yet present — skipping archive step"
+                    )
                     return
 
                 updated = await conn.fetchval(

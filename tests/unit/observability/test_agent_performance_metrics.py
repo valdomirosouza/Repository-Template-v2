@@ -5,9 +5,7 @@ Spec: specs/observability/agent-performance.md
 
 from __future__ import annotations
 
-import pytest
-from prometheus_client import CollectorRegistry, Histogram, Gauge
-
+from prometheus_client import CollectorRegistry, Gauge, Histogram
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -153,10 +151,12 @@ class TestCostPerResolutionMetric:
 class TestRecordAgentPerformanceHelper:
     def test_helper_exists_and_is_callable(self) -> None:
         from src.observability.metrics import record_agent_performance
+
         assert callable(record_agent_performance)
 
     def test_helper_does_not_raise_on_autonomous_resolution(self) -> None:
         from src.observability.metrics import record_agent_performance
+
         record_agent_performance(
             action_type="deploy",
             mttd_seconds=5.0,
@@ -167,6 +167,7 @@ class TestRecordAgentPerformanceHelper:
 
     def test_helper_does_not_raise_on_hitl_escalation(self) -> None:
         from src.observability.metrics import record_agent_performance
+
         record_agent_performance(
             action_type="write_file",
             mttd_seconds=12.0,

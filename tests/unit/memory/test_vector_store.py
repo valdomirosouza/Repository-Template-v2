@@ -18,7 +18,6 @@ from src.memory.vector_store import (
     VectorDocument,
 )
 
-
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 

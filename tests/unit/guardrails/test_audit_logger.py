@@ -15,7 +15,6 @@ import pytest
 from src.guardrails.audit_logger import AuditLogger, AuditWriteError, InMemoryAuditStorage
 from src.shared.models import AuditEvent
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
@@ -79,8 +78,8 @@ class TestInMemoryAuditStorage:
         storage = InMemoryAuditStorage()
         cutoff = datetime.now(UTC)
         await storage.append(_make_event(offset_seconds=-120))  # before cutoff
-        await storage.append(_make_event(offset_seconds=10))    # after cutoff
-        await storage.append(_make_event(offset_seconds=20))    # after cutoff
+        await storage.append(_make_event(offset_seconds=10))  # after cutoff
+        await storage.append(_make_event(offset_seconds=20))  # after cutoff
 
         results = await storage.query(from_time=cutoff)
         assert len(results) == 2
@@ -89,9 +88,9 @@ class TestInMemoryAuditStorage:
     async def test_query_filter_by_to_time(self):
         storage = InMemoryAuditStorage()
         cutoff = datetime.now(UTC)
-        await storage.append(_make_event(offset_seconds=-20))   # before cutoff
-        await storage.append(_make_event(offset_seconds=-10))   # before cutoff
-        await storage.append(_make_event(offset_seconds=120))   # after cutoff
+        await storage.append(_make_event(offset_seconds=-20))  # before cutoff
+        await storage.append(_make_event(offset_seconds=-10))  # before cutoff
+        await storage.append(_make_event(offset_seconds=120))  # after cutoff
 
         results = await storage.query(to_time=cutoff)
         assert len(results) == 2

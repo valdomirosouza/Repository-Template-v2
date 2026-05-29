@@ -16,12 +16,12 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
-from src.agents.request_store import InMemoryRequestStore, RequestState, RequestStoreProtocol
+from src.agents.request_store import RequestState, RequestStoreProtocol
 from src.api.rest._limiter import limiter
 from src.guardrails.pii_filter import mask_dict
 from src.observability.logger import get_logger
 from src.observability.metrics import AGENT_SEMAPHORE_WAITING
-from src.shared.broker import EventBrokerProtocol, InMemoryBroker, build_envelope
+from src.shared.broker import EventBrokerProtocol, build_envelope
 from src.shared.config import settings
 
 logger = get_logger("api.requests")

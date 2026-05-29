@@ -126,9 +126,7 @@ class TestHITLRedisStoreEncrypted:
         await store_encrypted.save(_make_request("r2"))
         assert await store_encrypted.pending_count() == 2
 
-    async def test_archive_roundtrip_with_encryption(
-        self, store_encrypted: HITLRedisStore
-    ) -> None:
+    async def test_archive_roundtrip_with_encryption(self, store_encrypted: HITLRedisStore) -> None:
         req = _make_request()
         await store_encrypted.save(req)
         req.status = HITLStatus.REJECTED

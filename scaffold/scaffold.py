@@ -15,7 +15,6 @@ Direct usage:
 from __future__ import annotations
 
 import argparse
-import os
 import shutil
 import sys
 from pathlib import Path
@@ -30,7 +29,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Scaffold a new service from a template.")
     parser.add_argument("--name", required=True, help="Service name (kebab-case, e.g. my-service)")
     parser.add_argument("--lang", required=True, choices=VALID_LANGS, help="Language / framework")
-    parser.add_argument("--out", default=None, help="Output directory (default: services/<name> or frontend/<name>)")
+    parser.add_argument(
+        "--out", default=None, help="Output directory (default: services/<name> or frontend/<name>)"
+    )
     args = parser.parse_args()
 
     name: str = args.name
@@ -69,10 +70,7 @@ def main() -> None:
         if path.is_file():
             try:
                 text = path.read_text(encoding="utf-8")
-                new_text = (
-                    text.replace(PLACEHOLDER, name)
-                        .replace("__MODULE_NAME__", module_name)
-                )
+                new_text = text.replace(PLACEHOLDER, name).replace("__MODULE_NAME__", module_name)
                 if new_text != text:
                     path.write_text(new_text, encoding="utf-8")
             except UnicodeDecodeError:
@@ -98,8 +96,8 @@ def _print_next_steps(name: str, lang: str, dest: Path) -> None:
     print("\nNext steps:")
     print(f"  1. Edit {dest.relative_to(ROOT)}/README.md   — purpose, owner, SLO")
     if lang == "python":
-        print(f"  2. uv sync (or add to workspace in pyproject.toml)")
-        print(f"  3. make test-python          — run tests")
+        print("  2. uv sync (or add to workspace in pyproject.toml)")
+        print("  3. make test-python          — run tests")
     elif lang == "go":
         print(f"  2. cd {dest.relative_to(ROOT)} && go mod tidy")
         print(f"  3. make test-go SERVICE={name}")
@@ -109,8 +107,8 @@ def _print_next_steps(name: str, lang: str, dest: Path) -> None:
     elif lang in ("node", "frontend"):
         print(f"  2. cd {dest.relative_to(ROOT)} && pnpm install")
         print(f"  3. make test-frontend APP={name}")
-    print(f"  4. Register in services.yaml and add scrape job to prometheus.yml")
-    print(f"  5. Add entry to .github/CODEOWNERS")
+    print("  4. Register in services.yaml and add scrape job to prometheus.yml")
+    print("  5. Add entry to .github/CODEOWNERS")
 
 
 if __name__ == "__main__":

@@ -11,7 +11,6 @@ from src.agents.harness.decision_tree_logger import DecisionTreeLogger
 from src.agents.harness.models import DecisionPoint
 from src.guardrails.audit_logger import AuditLogger, AuditWriteError, InMemoryAuditStorage
 
-
 # ── fixtures ──────────────────────────────────────────────────────────────────
 
 

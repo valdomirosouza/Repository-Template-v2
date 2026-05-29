@@ -80,8 +80,8 @@ class AnthropicLLMClient:
 
         from src.shared.config import settings
 
-        self._client = AsyncAnthropic(api_key=settings.anthropic_api_key)
-        self._model = settings.anthropic_model
+        self._client = AsyncAnthropic(api_key=settings.llm_api_key)
+        self._model = settings.llm_model
 
     async def complete(
         self,
@@ -95,7 +95,12 @@ class AnthropicLLMClient:
             system=system or "You are a helpful assistant.",
             messages=[{"role": "user", "content": user}],
         )
-        return message.content[0].text
+        from anthropic.types import TextBlock
+
+        block = message.content[0]
+        if isinstance(block, TextBlock):
+            return block.text
+        raise RuntimeError(f"Unexpected content block type: {type(block).__name__}")
 
 
 class StubLLMClient:

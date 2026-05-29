@@ -130,7 +130,10 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           file: coverage.xml
-          fail_ci_if_error: true
+          # Coverage reporting is non-blocking; the real 80% gate is enforced by
+          # pytest's --cov-fail-under=80 above. Don't fail CI when the Codecov
+          # upload can't run (e.g. CODECOV_TOKEN not configured).
+          fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
   test-integration:
@@ -238,7 +241,7 @@ jobs:
 
       - name: Check services.yaml references valid schema files
         run: |
-          python3 - <<'EOF'
+          uv run python - <<'EOF'
           import yaml, sys, pathlib
           catalog = yaml.safe_load(open("services.yaml"))
           missing = []

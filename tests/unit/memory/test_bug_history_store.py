@@ -10,9 +10,8 @@ from __future__ import annotations
 
 import pytest
 
-from src.memory.bug_history_store import BugHistoryStore, _SOURCE
+from src.memory.bug_history_store import _SOURCE, BugHistoryStore
 from src.memory.vector_store import InMemoryVectorStore, StubEmbedder, VectorDocument
-
 
 # ── fixtures ──────────────────────────────────────────────────────────────────
 
@@ -129,25 +128,19 @@ class TestBugHistoryStoreRecordRejection:
 
 class TestBugHistoryStoreGetSimilar:
     @pytest.mark.asyncio
-    async def test_returns_list_of_vector_documents(
-        self, bug_store: BugHistoryStore
-    ) -> None:
+    async def test_returns_list_of_vector_documents(self, bug_store: BugHistoryStore) -> None:
         await bug_store.record_rejection("sprint-1", "deploy", "No test.", 0.8, "agent-1")
         results = await bug_store.get_similar("deploy", "deploying to prod", k=1)
         assert isinstance(results, list)
         assert all(isinstance(d, VectorDocument) for d in results)
 
     @pytest.mark.asyncio
-    async def test_returns_empty_list_when_no_rejections(
-        self, bug_store: BugHistoryStore
-    ) -> None:
+    async def test_returns_empty_list_when_no_rejections(self, bug_store: BugHistoryStore) -> None:
         results = await bug_store.get_similar("deploy", "some context", k=3)
         assert results == []
 
     @pytest.mark.asyncio
-    async def test_returns_at_most_k_results(
-        self, bug_store: BugHistoryStore
-    ) -> None:
+    async def test_returns_at_most_k_results(self, bug_store: BugHistoryStore) -> None:
         for i in range(5):
             await bug_store.record_rejection(f"s-{i}", "deploy", f"reason {i}", 0.8, "a")
         results = await bug_store.get_similar("deploy", "context", k=2)
@@ -170,9 +163,7 @@ class TestBugHistoryStoreGetSimilar:
         assert all(d.source == _SOURCE for d in results)
 
     @pytest.mark.asyncio
-    async def test_context_is_pii_masked_before_embedding(
-        self, bug_store: BugHistoryStore
-    ) -> None:
+    async def test_context_is_pii_masked_before_embedding(self, bug_store: BugHistoryStore) -> None:
         await bug_store.record_rejection("sprint-1", "read_file", "Feedback.", 0.3, "agent-1")
         # Should not raise even if context contains PII-like strings
         results = await bug_store.get_similar(

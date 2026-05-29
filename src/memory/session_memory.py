@@ -83,7 +83,9 @@ class SessionMemory:
         try:
             return json.loads(raw)
         except (json.JSONDecodeError, TypeError):
-            logger.warning("Session memory value could not be decoded", session_id=session_id, key=key)
+            logger.warning(
+                "Session memory value could not be decoded", session_id=session_id, key=key
+            )
             return None
 
     async def get_all(self, session_id: str) -> dict[str, Any]:
@@ -106,10 +108,14 @@ class SessionMemory:
         idx_key = _index_key(session_id)
         raw_keys = await self._redis.smembers(idx_key)
 
-        keys_to_delete = [_redis_key(session_id, k.decode() if isinstance(k, bytes) else str(k)) for k in raw_keys]
+        keys_to_delete = [
+            _redis_key(session_id, k.decode() if isinstance(k, bytes) else str(k)) for k in raw_keys
+        ]
         keys_to_delete.append(idx_key)
 
         if keys_to_delete:
             await self._redis.delete(*keys_to_delete)
 
-        logger.info("Session memory deleted", session_id=session_id, keys_deleted=len(keys_to_delete))
+        logger.info(
+            "Session memory deleted", session_id=session_id, keys_deleted=len(keys_to_delete)
+        )

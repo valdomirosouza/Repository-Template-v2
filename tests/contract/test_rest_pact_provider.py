@@ -37,9 +37,7 @@ PACT_FILE = Path(__file__).parent / "pacts" / "frontend-api_gateway.json"
 _PACT = json.loads(PACT_FILE.read_text())
 
 # Index interactions by description for easy test lookup
-_INTERACTIONS: dict[str, dict[str, Any]] = {
-    i["description"]: i for i in _PACT["interactions"]
-}
+_INTERACTIONS: dict[str, dict[str, Any]] = {i["description"]: i for i in _PACT["interactions"]}
 
 
 def _interaction(description: str) -> dict[str, Any]:
@@ -83,9 +81,7 @@ def app() -> FastAPI:
 
 @pytest.fixture
 async def client(app: FastAPI) -> AsyncClient:
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as c:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         yield c
 
 
@@ -260,10 +256,20 @@ class TestProviderGetRequestQueued:
         response = await client.get(f"/v1/requests/{request_id}")
         assert response.status_code == 200
 
-    async def test_response_has_all_contracted_fields(self, app: FastAPI, client: AsyncClient) -> None:
+    async def test_response_has_all_contracted_fields(
+        self, app: FastAPI, client: AsyncClient
+    ) -> None:
         request_id = await _seed_request(app, status="queued")
         body = (await client.get(f"/v1/requests/{request_id}")).json()
-        for field in ("request_id", "status", "created_at", "updated_at", "result", "error", "message"):
+        for field in (
+            "request_id",
+            "status",
+            "created_at",
+            "updated_at",
+            "result",
+            "error",
+            "message",
+        ):
             assert field in body, f"Missing contracted field: {field!r}"
 
     async def test_status_is_in_contracted_enum(self, app: FastAPI, client: AsyncClient) -> None:
@@ -299,7 +305,9 @@ class TestProviderGetRequestCompleted:
         body = (await client.get(f"/v1/requests/{request_id}")).json()
         assert body["status"] == "completed"
 
-    async def test_result_field_is_present_and_non_null(self, app: FastAPI, client: AsyncClient) -> None:
+    async def test_result_field_is_present_and_non_null(
+        self, app: FastAPI, client: AsyncClient
+    ) -> None:
         result_data = {"summary": "Task completed successfully."}
         request_id = await _seed_request(app, status="completed", result=result_data)
         body = (await client.get(f"/v1/requests/{request_id}")).json()
@@ -399,7 +407,9 @@ class TestProviderHITLDecisionApproved:
         ).json()
         assert body["request_id"] == request_id
 
-    async def test_response_has_all_contracted_fields(self, app: FastAPI, client: AsyncClient) -> None:
+    async def test_response_has_all_contracted_fields(
+        self, app: FastAPI, client: AsyncClient
+    ) -> None:
         request_id = await _seed_hitl_request(app)
         body = (
             await client.post(

@@ -76,6 +76,9 @@ class StructuredLogger:
         record.__dict__["_structured_payload"] = payload
         self._logger.handle(record)
 
+    def debug(self, message: str, **context: Any) -> None:
+        self._emit(logging.DEBUG, self._build_record("DEBUG", message, context))
+
     def info(self, message: str, **context: Any) -> None:
         self._emit(logging.INFO, self._build_record("INFO", message, context))
 

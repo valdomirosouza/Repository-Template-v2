@@ -14,7 +14,7 @@ Tests cover:
 from __future__ import annotations
 
 import json
-from unittest.mock import AsyncMock, MagicMock, call, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -22,14 +22,12 @@ from src.agents.harness.coordinator import HarnessCoordinator
 from src.agents.harness.models import (
     EvaluatorScore,
     ExecutionSummary,
-    GeneratorArtifact,
     PatchProposal,
     SprintContract,
     TaskBrief,
 )
 from src.guardrails.audit_logger import AuditLogger, InMemoryAuditStorage
 from src.shared.config import settings
-
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -79,9 +77,7 @@ def _make_coordinator(
         )
 
     # LLM: first call = generate artifact; subsequent calls may be patch proposals
-    mock_llm.complete = AsyncMock(
-        side_effect=[patch_response] * 10 + generate_responses * 10
-    )
+    mock_llm.complete = AsyncMock(side_effect=[patch_response] * 10 + generate_responses * 10)
 
     # Separate generate and patch calls via a call counter
     call_count = {"n": 0}
@@ -135,9 +131,11 @@ class TestDecisionLoggingPerIteration:
         coordinator = _make_coordinator(audit, [_make_score(passed=True)])
         brief, contract = _make_brief(), _make_contract()
 
-        with patch.object(settings, "harness_mode", "simplified"), patch.object(
-            settings, "harness_evaluator_enabled", True
-        ), patch.object(settings, "harness_patch_proposal_threshold", 2):
+        with (
+            patch.object(settings, "harness_mode", "simplified"),
+            patch.object(settings, "harness_evaluator_enabled", True),
+            patch.object(settings, "harness_patch_proposal_threshold", 2),
+        ):
             await coordinator._run_sprint(brief, contract)
 
         decisions = await storage.query(action_type="decision_bifurcation")
@@ -154,9 +152,11 @@ class TestDecisionLoggingPerIteration:
         coordinator = _make_coordinator(audit, scores)
         brief, contract = _make_brief(), _make_contract()
 
-        with patch.object(settings, "harness_mode", "simplified"), patch.object(
-            settings, "harness_evaluator_enabled", True
-        ), patch.object(settings, "harness_patch_proposal_threshold", 2):
+        with (
+            patch.object(settings, "harness_mode", "simplified"),
+            patch.object(settings, "harness_evaluator_enabled", True),
+            patch.object(settings, "harness_patch_proposal_threshold", 2),
+        ):
             await coordinator._run_sprint(brief, contract)
 
         decisions = await storage.query(action_type="decision_bifurcation")
@@ -178,9 +178,11 @@ class TestDecisionLoggingPerIteration:
         coordinator = _make_coordinator(audit, scores)
         brief, contract = _make_brief(), _make_contract()
 
-        with patch.object(settings, "harness_mode", "simplified"), patch.object(
-            settings, "harness_evaluator_enabled", True
-        ), patch.object(settings, "harness_patch_proposal_threshold", 5):
+        with (
+            patch.object(settings, "harness_mode", "simplified"),
+            patch.object(settings, "harness_evaluator_enabled", True),
+            patch.object(settings, "harness_patch_proposal_threshold", 5),
+        ):
             await coordinator._run_sprint(brief, contract)
 
         decisions = await storage.query(action_type="decision_bifurcation")
@@ -204,8 +206,9 @@ class TestPatchProposalThreshold:
         coordinator = _make_coordinator(audit, scores)
         brief, contract = _make_brief(), _make_contract()
 
-        with patch.object(settings, "harness_patch_proposal_threshold", 2), patch.object(
-            settings, "harness_evaluator_enabled", True
+        with (
+            patch.object(settings, "harness_patch_proposal_threshold", 2),
+            patch.object(settings, "harness_evaluator_enabled", True),
         ):
             await coordinator._run_sprint(brief, contract)
 
@@ -226,8 +229,9 @@ class TestPatchProposalThreshold:
         coordinator = _make_coordinator(audit, scores)
         brief, contract = _make_brief(), _make_contract()
 
-        with patch.object(settings, "harness_patch_proposal_threshold", 0), patch.object(
-            settings, "harness_evaluator_enabled", True
+        with (
+            patch.object(settings, "harness_patch_proposal_threshold", 0),
+            patch.object(settings, "harness_evaluator_enabled", True),
         ):
             await coordinator._run_sprint(brief, contract)
 
@@ -249,8 +253,9 @@ class TestPatchProposalThreshold:
         coordinator = _make_coordinator(audit, scores)
         brief, contract = _make_brief(), _make_contract()
 
-        with patch.object(settings, "harness_patch_proposal_threshold", 3), patch.object(
-            settings, "harness_evaluator_enabled", True
+        with (
+            patch.object(settings, "harness_patch_proposal_threshold", 3),
+            patch.object(settings, "harness_evaluator_enabled", True),
         ):
             await coordinator._run_sprint(brief, contract)
 
@@ -321,8 +326,9 @@ class TestExecutionSummary:
         coordinator = _make_coordinator(audit, [_make_score(passed=True)])
         brief, contract = _make_brief(), _make_contract()
 
-        with patch.object(settings, "harness_evaluator_enabled", True), patch.object(
-            settings, "harness_patch_proposal_threshold", 2
+        with (
+            patch.object(settings, "harness_evaluator_enabled", True),
+            patch.object(settings, "harness_patch_proposal_threshold", 2),
         ):
             await coordinator._run_sprint(brief, contract)
 
@@ -341,9 +347,11 @@ class TestExecutionSummary:
         coordinator = _make_coordinator(audit, failing_scores)
         brief, contract = _make_brief(), _make_contract()
 
-        with patch.object(settings, "harness_max_iterations", 3), patch.object(
-            settings, "harness_evaluator_enabled", True
-        ), patch.object(settings, "harness_patch_proposal_threshold", 2):
+        with (
+            patch.object(settings, "harness_max_iterations", 3),
+            patch.object(settings, "harness_evaluator_enabled", True),
+            patch.object(settings, "harness_patch_proposal_threshold", 2),
+        ):
             await coordinator._run_sprint(brief, contract)
 
         summaries = await storage.query(action_type="sprint_execution_summary")
@@ -363,8 +371,9 @@ class TestExecutionSummary:
         coordinator = _make_coordinator(audit, scores)
         brief, contract = _make_brief(), _make_contract()
 
-        with patch.object(settings, "harness_evaluator_enabled", True), patch.object(
-            settings, "harness_patch_proposal_threshold", 5
+        with (
+            patch.object(settings, "harness_evaluator_enabled", True),
+            patch.object(settings, "harness_patch_proposal_threshold", 5),
         ):
             await coordinator._run_sprint(brief, contract)
 
@@ -383,8 +392,9 @@ class TestExecutionSummary:
         coordinator = _make_coordinator(audit, scores)
         brief, contract = _make_brief(), _make_contract()
 
-        with patch.object(settings, "harness_patch_proposal_threshold", 2), patch.object(
-            settings, "harness_evaluator_enabled", True
+        with (
+            patch.object(settings, "harness_patch_proposal_threshold", 2),
+            patch.object(settings, "harness_evaluator_enabled", True),
         ):
             await coordinator._run_sprint(brief, contract)
 
@@ -409,9 +419,11 @@ class TestExecutionSummaryInHITLPayload:
 
         coordinator._hitl.submit_for_approval = AsyncMock(side_effect=capture_hitl)
 
-        with patch.object(settings, "harness_max_iterations", 3), patch.object(
-            settings, "harness_evaluator_enabled", True
-        ), patch.object(settings, "harness_patch_proposal_threshold", 2):
+        with (
+            patch.object(settings, "harness_max_iterations", 3),
+            patch.object(settings, "harness_evaluator_enabled", True),
+            patch.object(settings, "harness_patch_proposal_threshold", 2),
+        ):
             await coordinator._run_sprint(brief, contract)
 
         assert "execution_summary" in captured_payload
@@ -435,9 +447,11 @@ class TestExecutionSummaryInHITLPayload:
 
         coordinator._hitl.submit_for_approval = AsyncMock(side_effect=capture_hitl)
 
-        with patch.object(settings, "harness_max_iterations", 12), patch.object(
-            settings, "harness_evaluator_enabled", True
-        ), patch.object(settings, "harness_patch_proposal_threshold", 2):
+        with (
+            patch.object(settings, "harness_max_iterations", 12),
+            patch.object(settings, "harness_evaluator_enabled", True),
+            patch.object(settings, "harness_patch_proposal_threshold", 2),
+        ):
             await coordinator._run_sprint(brief, contract)
 
         failures_in_payload = captured_payload["execution_summary"]["failures"]

@@ -13,6 +13,27 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Fixed
+
+- **CI green-up (`Lint` + `Contract Drift Check`).** `main`'s CI was red, which blocked
+  branch protection. Fixes:
+  - **`src/shared/llm_client.py`** — `AnthropicLLMClient` referenced `settings.anthropic_api_key`
+    / `settings.anthropic_model`, which do not exist on `Settings` (the fields are `llm_api_key`
+    / `llm_model`). This was a latent `AttributeError` at first real LLM call. Also narrowed the
+    response content block to `TextBlock` before reading `.text`.
+  - **`src/observability/logger.py`** — added the missing `StructuredLogger.debug()` method;
+    `broker.py` and `vector_store.py` called `logger.debug(...)` which would have raised
+    `AttributeError` on those code paths.
+  - **`src/shared/broker.py`** — `InMemoryBroker` gained no-op `start()`/`stop()` so it satisfies
+    the same interface as `KafkaEventBroker` (lifespan calls `broker.start()` on the union).
+  - **`.github/workflows/ci.yml`** — the "Check services.yaml references valid schema files" step
+    used bare `python3` (no PyYAML) instead of `uv run python`, failing with `ModuleNotFoundError:
+No module named 'yaml'`.
+  - Remaining mypy-strict, ruff, and formatting fixes across `src/` (type annotations, `raise ...
+from`, `zip(..., strict=...)`, unused-variable cleanup) plus `ruff format` normalisation of
+    test files. `pyproject.toml` ruff config: excluded `scaffold/templates` (linted via their own
+    config when scaffolded) and added per-file-ignores for the `scaffold/` CLI (`T201`) and tests.
+
 ### Added
 
 - **`alembic/versions/0004_create_requests.py`** and **`0005_create_hitl_archive.py`** —

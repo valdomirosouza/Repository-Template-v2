@@ -75,7 +75,11 @@ class SandboxExecutor:
         memory_limit: str | None = None,
     ) -> None:
         self._image = docker_image or settings.sandbox_docker_image
-        self._timeout = timeout_seconds if timeout_seconds is not None else settings.sandbox_exec_timeout_seconds
+        self._timeout = (
+            timeout_seconds
+            if timeout_seconds is not None
+            else settings.sandbox_exec_timeout_seconds
+        )
         self._cpu = cpu_limit or settings.sandbox_cpu_limit
         self._memory = memory_limit or settings.sandbox_memory_limit
 
@@ -119,7 +123,6 @@ class SandboxExecutor:
             risk_score=risk_score,
         )
 
-        start = time.monotonic()
         result = await self._run_docker(docker_cmd)
         result = self._truncate(result)
 
@@ -206,21 +209,21 @@ class SandboxExecutor:
                     timeout=self._timeout,
                 )
                 exit_code = proc.returncode if proc.returncode is not None else -1
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 timed_out = True
                 try:
                     proc.kill()
                     await proc.communicate()
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.warning("sandbox cleanup after timeout failed", error=str(exc))
                 exit_code = -1
                 logger.warning("sandbox execution timed out", timeout=self._timeout)
 
-        except FileNotFoundError:
+        except FileNotFoundError as exc:
             # Docker not installed — surface clearly rather than silently failing.
             raise SandboxPolicyError(
                 "Docker binary not found. Install Docker to use SandboxExecutor."
-            )
+            ) from exc
 
         duration = time.monotonic() - start
         return SandboxResult(
@@ -237,11 +240,15 @@ class SandboxExecutor:
         stderr = result.stderr
 
         if len(stdout.encode()) > settings.sandbox_stdout_max_bytes:
-            stdout = stdout.encode()[: settings.sandbox_stdout_max_bytes].decode("utf-8", errors="ignore")
+            stdout = stdout.encode()[: settings.sandbox_stdout_max_bytes].decode(
+                "utf-8", errors="ignore"
+            )
             stdout += _TRUNCATION_MARKER
 
         if len(stderr.encode()) > settings.sandbox_stderr_max_bytes:
-            stderr = stderr.encode()[: settings.sandbox_stderr_max_bytes].decode("utf-8", errors="ignore")
+            stderr = stderr.encode()[: settings.sandbox_stderr_max_bytes].decode(
+                "utf-8", errors="ignore"
+            )
             stderr += _TRUNCATION_MARKER
 
         return SandboxResult(

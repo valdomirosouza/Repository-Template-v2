@@ -130,10 +130,7 @@ class InMemoryVectorStore:
         if source_filter:
             candidates = [d for d in candidates if d.source == source_filter]
 
-        scored = [
-            (self._cosine_similarity(query_embedding, d.embedding), d)
-            for d in candidates
-        ]
+        scored = [(self._cosine_similarity(query_embedding, d.embedding), d) for d in candidates]
         scored.sort(key=lambda t: t[0], reverse=True)
         return [doc for _, doc in scored[:k]]
 
@@ -144,7 +141,7 @@ class InMemoryVectorStore:
     def _cosine_similarity(a: list[float], b: list[float]) -> float:
         if len(a) != len(b) or not a:
             return 0.0
-        dot = sum(x * y for x, y in zip(a, b))
+        dot = sum(x * y for x, y in zip(a, b, strict=False))
         norm_a = math.sqrt(sum(x * x for x in a)) or 1.0
         norm_b = math.sqrt(sum(x * x for x in b)) or 1.0
         return dot / (norm_a * norm_b)
@@ -203,9 +200,7 @@ class PostgresVectorStore:
         self._encryption = encryption
 
     async def upsert(self, doc: VectorDocument) -> str:
-        content = (
-            self._encryption.encrypt(doc.content) if self._encryption else doc.content
-        )
+        content = self._encryption.encrypt(doc.content) if self._encryption else doc.content
         embedding_str = f"[{','.join(str(x) for x in doc.embedding)}]"
         async with self._pool.acquire() as conn:
             await conn.execute(
@@ -237,9 +232,7 @@ class PostgresVectorStore:
             VectorDocument(
                 id=row["id"],
                 content=(
-                    self._encryption.decrypt(row["content"])
-                    if self._encryption
-                    else row["content"]
+                    self._encryption.decrypt(row["content"]) if self._encryption else row["content"]
                 ),
                 embedding=self._parse_vector(row["embedding"]),
                 source=row["source"],

@@ -2,7 +2,7 @@
 
 Provides two public APIs:
   - is_autonomous_mode_enabled()  — legacy boolean; preserved for backward compat
-  - get_autonomy_level(action_type, risk_score) — graduated autonomy (B1, SPEC-autonomous-mode-levels)
+  - get_autonomy_level(action_type, risk_score) — graduated autonomy (SPEC-autonomous-mode-levels)
 
 Falls back to settings defaults when the SDK is unavailable (local dev without flagd,
 or SDK not yet configured).
@@ -14,6 +14,7 @@ ADR:  ADR-0015 (Feature Flag Strategy — revised)
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Any
 
 from src.shared.config import settings
 
@@ -25,12 +26,12 @@ class AutonomyLevel(StrEnum):
     → TESTS_ONLY → READ_ONLY → NONE.
     """
 
-    FULL = "full"            # any action, any risk — governance approval required
+    FULL = "full"  # any action, any risk — governance approval required
     MEDIUM_RISK = "medium-risk"  # risk_score ≤ autonomy_medium_risk_threshold — HOTL
-    LOW_RISK = "low-risk"    # risk_score < autonomy_low_risk_threshold — no HITL
-    TESTS_ONLY = "tests-only"    # test-generation/execution actions only
+    LOW_RISK = "low-risk"  # risk_score < autonomy_low_risk_threshold — no HITL
+    TESTS_ONLY = "tests-only"  # test-generation/execution actions only
     READ_ONLY = "read-only"  # read-only actions only
-    NONE = "none"            # all actions require HITL (safest default)
+    NONE = "none"  # all actions require HITL (safest default)
 
 
 # ── Flag name constants ───────────────────────────────────────────────────────
@@ -75,7 +76,7 @@ def get_autonomy_level(action_type: str, risk_score: float) -> AutonomyLevel:
     Args:
         action_type: e.g. "read_file", "generate_test", "deploy" — used to
                      constrain READ_ONLY and TESTS_ONLY levels.
-        risk_score:  0.0–1.0 from the agent or orchestrator — used to constrain
+        risk_score:  0.0-1.0 from the agent or orchestrator — used to constrain
                      LOW_RISK and MEDIUM_RISK levels.
 
     Returns:
@@ -93,7 +94,7 @@ def get_autonomy_level(action_type: str, risk_score: float) -> AutonomyLevel:
 # ── Internal evaluation ───────────────────────────────────────────────────────
 
 
-def _evaluate(client, action_type: str, risk_score: float) -> AutonomyLevel:
+def _evaluate(client: Any, action_type: str, risk_score: float) -> AutonomyLevel:
     """Evaluate flags in priority order and return the first applicable level."""
     read_only_types = _parse_action_types(settings.autonomy_read_only_action_types)
     test_types = _parse_action_types(settings.autonomy_test_action_types)
@@ -125,10 +126,10 @@ def _evaluate(client, action_type: str, risk_score: float) -> AutonomyLevel:
     return AutonomyLevel.NONE
 
 
-def _flag_enabled(client, flag_name: str) -> bool:
+def _flag_enabled(client: Any, flag_name: str) -> bool:
     """Evaluate a boolean flag; returns False on any error."""
     try:
-        return client.get_boolean_value(flag_name, False)
+        return bool(client.get_boolean_value(flag_name, False))
     except Exception:
         return False
 

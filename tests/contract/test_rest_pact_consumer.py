@@ -24,8 +24,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-import pytest
-
 from src.api.rest.routers.hitl import DecisionOut, HITLStatusResponse
 from src.api.rest.routers.requests import RequestOut, RequestStatusResponse
 
@@ -82,7 +80,9 @@ class TestPactFileStructure:
     def test_no_duplicate_interaction_descriptions(self) -> None:
         pact = _load_pact()
         descriptions = [i["description"] for i in pact["interactions"]]
-        assert len(descriptions) == len(set(descriptions)), "Duplicate interaction descriptions found"
+        assert len(descriptions) == len(set(descriptions)), (
+            "Duplicate interaction descriptions found"
+        )
 
 
 # ── POST /v1/requests ─────────────────────────────────────────────────────────
@@ -106,7 +106,10 @@ class TestSubmitRequestContract:
     def test_request_out_status_field_is_str(self) -> None:
         fields = RequestOut.model_fields
         annotation = fields["status"].annotation
-        assert annotation is str or (hasattr(annotation, "__origin__") is False and str in getattr(annotation, "__args__", (str,)))
+        assert annotation is str or (
+            hasattr(annotation, "__origin__") is False
+            and str in getattr(annotation, "__args__", (str,))
+        )
 
     def test_request_out_request_id_is_str(self) -> None:
         fields = RequestOut.model_fields
@@ -131,7 +134,15 @@ class TestGetRequestStatusContract:
 
     def test_status_response_has_all_contracted_fields(self) -> None:
         fields = RequestStatusResponse.model_fields
-        for field in ("request_id", "status", "created_at", "updated_at", "result", "error", "message"):
+        for field in (
+            "request_id",
+            "status",
+            "created_at",
+            "updated_at",
+            "result",
+            "error",
+            "message",
+        ):
             assert field in fields, f"RequestStatusResponse is missing contracted field: {field!r}"
 
     def test_status_field_allows_known_contracted_values(self) -> None:
@@ -140,7 +151,10 @@ class TestGetRequestStatusContract:
         contracted_statuses = {"queued", "processing", "completed", "failed"}
         pact = _load_pact()
         for interaction in pact["interactions"]:
-            if interaction["request"]["path"].startswith("/v1/requests/") and interaction["request"]["method"] == "GET":
+            if (
+                interaction["request"]["path"].startswith("/v1/requests/")
+                and interaction["request"]["method"] == "GET"
+            ):
                 body_status = interaction["response"].get("body", {}).get("status")
                 if body_status is not None:
                     assert body_status in contracted_statuses, (
@@ -229,7 +243,10 @@ class TestHITLDecisionContract:
         contracted_decisions = {"APPROVED", "REJECTED"}
         pact = _load_pact()
         for interaction in pact["interactions"]:
-            if "/decision" in interaction["request"]["path"] and interaction["request"]["method"] == "POST":
+            if (
+                "/decision" in interaction["request"]["path"]
+                and interaction["request"]["method"] == "POST"
+            ):
                 req_decision = interaction["request"].get("body", {}).get("decision")
                 if req_decision is not None:
                     assert req_decision in contracted_decisions
@@ -246,7 +263,10 @@ class TestHITLDecisionContract:
         # DecisionIn requires rationale min_length=10; verify contracted rationales meet it.
         pact = _load_pact()
         for interaction in pact["interactions"]:
-            if "/decision" in interaction["request"]["path"] and interaction["request"]["method"] == "POST":
+            if (
+                "/decision" in interaction["request"]["path"]
+                and interaction["request"]["method"] == "POST"
+            ):
                 rationale = interaction["request"].get("body", {}).get("rationale", "")
                 assert len(rationale) >= 10, (
                     f"Contracted rationale {rationale!r} is shorter than the 10-char minimum"
@@ -282,6 +302,7 @@ class TestCrossInteractionInvariants:
         # UUIDs in Pact fixtures must follow the zero-prefix synthetic format
         # (00000000-0000-0000-0000-...) to guarantee no real identifiers leak.
         import re
+
         synthetic_pattern = re.compile(r"^0{8}-0{4}-0{4}-0{4}-[0-9a-f]{12}$")
         pact = _load_pact()
         for interaction in pact["interactions"]:

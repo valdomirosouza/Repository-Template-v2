@@ -211,9 +211,7 @@ def record_agent_performance(
 ) -> None:
     AGENT_MTTD_SECONDS.labels(action_type).observe(mttd_seconds)
     AGENT_MTTR_SECONDS.labels(action_type).observe(mttr_seconds)
-    AGENT_AUTONOMOUS_RESOLUTION_RATE.labels(action_type).set(
-        1.0 if resolved_autonomously else 0.0
-    )
+    AGENT_AUTONOMOUS_RESOLUTION_RATE.labels(action_type).set(1.0 if resolved_autonomously else 0.0)
     if resolved_autonomously:
         AGENT_COST_PER_RESOLUTION_TOKENS.labels(action_type).observe(tokens_used)
 

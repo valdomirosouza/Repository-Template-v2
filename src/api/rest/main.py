@@ -15,7 +15,6 @@ from contextlib import asynccontextmanager
 import asyncpg
 import redis.asyncio as redis_async
 from fastapi import FastAPI
-from src.shared.db_encryption import EncryptedField
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import make_asgi_app
 from slowapi import _rate_limit_exceeded_handler
@@ -31,6 +30,7 @@ from src.observability.metrics import init_budget_gauge
 from src.observability.otel_setup import setup_telemetry
 from src.shared.config import settings
 from src.shared.db_client import ResilientDBPool
+from src.shared.db_encryption import EncryptedField
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +122,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     # HITL gateway — Redis-backed when available; in-memory fallback for local dev.
     # Production pods must always have Redis available (see RB-003-hitl-recovery.md).
     # Payloads are AES-256-GCM encrypted at rest when db_encryption_enabled=True (ADR-0019).
+    hitl_store: HITLRedisStore | InMemoryHITLStore
     if app.state.redis is not None:
         _hitl_encryption = (
             EncryptedField(settings.db_encryption_key)

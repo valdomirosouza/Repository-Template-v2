@@ -204,11 +204,7 @@ class HarnessCoordinator:
             # Self-reflection: generate PatchProposal once threshold is crossed
             patch_proposal: PatchProposal | None = None
             threshold = settings.harness_patch_proposal_threshold
-            if (
-                threshold > 0
-                and last_score is not None
-                and (iteration - 1) >= threshold
-            ):
+            if threshold > 0 and last_score is not None and (iteration - 1) >= threshold:
                 patch_proposal = await self._generate_patch_proposal(
                     contract, last_score, iteration
                 )
@@ -227,7 +223,9 @@ class HarnessCoordinator:
                 await dt_logger.log(
                     decision_point=f"generation_strategy_iteration_{iteration}",
                     options_considered=["fresh_generation", "feedback_incorporation"],
-                    option_chosen="fresh_generation" if last_score is None else "feedback_incorporation",
+                    option_chosen="fresh_generation"
+                    if last_score is None
+                    else "feedback_incorporation",
                     rationale=(
                         "First attempt — no prior feedback available."
                         if last_score is None
@@ -264,8 +262,7 @@ class HarnessCoordinator:
                 return artifact, score, iteration, False
 
             failures.append(
-                f"iteration_{iteration}: score={score.average:.2f} "
-                f"feedback={score.feedback[:100]}"
+                f"iteration_{iteration}: score={score.average:.2f} feedback={score.feedback[:100]}"
             )
             logger.info(
                 "Sprint failed — retrying",
@@ -353,14 +350,16 @@ class HarnessCoordinator:
         criteria_text = "\n".join(f"  - {c}" for c in contract.success_criteria)
 
         prompt = (
-            f"You are a senior engineer performing structured self-reflection on a failed sprint.\n\n"
+            f"You are a senior engineer performing structured self-reflection "
+            f"on a failed sprint.\n\n"
             f"The sprint has failed {iteration - 1} time(s).\n\n"
             f"Success Criteria:\n{criteria_text}\n\n"
             f"Last evaluator feedback:\n{masked_feedback}\n\n"
             "Summarise the previous approach's failure in one sentence, then propose a "
             "concretely different alternative approach.\n\n"
             "Respond with valid JSON only:\n"
-            '{"previous_approach_summary": "...", "proposed_alternative": "...", "reasoning": "..."}'
+            '{"previous_approach_summary": "...", "proposed_alternative": "...", '
+            '"reasoning": "..."}'
         )
 
         response = await self._llm.complete(
@@ -374,7 +373,9 @@ class HarnessCoordinator:
         except json.JSONDecodeError:
             data = {
                 "previous_approach_summary": masked_feedback[:200],
-                "proposed_alternative": "Attempt a fundamentally different implementation strategy.",
+                "proposed_alternative": (
+                    "Attempt a fundamentally different implementation strategy."
+                ),
                 "reasoning": "LLM reflection response could not be parsed; using fallback.",
             }
 

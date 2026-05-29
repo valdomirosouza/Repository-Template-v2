@@ -71,7 +71,9 @@ class Settings(BaseSettings):
     harness_planner_enabled: bool = True  # disable to skip Planner in full mode
     harness_evaluator_enabled: bool = True  # disable to skip Evaluator (debug only)
     harness_planner_hitl_review: bool = False  # opt-in: HITL review of ProductSpec
-    harness_patch_proposal_threshold: int = 2  # consecutive failures before PatchProposal (0=disabled)
+    harness_patch_proposal_threshold: int = (
+        2  # consecutive failures before PatchProposal (0=disabled)
+    )
 
     # ── Agent Memory (ADR-0017) ───────────────────────────────────────────────
     memory_session_ttl_seconds: int = 86400  # 24 h Redis session TTL
@@ -91,10 +93,12 @@ class Settings(BaseSettings):
     autonomous_mode_enabled: bool = False  # fallback for legacy is_autonomous_mode_enabled()
 
     # Granular autonomy thresholds (SPEC-autonomous-mode-levels)
-    autonomy_low_risk_threshold: float = 0.3    # risk_score below this → eligible for LOW_RISK
+    autonomy_low_risk_threshold: float = 0.3  # risk_score below this → eligible for LOW_RISK
     autonomy_medium_risk_threshold: float = 0.7  # risk_score at or below → eligible for MEDIUM_RISK
     # Comma-separated lists configurable via env vars
-    autonomy_read_only_action_types: str = "read_file,search_code,list_files,get_status,read_spec,read_adr"
+    autonomy_read_only_action_types: str = (
+        "read_file,search_code,list_files,get_status,read_spec,read_adr"
+    )
     autonomy_test_action_types: str = "generate_test,run_test,check_coverage,lint_check"
 
     # ── Concurrency ───────────────────────────────────────────────────────────
@@ -123,12 +127,14 @@ class Settings(BaseSettings):
 
     # ── Feedback loop ─────────────────────────────────────────────────────────
     feedback_loop_interval_seconds: int = 300
-    feedback_rejection_threshold: float = 0.30   # rejection rate above this triggers bias +0.1
-    feedback_approval_threshold: float = 0.80    # sustained approval rate below this prevents bias reduction
-    feedback_min_samples: int = 10               # minimum decisions before any adjustment is made
-    feedback_bias_step_up: float = 0.10          # amount added to bias on high rejection
-    feedback_bias_step_down: float = 0.05        # amount subtracted from bias on sustained approval
-    feedback_bias_max: float = 0.50              # hard cap on positive bias
+    feedback_rejection_threshold: float = 0.30  # rejection rate above this triggers bias +0.1
+    feedback_approval_threshold: float = (
+        0.80  # sustained approval rate below this prevents bias reduction
+    )
+    feedback_min_samples: int = 10  # minimum decisions before any adjustment is made
+    feedback_bias_step_up: float = 0.10  # amount added to bias on high rejection
+    feedback_bias_step_down: float = 0.05  # amount subtracted from bias on sustained approval
+    feedback_bias_max: float = 0.50  # hard cap on positive bias
     feedback_prometheus_url: str = "http://localhost:9090"
 
     # ── Sandbox execution ─────────────────────────────────────────────────────
@@ -136,8 +142,8 @@ class Settings(BaseSettings):
     sandbox_exec_timeout_seconds: float = 30.0
     sandbox_cpu_limit: str = "1.0"
     sandbox_memory_limit: str = "512m"
-    sandbox_stdout_max_bytes: int = 65_536   # 64 KB
-    sandbox_stderr_max_bytes: int = 16_384   # 16 KB
+    sandbox_stdout_max_bytes: int = 65_536  # 64 KB
+    sandbox_stderr_max_bytes: int = 16_384  # 16 KB
 
     # ── FinOps ────────────────────────────────────────────────────────────────
     llm_monthly_token_budget: int = 1_000_000
@@ -158,13 +164,13 @@ class Settings(BaseSettings):
             if self.jwt_algorithm == "HS256" and len(self.secret_key) < 32:
                 raise ValueError(
                     "SECRET_KEY must be at least 32 characters when using HS256. "
-                    "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\". "
+                    'Generate with: python -c "import secrets; print(secrets.token_hex(32))". '
                     "Consider RS256 with asymmetric keys for stronger security."
                 )
             if self.db_encryption_enabled and "placeholder" in self.db_encryption_key.lower():
                 raise ValueError(
                     "DB_ENCRYPTION_KEY must be set via environment variable in production. "
-                    "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                    'Generate with: python -c "import secrets; print(secrets.token_hex(32))"'
                 )
             if not self.redis_tls_enabled and not self.redis_url.startswith("rediss://"):
                 raise ValueError(

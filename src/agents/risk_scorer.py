@@ -19,7 +19,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-
 # ── Weights (must sum to 1.0) ─────────────────────────────────────────────────
 
 _W_IRREVERSIBILITY = 0.35

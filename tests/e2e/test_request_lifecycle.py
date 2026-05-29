@@ -110,9 +110,7 @@ class TestRequestSubmit:
         async with AsyncClient(
             transport=ASGITransport(app=_build_app()), base_url="http://test"
         ) as client:
-            response = await client.post(
-                "/v1/requests", json={"request_text": "x" * 4001}
-            )
+            response = await client.post("/v1/requests", json={"request_text": "x" * 4001})
 
         assert response.status_code == 422
 
@@ -173,9 +171,7 @@ class TestRequestStatusPolling:
         async with AsyncClient(
             transport=ASGITransport(app=_build_app()), base_url="http://test"
         ) as client:
-            response = await client.get(
-                "/v1/requests/00000000-0000-0000-0000-000000000099"
-            )
+            response = await client.get("/v1/requests/00000000-0000-0000-0000-000000000099")
 
         assert response.status_code == 404
         assert "detail" in response.json()
@@ -261,9 +257,7 @@ class TestRequestSubmitLatency:
             elapsed_ms = (time.perf_counter() - start) * 1000
 
         assert response.status_code == 202
-        assert elapsed_ms < 500, (
-            f"Submit latency {elapsed_ms:.1f} ms exceeds 500 ms SLO threshold"
-        )
+        assert elapsed_ms < 500, f"Submit latency {elapsed_ms:.1f} ms exceeds 500 ms SLO threshold"
 
     async def test_status_poll_latency_under_200ms(self) -> None:
         """Status poll should be a cache read — well under 200 ms even at low percentiles."""
@@ -277,9 +271,7 @@ class TestRequestSubmitLatency:
             await client.get(f"/v1/requests/{request_id}")
             elapsed_ms = (time.perf_counter() - start) * 1000
 
-        assert elapsed_ms < 200, (
-            f"Status poll latency {elapsed_ms:.1f} ms exceeds 200 ms threshold"
-        )
+        assert elapsed_ms < 200, f"Status poll latency {elapsed_ms:.1f} ms exceeds 200 ms threshold"
 
 
 # ── Tests — concurrent submissions ────────────────────────────────────────────

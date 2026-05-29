@@ -56,14 +56,11 @@ class TestPIIFilterBenchmarks:
         """Short free-text mask (< 200 chars) — most common case."""
         text = "Contact test@example.com or call +55 11 00000-0000 for support."
         latency_ms = _measure_ms(lambda: mask_text(text))
-        assert latency_ms < 5.0, (
-            f"mask_text (short) took {latency_ms:.3f} ms — exceeds 5 ms budget"
-        )
+        assert latency_ms < 5.0, f"mask_text (short) took {latency_ms:.3f} ms — exceeds 5 ms budget"
 
     def test_mask_text_long_input_under_10ms(self) -> None:
         """Long free-text mask (1 000 chars) — worst case for the masking loop."""
-        text = ("Process request for test@example.com. " * 20 +
-                "CPF: 000.000.000-00. " * 10)
+        text = "Process request for test@example.com. " * 20 + "CPF: 000.000.000-00. " * 10
         latency_ms = _measure_ms(lambda: mask_text(text), iterations=500)
         assert latency_ms < 10.0, (
             f"mask_text (long) took {latency_ms:.3f} ms — exceeds 10 ms budget"
@@ -79,9 +76,7 @@ class TestPIIFilterBenchmarks:
             "ip_address": "192.0.2.1",
         }
         latency_ms = _measure_ms(lambda: mask_dict(payload))
-        assert latency_ms < 5.0, (
-            f"mask_dict (flat) took {latency_ms:.3f} ms — exceeds 5 ms budget"
-        )
+        assert latency_ms < 5.0, f"mask_dict (flat) took {latency_ms:.3f} ms — exceeds 5 ms budget"
 
     def test_mask_dict_nested_payload_under_10ms(self) -> None:
         """Nested dict masking — parameters dict from complex agent actions."""

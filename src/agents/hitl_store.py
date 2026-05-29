@@ -156,12 +156,10 @@ class HITLRedisStore:
         return self._from_redis(data)
 
     async def pending_count(self) -> int:
-        return await self._r.zcard(self._pending_key)
+        return int(await self._r.zcard(self._pending_key))
 
     async def get_pending_expired(self, now: datetime) -> list[HITLRequest]:
-        ids: list[str] = await self._r.zrangebyscore(
-            self._pending_key, "-inf", now.timestamp()
-        )
+        ids: list[str] = await self._r.zrangebyscore(self._pending_key, "-inf", now.timestamp())
         requests: list[HITLRequest] = []
         for rid in ids:
             data = await self._r.get(self._req_key(rid))

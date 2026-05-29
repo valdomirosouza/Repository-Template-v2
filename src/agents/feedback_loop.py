@@ -10,8 +10,8 @@ Spec: specs/ai/feedback-loop.md
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, cast
 
 import httpx
 
@@ -97,7 +97,7 @@ class FeedbackLoop:
             return []
 
         adjustments: list[BiasAdjustment] = []
-        for action_type, s in stats.items():
+        for _action_type, s in stats.items():
             adj = await self._maybe_adjust(s)
             if adj is not None:
                 adjustments.append(adj)
@@ -118,7 +118,11 @@ class FeedbackLoop:
                     "feedback loop: applied adjustments",
                     count=len(adjustments),
                     adjustments=[
-                        {"action_type": a.action_type, "direction": a.direction, "new_bias": a.new_bias}
+                        {
+                            "action_type": a.action_type,
+                            "direction": a.direction,
+                            "new_bias": a.new_bias,
+                        }
                         for a in adjustments
                     ],
                 )
@@ -153,7 +157,7 @@ class FeedbackLoop:
 
         return stats
 
-    async def _query(self, client: httpx.AsyncClient, metric: str) -> list[dict]:
+    async def _query(self, client: httpx.AsyncClient, metric: str) -> list[dict[str, Any]]:
         """Run an instant PromQL query and return the result list."""
         resp = await client.get(
             f"{self._prometheus_url}/api/v1/query",
@@ -161,7 +165,7 @@ class FeedbackLoop:
         )
         resp.raise_for_status()
         data = resp.json()
-        return data.get("data", {}).get("result", [])
+        return cast(list[dict[str, Any]], data.get("data", {}).get("result", []))
 
     # ── Bias adjustment ─────────────────────────────────────────────────────────
 

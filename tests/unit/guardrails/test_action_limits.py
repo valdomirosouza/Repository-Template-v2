@@ -12,7 +12,6 @@ import pytest
 
 from src.guardrails.action_limits import ActionLimitConfig, ActionLimiter
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
@@ -77,17 +76,13 @@ class TestCheckScopeLimit:
 
     def test_denies_excess_record_count(self):
         limiter = _make_limiter(max_records_affected=10)
-        allowed, reason = limiter.check_scope_limit(
-            "agent-test", "write", {"record_count": 11}
-        )
+        allowed, reason = limiter.check_scope_limit("agent-test", "write", {"record_count": 11})
         assert not allowed
         assert "11" in reason
 
     def test_allows_within_record_count(self):
         limiter = _make_limiter(max_records_affected=50)
-        allowed, reason = limiter.check_scope_limit(
-            "agent-test", "write", {"record_count": 50}
-        )
+        allowed, _ = limiter.check_scope_limit("agent-test", "write", {"record_count": 50})
         assert allowed
 
     def test_passes_when_no_allowed_types_configured(self):

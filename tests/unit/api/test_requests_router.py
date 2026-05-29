@@ -18,7 +18,6 @@ from src.agents.request_store import InMemoryRequestStore
 from src.api.rest.routers.requests import router
 from src.shared.broker import InMemoryBroker
 
-
 # ── App factory ───────────────────────────────────────────────────────────────
 
 
@@ -57,9 +56,7 @@ class TestSubmitRequest:
         app.state.broker = broker
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await client.post(
-                "/v1/requests", json={"request_text": "analyse the sales data"}
-            )
+            await client.post("/v1/requests", json={"request_text": "analyse the sales data"})
 
         assert len(broker.published) == 1
         assert broker.published[0]["topic"] == "domain.request.created"
@@ -68,9 +65,7 @@ class TestSubmitRequest:
     async def test_submit_returns_503_when_store_unavailable(self) -> None:
         app = _make_app(with_store=False)
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post(
-                "/v1/requests", json={"request_text": "any text"}
-            )
+            response = await client.post("/v1/requests", json={"request_text": "any text"})
         assert response.status_code == 503
 
 
@@ -82,9 +77,7 @@ class TestGetRequestStatus:
     async def test_status_returns_200_for_known_request(self) -> None:
         app = _make_app()
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            post = await client.post(
-                "/v1/requests", json={"request_text": "process this"}
-            )
+            post = await client.post("/v1/requests", json={"request_text": "process this"})
             request_id = post.json()["request_id"]
             response = await client.get(f"/v1/requests/{request_id}")
         assert response.status_code == 200

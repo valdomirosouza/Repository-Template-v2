@@ -51,9 +51,13 @@ class InMemoryBroker:
     def __init__(self) -> None:
         self.published: list[dict[str, Any]] = []
 
-    async def publish(
-        self, topic: str, payload: dict[str, Any], key: str | None = None
-    ) -> None:
+    async def start(self) -> None:
+        """No-op: the in-memory broker needs no connection setup."""
+
+    async def stop(self) -> None:
+        """No-op: the in-memory broker needs no teardown."""
+
+    async def publish(self, topic: str, payload: dict[str, Any], key: str | None = None) -> None:
         self.published.append({"topic": topic, "payload": payload})
 
 
@@ -84,9 +88,7 @@ class KafkaEventBroker:
             await self._producer.stop()
             logger.info("Kafka producer stopped")
 
-    async def publish(
-        self, topic: str, payload: dict[str, Any], key: str | None = None
-    ) -> None:
+    async def publish(self, topic: str, payload: dict[str, Any], key: str | None = None) -> None:
         if self._producer is None:
             raise RuntimeError("KafkaEventBroker not started — call start() first")
         value = json.dumps(payload).encode()

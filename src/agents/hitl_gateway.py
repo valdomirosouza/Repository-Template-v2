@@ -175,8 +175,7 @@ class HITLGateway:
 
             if request.status != HITLStatus.PENDING:
                 raise HITLGatewayError(
-                    f"Request {decision.request_id} is not PENDING "
-                    f"(current: {request.status})"
+                    f"Request {decision.request_id} is not PENDING (current: {request.status})"
                 )
 
             if decision.decision not in (HITLStatus.APPROVED, HITLStatus.REJECTED):
