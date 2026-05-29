@@ -1,0 +1,65 @@
+# Monitoring NetworkPolicy
+# -------------------------
+# Allows Prometheus (in the monitoring namespace) to scrape /metrics on all application pods.
+# Also allows Alertmanager to send notifications to external receivers (PagerDuty, Slack).
+#
+# ADR-0007 (Accepted: Istio) — Phase 1.  REM-003.
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: default
+  labels:
+    app.kubernetes.io/managed-by: helm
+    security.io/policy: network-isolation
+    rem: REM-003
+spec:
+  # Applies to ALL pods — every pod can be scraped by Prometheus.
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+        - podSelector:
+            matchLabels:
+              app: prometheus
+      # Scrapes any port — Prometheus discovers port from ServiceMonitor / annotations.
+      # Restrict to specific ports once ServiceMonitors are configured.
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: alertmanager-egress
+  namespace: monitoring
+  labels:
+    security.io/policy: network-isolation
+    rem: REM-003
+spec:
+  podSelector:
+    matchLabels:
+      app: alertmanager
+  policyTypes:
+    - Egress
+  egress:
+    # DNS
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # PagerDuty / Slack / external webhook (HTTPS)
+    - ports:
+        - protocol: TCP
+          port: 443
+    # Prometheus (for silences / alerts API)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - protocol: TCP
+          port: 9090

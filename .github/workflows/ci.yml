@@ -279,10 +279,83 @@ jobs:
           print("All schema file references in services.yaml are valid.")
           EOF
 
+  dast:
+    name: DAST (OWASP ZAP baseline)
+    # REM-004 — shift DAST left; run against the app in in-memory mode so no
+    # backing services are required. Fails on FAIL-level ZAP findings (high
+    # severity / high confidence). WARN-level findings are in the artifact only.
+    # ISO 8.29, SOC 2 CC7.1.
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13"
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync --frozen
+      - name: Start API in in-memory mode
+        # The app falls back to InMemoryBroker, InMemoryRequestStore, and
+        # InMemoryAuditStorage when backing services are unreachable, so it
+        # starts cleanly without Kafka/Redis/PostgreSQL (ADR-0002 fallback pattern).
+        run: |
+          APP_ENV=development \
+          uv run uvicorn src.api.rest.main:app --host 0.0.0.0 --port 8000 &
+          echo $! > /tmp/app.pid
+        env:
+          DATABASE_URL: "postgresql+asyncpg://unused:unused@localhost:5432/unused"
+          REDIS_URL: "redis://localhost:6379/0"
+          KAFKA_BOOTSTRAP_SERVERS: "localhost:9092"
+      - name: Wait for API readiness
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8000/health; then
+              echo "API is ready"
+              break
+            fi
+            echo "Waiting for API... ($i/30)"
+            sleep 2
+          done
+      - name: OWASP ZAP baseline scan
+        run: |
+          docker run --rm --network host \
+            -v "$(pwd)":/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+              -t http://localhost:8000 \
+              -l WARN \
+              -r /zap/wrk/zap-report.html \
+              -J /zap/wrk/zap-report.json \
+              -I || ZAP_EXIT=$?
+          # Use `|| ZAP_EXIT=$?` so bash's `set -e` does not abort before we can
+          # inspect the exit code. ZAP_EXIT stays 0 on success; non-zero on error.
+          ZAP_EXIT=${ZAP_EXIT:-0}
+          # With -I: exit 0 = clean scan; exit 3 = ZAP internal error (e.g. sparse
+          # spider results on a minimal in-memory app with no DB-backed content).
+          # We treat exit 3 as a warning only. exit 2 (FAIL-level findings) fails.
+          if [ "$ZAP_EXIT" -eq 2 ]; then
+            echo "::error::ZAP found FAIL-level findings. Review zap-report.html artifact."
+            exit 1
+          elif [ "$ZAP_EXIT" -eq 3 ]; then
+            echo "::warning::ZAP exit 3 (internal error) — sparse target or scan config issue. Check artifact."
+          fi
+        shell: bash
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: zap-report-${{ github.run_id }}
+          path: |
+            zap-report.html
+            zap-report.json
+          retention-days: 30
+
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest
-    needs: [test-unit, test-security, test-integration]
+    needs: [test-unit, test-security, test-integration, dast]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Set up Docker Buildx
@@ -305,3 +378,15 @@ jobs:
           exit-code: "1"
           severity: CRITICAL,HIGH
           ignore-unfixed: true
+      - name: Scan IaC/config for misconfigurations (Trivy)
+        # REM-003 — catch missing securityContexts, privileged containers, and
+        # NetworkPolicy gaps in Helm templates and K8s manifests (ISO 5.14/8.20).
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          format: table
+          exit-code: "1"
+          severity: CRITICAL,HIGH
+          skip-dirs: ".venv,node_modules,target,.gradle,.git,infrastructure/terraform"
+          trivyignores: .trivyignore

@@ -1,0 +1,26 @@
+# Default-deny ingress NetworkPolicy
+# -----------------------------------
+# Blocks all inbound traffic to every pod in the namespace by default.
+# Subsequent policies in this directory open only the specific ports needed.
+#
+# ADR-0007 (Accepted: Istio) — Phase 1 network isolation.
+# REM-003 — ISO 5.14/8.20, SOC 2 CC6.7.
+#
+# Apply: kubectl apply -f infrastructure/k8s/network-policies/default-deny-ingress.yaml
+# Verify: kubectl get networkpolicy -n <namespace>
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: default # change to your deployment namespace
+  labels:
+    app.kubernetes.io/managed-by: helm
+    security.io/policy: network-isolation
+    rem: REM-003
+spec:
+  podSelector: {} # selects ALL pods in the namespace
+  policyTypes:
+    - Ingress
+  # No ingress rules → deny all inbound traffic by default.
+  # Pods can still make outbound (egress) connections unless a deny-egress policy is applied.

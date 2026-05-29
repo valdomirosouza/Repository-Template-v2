@@ -1,0 +1,30 @@
+# Istio PeerAuthentication — STRICT mTLS
+# ----------------------------------------
+# Enforces mutual TLS for ALL pods in the namespace once Istio is installed.
+# Without Istio, this manifest has no effect (the CRD simply doesn't exist).
+#
+# Apply ONLY after completing Istio Phase 2 activation (see ADR-0007):
+#   kubectl apply -f infrastructure/k8s/network-policies/istio-peer-auth.yaml
+#
+# Verify mTLS is active:
+#   istioctl x check-inject -n <namespace>
+#   kubectl exec <pod> -- curl -s http://another-pod/health  # should use mTLS transparently
+#
+# ADR-0007 (Accepted: Istio) — Phase 2.  REM-003 full closure.
+# ISO 5.14/8.20, SOC 2 CC6.7.
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default-strict-mtls
+  namespace: default # change to your deployment namespace
+  labels:
+    security.io/policy: mtls
+    rem: REM-003
+spec:
+  # Applies to ALL pods in the namespace (no selector = namespace-wide)
+  mtls:
+    mode: STRICT
+    # STRICT: sidecars reject any non-mTLS connection.
+    # PERMISSIVE: sidecars accept both mTLS and plaintext (for migration only).
+    # Never leave PERMISSIVE enabled in production — it defeats the zero-trust model.

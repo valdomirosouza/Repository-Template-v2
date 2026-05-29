@@ -91,6 +91,33 @@ EventBrokerProtocol`. New config keys: `kafka_dlq_topic`, `kafka_consumer_max_re
   configure branch protection, obtain DPO sign-off, and flip ISO matrix rows to Implemented.
   Includes a final checklist and the verification procedure for HITL dual-approval.
 
+- **Network isolation — NetworkPolicy manifests + ADR-0007 Accepted (REM-003 Phase 1).**
+  Advanced ADR-0007 from _Proposed_ to _Accepted: Istio_ with full decision rationale,
+  two-phase activation plan, and consequence analysis. Added
+  `infrastructure/k8s/network-policies/` with four manifests: `default-deny-ingress.yaml`
+  (blocks all inbound to every pod), `api-gateway.yaml` (per-service ingress/egress rules for
+  api-gateway, event-worker, domain-service), `monitoring.yaml` (Prometheus scrape +
+  Alertmanager egress), and `istio-peer-auth.yaml` (STRICT mTLS — Phase 2, requires cluster +
+  Istio). Phase 1 policies are enforced by the CNI plugin without a service mesh and provide
+  defence-in-depth even before Istio is installed. Phase 2 (STRICT mTLS) is activated by
+  applying `istio-peer-auth.yaml` after cluster provisioning. ISO 5.14/8.20, SOC 2 CC6.7.
+
+- **DAST shifted left — OWASP ZAP in CI (REM-004).** New `dast` job in
+  `.github/workflows/ci.yml`: starts the FastAPI app in in-memory mode (DB/Redis/Kafka
+  fallbacks activate automatically; no services required), waits for `/health` readiness,
+  then runs `ghcr.io/zaproxy/zaproxy:stable zap-baseline.py` via Docker `--network host`
+  against `http://localhost:8000`. Fails the job on FAIL-level ZAP findings (high
+  severity/confidence); WARN-level findings are captured in the artifact but non-blocking for
+  a first integration. ZAP HTML + JSON reports uploaded as artifact (30-day retention). Job
+  runs after `lint` in parallel with unit/integration tests; `build` job now `needs: dast`.
+  ISO 8.29, SOC 2 CC7.1.
+
+- **Trivy IaC/config scan added to build job.** New Trivy step with `scan-type: config`
+  catches CRITICAL/HIGH misconfigurations in Helm templates, K8s manifests, and Dockerfiles
+  (e.g. missing `securityContext`, privileged containers, wide-open capabilities). Complements
+  the existing image CVE scan (REM-006). Skips `.venv`, `node_modules`, `target`, `.gradle`.
+  ISO 5.14/8.20, SOC 2 CC6.8.
+
 - **Governance enforcement (REM-008) + version single-source-of-truth (REM-010).** Added
   `.github/workflows/pr-governance.yml` enforcing a **Conventional-Commit PR title**, a
   **CHANGELOG `[Unreleased]` entry** (docs-only / `skip-changelog` / Dependabot exempt), and a

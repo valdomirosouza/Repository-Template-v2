@@ -1,0 +1,11 @@
+# .trivyignore — Accepted / intentional Trivy findings
+# --------------------------------------------------------
+# Format: <rule-id>  # justification
+# See: https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/
+
+# DS-0002: The Dockerfile *builder* stage runs as root so that uv/pip can
+# install packages to /build. The *production* stage explicitly switches to
+# a non-root user (appuser, UID 1001) via USER appuser before the entrypoint.
+# Trivy cannot distinguish which stage a finding applies to in multi-stage
+# builds; the production image is non-root in practice.
+DS-0002
