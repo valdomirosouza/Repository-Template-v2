@@ -36,6 +36,18 @@ variable "broker_volume_size_gb" {
   description = "EBS volume size per broker in GiB."
 }
 
+variable "default_replication_factor" {
+  type        = number
+  default     = 3
+  description = "Kafka default.replication.factor. Must be ≤ number of broker nodes. Use 2 for 2-broker staging clusters."
+}
+
+variable "min_insync_replicas" {
+  type        = number
+  default     = 2
+  description = "Kafka min.insync.replicas. Must be < default_replication_factor to allow leader election."
+}
+
 variable "tags" {
   type        = map(string)
   default     = {}

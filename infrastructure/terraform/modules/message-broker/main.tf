@@ -129,16 +129,16 @@ resource "aws_msk_cluster" "main" {
 }
 
 resource "aws_msk_configuration" "main" {
-  name              = "${var.name_prefix}-kafka-config"
-  kafka_versions    = [var.kafka_version]
-  server_properties = <<-PROPS
-    auto.create.topics.enable=false
-    default.replication.factor=3
-    min.insync.replicas=2
-    num.partitions=12
-    log.retention.hours=168
-    log.retention.bytes=10737418240
-  PROPS
+  name           = "${var.name_prefix}-kafka-config"
+  kafka_versions = [var.kafka_version]
+  server_properties = join("\n", [
+    "auto.create.topics.enable=false",
+    "default.replication.factor=${var.default_replication_factor}",
+    "min.insync.replicas=${var.min_insync_replicas}",
+    "num.partitions=12",
+    "log.retention.hours=168",
+    "log.retention.bytes=10737418240",
+  ])
 }
 
 # Associate the SCRAM secret with the MSK cluster.

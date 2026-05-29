@@ -92,6 +92,22 @@ module "domain_service" {
   image_tag            = var.image_tag
 }
 
+# ── Message Broker ───────────────────────────────────────────────────────────
+# 3-broker cluster (one per AZ). Default replication factor 3, min ISR 2.
+module "message_broker" {
+  source = "../../modules/message-broker"
+
+  name_prefix                = "monorepo-production"
+  vpc_id                     = module.networking.vpc_id
+  subnet_ids                 = module.networking.private_subnet_ids
+  allowed_security_group_ids = [module.networking.sg_app_id]
+  broker_instance_type       = "kafka.m5.large"
+  broker_volume_size_gb      = 500
+  default_replication_factor = 3
+  min_insync_replicas        = 2
+  tags                       = { Project = "monorepo", Environment = "production", ManagedBy = "terraform" }
+}
+
 module "event_worker" {
   source = "../../modules/event-worker"
 
@@ -100,6 +116,8 @@ module "event_worker" {
   oidc_provider_url    = module.kubernetes.oidc_provider_url
   aws_account_id       = data.aws_caller_identity.current.account_id
   aws_region           = var.aws_region
+  msk_cluster_arn      = module.message_broker.cluster_arn
+  dlq_sqs_arn          = ""
   helm_values_file     = "infrastructure/helm/event-worker/values-production.yaml"
   image_tag            = var.image_tag
 }
@@ -176,13 +194,15 @@ variable "image_tag" {
   default     = "latest"
 }
 
-output "cluster_endpoint"             { value = module.kubernetes.cluster_endpoint }
-output "redis_url"                    { value = module.cache.redis_url; sensitive = true }
-output "api_gateway_irsa_role_arn"    { value = module.api_gateway.irsa_role_arn }
-output "domain_service_irsa_role_arn" { value = module.domain_service.irsa_role_arn }
-output "event_worker_irsa_role_arn"   { value = module.event_worker.irsa_role_arn }
-output "frontend_irsa_role_arn"       { value = module.frontend.irsa_role_arn }
-output "obs_api_gateway_sns_arn"      { value = module.obs_api_gateway.sns_topic_arn }
-output "obs_domain_service_sns_arn"   { value = module.obs_domain_service.sns_topic_arn }
-output "obs_event_worker_sns_arn"     { value = module.obs_event_worker.sns_topic_arn }
-output "obs_frontend_sns_arn"         { value = module.obs_frontend.sns_topic_arn }
+output "cluster_endpoint"               { value = module.kubernetes.cluster_endpoint }
+output "redis_url"                      { value = module.cache.redis_url; sensitive = true }
+output "kafka_bootstrap_brokers"        { value = module.message_broker.bootstrap_brokers_sasl_scram; sensitive = true }
+output "kafka_credentials_secret_arn"   { value = module.message_broker.credentials_secret_arn }
+output "api_gateway_irsa_role_arn"      { value = module.api_gateway.irsa_role_arn }
+output "domain_service_irsa_role_arn"   { value = module.domain_service.irsa_role_arn }
+output "event_worker_irsa_role_arn"     { value = module.event_worker.irsa_role_arn }
+output "frontend_irsa_role_arn"         { value = module.frontend.irsa_role_arn }
+output "obs_api_gateway_sns_arn"        { value = module.obs_api_gateway.sns_topic_arn }
+output "obs_domain_service_sns_arn"     { value = module.obs_domain_service.sns_topic_arn }
+output "obs_event_worker_sns_arn"       { value = module.obs_event_worker.sns_topic_arn }
+output "obs_frontend_sns_arn"           { value = module.obs_frontend.sns_topic_arn }
