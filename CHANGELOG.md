@@ -15,6 +15,11 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ### Added
 
+- **`docs/quickstart/local-dev-setup.md`** — Local development environment setup guide,
+  ported from the `docs/template-improvements` branch. Covers devcontainer setup, required
+  tool versions, IDE extensions, and common-error troubleshooting — a gap `main`'s quickstart
+  set did not previously cover. The one stale link (to `TEMPLATE_USAGE.md`, not ported) was
+  repointed to `CUSTOMISING.md`.
 - **`scaffold/`** — Service scaffolding system ported from the abandoned `master` branch.
   `scaffold/scaffold.py` plus templates for Python, Java, Go, and Next.js frontend services.
   Implements the `make new-service NAME=foo LANG=python|java|go` command that CLAUDE.md
