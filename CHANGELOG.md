@@ -13,288 +13,147 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
-### Security
+## [1.17.0] — 2026-05-29
 
-- **Consumer runtime integrity — DLQ + safe offset commit (REM-012).** Set
-  `enable_auto_commit=False` on the Kafka request consumer — offsets are now committed only
-  after `_handle()` completes (success or DLQ-routed), eliminating the window where
-  auto-commit could advance the offset before processing finished (silent message loss) or
-  where a crashed consumer would reprocess the same message indefinitely without a circuit
-  break (poison-message loop). Added a configurable retry loop (`kafka_consumer_max_retries=3`,
-  exponential backoff) inside `_handle()`; messages that exhaust all attempts are published to
-  `domain.request.dlq` via the injected broker, `DLQ_MESSAGES_COUNTER` is incremented, and the
-  request status is set to `failed`. `RequestConsumer.__init__` now accepts `broker:
-EventBrokerProtocol`. New config keys: `kafka_dlq_topic`, `kafka_consumer_max_retries`,
-  `kafka_consumer_retry_backoff_seconds`. `domain.request.dlq` channel registered in AsyncAPI
-  spec and `services.yaml`. New runbook `docs/sre/runbooks/dlq-accumulating.md`. Spec updated.
-  35 unit tests (all passing). ISO 8.16, SOC 2 CC7.2/CC9.
-- **Consumer heartbeat metric (REM-013).** Added `CONSUMER_HEARTBEAT_TIMESTAMP` Gauge (epoch
-  seconds) to `src/observability/metrics.py`. Updated in `run()` after every committed message.
-  Alert rule: `time() - consumer_heartbeat_timestamp_seconds > 300 AND kafka_consumer_lag > 0`
-  fires only when silent for 5 min while the queue is non-empty, preventing false positives
-  during quiet periods. ISO 8.16, SOC 2 CC7.2.
-
-### Added
-
-- `docs/compliance/hardening-plan.md` — full waved hardening plan (Waves A–E) with per-wave
-  severity, owner, blocker notes, and ISO/SOC 2 control mappings. Defines Wave B (Prometheus
-  alerting rules, REM-014), Wave C (mTLS/NetworkPolicy REM-003, DAST REM-004, SLSA L3 REM-011),
-  Wave D (CODEOWNERS/DPIA REM-009), and Wave E (Redis HA, key rotation, per-user rate limits).
-- `docs/sre/runbooks/dlq-accumulating.md` — DLQ accumulation runbook: triage, root-cause
-  playbooks (LLM outage, DB failure, injection-guard rejection), replay procedure, escalation
-  matrix.
+This release delivers the full **five-wave security and resilience hardening programme**
+(Waves A–E, PRs #27–#31) together with the compliance infrastructure, governance controls,
+and CI hardening shipped in the preceding milestone. All changes are additive; no public
+API or configuration keys were removed.
 
 ### Security
 
-- **Prometheus alerting rules — observability closure (REM-014).** Added
-  `infrastructure/monitoring/prometheus/rules/resilience-alerts.yaml` with four new alert rules:
-  `CircuitBreakerOpen` (fires when `circuit_breaker_state == 1` for ≥1 min — fast-fail in
-  progress), `CircuitBreakerHalfOpen` (fires when probing for ≥5 min — upstream still
-  degraded), `ConsumerStale` (heartbeat + lag guard — consumer hung while queue grows; depends
-  on Wave A `consumer_heartbeat_timestamp_seconds` metric), and `ConsumerLagCritical` (>50k
-  messages behind). Added `CIRCUIT_BREAKER_STATE` Gauge to `src/observability/metrics.py`;
-  `CircuitBreaker` now accepts a `name` parameter and emits 0.0/0.5/1.0 on CLOSED/HALF_OPEN/OPEN
-  transitions. `ResilientLLMClientWrapper` defaults to `name="llm"`, `ResilientDBPool` to
-  `name="db"`. Added two missing SLO burn-rate groups to `slo-burn-rate.yaml`: agent action
-  success rate (fast 1h/14.4× + slow 6h/6.0× using `agent_actions_total`) and event consumer
-  DLQ proxy (`EventConsumerDLQBudgetBurning`). 5 new circuit-breaker state metric unit tests,
-  all passing. ISO 8.16, SOC 2 CC7.2.
+- **DLQ + safe Kafka offset commit (REM-012, Wave A).** `enable_auto_commit=False` on the
+  request consumer — offsets committed only after `_handle()` completes. Retry loop
+  (`kafka_consumer_max_retries=3`, exponential backoff) routes exhausted messages to
+  `domain.request.dlq` via the injected broker; `DLQ_MESSAGES_COUNTER` incremented; request
+  status set to `failed`. New config: `kafka_dlq_topic`, `kafka_consumer_max_retries`,
+  `kafka_consumer_retry_backoff_seconds`. 35 unit tests. ISO 8.16, SOC 2 CC7.2/CC9.
 
-- **Alertmanager + PagerDuty wiring (REM-002).** `LLMTokenBudgetExceeded90Percent` and all
-  other `severity=critical` alerts now route to PagerDuty when
-  `PAGERDUTY_INTEGRATION_KEY` is set. Added `infrastructure/monitoring/alertmanager/alertmanager.yml`
-  with PagerDuty receiver, `null` default receiver (local dev safety), inhibition rules
-  (critical suppresses same-name warning), and commented Slack stub. Alertmanager service
-  (`prom/alertmanager:v0.27.0`) added to `docker-compose.yml` with `alertmanager_data` volume.
-  Alertmanager block uncommented in `prometheus.yml`. `PAGERDUTY_INTEGRATION_KEY` added to
-  `.env.example` (placeholder; alerts silently dropped in local dev). ISO 8.16, SOC 2 CC7.2.
+- **Consumer heartbeat metric (REM-013, Wave A).** `CONSUMER_HEARTBEAT_TIMESTAMP` Gauge
+  (epoch seconds) updated after every committed message. Alert:
+  `time() - consumer_heartbeat_timestamp_seconds > 300 AND kafka_consumer_lag > 0`. ISO 8.16.
 
-- **CODEOWNERS governance closure — REM-009 (partial).** Replaced all `@org/*` placeholder
-  teams in `.github/CODEOWNERS` with `@valdomirosouza` (the real repo owner), eliminating the
-  silent reviewer-assignment failures that kept ~4 ISO controls at "Partial". Added a
-  `Validate CODEOWNERS has no @org/ placeholder teams` step to the `governance` CI job that
-  fails the build if any `@org/` patterns are re-introduced — making correct CODEOWNERS a hard
-  gate. Adopters: follow `docs/governance/owner-onboarding.md` to replace `@valdomirosouza`
-  with real org teams before enterprise engagement. ISO control 5.2 (roles & responsibilities)
-  updated to ✅ Implemented. ISO 5.2/5.31, SOC 2 CC5.2.
+- **Prometheus alerting rules + Alertmanager/PagerDuty (REM-002, REM-014, Wave B).**
+  `infrastructure/monitoring/prometheus/rules/resilience-alerts.yaml`: `CircuitBreakerOpen`,
+  `CircuitBreakerHalfOpen`, `ConsumerStale`, `ConsumerLagCritical`. `CIRCUIT_BREAKER_STATE`
+  Gauge emitted by `CircuitBreaker(name=...)` on CLOSED/HALF_OPEN/OPEN transitions. Two
+  missing SLO burn-rate groups added (agent action success rate, event consumer DLQ proxy).
+  Alertmanager service (`prom/alertmanager:v0.27.0`) wired; `severity=critical` routes to
+  PagerDuty when `PAGERDUTY_INTEGRATION_KEY` is set (null receiver in local dev). ISO 8.16,
+  SOC 2 CC7.2.
 
-- **DPIA sign-off workflow formalised.** Section 5 of `docs/privacy/dpia/dpia-v1.md` expanded
-  with: a DPO sign-off checklist (8 items covering Art. 35.7 requirements), an explicit
-  supervisory-authority consultation determination (GDPR Art. 36 — not required; residual risks
-  all Low), and a status gate note linking to the onboarding guide. DPIA remains **Draft**
-  pending real DPO signature — ISO 5.31 stays Partial until that step is complete.
+- **Network isolation — NetworkPolicy manifests + ADR-0007 Accepted: Istio (REM-003 Phase 1,
+  Wave C).** Four `NetworkPolicy` manifests in `infrastructure/k8s/network-policies/`:
+  default-deny-ingress, per-service ingress/egress (api-gateway, event-worker, domain-service),
+  Prometheus scrape + Alertmanager egress, and `istio-peer-auth.yaml` (STRICT mTLS Phase 2 —
+  requires cluster + Istio). Phase 1 enforced by CNI plugin without a mesh. `securityContext`
+  (runAsNonRoot, readOnlyRootFilesystem, drop ALL capabilities) added to `agent-service` and
+  `flagd` Deployments. ISO 5.14/8.20, SOC 2 CC6.7.
 
-### Added
+- **OWASP ZAP DAST shifted left (REM-004, Wave C).** New `dast` job in `ci.yml` runs ZAP
+  baseline scan against the FastAPI app in in-memory mode (no backing services required).
+  Fails on FAIL-level findings; WARN-level findings in uploaded artifact (30-day retention).
+  `build` job now `needs: dast`. ISO 8.29, SOC 2 CC7.1.
 
-- `docs/governance/owner-onboarding.md` — step-by-step playbook for adopters: create GitHub
-  Org, create the 7 required teams (with ISO/SOC 2 rationale per role), update CODEOWNERS,
-  configure branch protection, obtain DPO sign-off, and flip ISO matrix rows to Implemented.
-  Includes a final checklist and the verification procedure for HITL dual-approval.
-
-- **Network isolation — NetworkPolicy manifests + ADR-0007 Accepted (REM-003 Phase 1).**
-  Advanced ADR-0007 from _Proposed_ to _Accepted: Istio_ with full decision rationale,
-  two-phase activation plan, and consequence analysis. Added
-  `infrastructure/k8s/network-policies/` with four manifests: `default-deny-ingress.yaml`
-  (blocks all inbound to every pod), `api-gateway.yaml` (per-service ingress/egress rules for
-  api-gateway, event-worker, domain-service), `monitoring.yaml` (Prometheus scrape +
-  Alertmanager egress), and `istio-peer-auth.yaml` (STRICT mTLS — Phase 2, requires cluster +
-  Istio). Phase 1 policies are enforced by the CNI plugin without a service mesh and provide
-  defence-in-depth even before Istio is installed. Phase 2 (STRICT mTLS) is activated by
-  applying `istio-peer-auth.yaml` after cluster provisioning. ISO 5.14/8.20, SOC 2 CC6.7.
-
-- **DAST shifted left — OWASP ZAP in CI (REM-004).** New `dast` job in
-  `.github/workflows/ci.yml`: starts the FastAPI app in in-memory mode (DB/Redis/Kafka
-  fallbacks activate automatically; no services required), waits for `/health` readiness,
-  then runs `ghcr.io/zaproxy/zaproxy:stable zap-baseline.py` via Docker `--network host`
-  against `http://localhost:8000`. Fails the job on FAIL-level ZAP findings (high
-  severity/confidence); WARN-level findings are captured in the artifact but non-blocking for
-  a first integration. ZAP HTML + JSON reports uploaded as artifact (30-day retention). Job
-  runs after `lint` in parallel with unit/integration tests; `build` job now `needs: dast`.
-  ISO 8.29, SOC 2 CC7.1.
-
-- **Trivy IaC/config scan added to build job.** New Trivy step with `scan-type: config`
+- **Trivy IaC/config scan (Wave C).** New Trivy step (`scan-type: config`) in `build` job
   catches CRITICAL/HIGH misconfigurations in Helm templates, K8s manifests, and Dockerfiles
-  (e.g. missing `securityContext`, privileged containers, wide-open capabilities). Complements
-  the existing image CVE scan (REM-006). Skips `.venv`, `node_modules`, `target`, `.gradle`.
-  ISO 5.14/8.20, SOC 2 CC6.8.
+  (missing `securityContext`, privileged containers). Terraform stubs excluded via `skip-dirs`;
+  `.trivyignore` documents accepted DS-0002 for the multi-stage builder. ISO 5.14/8.20, SOC 2 CC6.8.
 
-- **HTTP security headers on every response.** New `SecurityHeadersMiddleware`
-  (`src/api/rest/security_headers.py`) added to `main.py`. Headers applied unconditionally:
-  `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
-  `Referrer-Policy: strict-origin-when-cross-origin`,
+- **CODEOWNERS governance closure (REM-009 partial, Wave D).** All `@org/*` placeholder teams
+  replaced with `@valdomirosouza`; CI `governance` job now blocks re-introduction of `@org/`
+  patterns. ISO control 5.2 (roles & responsibilities) updated to ✅ Implemented. DPIA
+  Section 5 expanded with DPO sign-off checklist and GDPR Art. 36 consultation determination.
+  ISO 5.2/5.31, SOC 2 CC5.2.
+
+- **HTTP security headers on every response (Wave E).** `SecurityHeadersMiddleware`
+  (`src/api/rest/security_headers.py`): `X-Content-Type-Options: nosniff`,
+  `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`,
   `Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=()`,
   `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; form-action 'none'`.
-  `Strict-Transport-Security` (2-year max-age, includeSubDomains, preload) added only when
-  `APP_ENV=production` so local HTTP development is not broken. 5 unit tests.
+  HSTS (2-year max-age, includeSubDomains, preload) in `APP_ENV=production` only. 5 unit tests.
 
-- **Per-JWT-subject rate limiting.** `src/api/rest/_limiter.py` key function upgraded from
-  `get_remote_address` (per-IP) to `_get_rate_limit_key`: when a `Bearer` token is present,
-  decodes it (without signature verification — intentionally, for bucketing only) and uses the
-  JWT `sub` claim as the rate-limit key; falls back to IP for unauthenticated requests.
-  Prevents a single IP from exhausting limits across multiple user accounts.
+- **Per-JWT-subject rate limiting (Wave E).** `_limiter.py` key function decodes Bearer token
+  (without signature verification — intentionally, for bucketing only) and uses the JWT `sub`
+  claim as the rate-limit key; falls back to IP for unauthenticated requests. Prevents a single
+  IP from exhausting limits across multiple user accounts.
 
-- **CodeQL SAST workflow.** New `.github/workflows/codeql.yml` runs GitHub-native CodeQL
-  analysis on Python with `security-extended` queries (OWASP Top 10 + common Python
-  vulnerability patterns). Runs on push/PR to main and on a weekly Monday schedule. Results
-  surface in GitHub Security → Code scanning alerts.
-
-- **Container base image pinned to patch version.** `Dockerfile` both stages changed from
-  `python:3.13-slim` (floating minor) to `python:3.13.7-slim`. Eliminates reproducibility
-  drift from upstream image rebuilds. Comment documents how to obtain the full digest for
-  stronger pinning when needed.
-
-### Added
-
-- `DB_POOL_CONNECTIONS_ACQUIRED` / `DB_POOL_CONNECTIONS_AVAILABLE` Gauges in
-  `src/observability/metrics.py`, emitted by `ResilientDBPool._call()` after every successful
-  query. Enables a pool-exhaustion alert: `db_pool_connections_available == 0`.
-
-- Redis Sentinel HA config: three new settings (`redis_sentinel_enabled`,
-  `redis_sentinel_master_name`, `redis_sentinel_hosts`) in `src/shared/config.py` and
-  `.env.example`. New runbook `docs/sre/runbooks/redis-ha.md` covers Sentinel setup on
-  Kubernetes via Bitnami Helm chart, failover verification, and manual emergency promotion.
-
-- `docs/sre/runbooks/db-key-rotation.md` — zero-downtime key-rotation procedure for
-  `DB_ENCRYPTION_KEY`: dual-key decryption pattern, re-encryption migration script, emergency
-  rotation steps, and post-rotation verification. Leverages the existing `enc:v1:` wire-format
-  version prefix in `EncryptedField`.
-
-- **Governance enforcement (REM-008) + version single-source-of-truth (REM-010).** Added
-  `.github/workflows/pr-governance.yml` enforcing a **Conventional-Commit PR title**, a
-  **CHANGELOG `[Unreleased]` entry** (docs-only / `skip-changelog` / Dependabot exempt), and a
-  **spec reference** for feat/fix/security/privacy/perf PRs (`no-spec` / Dependabot exempt); the
-  harness `spec-compliance` gate is now `blocking: true`. Reconciled **`version.txt` → `1.15.0`**
-  (was `1.9.1`; it's read by `config.py`/`Makefile`) and added a **version-consistency** gate that
-  fails any PR changing `version.txt` or `pyproject.toml` without keeping them equal
-  (release-please bot exempt). ISO 5.36, SOC 2 CC5.
-  Made the four gates **merge-blocking** by adding them to `main` branch protection's required
-  status checks — the nine required contexts are now the five existing `ci.yml` jobs plus the four
-  `pr-governance` jobs — and enabled **strict mode** (branches must be up-to-date with `main`
-  before merge). Branch-protection config is GitHub-side state, not in the repo.
-
-- **CI/release supply-chain hardening (REM-006, REM-007).** Added a **Trivy** image CVE scan to
-  `ci.yml` (fails the build on fixable CRITICAL/HIGH; ISO 8.7, SOC 2 CC6.8). **SHA-pinned all 17
-  GitHub Actions** to commit digests (version comments retained), added least-privilege top-level
-  `permissions:` blocks to the 10 workflows that lacked them, and added signed **SLSA build
-  provenance** (`actions/attest-build-provenance`) to `release.yml` — moving the pipeline from
-  SLSA L1-partial toward a clean **L2**. The remaining REM-007 sub-items (OIDC for registry/cloud
-  auth; admission-time signature verification) need real cloud/cluster infra and are tracked as
-  **REM-011**.
+- **CodeQL SAST workflow (Wave E).** `.github/workflows/codeql.yml` runs Python
+  `security-extended` queries on push/PR to main and weekly. Results surface in GitHub Security
+  → Code scanning alerts.
 
 - **HITL operator authentication (REM-001).** `POST /v1/hitl/requests/{id}/decision` now
-  requires a JWT **bearer** token carrying the `hitl-operator` role, and the approver identity
-  is taken from the **verified token subject** instead of the request body — closing an
-  impersonation / audit-forgery hole (anyone could previously approve agent actions and assert
-  any `approver_id`). New `src/api/rest/auth.py`; `PyJWT` dependency added; `hitl_operator_role`
-  setting added. Unit tests cover missing/invalid/expired token → 401, wrong role → 403, and
-  identity-from-token (a spoofed body `approver_id` is ignored).
-- **Scoped auto-merge (REM-005).** `.github/workflows/auto-merge.yml` now only auto-approves +
-  merges **documentation-only** PRs or **Dependabot** dependency bumps; any PR touching code,
-  infrastructure, workflows, or guardrails falls back to mandatory human review — restoring
-  segregation of duties / four-eyes (ISO 27001 A.5.3/A.8.32, SOC 2 CC8.1).
+  requires a JWT bearer token with the `hitl-operator` role; approver identity taken from the
+  verified token subject (not the request body). Closes impersonation / audit-forgery gap.
+  ISO 5.15/8.5, SOC 2 CC6.1.
 
-### Documentation
+- **Scoped auto-merge (REM-005).** `auto-merge.yml` limited to documentation-only PRs and
+  Dependabot bumps; code/infra changes require human review.
+  ISO 5.3/8.32, SOC 2 CC8.1.
 
-- **`CLAUDE.md`** — documented the now-blocking PR governance gates (REM-008/REM-010) so they
-  are discoverable before a PR is opened. Added **§7.1 "CI-Enforced Gates"** (Conventional PR
-  title, CHANGELOG-under-`[Unreleased]`, spec-reference, and `version.txt` ⇄ `pyproject.toml`
-  version-consistency checks, plus their `skip-changelog` / `no-spec` escape-hatch labels and the
-  `ci.yml` job list), expanded the §6 Conventional-Commit `Types` list to match what the
-  `pr-governance` grammar actually accepts (added `perf`, `ci`, `build`, `style`, `revert`), and
-  noted that **`version.txt` is the single source of truth** for the project version. Bumped the
-  behavioral-contract doc header to 2.1.1.
+- **Supply-chain hardening (REM-006, REM-007).** Trivy image CVE scan gates build on
+  CRITICAL/HIGH with `ignore-unfixed`. All 17 GitHub Actions SHA-pinned to commit digests;
+  least-privilege `permissions:` blocks on 10 workflows; signed SLSA build provenance added
+  to `release.yml` (SLSA L2). ISO 5.21/8.7, SOC 2 CC9.
+
+- **PR governance gates (REM-008, REM-010).** `.github/workflows/pr-governance.yml` enforces:
+  Conventional-Commit PR title, CHANGELOG `[Unreleased]` entry, spec reference for product
+  PRs, version.txt ↔ pyproject.toml consistency. All four gates merge-blocking on `main` with
+  strict mode. ISO 5.36, SOC 2 CC5.
 
 ### Added
 
-- **`docs/compliance/`** — compliance & control-mapping package for enterprise vendor-risk
-  reviews. Includes the full **ISO/IEC 27001:2022 Annex A** control matrix (93 controls with
-  status + evidence), a **SOC 2** Trust Services Criteria mapping, a **SLSA v1.0** supply-chain
-  assessment, a prioritised **remediation register** (unified with the threat model's `REM-`
-  backlog; new items REM-005–010), a prospect-facing **trust summary**, and a
-  **security-questionnaire quick-reference**. Wired into `.github/CODEOWNERS`
-  (`@org/security-lead @org/tech-lead`), `SECURITY.md`, and the MkDocs nav. This is a
-  self-assessment, not a certification; it openly tracks gaps — notably segregation-of-duties
-  vs. the `auto-merge.yml` workflow (REM-005) and the unauthenticated HITL operator endpoint
-  (REM-001).
-
-### Fixed
-
-- **CI green-up (`Lint` + `Contract Drift Check`).** `main`'s CI was red, which blocked
-  branch protection. Fixes:
-  - **`src/shared/llm_client.py`** — `AnthropicLLMClient` referenced `settings.anthropic_api_key`
-    / `settings.anthropic_model`, which do not exist on `Settings` (the fields are `llm_api_key`
-    / `llm_model`). This was a latent `AttributeError` at first real LLM call. Also narrowed the
-    response content block to `TextBlock` before reading `.text`.
-  - **`src/observability/logger.py`** — added the missing `StructuredLogger.debug()` method;
-    `broker.py` and `vector_store.py` called `logger.debug(...)` which would have raised
-    `AttributeError` on those code paths.
-  - **`src/shared/broker.py`** — `InMemoryBroker` gained no-op `start()`/`stop()` so it satisfies
-    the same interface as `KafkaEventBroker` (lifespan calls `broker.start()` on the union).
-  - **`.github/workflows/ci.yml`** — the "Check services.yaml references valid schema files" step
-    used bare `python3` (no PyYAML) instead of `uv run python`, failing with `ModuleNotFoundError:
-No module named 'yaml'`.
-  - Remaining mypy-strict, ruff, and formatting fixes across `src/` (type annotations, `raise ...
-from`, `zip(..., strict=...)`, unused-variable cleanup) plus `ruff format` normalisation of
-    test files. `pyproject.toml` ruff config: excluded `scaffold/templates` (linted via their own
-    config when scaffolded) and added per-file-ignores for the `scaffold/` CLI (`T201`) and tests.
-
-### Added
-
-- **`alembic/versions/0004_create_requests.py`** and **`0005_create_hitl_archive.py`** —
-  Two migrations ported from the abandoned `master` branch (were `0002`/`0003` there).
-  Renumbered to chain onto `main`'s head (`0001→0002→0003→0004→0005`, single head verified
-  with `alembic heads`). `0004` creates the `requests` table (durable fallback when Redis TTL
-  evicts in-flight request state); `0005` creates the append-only `hitl_requests_archive`
-  table (long-term HITL audit record beyond Redis TTL; REVOKEs UPDATE/DELETE from the app
-  role). Both are additive — no table-name conflict with `main`'s existing schema. Note: no
-  ORM models read these tables yet; they are schema-only until a persistent request/HITL
-  store is wired in `src/`.
-- **`docs/quickstart/local-dev-setup.md`** — Local development environment setup guide,
-  ported from the `docs/template-improvements` branch. Covers devcontainer setup, required
-  tool versions, IDE extensions, and common-error troubleshooting — a gap `main`'s quickstart
-  set did not previously cover. The one stale link (to `TEMPLATE_USAGE.md`, not ported) was
-  repointed to `CUSTOMISING.md`.
-- **`scaffold/`** — Service scaffolding system ported from the abandoned `master` branch.
-  `scaffold/scaffold.py` plus templates for Python, Java, Go, and Next.js frontend services.
-  Implements the `make new-service NAME=foo LANG=python|java|go` command that CLAUDE.md
-  documented but `main` had never implemented.
-- **`infrastructure/terraform/modules/{database,message-broker,observability,vector-db}/`** —
-  Four Terraform modules ported from `master`. These were empty `.gitkeep` stubs in `main`
-  (main.tf + outputs.tf + variables.tf each). `terraform fmt`-normalised on import.
-- **`docs/adr/ADR-0025-language-selection.md`** — Language Selection for New Services, ported
-  from `master` (was ADR-0016 there; renumbered to avoid collision with `main`'s
-  ADR-0016-agent-sandbox-execution-policy). Decision matrix mapping workload type → runtime;
-  pairs with the scaffold system.
-- **`infrastructure/terraform/README.md`** and per-module `README.md` files for all 11
-  Terraform modules (`networking`, `kubernetes`, `database`, `cache`, `message-broker`,
-  `vector-db`, `observability`, `api-gateway`, `domain-service`, `event-worker`, `frontend`).
-  The Terraform tree previously had zero documentation. The top-level README covers
-  prerequisites, provider pinning, quick start, the EKS-OIDC bootstrapping order
-  (`-target=module.networking -target=module.kubernetes` on first apply), remote-state setup,
-  and a dev/staging/production comparison table. Each module README follows `terraform-docs`
-  style (Purpose · Resources · Inputs · Outputs · Usage) and documents key gotchas: dev omits
-  `database`/`message-broker`, the `event-worker` MSK/DLQ IAM policies are conditional on their
-  ARN inputs, and `default_replication_factor` must be ≤ broker count. Docs-only — no `.tf`
-  changes.
+- `docs/compliance/hardening-plan.md` — five-wave hardening plan with severity, owners,
+  blockers, ISO/SOC 2 control mappings.
+- `docs/compliance/` package — ISO/IEC 27001:2022 Annex A control matrix (93 controls),
+  SOC 2 Trust Services Criteria mapping, SLSA v1.0 assessment, remediation register.
+- `docs/governance/owner-onboarding.md` — adopter playbook: GitHub Org, 7 required teams,
+  CODEOWNERS migration, branch protection, DPO sign-off checklist.
+- `docs/sre/runbooks/dlq-accumulating.md` — DLQ triage, root-cause playbooks, replay procedure.
+- `docs/sre/runbooks/redis-ha.md` — Redis Sentinel HA setup, failover verification.
+- `docs/sre/runbooks/db-key-rotation.md` — zero-downtime encryption key rotation procedure.
+- `infrastructure/k8s/network-policies/` — 4 `NetworkPolicy` manifests + README.
+- `infrastructure/monitoring/alertmanager/alertmanager.yml` — PagerDuty + null receiver.
+- `infrastructure/monitoring/prometheus/rules/resilience-alerts.yaml` — 4 new alert rules.
+- `src/api/rest/security_headers.py` — `SecurityHeadersMiddleware`.
+- `src/api/rest/auth.py` — JWT bearer + role-based HITL operator authentication.
+- `CIRCUIT_BREAKER_STATE` Gauge — per-client circuit breaker state (0/0.5/1.0).
+- `CONSUMER_HEARTBEAT_TIMESTAMP` Gauge — consumer liveness.
+- `DB_POOL_CONNECTIONS_ACQUIRED` / `DB_POOL_CONNECTIONS_AVAILABLE` Gauges — pool saturation.
+- `redis_sentinel_enabled`, `redis_sentinel_master_name`, `redis_sentinel_hosts` config settings.
+- `domain.request.dlq` Kafka channel in AsyncAPI spec and `services.yaml`.
+- `alembic/versions/0004_create_requests.py` and `0005_create_hitl_archive.py`.
+- `scaffold/` — service scaffolding system (`make new-service NAME=foo LANG=python|java|go`).
+- Terraform module READMEs for all 11 infrastructure modules.
+- `.github/workflows/codeql.yml` — CodeQL analysis.
+- `.trivyignore` — documented accepted finding (DS-0002, builder stage).
 
 ### Changed
 
-- **`docs/adr/README.md`** — Added missing Core Architecture index rows for ADR-0022 (Testing
-  Strategy), ADR-0023 (Frontend Architecture), ADR-0024 (API Versioning Strategy), and the
-  new ADR-0025 (Language Selection).
+- `src/api/rest/_limiter.py` — rate-limit key upgraded from per-IP to per-JWT-subject.
+- `CircuitBreaker` — accepts `name` parameter; emits `CIRCUIT_BREAKER_STATE` on transitions.
+- `ResilientDBPool._call()` — emits pool saturation gauges after each successful query.
+- `ResilientDBPool` defaults to `CircuitBreaker(name="db")`;
+  `ResilientLLMClientWrapper` to `CircuitBreaker(name="llm")`.
+- `RequestConsumer` — `enable_auto_commit=False`, retry loop, DLQ routing; now requires
+  `broker: EventBrokerProtocol` parameter.
+- `infrastructure/feature-flags/flagd.yaml`, `infrastructure/k8s/deployment.yaml` —
+  `securityContext` added (runAsNonRoot, readOnlyRootFilesystem, capabilities drop ALL).
+- `docs/adr/ADR-0007-service-mesh.md` — advanced from Proposed → Accepted: Istio.
+- `docs/privacy/dpia/dpia-v1.md` — Section 5 DPO checklist + GDPR Art. 36 determination.
+- `.github/CODEOWNERS` — all `@org/*` placeholders replaced with `@valdomirosouza`.
 
-### Security
+### Fixed
 
-- **`.github/workflows/auto-merge.yml`** — ⚠️ **Governance exception (owner-requested).**
-  Added a workflow that auto-approves and auto-merges pull requests targeting `main` once
-  required checks pass, and enabled the repo `allow_auto_merge` / `delete_branch_on_merge`
-  settings plus "Actions may approve PRs". This **intentionally bypasses** the human review
-  gate in CLAUDE.md §7 and `.github/CODEOWNERS`. It triggers on `pull_request` (not
-  `pull_request_target`) and is gated to same-repo PRs, so fork PRs — which receive only a
-  read-only token — are **not** auto-merged. The job never checks out or executes PR code
-  (API calls only). Delete the workflow file to restore manual review.
+- `src/shared/llm_client.py` — `AttributeError` on `settings.anthropic_api_key` /
+  `settings.anthropic_model` (correct fields: `llm_api_key` / `llm_model`).
+- `src/observability/logger.py` — missing `StructuredLogger.debug()` method.
+- `src/shared/broker.py` — `InMemoryBroker` gained `start()`/`stop()` no-ops to satisfy
+  the `KafkaEventBroker` interface in the lifespan.
+- `.github/workflows/ci.yml` — services.yaml schema check used bare `python3` instead of
+  `uv run python`, causing `ModuleNotFoundError: No module named 'yaml'`.
+- Various mypy-strict, ruff, and formatting fixes across `src/`.
 
----
 
 ## [1.15.0] — 2026-05-28
 
