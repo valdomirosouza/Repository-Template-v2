@@ -15,6 +15,15 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ### Security
 
+- **Governance enforcement (REM-008) + version single-source-of-truth (REM-010).** Added
+  `.github/workflows/pr-governance.yml` enforcing a **Conventional-Commit PR title**, a
+  **CHANGELOG `[Unreleased]` entry** (docs-only / `skip-changelog` / Dependabot exempt), and a
+  **spec reference** for feat/fix/security/privacy/perf PRs (`no-spec` / Dependabot exempt); the
+  harness `spec-compliance` gate is now `blocking: true`. Reconciled **`version.txt` → `1.15.0`**
+  (was `1.9.1`; it's read by `config.py`/`Makefile`) and added a **version-consistency** gate that
+  fails any PR changing `version.txt` or `pyproject.toml` without keeping them equal
+  (release-please bot exempt). ISO 5.36, SOC 2 CC5.
+
 - **CI/release supply-chain hardening (REM-006, REM-007).** Added a **Trivy** image CVE scan to
   `ci.yml` (fails the build on fixable CRITICAL/HIGH; ISO 8.7, SOC 2 CC6.8). **SHA-pinned all 17
   GitHub Actions** to commit digests (version comments retained), added least-privilege top-level
@@ -35,6 +44,17 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
   merges **documentation-only** PRs or **Dependabot** dependency bumps; any PR touching code,
   infrastructure, workflows, or guardrails falls back to mandatory human review — restoring
   segregation of duties / four-eyes (ISO 27001 A.5.3/A.8.32, SOC 2 CC8.1).
+
+### Documentation
+
+- **`CLAUDE.md`** — documented the now-blocking PR governance gates (REM-008/REM-010) so they
+  are discoverable before a PR is opened. Added **§7.1 "CI-Enforced Gates"** (Conventional PR
+  title, CHANGELOG-under-`[Unreleased]`, spec-reference, and `version.txt` ⇄ `pyproject.toml`
+  version-consistency checks, plus their `skip-changelog` / `no-spec` escape-hatch labels and the
+  `ci.yml` job list), expanded the §6 Conventional-Commit `Types` list to match what the
+  `pr-governance` grammar actually accepts (added `perf`, `ci`, `build`, `style`, `revert`), and
+  noted that **`version.txt` is the single source of truth** for the project version. Bumped the
+  behavioral-contract doc header to 2.1.1.
 
 ### Added
 

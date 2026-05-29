@@ -1,0 +1,126 @@
+# PR governance gates (REM-008, REM-010).
+#
+# Turns the repo's documented conventions into *enforced* CI checks:
+#   • Conventional-Commit PR title (the squash-merge subject)
+#   • CHANGELOG.md updated under [Unreleased]
+#   • spec reference for product/code changes (feat/fix/security/privacy/perf)
+#   • version.txt ⇄ pyproject.toml consistency when either is changed
+#
+# Escape hatches: `skip-changelog` and `no-spec` labels; Dependabot and the
+# release-please bot are exempted where appropriate.
+#
+# Runs on `pull_request` (read-only token; only the version-consistency job checks
+# out code, and only to read two files).
+
+name: PR Governance
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: pr-governance-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  conventional-title:
+    name: Conventional PR title
+    runs-on: ubuntu-latest
+    env:
+      TITLE: ${{ github.event.pull_request.title }}
+    steps:
+      - name: Validate PR title
+        run: |
+          echo "Title: $TITLE"
+          pattern='^(feat|fix|docs|refactor|test|chore|security|privacy|perf|ci|build|style|revert)(\([a-z0-9 ,._/-]+\))?!?: .+'
+          if ! printf '%s' "$TITLE" | grep -qE "$pattern"; then
+            echo "::error::PR title must follow Conventional Commits, e.g. 'feat(api): add X'."
+            echo "Allowed types: feat, fix, docs, refactor, test, chore, security, privacy, perf, ci, build, style, revert."
+            exit 1
+          fi
+          echo "OK"
+
+  changelog-updated:
+    name: CHANGELOG updated
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR: ${{ github.event.pull_request.number }}
+      REPO: ${{ github.repository }}
+      LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+    steps:
+      - name: Require a CHANGELOG entry
+        run: |
+          if printf ',%s,' "$LABELS" | grep -q ',skip-changelog,'; then
+            echo "skip-changelog label present — exempt"; exit 0
+          fi
+          files=$(gh pr view "$PR" --repo "$REPO" --json files --jq '.files[].path')
+          nondoc=$(printf '%s\n' "$files" | grep -vE '^docs/|\.md$|\.markdown$' || true)
+          if [ -z "$nondoc" ]; then
+            echo "documentation-only PR — CHANGELOG not required"; exit 0
+          fi
+          if printf '%s\n' "$files" | grep -qx "CHANGELOG.md"; then
+            echo "CHANGELOG.md updated"
+          else
+            echo "::error::Update CHANGELOG.md under [Unreleased], or add the 'skip-changelog' label."
+            exit 1
+          fi
+
+  spec-reference:
+    name: Spec reference
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
+    env:
+      TITLE: ${{ github.event.pull_request.title }}
+      BODY: ${{ github.event.pull_request.body }}
+      LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+    steps:
+      - name: Require a spec reference for product/code changes
+        run: |
+          if printf ',%s,' "$LABELS" | grep -q ',no-spec,'; then
+            echo "no-spec label present — exempt"; exit 0
+          fi
+          if printf '%s' "$TITLE" | grep -qE '^(feat|fix|security|privacy|perf)(\(|!|:)'; then
+            if printf '%s' "$BODY" | grep -qE 'specs/[A-Za-z0-9/._-]+\.md'; then
+              echo "spec reference found"
+            else
+              echo "::error::feat/fix/security/privacy/perf PRs must reference a spec (specs/....md) in the body, or add the 'no-spec' label with justification."
+              exit 1
+            fi
+          else
+            echo "PR type is exempt from the spec requirement"
+          fi
+
+  version-consistency:
+    name: Version consistency
+    runs-on: ubuntu-latest
+    # release-please bumps pyproject.toml on its release PR; don't block the bot.
+    if: github.event.pull_request.user.login != 'github-actions[bot]'
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR: ${{ github.event.pull_request.number }}
+      REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: version.txt must match pyproject.toml when either changes (REM-010)
+        run: |
+          files=$(gh pr view "$PR" --repo "$REPO" --json files --jq '.files[].path')
+          if printf '%s\n' "$files" | grep -qE '^(version\.txt|pyproject\.toml)$'; then
+            vt=$(tr -d '[:space:]' < version.txt)
+            pp=$(grep -m1 -E '^version *= *"' pyproject.toml | sed -E 's/.*"([^"]+)".*/\1/')
+            echo "version.txt=$vt  pyproject=$pp"
+            if [ "$vt" != "$pp" ]; then
+              echo "::error::version.txt ($vt) and pyproject.toml ($pp) disagree — keep the single source of truth in sync (REM-010)."
+              exit 1
+            fi
+            echo "versions match"
+          else
+            echo "no version files changed — skip"
+          fi

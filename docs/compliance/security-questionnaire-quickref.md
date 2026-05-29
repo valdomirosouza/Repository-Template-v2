@@ -19,13 +19,13 @@
 
 ## Secure SDLC & change management
 
-| Question                                              | Answer       | Evidence                                                                                                                                                                |
-| ----------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Is security integrated into your SDLC?                | Yes          | `CLAUDE.md` SDD cycle, `harness/` gates, pre-commit                                                                                                                     |
-| Do all code changes require peer review before merge? | Yes          | CODEOWNERS + branch protection + required checks; `auto-merge.yml` is scoped to docs-only / Dependabot PRs, so all code/infra changes require human review (REM-005 ✅) |
-| Are there automated quality/security gates in CI?     | Yes          | `harness/code-check.yml`: lint, ≥80% coverage, SAST, secret scan, PII scan                                                                                              |
-| Is there a formal change-management / CAB process?    | Yes (design) | `skills/change-management/`, `docs/change-management/` (RFC + CAB)                                                                                                      |
-| Separate dev/test/prod environments?                  | Yes          | `infrastructure/terraform/environments/{dev,staging,production}`                                                                                                        |
+| Question                                              | Answer       | Evidence                                                                                                                                                                                   |
+| ----------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Is security integrated into your SDLC?                | Yes          | `CLAUDE.md` SDD cycle, `harness/` gates, pre-commit                                                                                                                                        |
+| Do all code changes require peer review before merge? | Yes          | CODEOWNERS + branch protection + required checks; `auto-merge.yml` is scoped to docs-only / Dependabot PRs, so all code/infra changes require human review (REM-005 ✅)                    |
+| Are there automated quality/security gates in CI?     | Yes          | `harness/code-check.yml` (lint, ≥80% coverage, SAST, secret scan, PII scan) + `pr-governance.yml` (Conventional-Commit title, CHANGELOG, spec reference, version consistency — REM-008 ✅) |
+| Is there a formal change-management / CAB process?    | Yes (design) | `skills/change-management/`, `docs/change-management/` (RFC + CAB)                                                                                                                         |
+| Separate dev/test/prod environments?                  | Yes          | `infrastructure/terraform/environments/{dev,staging,production}`                                                                                                                           |
 
 ## Access control & authentication
 

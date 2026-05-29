@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Version:** 2.1.0 | **Last updated:** 2026-05-28
+> **Version:** 2.1.1 | **Last updated:** 2026-05-29
 > This file is the authoritative behavioral contract for Claude Code operating in this repository.
 > Claude must read this file at the start of every session and follow all rules without exception.
 
@@ -345,7 +345,9 @@ chore/SPEC-NNN-<short-description>
 Refs: #<issue-number>, SPEC-NNN, ADR-NNNN
 ```
 
-Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `security`, `privacy`
+Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `security`, `privacy`, `perf`, `ci`, `build`, `style`, `revert`
+
+> The **squash-merge PR title** (not just commits) must match this Conventional-Commits grammar — it is validated by the `pr-governance` workflow and blocks merge if malformed.
 
 ---
 
@@ -360,6 +362,17 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `security`, `privacy`
 - [ ] DPIA/RIPD review flagged if new PII processing added
 - [ ] Guardrails unmodified or strengthened (never weakened)
 - [ ] _(AI Agents Module only)_ HITL gateway used for any new agent action
+
+### 7.1 CI-Enforced Gates (not just advisory)
+
+The `pr-governance` workflow (`.github/workflows/pr-governance.yml`, REM-008/REM-010) turns several of the rules above into **blocking** PR checks. Know these before opening a PR:
+
+- **Conventional PR title** — the squash-merge subject must match the grammar in §6.
+- **CHANGELOG updated** — any non-docs change must touch `CHANGELOG.md` under `[Unreleased]`. Escape hatch: add the `skip-changelog` label. Docs-only PRs and Dependabot are auto-exempt.
+- **Spec reference** — `feat`/`fix`/`security`/`privacy`/`perf` PRs must cite a spec (`SPEC-NNN`/`REM-NNN`) in title or body. Escape hatch: `no-spec` label.
+- **Version consistency** — `version.txt` is the **single source of truth** for the project version (currently driven by REM-010). If you change `version.txt` or `pyproject.toml`, the two must agree, or the gate fails. Don't bump the version by hand in one place only.
+
+The full pipeline (`ci.yml`) additionally runs jobs: `governance`, `lint`, `test-unit`, `test-integration`, `test-security`, `contract-drift`, `build`. The `harness/*.yml` specs (§0.1) are the Claude Code PR-review gates that complement these.
 
 ---
 

@@ -42,7 +42,7 @@ gates:
           exit 0
         fi
       "
-    blocking: false
+    blocking: true # REM-008 — enforced (mirrors the CI 'Spec reference' gate in pr-governance.yml)
     failure_message: >
       No spec reference found in the PR body. Add a 'Referenced Spec: specs/...' line.
       In CI, ensure PR_BODY_FILE points to a file containing the PR description body.
