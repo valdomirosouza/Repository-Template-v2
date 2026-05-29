@@ -22,6 +22,9 @@ env:
   TOXIPROXY_URL: ${{ secrets.STAGING_TOXIPROXY_URL }}
   KAFKA_PROXY_NAME: kafka
 
+permissions:
+  contents: read
+
 jobs:
   chaos-kill-agent:
     name: "Kill agent pod"
@@ -29,10 +32,10 @@ jobs:
     if: ${{ github.event.inputs.experiment == '' || github.event.inputs.experiment == 'kill-agent' }}
     environment: staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: "3.12"
 
@@ -49,7 +52,7 @@ jobs:
 
       - name: Upload journal
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: kill-agent-journal
           path: chaostoolkit.log
@@ -60,10 +63,10 @@ jobs:
     if: ${{ github.event.inputs.experiment == '' || github.event.inputs.experiment == 'network-partition' }}
     environment: staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: "3.12"
 
@@ -75,7 +78,7 @@ jobs:
 
       - name: Upload journal
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: network-partition-journal
           path: chaostoolkit.log
@@ -86,10 +89,10 @@ jobs:
     if: ${{ github.event.inputs.experiment == '' || github.event.inputs.experiment == 'broker-outage' }}
     environment: staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: "3.12"
 
@@ -106,7 +109,7 @@ jobs:
 
       - name: Upload journal
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: broker-outage-journal
           path: chaostoolkit.log

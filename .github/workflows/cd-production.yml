@@ -14,6 +14,9 @@ on:
         options: [canary]
         default: canary
 
+permissions:
+  contents: read
+
 jobs:
   check-error-budget:
     name: Check Error Budget
@@ -37,10 +40,10 @@ jobs:
     environment: production
     if: ${{ inputs.strategy == 'canary' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
 
       - name: Set up Helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4  # v4.3.1
         with:
           version: "3.14.0"
 
@@ -80,10 +83,10 @@ if er > 0.01 or p99 > 0.5:
     runs-on: ubuntu-latest
     needs: deploy-canary
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
 
       - name: Set up Helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4  # v4.3.1
         with:
           version: "3.14.0"
 
@@ -120,10 +123,10 @@ if er > 0.01 or p99 > 0.5:
     runs-on: ubuntu-latest
     needs: promote-canary-25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
 
       - name: Set up Helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4  # v4.3.1
         with:
           version: "3.14.0"
 
@@ -142,6 +145,6 @@ if er > 0.01 or p99 > 0.5:
     needs: [deploy-canary, promote-canary-25, promote-canary-100]
     if: failure()
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
       - name: Execute rollback
         run: bash infrastructure/scripts/deploy/rollback.sh --env production

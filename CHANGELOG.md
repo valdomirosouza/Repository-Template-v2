@@ -15,6 +15,15 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ### Security
 
+- **CI/release supply-chain hardening (REM-006, REM-007).** Added a **Trivy** image CVE scan to
+  `ci.yml` (fails the build on fixable CRITICAL/HIGH; ISO 8.7, SOC 2 CC6.8). **SHA-pinned all 17
+  GitHub Actions** to commit digests (version comments retained), added least-privilege top-level
+  `permissions:` blocks to the 10 workflows that lacked them, and added signed **SLSA build
+  provenance** (`actions/attest-build-provenance`) to `release.yml` — moving the pipeline from
+  SLSA L1-partial toward a clean **L2**. The remaining REM-007 sub-items (OIDC for registry/cloud
+  auth; admission-time signature verification) need real cloud/cluster infra and are tracked as
+  **REM-011**.
+
 - **HITL operator authentication (REM-001).** `POST /v1/hitl/requests/{id}/decision` now
   requires a JWT **bearer** token carrying the `hitl-operator` role, and the approver identity
   is taken from the **verified token subject** instead of the request body — closing an

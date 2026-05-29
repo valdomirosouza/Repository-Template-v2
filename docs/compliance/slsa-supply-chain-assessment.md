@@ -9,7 +9,15 @@
 
 ---
 
-## Current level: **Build L1, partial toward L2**
+## Current level: **Build L2** (advancing to L3)
+
+> **Update 2026-05-29 (REM-006, REM-007):** all 17 GitHub Actions are now **SHA-pinned** to commit
+> digests, every workflow has a least-privilege top-level `permissions:` block, `release.yml` emits
+> **signed SLSA build provenance** (`actions/attest-build-provenance`), and `ci.yml` runs a **Trivy**
+> image CVE scan. The remaining L3 / OIDC items — OIDC registry/cloud auth, admission-time signature
+> verification, and pinned `Syft`/`Cosign` installers — are tracked as **REM-011** (they require real
+> cloud/cluster infrastructure). The per-row tables below describe the original assessment; rows
+> attributed to REM-007 are now resolved except where noted REM-011.
 
 | SLSA Build requirement                                                        | Level | Status     | Evidence / gap                                                                                                                                                                             |
 | ----------------------------------------------------------------------------- | ----- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

@@ -50,16 +50,16 @@
 
 ## Vulnerability & supply-chain management
 
-| Question                           | Answer            | Evidence                                                                    |
-| ---------------------------------- | ----------------- | --------------------------------------------------------------------------- |
-| Do you run SAST?                   | Yes               | Bandit, SpotBugs, gosec, ruff `S` rules — CI-gated                          |
-| Do you run DAST?                   | Partial (REM-004) | OWASP ZAP at staging; not yet in CI                                         |
-| Dependency vulnerability scanning? | Yes               | pip-audit, govulncheck, OWASP Dependency-Check, pnpm audit (severity-gated) |
-| Container image scanning?          | Roadmap (REM-006) | Trivy required by PRR; not yet wired into CI                                |
-| Do you produce an SBOM?            | Yes               | Syft (CycloneDX + SPDX) on every release + weekly                           |
-| Are build artifacts signed?        | Yes               | Cosign keyless (Sigstore/OIDC) image + SBOM attestation                     |
-| SLSA level?                        | L1→L2 (REM-007)   | See `slsa-supply-chain-assessment.md`                                       |
-| Secret scanning in place?          | Yes               | `detect-secrets` (pre-commit + CI)                                          |
+| Question                           | Answer               | Evidence                                                                      |
+| ---------------------------------- | -------------------- | ----------------------------------------------------------------------------- |
+| Do you run SAST?                   | Yes                  | Bandit, SpotBugs, gosec, ruff `S` rules — CI-gated                            |
+| Do you run DAST?                   | Partial (REM-004)    | OWASP ZAP at staging; not yet in CI                                           |
+| Dependency vulnerability scanning? | Yes                  | pip-audit, govulncheck, OWASP Dependency-Check, pnpm audit (severity-gated)   |
+| Container image scanning?          | Yes                  | Trivy scan in `ci.yml` build job; fails on fixable CRITICAL/HIGH (REM-006 ✅) |
+| Do you produce an SBOM?            | Yes                  | Syft (CycloneDX + SPDX) on every release + weekly                             |
+| Are build artifacts signed?        | Yes                  | Cosign keyless (Sigstore/OIDC) image + SBOM attestation                       |
+| SLSA level?                        | L2 → L3 (REM-007 ✅) | See `slsa-supply-chain-assessment.md`                                         |
+| Secret scanning in place?          | Yes                  | `detect-secrets` (pre-commit + CI)                                            |
 
 ## Logging, monitoring & incident response
 
