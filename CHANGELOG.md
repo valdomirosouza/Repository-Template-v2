@@ -13,7 +13,25 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.17.1] — 2026-05-29
+
 ### Changed
+
+- **Repository renamed** from `template-monorepo` to `Repository-Template`. All URLs, badges,
+  template clone commands, pact metadata, and CHANGELOG comparison links updated accordingly.
+
+- **Quick Start onboarding** (README). Consolidated the previous "Use this template",
+  "End-to-end demo", and "5-step setup" sections into a single **Clone → Initial Setup → Code**
+  flow. Added devcontainer alternative, `openssl rand -hex 32` hint for `SECRET_KEY`, direct
+  links to API docs and observability UIs, and a minimum-customisation table.
+
+- **CODEOWNERS** replaced single-owner placeholder with semantic team handles
+  (`@your-org/platform-team`, `@your-org/tech-leads`, `@your-org/privacy-team`,
+  `@your-org/ai-governance`, `@your-org/security-team`, `@your-org/sre-team`,
+  `@your-org/devops-team`). HITL gateway now requires dual approval from two distinct teams.
+
+- **CHANGELOG comparison links** extended from `v1.3.0` up to `v1.17.0` — all 27 released
+  versions now have a working diff link.
 
 - **7-step workflow enforcement (governance audit).** Closed enforcement gaps in the mandatory
   development cycle (CLAUDE.md §2): `pr-governance.yml` now has a blocking `issue-referenced`
@@ -24,6 +42,9 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
   Done; `change_request.md` marks spec reference required for all change types and adds Step 2
   checklist and Step 3 implementation plan section. `CLAUDE.md` adds ADR-0001–0025 row to the
   Key Layers table and clarifies §4 skill loading mechanism.
+
+- **README version badge** corrected from `1.9.0` → `1.17.0`; `CLAUDE.md` version ref
+  corrected from `v2.1.0` → `v2.1.1` in the Repository Structure table.
 
 ## [1.17.0] — 2026-05-29
 
@@ -1351,7 +1372,8 @@ API or configuration keys were removed.
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.0...HEAD
+[Unreleased]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.1...HEAD
+[1.17.1]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.0...v1.17.1
 [1.17.0]: https://github.com/valdomirosouza/Repository-Template/compare/v1.15.0...v1.17.0
 [1.15.0]: https://github.com/valdomirosouza/Repository-Template/compare/v1.14.0...v1.15.0
 [1.14.0]: https://github.com/valdomirosouza/Repository-Template/compare/v1.13.0...v1.14.0
