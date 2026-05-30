@@ -13,6 +13,15 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.17.3] — 2026-05-29
+
+### Removed
+
+- **`docs/audit/expert-audit-2026-05-26.md` deleted.** Internal development audit containing
+  construction-time tracking detail (REM-NNN references, fix commit hashes) irrelevant to
+  template adopters. The `docs/audit/` folder is now empty and ready for adopter-owned audit
+  records.
+
 ## [1.17.2] — 2026-05-29
 
 ### Removed
@@ -1380,7 +1389,8 @@ API or configuration keys were removed.
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.2...HEAD
+[Unreleased]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.3...HEAD
+[1.17.3]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.2...v1.17.3
 [1.17.2]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.1...v1.17.2
 [1.17.1]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.0...v1.17.1
 [1.17.0]: https://github.com/valdomirosouza/Repository-Template/compare/v1.15.0...v1.17.0
