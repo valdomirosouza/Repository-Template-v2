@@ -13,6 +13,27 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.17.6] — 2026-05-29
+
+### Changed
+
+- **README** version badge corrected to `1.17.5`; `services.yaml` bolded and promoted to top
+  of the minimum customisation table; glossary link added below the table; Alertmanager
+  (port 9093) added to the infrastructure table; `autonomous-mode` verify command added to
+  the Feature Flags section.
+- **`docs/quickstart/python-backend.md`** Python version corrected from `3.12` to `3.13` in
+  stack header and prerequisites table.
+- **`.env.example`** header now points to `src/shared/config.py` as the authoritative
+  reference for all available settings fields.
+- **`CONTRIBUTING.md`** unimplemented "Container scan" quality gate removed from the blocking
+  gates table.
+- **`CLAUDE.md`** §4 skill table gains `incident-response` row; §2 Step 5 links to
+  `docs/privacy/` for the DPIA/RIPD review process.
+- **`docs/change-management/rfc/RFC-TEMPLATE.md`** created — structured RFC template covering
+  status, context, alternatives, impact assessment, rollout/rollback plans, timeline, and
+  open questions.
+- **`.gitignore`** excludes `src/shared/generated/grpc/` (auto-generated gRPC stubs).
+
 ## [1.17.5] — 2026-05-29
 
 ### Changed
@@ -1406,7 +1427,8 @@ API or configuration keys were removed.
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.5...HEAD
+[Unreleased]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.6...HEAD
+[1.17.6]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.5...v1.17.6
 [1.17.5]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.4...v1.17.5
 [1.17.4]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.3...v1.17.4
 [1.17.3]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.2...v1.17.3
