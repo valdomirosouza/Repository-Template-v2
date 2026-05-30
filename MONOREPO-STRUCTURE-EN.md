@@ -1,7 +1,7 @@
 # Ideal Monorepo Structure — Enterprise Systems
 
-> **Template version:** 2.0.0
-> **Last updated:** 2026-05-28
+> **Template version:** 1.17.3
+> **Last updated:** 2026-05-29
 > **Scope:** Generic enterprise monorepo template; AI/agent capabilities are an optional opt-in extension
 
 ---
@@ -57,10 +57,8 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 ├── PRIVACY.md                           ← Data processing notice (LGPD / GDPR)
 ├── CONTRIBUTING.md                      ← Contribution guide
 ├── CODE_OF_CONDUCT.md                   ← Code of conduct
-├── LICENSE                              ← License file
+├── MONOREPO-STRUCTURE-EN.md            ← This document — enterprise template reference
 ├── version.txt                          ← Canonical version (single source of truth)
-├── .release-please-manifest.json        ← Release automation manifest
-├── release-please-config.json           ← Release Please configuration
 │
 ├── ── ARCHITECTURE & DECISIONS ───────────────────────────────────────
 │
@@ -84,28 +82,20 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 │   │
 │   ├── api/                             ← API specifications
 │   │   ├── openapi/
-│   │   │   ├── v1/
-│   │   │   │   ├── openapi.yaml         ← OpenAPI 3.1 — synchronous REST APIs
-│   │   │   │   └── openapi-internal.yaml← Internal service APIs
-│   │   │   └── v2/
-│   │   │       └── openapi.yaml
+│   │   │   └── v1/
+│   │   │       └── openapi.yaml         ← OpenAPI 3.1 — synchronous REST APIs
 │   │   ├── asyncapi/
 │   │   │   ├── v1/
-│   │   │   │   ├── asyncapi.yaml        ← AsyncAPI 2.6 — events / queues
-│   │   │   │   ├── domain-events.yaml   ← Schema: core domain events
-│   │   │   │   ├── agent-events.yaml    ← Schema: agent action / decision events
-│   │   │   │   └── notification-events.yaml
-│   │   │   └── README.md               ← AsyncAPI usage guide
+│   │   │   │   └── asyncapi.yaml        ← AsyncAPI 2.6 — events / queues
+│   │   │   └── v2/
+│   │   │       └── migration-guide.md   ← v1→v2 migration guide
 │   │   └── grpc/
 │   │       └── proto/                  ← Protobuf (inter-service, high throughput)
-│   │           ├── core.proto
-│   │           ├── agent.proto
-│   │           └── observability.proto
+│   │           └── ai_service.proto     ← AI service gRPC contract
 │   │
 │   ├── runbooks/                        ← Operational runbooks
-│   │   ├── README.md                    ← Runbook template
-│   │   ├── service-failure.md
-│   │   ├── agent-failure.md             ← What to do when an AI agent fails
+│   │   ├── README.md                    ← Runbook template + index
+│   │   ├── RB-003-hitl-recovery.md      ← HITL queue recovery procedure
 │   │   ├── rollback-procedure.md        ← Detailed rollback playbook
 │   │   └── disaster-recovery.md        ← DR Playbook
 │   │
@@ -114,10 +104,7 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 │   │   └── YYYY-MM-DD-<incident-name>.md
 │   │
 │   ├── security/
-│   │   ├── threat-model.md              ← Threat model (STRIDE / PASTA)
-│   │   ├── owasp-web-assessment.md      ← OWASP Web Top 10 assessment
-│   │   ├── owasp-llm-assessment.md      ← OWASP LLM Top 10 assessment
-│   │   └── pentest-reports/            ← DAST / pentest reports
+│   │   └── pentest-reports/            ← DAST / pentest reports (placeholder)
 │   │
 │   ├── privacy/                         ← Data privacy documentation
 │   │   ├── dpia/                        ← Data Protection Impact Assessment (GDPR)
@@ -129,8 +116,8 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 │   │   └── data-processing-register.md ← Register of Processing Activities (RoPA)
 │   │
 │   ├── ai-governance/                   ← AI-specific governance artifacts
+│   │   ├── README.md                    ← AI governance overview
 │   │   ├── model-card.md                ← Model Card (Google / Hugging Face format)
-│   │   ├── bias-audit.md                ← Bias audit report
 │   │   ├── eu-ai-act-compliance.md      ← EU AI Act Arts. 9, 12–14 checklist
 │   │   ├── nist-ai-rmf.md              ← NIST AI RMF mapping
 │   │   └── autonomy-boundaries.md      ← HITL / HOTL boundary definitions
@@ -154,9 +141,38 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 │   │   └── rfc/
 │   │       └── RFC-NNNN-<title>.md      ← Archived RFCs
 │   │
+│   ├── quickstart/                      ← Role-specific onboarding guides
+│   │   ├── README.md                    ← Guide index
+│   │   ├── python-backend.md            ← Python / FastAPI quickstart
+│   │   ├── java-backend.md              ← Java / Spring Boot quickstart
+│   │   ├── go-backend.md                ← Go quickstart
+│   │   ├── frontend.md                  ← Next.js quickstart
+│   │   ├── jobs-worker.md               ← Batch / scheduled jobs quickstart
+│   │   ├── add-new-service.md           ← 10-step new service checklist
+│   │   ├── contract-driven-dev.md       ← Generate code from OpenAPI / AsyncAPI / proto
+│   │   ├── local-dev-setup.md           ← Local dev environment guide
+│   │   ├── hybrid-workflow.md           ← Vibe → Agentic hybrid workflow guide
+│   │   ├── vibe-to-agentic.md           ← Progressive autonomy onboarding
+│   │   └── ai-agents.md                 ← AI Agents extension activation guide
+│   │
+│   ├── compliance/                      ← Security & compliance documentation
+│   │   ├── README.md                    ← Compliance package overview
+│   │   ├── hardening-plan.md            ← Security hardening programme
+│   │   ├── remediation-register.md      ← Open control gaps + resolution tracking
+│   │   ├── iso27001-annex-a-control-matrix.md ← ISO 27001 control mapping
+│   │   ├── soc2-tsc-mapping.md          ← SOC 2 Trust Services Criteria mapping
+│   │   ├── slsa-supply-chain-assessment.md    ← SLSA supply chain assessment
+│   │   ├── security-questionnaire-quickref.md ← Vendor security questionnaire answers
+│   │   └── trust-summary.md             ← One-page trust summary for customers
+│   │
+│   ├── governance/                      ← Team governance documentation
+│   │   └── owner-onboarding.md          ← New maintainer / team onboarding guide
+│   │
+│   ├── optional-extensions/
+│   │   └── ai-agents/
+│   │       └── README.md                ← AI Agents Module activation / removal guide
+│   │
 │   ├── dependency-manifest.yaml         ← Layer 2: enriched dependency manifest
-│   ├── sbom.json                        ← Layer 3: SBOM (auto-generated in CI)
-│   ├── eol-inventory.yaml              ← End-of-life inventory (quarterly review)
 │   ├── glossary.md                      ← Canonical glossary
 │   └── repo-structure.md               ← Annotated directory tree
 │
@@ -168,54 +184,45 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 │   ├── system/
 │   │   ├── vision.md                    ← Product vision and goals
 │   │   ├── architecture.md              ← High-level architecture
-│   │   ├── domain-model.md              ← Core domain model
 │   │   ├── async-event-flow.md          ← Async event flow design
-│   │   └── scalability.md              ← Horizontal + vertical scalability
+│   │   └── request-pipeline.md         ← End-to-end request pipeline spec
 │   │
 │   ├── sdlc/
-│   │   ├── definition-of-done.md        ← Full DoD
-│   │   ├── branching.md                 ← Branch strategy
-│   │   ├── pull-request.md              ← PR process
-│   │   ├── release.md                   ← Release process
-│   │   └── change-management.md        ← Change management spec
+│   │   └── development-lifecycle.md    ← Full SDLC lifecycle (5 stages + gate criteria)
 │   │
 │   ├── observability/
-│   │   ├── golden-signals.md            ← Traffic, Error, Saturation, Latency
-│   │   ├── logging.md                   ← Structured logging (JSON / OTel)
-│   │   ├── tracing.md                   ← Distributed tracing (OpenTelemetry)
-│   │   ├── metrics.md                   ← Prometheus metrics + alerting rules
-│   │   ├── dashboards.md                ← Grafana dashboard design
-│   │   └── slo-sli.md                  ← SLO / SLI / Error Budget spec
+│   │   ├── agent-performance.md         ← Agent performance observability spec
+│   │   └── agent-supervision.md        ← Agent supervision dashboard spec
 │   │
 │   ├── api/
-│   │   ├── async-api-design.md          ← Async API patterns (events, queues)
-│   │   ├── rest-api-design.md           ← REST + OpenAPI 3.1 standards
-│   │   └── grpc-design.md              ← gRPC + Protobuf standards
+│   │   └── async-api-design.md          ← Async API patterns (events, queues)
 │   │
 │   ├── security/
-│   │   ├── threat-model.md
-│   │   ├── sast-dast-policy.md
-│   │   ├── secrets-management.md
-│   │   └── supply-chain.md
+│   │   ├── threat-model.md              ← Threat model (STRIDE)
+│   │   ├── pentest-checklist.md         ← Penetration testing checklist
+│   │   └── rbac-model.md               ← Role-based access control model
 │   │
-│   ├── ai/                              ← AI-specific specs
+│   ├── ai/                              ← AI-specific specs (opt-in)
+│   │   ├── README.md                    ← AI specs index
 │   │   ├── agent-design.md              ← Agent architecture (Perception→Reason→Act)
+│   │   ├── agent-memory.md              ← Agent memory architecture spec
+│   │   ├── autonomous-mode-levels.md    ← Autonomy levels (NONE→LOW→MEDIUM→FULL)
+│   │   ├── feedback-loop.md             ← Agent feedback loop spec
 │   │   ├── guardrails.md                ← Technical guardrails spec
+│   │   ├── harness-design.md            ← Multi-agent harness spec (Planner→Generator→Evaluator)
 │   │   ├── hitl-hotl.md                 ← Human oversight model spec
-│   │   ├── llm-integration.md           ← LLM integration patterns
-│   │   ├── rag-design.md                ← RAG pipeline design
-│   │   └── multi-agent-orchestration.md← Multi-agent coordination patterns
+│   │   ├── hitl-notification.md         ← HITL notification and escalation spec
+│   │   └── sandbox-execution.md        ← Agent sandbox execution policy
 │   │
 │   ├── privacy/
 │   │   ├── pii-inventory.md             ← PII fields + classification
 │   │   ├── data-retention.md            ← Retention rules + LGPD/GDPR alignment
 │   │   ├── dpia-ripd.md                 ← DPIA (GDPR) / RIPD (LGPD) spec
-│   │   └── anonymization.md            ← Anonymization + pseudonymization spec
+│   │   ├── db-encryption-at-rest.md     ← AES-256-GCM encryption spec (ADR-0018)
+│   │   └── redis-tls.md                ← Redis TLS + value encryption spec (ADR-0019)
 │   │
 │   └── ethics/
-│       ├── autonomy-boundaries.md       ← Agent action limits
-│       ├── audit-trail.md               ← Auditability requirements
-│       └── bias-audit.md               ← Bias detection + mitigation
+│       └── ethical-ai-principles.md    ← 6 AI ethics principles (EU AI Act + LGPD Art. 20)
 │
 ├── ── SOURCE CODE ─────────────────────────────────────────────────────
 │
@@ -270,24 +277,41 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 │   │   ├── action_limits.py             ← Agent action rate limits + scope limits
 │   │   ├── pii_filter.py                ← PII masking before LLM ingestion
 │   │   ├── prompt_injection_guard.py    ← OWASP LLM01 — Prompt Injection defense
-│   │   ├── output_validator.py          ← OWASP LLM02 — Output validation
 │   │   └── audit_logger.py             ← Immutable audit log of all agent actions
 │   │
 │   ├── observability/                   ← Observability instrumentation
-│   │   ├── otel_setup.py                ← OpenTelemetry SDK bootstrap
-│   │   ├── metrics.py                   ← Prometheus metrics (Golden Signals)
-│   │   ├── logger.py                    ← Structured JSON logging
-│   │   └── tracer.py                   ← Distributed tracing
+│   │   ├── otel_setup.py                ← OpenTelemetry SDK bootstrap + distributed tracing
+│   │   ├── metrics.py                   ← Prometheus metrics (Golden Signals + agent metrics)
+│   │   └── logger.py                   ← Structured JSON logging
 │   │
 │   └── shared/                          ← Shared code across modules
 │       ├── config.py                    ← Config via env vars (Pydantic Settings)
 │       ├── models.py                    ← Domain models (AuditEvent, AgentActionRequest, etc.)
 │       ├── retry.py                     ← with_retry() + CircuitBreaker (CLOSED/OPEN/HALF_OPEN)
 │       ├── db_client.py                 ← ResilientDBPool (asyncpg + CB + retry + timeout)
+│       ├── db_encryption.py             ← AES-256-GCM EncryptedField (ADR-0018)
+│       ├── broker.py                    ← Kafka / InMemoryBroker abstraction
 │       ├── llm_client.py                ← LLMClient Protocol + TimeoutLLMClientWrapper
-│       ├── feature_flags.py             ← is_autonomous_mode_enabled() — OpenFeature SDK wrapper (ADR-0015)
-│       ├── exceptions.py
-│       └── constants.py
+│       └── feature_flags.py            ← is_autonomous_mode_enabled() — OpenFeature SDK (ADR-0015)
+│
+├── ── POLYGLOT SERVICES ───────────────────────────────────────────────
+│
+├── services/
+│   ├── domain-service/                  ← Java 21 / Spring Boot 3.3 — CRUD API + Kafka consumer
+│   │   └── README.md
+│   └── event-worker/                    ← Go 1.23 — stateless high-throughput Kafka consumer
+│       └── README.md
+│
+├── frontend/
+│   └── frontend/                        ← Next.js 14 / TypeScript — HITL operator approval UI
+│       └── README.md
+│
+├── scaffold/                            ← Code generation templates + scaffolding CLI
+│   ├── scaffold.py                      ← make new-service entry point
+│   └── templates/
+│       ├── python/                      ← Python service template
+│       ├── java/                        ← Java service template
+│       └── go/                          ← Go service template
 │
 ├── ── TESTS ───────────────────────────────────────────────────────────
 │
@@ -318,13 +342,11 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 │   │   └── test_api_contracts.py
 │   │
 │   ├── performance/                     ← Load and performance tests
-│   │   ├── locustfile.py                ← Load testing (Locust)
 │   │   ├── k6/
-│   │   │   ├── smoke-test.js
-│   │   │   ├── load-test.js
-│   │   │   └── stress-test.js
+│   │   │   ├── request-api-load.js      ← k6 load test for POST /v1/requests
+│   │   │   └── hitl-decision-load.js    ← k6 load test for HITL decision endpoint
 │   │   └── benchmarks/
-│   │       └── <feature>_benchmark.py
+│   │       └── test_orchestrator_benchmarks.py
 │   │
 │   ├── security/                        ← Security-focused tests
 │   │   ├── test_owasp_web_top10.py
@@ -335,9 +357,14 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 │   │
 │   ├── chaos/                           ← Chaos Engineering
 │   │   ├── experiments/
-│   │   │   ├── kill-agent.yaml          ← Litmus / Chaos Toolkit experiment
+│   │   │   ├── kill-agent.yaml
 │   │   │   ├── network-partition.yaml
-│   │   │   └── broker-outage.yaml
+│   │   │   ├── broker-outage.yaml
+│   │   │   ├── agent-context-overflow.yaml
+│   │   │   ├── evaluator-disagreement.yaml
+│   │   │   ├── hitl-store-degradation.yaml
+│   │   │   ├── llm-api-timeout.yaml
+│   │   │   └── prompt-injection-under-load.yaml
 │   │   └── runbooks/
 │   │       └── game-day-playbook.md
 │   │
@@ -383,27 +410,23 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 │   │   └── message-broker/
 │   │       └── values.yaml
 │   │
+│   ├── k8s/                             ← Static Kubernetes manifests
+│   │   └── network-policies/            ← NetworkPolicy definitions + README
+│   │
 │   ├── monitoring/                      ← Observability configuration
 │   │   ├── prometheus/
-│   │   │   ├── rules/
-│   │   │   │   ├── golden-signals.yaml  ← Alerting: Traffic, Error, Saturation, Latency
-│   │   │   │   └── slo-burn-rate.yaml   ← Multi-window burn rate alerts
-│   │   │   └── scrape-configs.yaml
+│   │   │   └── rules/
+│   │   │       ├── golden-signals.yaml  ← Alerting: Traffic, Error, Saturation, Latency
+│   │   │       └── agent-alerts.yaml    ← 14 agent-specific alert rules
 │   │   ├── grafana/
-│   │   │   ├── dashboards/
-│   │   │   │   ├── golden-signals.json  ← Golden Signals overview
-│   │   │   │   ├── sre-overview.json    ← SLO + Error Budget
-│   │   │   │   ├── agent-performance.json← AI agent metrics
-│   │   │   │   ├── noc-dashboard.json   ← NOC operational view
-│   │   │   │   ├── finops.json          ← LLM token cost + infra cost
-│   │   │   │   └── cuj-dashboards/
-│   │   │   │       └── cuj-<NNN>.json   ← One dashboard per Critical User Journey
-│   │   │   └── alerts/
-│   │   │       └── slo-burn-rate.yaml
-│   │   ├── jaeger/
-│   │   │   └── jaeger-config.yaml       ← Distributed tracing backend
-│   │   └── opentelemetry/
-│   │       └── otel-collector.yaml      ← OTel Collector config
+│   │   │   ├── dashboards/              ← 5 pre-provisioned dashboards
+│   │   │   │   ├── golden-signals.json
+│   │   │   │   ├── sre-overview.json
+│   │   │   │   ├── agent-performance.json
+│   │   │   │   └── cuj-dashboards/      ← One dashboard per Critical User Journey
+│   │   │   └── datasources/             ← Auto-provisioned Prometheus datasource
+│   │   └── jaeger/
+│   │       └── sampling-strategies.json ← Per-service trace sampling policy
 │   │
 │   ├── message-broker/                  ← Broker configuration
 │   │   ├── topics/
@@ -439,24 +462,28 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 │
 ├── .github/
 │   ├── workflows/
-│   │   ├── ci.yml                       ← CI: validate → test → security → build
-│   │   ├── cd-staging.yml               ← CD staging: build → push → deploy → DAST
-│   │   ├── cd-production.yml            ← CD prod: canary + Golden Signals watch
-│   │   ├── sbom.yml                     ← SBOM generation + Cosign signing
-│   │   ├── dependency-review.yml        ← Dependency Review on PR
+│   │   ├── ci.yml                       ← Python CI: governance → lint → unit → integration → security
+│   │   ├── ci-java.yml                  ← Java CI: Checkstyle → SpotBugs → OWASP → JaCoCo
+│   │   ├── ci-go.yml                    ← Go CI: go mod tidy → golangci-lint → race detector
+│   │   ├── ci-frontend.yml              ← Frontend CI: ESLint → TS check → Jest → Playwright
+│   │   ├── cd-staging.yml               ← CD staging: build → push → Helm deploy → smoke tests
+│   │   ├── cd-production.yml            ← CD prod: canary 5%→25%→100% + auto-rollback
+│   │   ├── pr-governance.yml            ← PR governance: conventional title, changelog, spec ref
 │   │   ├── codeql.yml                   ← GitHub CodeQL SAST
-│   │   ├── secret-scanning.yml          ← Gitleaks / TruffleHog
-│   │   ├── release.yml                  ← Release Please automation
-│   │   └── chaos-schedule.yml          ← Chaos experiments (weekly)
+│   │   ├── secret-scanning.yml          ← detect-secrets + custom patterns
+│   │   ├── sbom.yml                     ← SBOM generation + Cosign signing
+│   │   ├── release.yml                  ← Release automation
+│   │   ├── chaos-schedule.yml           ← Scheduled chaos experiments
+│   │   ├── auto-merge.yml               ← Auto-merge for bot PRs
+│   │   └── index-docs.yml              ← Documentation indexing
 │   │
 │   ├── ISSUE_TEMPLATE/
-│   │   ├── bug_report.md
-│   │   ├── feature_request.md
-│   │   ├── change_request.md            ← RFC / Change Request template
-│   │   └── security_advisory.md
+│   │   ├── bug_report.md                ← Bug report (includes spec reference + DoD)
+│   │   └── change_request.md            ← RFC / Change Request template
 │   │
-│   ├── pull_request_template.md         ← PR template
-│   └── CODEOWNERS                      ← Code owners by directory
+│   ├── pull_request_template.md         ← PR template (includes workflow compliance checklist)
+│   ├── dependabot.yml                   ← Dependabot auto-update config
+│   └── CODEOWNERS                      ← @your-org/* team handles by directory
 │
 ├── ── SKILLS (Claude Code) ────────────────────────────────────────────
 │
@@ -478,17 +505,20 @@ The template covers all dimensions of a modern, scalable, reliable, and secure s
 │
 ├── ── PROJECT CONFIGURATION ───────────────────────────────────────────
 │
-├── pyproject.toml                       ← Python project config (uv / poetry)
-├── requirements.txt                     ← Pinned runtime dependencies (Layer 1)
-├── requirements-dev.txt                 ← Development dependencies
-├── .env.example                         ← Environment variables template
-├── .editorconfig                        ← Consistent formatting
+├── pyproject.toml                       ← Python project config (uv / hatchling)
+├── uv.lock                              ← Pinned Python dependencies (uv lock file)
+├── alembic.ini                          ← Database migration config
+├── mkdocs.yml                           ← Documentation site config (MkDocs Material)
+├── .env.example                         ← Environment variables template (all services)
 ├── .gitignore
-├── .gitattributes
+├── .pre-commit-config.yaml              ← Pre-commit hooks (ruff, mypy, detect-secrets, bandit)
+├── .secrets.baseline                    ← detect-secrets baseline for CI
+├── .trivyignore                         ← Trivy CVE ignore list
 ├── Dockerfile                           ← Multi-stage application container
-├── docker-compose.yml                   ← Full local dev stack
-├── docker-compose.test.yml             ← Integration test stack
-├── Makefile                             ← make test | make lint | make deploy-staging
+├── docker-compose.yml                   ← Full local dev stack (9 services)
+├── docker-compose.test.yml             ← Integration test stack (offset ports)
+├── docker-compose.sandbox.yml           ← Sandbox execution environment
+├── Makefile                             ← All make targets (setup, test, lint, deploy, codegen)
 │
 └── .devcontainer/
     ├── devcontainer.json               ← VSCode / GitHub Codespaces config
@@ -659,7 +689,7 @@ LOGS  (src/observability/logger.py)
   │   → Applies to: user IDs, emails, IPs, personal names, free-text fields
   └── Retention: 30d hot / 90d warm / 1 year cold (per LGPD / GDPR policy)
 
-TRACES  (src/observability/tracer.py)
+TRACES  (src/observability/otel_setup.py)
   │
   ├── Backend: Jaeger (infrastructure/monitoring/jaeger/)
   ├── Propagation: W3C TraceContext (across sync + async boundaries)
@@ -692,7 +722,7 @@ PRR — Production Readiness Review  (docs/sre/prr/)
   ├── HITL controls active for all autonomous agent actions in production
   ├── PII masking validated end-to-end (no PII in third-party logs)
   ├── DPIA / RIPD approved (docs/privacy/)
-  ├── Threat model current (docs/security/threat-model.md)
+  ├── Threat model current (specs/security/threat-model.md)
   ├── SBOM generated and signed
   └── Error budget > 10%
 
@@ -764,7 +794,6 @@ This section applies to **any system component** that incorporates:
 | Guardrail                        | Implementation                         | OWASP LLM Risk |
 | -------------------------------- | -------------------------------------- | -------------- |
 | Prompt Injection defense         | `guardrails/prompt_injection_guard.py` | LLM01          |
-| Output validation                | `guardrails/output_validator.py`       | LLM02          |
 | PII masking before LLM ingestion | `guardrails/pii_filter.py`             | LLM06          |
 | Action scope limits              | `guardrails/action_limits.py`          | LLM08          |
 | Immutable audit log              | `guardrails/audit_logger.py`           | LLM09          |
@@ -1038,5 +1067,5 @@ Use this checklist to assess how an existing repository maps to this template:
 
 ---
 
-_Template version: 2.0.0 — Last updated: 2026-05-24_  
+_Template version: 1.17.3 — Last updated: 2026-05-29_  
 _Generic enterprise template — Agentic AI, DevSecOps, SRE, Privacy-first_
