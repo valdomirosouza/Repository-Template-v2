@@ -13,6 +13,17 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.17.4] — 2026-05-29
+
+### Changed
+
+- **`MONOREPO-STRUCTURE-EN.md` accuracy pass.** Synced the architectural reference document
+  with the actual repository state: version header corrected (`2.0.0` → `1.17.3`), 19
+  non-existent files removed from the directory tree, 7 paths/names corrected (threat-model
+  location, tracer.py, proto filenames, k6 scripts, chaos experiments, CI workflows), and 9
+  missing directories added (`docs/quickstart/`, `docs/compliance/`, `docs/governance/`,
+  `services/`, `frontend/`, `scaffold/`, `infrastructure/k8s/`, plus root config files).
+
 ## [1.17.3] — 2026-05-29
 
 ### Removed
@@ -1389,7 +1400,8 @@ API or configuration keys were removed.
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.3...HEAD
+[Unreleased]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.4...HEAD
+[1.17.4]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.3...v1.17.4
 [1.17.3]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.2...v1.17.3
 [1.17.2]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.1...v1.17.2
 [1.17.1]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.0...v1.17.1
