@@ -12,6 +12,11 @@ assignees: []
 **Actual:** <!-- What happened -->
 **Expected:** <!-- What should have happened -->
 
+## Referenced Spec
+
+<!-- Path to the spec governing the component with this bug — REQUIRED -->
+<!-- e.g. specs/ai/guardrails.md · specs/api/rest-api-design.md · specs/system/async-event-flow.md -->
+
 ## Steps to Reproduce
 
 1.
@@ -44,6 +49,25 @@ assignees: []
 
 <!-- If this bug causes an SLO breach, list the affected SLO(s) -->
 <!-- e.g. api-gateway availability SLO (target ≥ 99.9%) -->
+
+## Step 2 — Validation Checklist
+
+Before starting the fix, the implementer must confirm:
+
+- [ ] Root cause identified and understood
+- [ ] Spec reviewed — fix aligns with intended behaviour in `specs/`
+- [ ] ADRs reviewed for binding constraints (`docs/adr/`)
+- [ ] Relevant skills loaded (CLAUDE.md §4)
+- [ ] Fix does not weaken guardrails or security controls (CLAUDE.md §3.2–3.3)
+- [ ] DPIA/RIPD flagged if the fix changes how personal data is processed (CLAUDE.md §3.1)
+
+## Definition of Done
+
+- [ ] Bug reproduced with a failing test before the fix
+- [ ] Fix implemented following the spec
+- [ ] All tests passing, coverage ≥ 80%
+- [ ] `CHANGELOG.md` updated under `Fixed`
+- [ ] ADR filed if the fix required an architectural decision
 
 ## Additional Context
 

@@ -11,8 +11,9 @@ assignees: []
 
 ## Referenced Spec
 
-<!-- Path to the governing spec. Required for Normal and Emergency changes. -->
-<!-- e.g. specs/ai/guardrails.md -->
+<!-- Path to the governing spec — REQUIRED for all change types. Write the spec first if it does not exist. -->
+<!-- e.g. specs/ai/guardrails.md · specs/system/architecture.md · specs/api/rest-api-design.md -->
+<!-- No implementation may begin without a spec (CLAUDE.md §3.4). -->
 
 ## Change Type
 
@@ -50,6 +51,26 @@ Then   <!-- expected observable outcome -->
 ## Security Considerations
 
 <!-- Any security implications? New attack surface, permission changes, new external calls? -->
+
+## Step 2 — Validation Checklist
+
+Before starting implementation, the implementer must confirm:
+
+- [ ] Spec read and implementation will align with it
+- [ ] ADRs reviewed for binding constraints (`docs/adr/`)
+- [ ] Relevant skills loaded per CLAUDE.md §4
+- [ ] Glossary terms confirmed (`docs/glossary.md`)
+- [ ] No rule violations identified (CLAUDE.md §3 — privacy, security, AI governance, architecture)
+- [ ] DPIA/RIPD flagged if this change introduces new personal data processing (CLAUDE.md §3.1)
+
+## Step 3 — Implementation Plan
+
+<!-- High-level steps to implement this change — REQUIRED before writing any code (CLAUDE.md §2 Step 3) -->
+<!-- Share this plan and confirm alignment before starting implementation. -->
+
+1.
+2.
+3.
 
 ## Definition of Done
 

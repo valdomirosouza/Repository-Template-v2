@@ -2,6 +2,14 @@
 
 <!-- One paragraph description of the change and its purpose -->
 
+## Workflow Compliance (CLAUDE.md §2)
+
+_Confirm that the mandatory 7-step cycle was followed before code was written:_
+
+- [ ] **Step 1 — Registered:** Issue filed and linked below; spec exists in `specs/` before coding started
+- [ ] **Step 2 — Validated:** Rules (§3), relevant Skills (§4), and ADRs (`docs/adr/`) reviewed; no violations found
+- [ ] **Step 3 — Planned:** Implementation plan documented in the issue before coding started
+
 ## Linked Issue
 
 Closes #<!-- issue number -->

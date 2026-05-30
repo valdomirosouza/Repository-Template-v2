@@ -160,6 +160,7 @@ RequestConsumer (asyncio background task in lifespan)
 | Memory        | `src/memory/`                             | Session memory, vector store, document indexer, bug history (opt-in, ADR-0017)                          |
 | Frontend      | `frontend/`                               | Next.js app; includes HITL operator approval UI                                                         |
 | PR Gates      | `harness/`                                | Claude Code harness specs (code-check, doc-check, release-check, staging-check)                         |
+| ADRs          | `docs/adr/`                               | ADR-0001–ADR-0025 all binding; 0016–0025 cover sandbox, memory, encryption, finops, testing, frontend   |
 
 ### Infrastructure Fallback Pattern
 
@@ -277,7 +278,7 @@ Step 10: UPDATE CHANGELOG.md with the change under the correct category.
 
 ## 4. Skill Activation Table
 
-When the user's request matches a skill domain, load and follow that skill before proceeding.
+When the user's request matches a skill domain, **Read the skill file listed in the table and follow its guidance before writing any code**. These are plain Markdown files in the `skills/` directory — load them with the Read tool, not via the Claude Code Skill tool. The `.claude/skills/` directory is a parallel copy for the Claude Code Skill tool (used by `/`-commands) and does not replace this mechanism.
 
 ### Core Skills
 

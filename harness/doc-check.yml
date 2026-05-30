@@ -3,6 +3,49 @@ description: Documentation gate — ensures all documentation obligations are me
 version: "1.0"
 
 gates:
+  - name: issue-referenced
+    command: >
+      bash -c "
+        if [ -n \"${PR_BODY_FILE:-}\" ] && [ -f \"${PR_BODY_FILE}\" ]; then
+          if grep -qiE '(closes|fixes|resolves|references|ref|see)? *#[0-9]+|GH-[0-9]+' \"${PR_BODY_FILE}\"; then
+            echo 'GitHub Issue reference found.';
+          else
+            echo 'No GitHub Issue reference found in the PR body.' >&2;
+            echo 'Step 1 of the Development Workflow (CLAUDE.md §2) requires a registered issue before any work begins.' >&2;
+            exit 1;
+          fi
+        else
+          echo 'PR_BODY_FILE not set — issue-referenced check skipped (set it in CI).';
+          exit 0
+        fi
+      "
+    blocking: true
+    failure_message: "Every PR must reference a GitHub Issue (e.g. 'Closes #42'). Register the issue before coding (Step 1 — CLAUDE.md §2)."
+
+  - name: workflow-compliance
+    command: >
+      bash -c "
+        if [ -n \"${PR_BODY_FILE:-}\" ] && [ -f \"${PR_BODY_FILE}\" ]; then
+          if ! grep -q 'Workflow Compliance' \"${PR_BODY_FILE}\"; then
+            echo 'PR body is missing the Workflow Compliance section.' >&2;
+            echo 'Use the PR template and confirm Steps 1-3 before submitting.' >&2;
+            exit 1;
+          fi
+          STEPS=$(grep -cE '\- \[x\].*Step [123]' \"${PR_BODY_FILE}\" || true);
+          if [ \"$STEPS\" -lt 3 ]; then
+            echo \"Only $STEPS of 3 workflow steps are checked.\" >&2;
+            echo 'Tick Step 1 (Registered), Step 2 (Validated), and Step 3 (Planned) before merging.' >&2;
+            exit 1;
+          fi
+          echo 'Workflow compliance confirmed: Steps 1-3 all checked.';
+        else
+          echo 'PR_BODY_FILE not set — workflow-compliance check skipped (set it in CI).';
+          exit 0
+        fi
+      "
+    blocking: true
+    failure_message: "PR missing Workflow Compliance section or Steps 1-3 not all checked. The 7-step cycle (CLAUDE.md §2) must be confirmed before merge: Issue+Spec (Step 1), Rules/Skills/ADRs validated (Step 2), Plan documented (Step 3)."
+
   - name: changelog-updated
     command: >
       git diff --name-only origin/main...HEAD | grep -q '^CHANGELOG.md$'
