@@ -13,6 +13,18 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Changed
+
+- **7-step workflow enforcement (governance audit).** Closed enforcement gaps in the mandatory
+  development cycle (CLAUDE.md §2): `pr-governance.yml` now has a blocking `issue-referenced`
+  gate (Step 1 was entirely unenforced at CI level); `harness/doc-check.yml` gains
+  `issue-referenced` and `workflow-compliance` gates; `pull_request_template.md` gains a
+  Workflow Compliance section requiring Steps 1–3 to be ticked before merge.
+  `bug_report.md` adds Referenced Spec field, Step 2 validation checklist, and Definition of
+  Done; `change_request.md` marks spec reference required for all change types and adds Step 2
+  checklist and Step 3 implementation plan section. `CLAUDE.md` adds ADR-0001–0025 row to the
+  Key Layers table and clarifies §4 skill loading mechanism.
+
 ## [1.17.0] — 2026-05-29
 
 This release delivers the full **five-wave security and resilience hardening programme**
@@ -153,7 +165,6 @@ API or configuration keys were removed.
 - `.github/workflows/ci.yml` — services.yaml schema check used bare `python3` instead of
   `uv run python`, causing `ModuleNotFoundError: No module named 'yaml'`.
 - Various mypy-strict, ruff, and formatting fixes across `src/`.
-
 
 ## [1.15.0] — 2026-05-28
 
