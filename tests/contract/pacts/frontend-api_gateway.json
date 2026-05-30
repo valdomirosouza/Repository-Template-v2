@@ -326,7 +326,7 @@
       "version": "2.0.0"
     },
     "client": {
-      "name": "template-monorepo",
+      "name": "Repository-Template",
       "version": "1.10.0"
     }
   }

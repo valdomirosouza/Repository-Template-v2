@@ -3,7 +3,7 @@
 **Reviewer:** Senior Software Engineer (AI-assisted)
 **Baseline:** v1.1.1 (`ff34506`)
 **Resolved in:** v1.2.0 (`d2fb36d`) — tag `v1.2.0`
-**GitHub Release:** https://github.com/valdomirosouza/template-monorepo/releases/tag/v1.2.0
+**GitHub Release:** https://github.com/valdomirosouza/Repository-Template/releases/tag/v1.2.0
 
 ---
 

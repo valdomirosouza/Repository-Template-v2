@@ -1351,11 +1351,11 @@ API or configuration keys were removed.
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/template-monorepo/compare/v1.3.0...HEAD
-[1.3.0]: https://github.com/valdomirosouza/template-monorepo/compare/v1.2.1...v1.3.0
-[1.2.1]: https://github.com/valdomirosouza/template-monorepo/compare/v1.2.0...v1.2.1
-[1.2.0]: https://github.com/valdomirosouza/template-monorepo/compare/v1.1.1...v1.2.0
-[1.1.1]: https://github.com/valdomirosouza/template-monorepo/compare/v1.1.0...v1.1.1
-[1.1.0]: https://github.com/valdomirosouza/template-monorepo/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/valdomirosouza/template-monorepo/compare/v0.1.0...v1.0.0
-[0.1.0]: https://github.com/valdomirosouza/template-monorepo/releases/tag/v0.1.0
+[Unreleased]: https://github.com/valdomirosouza/Repository-Template/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/valdomirosouza/Repository-Template/compare/v1.2.1...v1.3.0
+[1.2.1]: https://github.com/valdomirosouza/Repository-Template/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/valdomirosouza/Repository-Template/compare/v1.1.1...v1.2.0
+[1.1.1]: https://github.com/valdomirosouza/Repository-Template/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/valdomirosouza/Repository-Template/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/valdomirosouza/Repository-Template/compare/v0.1.0...v1.0.0
+[0.1.0]: https://github.com/valdomirosouza/Repository-Template/releases/tag/v0.1.0
