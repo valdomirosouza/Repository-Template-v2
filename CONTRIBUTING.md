@@ -145,7 +145,6 @@ Use `.github/pull_request_template.md` — it is automatically populated when yo
 | Unit tests       | Coverage ≥ 80%, zero failures        |
 | SAST             | Zero CRITICAL/HIGH findings          |
 | Secret detection | Zero secrets detected                |
-| Container scan   | Zero Critical CVEs                   |
 | PII scan         | No real PII in test fixtures or logs |
 | Human review     | Minimum 1 approved reviewer          |
 

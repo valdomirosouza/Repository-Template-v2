@@ -1,6 +1,6 @@
 # Quickstart — Python Backend
 
-> **Stack:** Python 3.12 · FastAPI · asyncpg · aiokafka · OpenTelemetry · Anthropic SDK
+> **Stack:** Python 3.13 · FastAPI · asyncpg · aiokafka · OpenTelemetry · Anthropic SDK
 > **Service types:** REST API, AI agent orchestrator, Kafka consumer
 > **Read first:** [docs/quickstart/README.md](README.md) for shared governance rules.
 
@@ -10,7 +10,7 @@
 
 | Tool             | Version | Install                                                                 |
 | ---------------- | ------- | ----------------------------------------------------------------------- |
-| Python           | 3.12+   | [python.org](https://www.python.org/downloads/) or `pyenv install 3.12` |
+| Python           | 3.13+   | [python.org](https://www.python.org/downloads/) or `pyenv install 3.13` |
 | uv               | latest  | `curl -LsSf https://astral.sh/uv/install.sh \| sh`                      |
 | Docker & Compose | 24+     | [docker.com](https://www.docker.com/products/docker-desktop/)           |
 | make             | any     | pre-installed on macOS/Linux                                            |

@@ -213,6 +213,7 @@ Step 3:  CHECK the glossary (docs/glossary.md) for all terms used.
 Step 4:  VALIDATE that a GitHub Issue exists and references the spec.
 
 Step 5:  CHECK if a DPIA/RIPD review is needed (any new PII processing).
+         See docs/privacy/ for DPIA/RIPD templates and the review process.
 
 Step 6:  IMPLEMENT following the spec. No gold-plating, no scope creep.
 
@@ -287,6 +288,7 @@ When the user's request matches a skill domain, **Read the skill file listed in 
 | Golden Signals, SLO breach, alert               | `skills/sre/golden-signals.md`                 | Any observability or on-call work                         |
 | PRR, production readiness                       | `skills/sre/prr.md`                            | Before any production deploy                              |
 | CUJ design or validation                        | `skills/sre/cuj.md`                            | Defining or testing critical user journeys                |
+| Incident response, on-call, MTTD/MTTR           | `skills/sre/incident-response.md`              | Production incident or escalation                         |
 | PII, masking, classification                    | `skills/privacy/pii.md`                        | Any data handling code                                    |
 | LGPD compliance                                 | `skills/privacy/lgpd.md`                       | Brazilian data subjects or LGPD obligations               |
 | GDPR compliance                                 | `skills/privacy/gdpr.md`                       | EU data subjects or GDPR obligations                      |

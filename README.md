@@ -1,7 +1,7 @@
 # Enterprise Monorepo Template
 
 > Production-ready monorepo template for enterprise software systems. AI/agent capabilities are optional opt-in extensions.
-> **Version:** 1.17.4 | **Status:** Active | **License:** Proprietary
+> **Version:** 1.17.5 | **Status:** Active | **License:** Proprietary
 
 [![CI](https://github.com/valdomirosouza/Repository-Template/actions/workflows/ci.yml/badge.svg)](https://github.com/valdomirosouza/Repository-Template/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/valdomirosouza/Repository-Template)](https://github.com/valdomirosouza/Repository-Template/releases/latest)
@@ -56,6 +56,7 @@ curl http://localhost:8000/ready    # → {"status": "ready"}
 | Grafana         | 3001        | Dashboards — http://localhost:3001 (admin / admin) |
 | Jaeger          | 16686       | Distributed trace UI                               |
 | flagd           | 8013        | OpenFeature flag server                            |
+| Alertmanager    | 9093        | Alert routing (PagerDuty / Slack integration)      |
 
 ---
 
@@ -109,15 +110,17 @@ Also read after your language guide:
 
 **Minimum required customisations before committing your first feature:**
 
-| File                 | What to change                                            |
-| -------------------- | --------------------------------------------------------- |
-| `services.yaml`      | Rename services, update ports and topic names             |
-| `.env.example`       | Add project-specific environment variables                |
-| `docs/adr/`          | Add ADRs for your own architectural decisions             |
-| `specs/`             | Write specs for features before implementing              |
-| `CLAUDE.md`          | Adjust AI behavioural contract for your team              |
-| `.github/CODEOWNERS` | Replace `@your-org/*` placeholders with your team handles |
-| `version.txt`        | Reset to `0.1.0`                                          |
+| File                 | What to change                                                    |
+| -------------------- | ----------------------------------------------------------------- |
+| **`services.yaml`**  | **Rename services, update ports and topic names — do this first** |
+| `.github/CODEOWNERS` | Replace `@your-org/*` placeholders with your team handles         |
+| `version.txt`        | Reset to `0.1.0`                                                  |
+| `.env.example`       | Add project-specific environment variables                        |
+| `docs/adr/`          | Add ADRs for your own architectural decisions                     |
+| `specs/`             | Write specs for features before implementing                      |
+| `CLAUDE.md`          | Adjust AI behavioural contract for your team                      |
+
+> For term definitions (SDD, HITL/HOTL, CUJ, PRR) see [`docs/glossary.md`](docs/glossary.md).
 
 > See [`CUSTOMISING.md`](CUSTOMISING.md) for the full adoption guide, including what to delete if
 > you don't need Java, Go, frontend, AI agents, or Terraform.
@@ -352,6 +355,8 @@ Flags use the [OpenFeature](https://openfeature.dev/) SDK (CNCF standard) backed
 | `autonomous-mode` | `off`   | When `on`, enables HOTL — agents act without HITL approval |
 
 To change a flag locally: edit `infrastructure/feature-flags/flags/autonomous-mode.yaml`, then restart flagd (`docker compose restart flagd`). Governance approval required before enabling `autonomous-mode` in production (ADR-0015).
+
+To verify the current state: `cat infrastructure/feature-flags/flags/autonomous-mode.yaml`
 
 ---
 

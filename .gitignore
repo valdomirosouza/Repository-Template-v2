@@ -51,6 +51,7 @@ terraform.tfvars
 sbom.cyclonedx.json
 docs/site/
 site/
+src/shared/generated/grpc/   # generated gRPC stubs — run make gen-proto-python
 
 # Test outputs
 test-results/
