@@ -1,14 +1,16 @@
 # Enterprise Monorepo Template
 
 > Production-ready monorepo template for enterprise software systems. AI/agent capabilities are optional opt-in extensions.
-> **Version:** 1.9.0 | **Status:** Active | **License:** Proprietary
+> **Version:** 1.17.0 | **Status:** Active | **License:** Proprietary
 
 [![CI](https://github.com/valdomirosouza/Repository-Template/actions/workflows/ci.yml/badge.svg)](https://github.com/valdomirosouza/Repository-Template/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/valdomirosouza/Repository-Template)](https://github.com/valdomirosouza/Repository-Template/releases/latest)
 
 ---
 
-## Use this template
+## Quick Start: Clone → Initial Setup → Code
+
+### 1. Clone
 
 Click **"Use this template"** on the GitHub repository page, or run:
 
@@ -17,31 +19,108 @@ gh repo create my-project --template valdomirosouza/Repository-Template --clone
 cd my-project
 ```
 
-Then follow the **5-step setup** below to go from blank repo to running system.
+> **Devcontainer alternative** (no local tool installs): open the folder in VS Code and choose
+> **Dev Containers: Reopen in Container** — Python, Java, Go, and Node are pre-configured.
 
 ---
 
-## End-to-end demo in 3 commands
-
-See the full async pipeline fire — from HTTP request to agent execution — in under 2 minutes:
+### 2. Initial Setup
 
 ```bash
-# 1. Start infra + API
-make infra-up && make run &
+# Configure environment
+cp .env.example .env
+# Edit .env — set SECRET_KEY (the only always-required value).
+# Generate one with: openssl rand -hex 32
+# ANTHROPIC_API_KEY is only needed if you use the AI Agents extension.
 
-# 2. Submit a request
+# Install Python deps, start all infrastructure containers, run DB migrations
+make setup
+
+# Confirm everything is alive
+curl http://localhost:8000/health   # → {"status": "ok"}
+curl http://localhost:8000/ready    # → {"status": "ready"}
+```
+
+> If `/ready` returns `503`, run `docker compose ps` — PostgreSQL or Redis may still be initialising.
+
+**What `make setup` starts:**
+
+| Container       | Port(s)     | Role                                               |
+| --------------- | ----------- | -------------------------------------------------- |
+| PostgreSQL      | 5432        | Audit log, pgvector agent memory                   |
+| Redis           | 6379        | HITL store, request store, session cache           |
+| Kafka (KRaft)   | 9092        | Async event broker                                 |
+| Schema Registry | 8081        | Avro schema validation                             |
+| OTel Collector  | 4317 (gRPC) | Traces, metrics, logs aggregator                   |
+| Prometheus      | 9090        | Metrics scrape + alerting                          |
+| Grafana         | 3001        | Dashboards — http://localhost:3001 (admin / admin) |
+| Jaeger          | 16686       | Distributed trace UI                               |
+| flagd           | 8013        | OpenFeature flag server                            |
+
+---
+
+### 3. Code
+
+**Verify the baseline is green:**
+
+```bash
+make test-unit-python   # fast, no Docker required — run this first
+make test-python        # full suite: unit + integration + security (needs infra-up)
+make lint-python        # ruff + mypy + detect-secrets
+```
+
+**Fire the full async pipeline end-to-end:**
+
+```bash
+make run &
+
 REQUEST_ID=$(curl -s -X POST http://localhost:8000/v1/requests \
   -H "Content-Type: application/json" \
   -d '{"context": {"task": "summarise quarterly report", "source": "internal"}}' \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['request_id'])")
 
-# 3. Poll for the result
 curl -s http://localhost:8000/v1/requests/$REQUEST_ID | python3 -m json.tool
 ```
 
-Expected response shape: `{"status": "completed", "result": {...}, "request_id": "..."}`.
-If `status` is `"processing"` retry after a second. If the LLM API key is not set the
-orchestrator routes to HITL — approve at `POST /v1/hitl/<id>/decide`.
+Expected: `{"status": "completed", "result": {...}, "request_id": "..."}`. If `"processing"`, retry after a second. If the LLM key is not set, the orchestrator routes to HITL — approve at `POST /v1/hitl/<id>/decide`.
+
+**Open API docs and observability:**
+
+```bash
+open http://localhost:8000/docs    # Swagger UI (non-production only)
+open http://localhost:3001         # Grafana Golden Signals (admin / admin)
+open http://localhost:16686        # Jaeger trace UI
+```
+
+**Pick your language guide and start building:**
+
+| I am building...                  | Guide                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------ |
+| Python API or AI agent            | [`docs/quickstart/python-backend.md`](docs/quickstart/python-backend.md) |
+| Java / Spring Boot domain service | [`docs/quickstart/java-backend.md`](docs/quickstart/java-backend.md)     |
+| Go high-throughput worker         | [`docs/quickstart/go-backend.md`](docs/quickstart/go-backend.md)         |
+| React / Next.js frontend          | [`docs/quickstart/frontend.md`](docs/quickstart/frontend.md)             |
+| Scheduled job or batch processor  | [`docs/quickstart/jobs-worker.md`](docs/quickstart/jobs-worker.md)       |
+
+Also read after your language guide:
+
+- [`docs/quickstart/contract-driven-dev.md`](docs/quickstart/contract-driven-dev.md) — generate code from OpenAPI / AsyncAPI / proto
+- [`docs/quickstart/add-new-service.md`](docs/quickstart/add-new-service.md) — 10-step checklist for registering a new service
+
+**Minimum required customisations before committing your first feature:**
+
+| File                 | What to change                                            |
+| -------------------- | --------------------------------------------------------- |
+| `services.yaml`      | Rename services, update ports and topic names             |
+| `.env.example`       | Add project-specific environment variables                |
+| `docs/adr/`          | Add ADRs for your own architectural decisions             |
+| `specs/`             | Write specs for features before implementing              |
+| `CLAUDE.md`          | Adjust AI behavioural contract for your team              |
+| `.github/CODEOWNERS` | Replace `@your-org/*` placeholders with your team handles |
+| `version.txt`        | Reset to `0.1.0`                                          |
+
+> See [`CUSTOMISING.md`](CUSTOMISING.md) for the full adoption guide, including what to delete if
+> you don't need Java, Go, frontend, AI agents, or Terraform.
 
 > For architecture details see [`docs/architecture.md`](docs/architecture.md) and [`CLAUDE.md`](CLAUDE.md).
 
@@ -65,104 +144,6 @@ A production-ready scaffold for enterprise teams. Everything is wired together f
 | **Testing**              | Unit · Integration · Security · Chaos · Contract tests (harness message schema invariants)      |
 | **Dev experience**       | Devcontainer · `docker compose up -d` · per-language `make` targets · skills catalog            |
 | **AI/Agents** _(opt-in)_ | Anthropic Claude · HITL/HOTL gateway · multi-agent harness · guardrails · ethical AI principles |
-
----
-
-## 5-step setup
-
-### Step 1 — Start the infrastructure
-
-```bash
-cp .env.example .env
-# Fill in: SECRET_KEY  (the only always-required value)
-# ANTHROPIC_API_KEY only needed if using the AI Agents extension
-# Everything else has working local defaults
-
-make infra-up
-```
-
-`make infra-up` starts these containers:
-
-| Container       | Port(s)     | Role                                     |
-| --------------- | ----------- | ---------------------------------------- |
-| PostgreSQL      | 5432        | Audit log, pgvector agent memory         |
-| Redis           | 6379        | HITL store, request store, session cache |
-| Kafka (KRaft)   | 9092        | Async event broker                       |
-| Schema Registry | 8081        | Avro schema validation                   |
-| OTel Collector  | 4317 (gRPC) | Traces, metrics, logs aggregator         |
-| Prometheus      | 9090        | Metrics scrape + alerting                |
-| Grafana         | 3000        | Dashboards (admin / admin)               |
-| Jaeger          | 16686       | Distributed trace UI                     |
-| flagd           | 8013        | OpenFeature flag server                  |
-
-### Step 2 — Run database migrations
-
-```bash
-make setup   # installs Python deps + runs Alembic migrations
-```
-
-### Step 2b — Confirm everything is alive
-
-```bash
-make run &   # start the API in the background
-
-curl http://localhost:8000/health   # → {"status": "ok"}
-curl http://localhost:8000/ready    # → {"status": "ready"} once DB + Redis are up
-```
-
-If `/ready` returns `503`, check `docker compose ps` — PostgreSQL or Redis may still be starting.
-
-### Step 3 — Verify baseline is green
-
-```bash
-make test-unit-python   # fast, no Docker required — run this first
-make test-python        # full suite: unit + integration + security (needs infra-up)
-make lint-python        # ruff + mypy + detect-secrets
-```
-
-### Step 4 — Open your language quickstart
-
-| I am building...                  | Guide                                                                    |
-| --------------------------------- | ------------------------------------------------------------------------ |
-| Python API or AI agent            | [`docs/quickstart/python-backend.md`](docs/quickstart/python-backend.md) |
-| Java / Spring Boot domain service | [`docs/quickstart/java-backend.md`](docs/quickstart/java-backend.md)     |
-| Go high-throughput worker         | [`docs/quickstart/go-backend.md`](docs/quickstart/go-backend.md)         |
-| React / Next.js frontend          | [`docs/quickstart/frontend.md`](docs/quickstart/frontend.md)             |
-| Scheduled job or batch processor  | [`docs/quickstart/jobs-worker.md`](docs/quickstart/jobs-worker.md)       |
-
-Also read after your language guide:
-
-- [`docs/quickstart/contract-driven-dev.md`](docs/quickstart/contract-driven-dev.md) — generate code from OpenAPI / AsyncAPI / proto
-- [`docs/quickstart/add-new-service.md`](docs/quickstart/add-new-service.md) — 10-step checklist for registering a new service
-
-### Step 5 — Customise for your project
-
-**Minimum required changes:**
-
-| File                 | What to change                                |
-| -------------------- | --------------------------------------------- |
-| `services.yaml`      | Rename services, update ports and topic names |
-| `.env.example`       | Add project-specific environment variables    |
-| `docs/adr/`          | Add ADRs for your own architectural decisions |
-| `specs/`             | Write specs for features before implementing  |
-| `CLAUDE.md`          | Adjust AI behavioral contract for your team   |
-| `.github/CODEOWNERS` | Set team ownership                            |
-| `version.txt`        | Reset to `0.1.0`                              |
-
-**What to remove if you don't need it:**
-
-| If you don't need...     | Delete                                                                                                                                                                                   |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Java services            | `services/domain-service/` and `ci-java.yml`                                                                                                                                             |
-| Go services              | `services/event-worker/` and `ci-go.yml`                                                                                                                                                 |
-| Frontend                 | `frontend/` directory and `ci-frontend.yml`                                                                                                                                              |
-| **AI agents entirely**   | `src/agents/`, `src/guardrails/`, `src/memory/`, `specs/ai/`, `docs/ai-governance/` — see [`docs/optional-extensions/ai-agents/README.md`](docs/optional-extensions/ai-agents/README.md) |
-| Multi-agent harness only | `src/agents/harness/` — set `HARNESS_MODE=solo` in `.env`                                                                                                                                |
-| Agent memory only        | `src/memory/` — remove pgvector from `docker-compose.yml`                                                                                                                                |
-| Sandbox execution only   | `src/agents/sandbox_executor.py`, `docker-compose.sandbox.yml`                                                                                                                           |
-| Terraform                | `infrastructure/terraform/` — keep only Helm if using an existing K8s cluster                                                                                                            |
-
-See [`CUSTOMISING.md`](CUSTOMISING.md) for the full adoption guide.
 
 ---
 
@@ -219,7 +200,7 @@ make new-service NAME=my-service LANG=python   # or java / go
 
 ```
 .
-├── CLAUDE.md                    ← AI behavioral contract (v2.1.0)
+├── CLAUDE.md                    ← AI behavioral contract (v2.1.1)
 ├── services.yaml                ← Service catalog (all languages, ports, topics)
 ├── docker-compose.yml           ← Full dev infrastructure stack
 ├── docker-compose.test.yml      ← Lightweight test stack (offset ports)

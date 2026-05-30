@@ -4,73 +4,86 @@
 # GitHub enforces review requirements when this file is committed to the default branch
 # and branch protection is configured with "Require review from Code Owners".
 #
-# REM-009: all @org/* placeholders replaced with real reviewers (2026-05-29).
-# Adopters: replace @valdomirosouza with your GitHub usernames or @your-org/team-name.
-# Run: gh api repos/{owner}/{repo}/collaborators to list current contributors.
+# HOW TO ADOPT THIS TEMPLATE
+# ---------------------------
+# Replace every @your-org/* placeholder with your actual GitHub team or username.
+# Create teams in GitHub: Settings → Teams, then grant repo access.
+#
+# Suggested team structure (create these before your first enterprise engagement):
+#   @your-org/platform-team    — Tech Lead + senior engineers (global fallback)
+#   @your-org/tech-leads       — Architecture decisions, ADRs, specs, changelog
+#   @your-org/privacy-team     — DPO; required before any GDPR/LGPD assessment
+#   @your-org/ai-governance    — AI Governance Lead; required before enabling HOTL
+#   @your-org/security-team    — Security Lead; required before SOC 2 audit
+#   @your-org/sre-team         — SRE Lead + on-call engineers
+#   @your-org/devops-team      — CI/CD pipelines, infrastructure, deploy scripts
+#
+# Run this to list current contributors after adopting:
+#   gh api repos/{owner}/{repo}/collaborators
 #
 # Role index (update when your team grows):
-#   Tech Lead / product steward  → @valdomirosouza
-#   DPO (Data Protection Officer) → @valdomirosouza  ← assign to real DPO before enterprise engagement
-#   Security Lead                → @valdomirosouza  ← assign to real security engineer before SOC 2
-#   AI Governance Lead           → @valdomirosouza
-#   SRE Lead                     → @valdomirosouza
-#   DevOps Lead                  → @valdomirosouza
+#   Platform / Tech Lead      → @your-org/platform-team
+#   DPO (Data Protection)     → @your-org/privacy-team   ← assign before enterprise engagement
+#   Security Lead             → @your-org/security-team  ← assign before SOC 2
+#   AI Governance Lead        → @your-org/ai-governance
+#   SRE Lead                  → @your-org/sre-team
+#   DevOps Lead               → @your-org/devops-team
 
 # ── Global fallback ───────────────────────────────────────────────────────────
 # All files not matched by a more-specific rule below.
-*                                    @valdomirosouza
+*                                    @your-org/platform-team
 
 # ── Governance ────────────────────────────────────────────────────────────────
-CLAUDE.md                            @valdomirosouza
-docs/adr/                            @valdomirosouza
-specs/                               @valdomirosouza
-CHANGELOG.md                         @valdomirosouza
+CLAUDE.md                            @your-org/tech-leads
+docs/adr/                            @your-org/tech-leads
+specs/                               @your-org/tech-leads
+CHANGELOG.md                         @your-org/tech-leads
 
 # ── Privacy — DPO approval required ──────────────────────────────────────────
-# Replace @valdomirosouza with your DPO before any GDPR/LGPD assessment.
-docs/privacy/                        @valdomirosouza
-specs/privacy/                       @valdomirosouza
-PRIVACY.md                           @valdomirosouza
+# Replace @your-org/privacy-team with your DPO before any GDPR/LGPD assessment.
+docs/privacy/                        @your-org/privacy-team
+specs/privacy/                       @your-org/privacy-team
+PRIVACY.md                           @your-org/privacy-team
 
 # ── AI Governance ─────────────────────────────────────────────────────────────
-docs/ai-governance/                  @valdomirosouza
-specs/ai/                            @valdomirosouza
+docs/ai-governance/                  @your-org/ai-governance
+specs/ai/                            @your-org/ai-governance
 
 # ── Security — Security Lead required ────────────────────────────────────────
-# Replace @valdomirosouza with your Security Lead before SOC 2 audit.
-src/guardrails/                      @valdomirosouza
-docs/security/                       @valdomirosouza
-SECURITY.md                          @valdomirosouza
-.github/workflows/                   @valdomirosouza
-tests/security/                      @valdomirosouza
+# Replace @your-org/security-team with your Security Lead before SOC 2 audit.
+src/guardrails/                      @your-org/security-team
+docs/security/                       @your-org/security-team
+SECURITY.md                          @your-org/security-team
+.github/workflows/                   @your-org/devops-team @your-org/security-team
+tests/security/                      @your-org/security-team
 
 # ── Compliance & Control Mapping ─────────────────────────────────────────────
-docs/compliance/                     @valdomirosouza
+docs/compliance/                     @your-org/security-team @your-org/privacy-team
 
 # ── HITL Gateway — dual approval required ────────────────────────────────────
-# This path requires two distinct reviewers for segregation of duties.
-# With a single owner this is nominal; add a second reviewer when team grows.
-src/agents/hitl_gateway.py           @valdomirosouza
+# Two distinct reviewers enforce segregation of duties.
+# Assign one security reviewer and one AI governance reviewer.
+src/agents/hitl_gateway.py           @your-org/security-team @your-org/ai-governance
 
 # ── Agent source ──────────────────────────────────────────────────────────────
-src/agents/                          @valdomirosouza
-src/observability/                   @valdomirosouza
-src/shared/                          @valdomirosouza
+src/agents/                          @your-org/platform-team @your-org/ai-governance
+src/observability/                   @your-org/sre-team
+src/shared/                          @your-org/platform-team
 
 # ── SRE & Infrastructure ──────────────────────────────────────────────────────
-docs/sre/                            @valdomirosouza
-infrastructure/                      @valdomirosouza
-harness/                             @valdomirosouza
-infrastructure/scripts/deploy/       @valdomirosouza
+docs/sre/                            @your-org/sre-team
+infrastructure/                      @your-org/sre-team @your-org/devops-team
+harness/                             @your-org/devops-team
+infrastructure/scripts/deploy/       @your-org/devops-team @your-org/sre-team
 
 # ── Change Management ─────────────────────────────────────────────────────────
-docs/change-management/              @valdomirosouza
-docs/runbooks/                       @valdomirosouza
+docs/change-management/              @your-org/tech-leads
+docs/runbooks/                       @your-org/sre-team
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
-tests/                               @valdomirosouza
-tests/chaos/                         @valdomirosouza
-tests/contract/                      @valdomirosouza
+tests/                               @your-org/platform-team
+tests/chaos/                         @your-org/sre-team
+tests/contract/                      @your-org/platform-team
 
 # ── Skills (Claude Code behavior) ────────────────────────────────────────────
-skills/                              @valdomirosouza
+skills/                              @your-org/tech-leads
