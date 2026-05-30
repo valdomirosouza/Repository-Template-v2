@@ -13,6 +13,12 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.17.5] — 2026-05-29
+
+### Changed
+
+- **README version badge** updated from `1.17.0` to `1.17.4`.
+
 ## [1.17.4] — 2026-05-29
 
 ### Changed
@@ -1400,7 +1406,8 @@ API or configuration keys were removed.
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.4...HEAD
+[Unreleased]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.5...HEAD
+[1.17.5]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.4...v1.17.5
 [1.17.4]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.3...v1.17.4
 [1.17.3]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.2...v1.17.3
 [1.17.2]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.1...v1.17.2
