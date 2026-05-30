@@ -13,6 +13,14 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.17.2] — 2026-05-29
+
+### Removed
+
+- **SETUP/ folder deleted.** The 14 Claude Code scaffolding prompts and their README were
+  internal build artefacts used to construct this template from scratch. They are not needed
+  by template adopters and have been removed to keep the repository clean.
+
 ## [1.17.1] — 2026-05-29
 
 ### Changed
@@ -1372,7 +1380,8 @@ API or configuration keys were removed.
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.1...HEAD
+[Unreleased]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.2...HEAD
+[1.17.2]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.1...v1.17.2
 [1.17.1]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.0...v1.17.1
 [1.17.0]: https://github.com/valdomirosouza/Repository-Template/compare/v1.15.0...v1.17.0
 [1.15.0]: https://github.com/valdomirosouza/Repository-Template/compare/v1.14.0...v1.15.0
