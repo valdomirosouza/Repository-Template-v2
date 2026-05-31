@@ -13,9 +13,12 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.23.0] — 2026-05-31
+
 ### Added
 
 - **`docs/governance/raci-matrix.md`** — RACI matrix covering 7 process domains (SDLC, security, privacy, AI governance, change management, SRE, infrastructure) with 60+ process rows mapped to 8 roles (TL, PO, ENG, SEC, DPO, AIGOV, SRE, DEV) and validation rules. Closes #10.
+- **`version.txt` / `pyproject.toml`** — Bumped to `1.23.0`.
 
 ## [1.22.0] — 2026-05-31
 
