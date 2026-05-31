@@ -13,9 +13,12 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.24.0] — 2026-05-31
+
 ### Added
 
 - **`docs/sre/on-call-schedule.md`** — On-call schedule template covering rotation structure (primary/secondary/manager tiers), escalation policy with acknowledgement SLAs (P0 5 min → P3 next day), paging rules mapped to Prometheus alert severities, on-call responsibilities, handoff procedure with note template, post-incident action SLAs, onboarding checklist, and sustainability guidelines. Closes #14.
+- **`version.txt` / `pyproject.toml`** — Bumped to `1.24.0`.
 
 ## [1.23.1] — 2026-05-31
 
