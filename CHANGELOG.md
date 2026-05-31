@@ -13,9 +13,12 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.20.1] — 2026-05-31
+
 ### Changed
 
 - **`docs/runbooks/README.md`** — Runbook index expanded with Alert → Runbook mapping (all 35 Prometheus alerts linked to their runbook) and Service → Runbook mapping (on-call quick reference by service and scenario).
+- **`version.txt` / `pyproject.toml`** — Bumped to `1.20.1`.
 
 ## [1.20.0] — 2026-05-31
 
