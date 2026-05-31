@@ -324,6 +324,9 @@ When the user's request matches a skill domain, **Read the skill file listed in 
 | DORA metrics, deployment frequency, MTTR        | `skills/sre/dora-metrics.md`                      | Any pipeline or deploy work                                            |
 | OWASP Top 10, DAST, vulnerability remediation   | `skills/devsecops/owasp-top10.md`                 | Any API endpoint, auth, or data handling change                        |
 | DevSecOps pipeline, SAST, SCA, IaC scan         | `skills/devsecops/pipeline-security.md`           | Any CI/CD pipeline modification                                        |
+| Token efficiency install, RTK setup             | `skills/token-efficiency/rtk-setup.md`            | First session on a new machine; "install rtk"                          |
+| Test/lint/build/git/docker commands             | `skills/token-efficiency/rtk-commands.md`         | Any shell command execution                                            |
+| Session start, context hygiene                  | `skills/token-efficiency/rtk-context-hygiene.md`  | Start of every Claude Code session                                     |
 
 ### AI Agents Module Skills _(opt-in — only when `src/agents/` is present)_
 
@@ -505,3 +508,56 @@ Enforcement:
 - Any DORA metric falling below Elite → Medium threshold triggers a required retrospective within 5 business days.
 
 Full skill: `skills/sre/dora-metrics.md` | Spec: `specs/observability/dora-metrics.md` | ADR: ADR-0028
+
+---
+
+## 13. Token Efficiency Rules
+
+RTK (Rust Token Killer, https://github.com/rtk-ai/rtk) is installed and active in this repository.
+The PreToolUse hook auto-rewrites bash commands. The rules below are in effect for
+every Claude Code session. **Spec:** RTK-001 | **ADR:** ADR-0030
+
+### 13.1 Mandatory: Always use RTK for high-output commands
+
+NEVER run these commands without RTK prefix:
+
+- `pytest` / any test runner → use `rtk pytest`, `rtk go test`, `rtk jest`
+- `git status` / `git diff` / `git log` → use `rtk git <subcommand>`
+- `docker ps` / `docker logs` / `kubectl logs` → use `rtk docker ...` / `rtk kubectl ...`
+- `ls -la` on directories with >20 files → use `rtk ls`
+- `ruff check` / `golangci-lint run` → use `rtk ruff check` / `rtk golangci-lint run`
+- `cat` on files > 200 lines → use `rtk read <file>` or `head -N <file>`
+
+The hook handles this automatically for bash tool calls. These rules apply when
+explicitly constructing commands or in contexts where the hook may not apply.
+
+### 13.2 Mandatory: Read files surgically
+
+- NEVER read an entire file to locate a single function — use `grep -n` first
+- NEVER load more than ONE skill file per task unless the task spans two explicit domains
+- ALWAYS use `rtk ls` or `rtk smart <dir>` before reading individual files in an unfamiliar module
+
+### 13.3 Mandatory: Prefer bash shell tools over built-in Read/Grep/Glob
+
+Built-in tools bypass the PreToolUse hook. Prefer shell equivalents so RTK filtering applies:
+
+- `cat file | head -N` over Read tool for large files
+- `grep -rn "pattern" src/` over Grep tool for codebase search
+- `find src/ -name "*.py"` over Glob tool for file discovery
+
+Exception: for files < 100 lines, built-in Read tool is fine.
+
+### 13.4 Skill activation
+
+When the task involves token efficiency, install, or context hygiene:
+
+| Trigger                                | Skill                                            |
+| -------------------------------------- | ------------------------------------------------ |
+| "install rtk", "set up token savings"  | `skills/token-efficiency/rtk-setup.md`           |
+| Any test/lint/build/git/docker command | `skills/token-efficiency/rtk-commands.md`        |
+| Session start, context window concerns | `skills/token-efficiency/rtk-context-hygiene.md` |
+
+### 13.5 Weekly maintenance
+
+Run `rtk discover --since 7` at the start of each week. Any command with 0% savings
+that appears > 3 times should be added to `.rtk/filters.toml`.

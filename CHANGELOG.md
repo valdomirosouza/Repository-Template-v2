@@ -13,6 +13,14 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **`skills/token-efficiency/`** — Token-efficiency skill group: `rtk-setup.md` (one-time install), `rtk-commands.md` (monorepo command reference), `rtk-context-hygiene.md` (session discipline rules). Estimated 60–80% token reduction per Claude Code session. Refs: RTK-001, ADR-0030.
+- **`.rtk/filters.toml`** — Project-level RTK filter config; covers make targets, alembic, trivy, helm, terraform, uv, pre-commit, syft, and cosign. Refs: RTK-001, ADR-0030.
+- **`CLAUDE.md §13`** — Token Efficiency Rules: mandatory RTK usage contract for every Claude Code session. Refs: RTK-001, ADR-0030.
+- **`docs/adr/ADR-0030-rtk-token-efficiency.md`** — ADR documenting RTK integration as a developer-only tool.
+- **`specs/tooling/rtk-token-efficiency.md`** — Spec RTK-001 defining problem statement, solution, scope, and acceptance criteria.
+
 ## [1.24.0] — 2026-05-31
 
 ### Added
