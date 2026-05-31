@@ -13,6 +13,16 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **`docs/runbooks/RB-004-db-connection-failure.md`** — Incident response playbook for PostgreSQL connection failures: symptoms, pool exhaustion, crash recovery, disk-full, and escalation matrix.
+- **`docs/runbooks/RB-005-kafka-consumer-lag.md`** — Incident response playbook for Kafka consumer lag: consumer pod down, slow consumer scale-out, poison-pill handling, schema mismatch, and DLQ verification.
+- **`docs/runbooks/RB-006-auth-failure.md`** — Incident response playbook for JWT/auth failures: JWKS unreachability, key rotation gaps, clock skew, brute-force detection, and security escalation path.
+
+### Changed
+
+- **`docs/runbooks/README.md`** — Runbook index expanded to all six runbooks (RB-001–RB-006) with owner and last-reviewed columns; RB-003 (HITL recovery) was previously missing from the index.
+
 ## [1.19.0] — 2026-05-31
 
 ### Added

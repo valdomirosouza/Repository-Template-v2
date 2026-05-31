@@ -7,10 +7,14 @@ they focus on systems, processes, and improvements — not on individual mistake
 
 ## Runbook Index
 
-| Runbook                                        | Severity scope | Last reviewed |
-| ---------------------------------------------- | -------------- | ------------- |
-| [rollback-procedure.md](rollback-procedure.md) | P1–P2          | 2026-05-24    |
-| [disaster-recovery.md](disaster-recovery.md)   | P1             | 2026-05-24    |
+| Runbook                                                            | Severity scope | Owner              | Last reviewed |
+| ------------------------------------------------------------------ | -------------- | ------------------ | ------------- |
+| [RB-001 rollback-procedure.md](rollback-procedure.md)              | P1–P2          | SRE Lead           | 2026-05-24    |
+| [RB-002 disaster-recovery.md](disaster-recovery.md)                | P1             | SRE Lead           | 2026-05-24    |
+| [RB-003 hitl-recovery.md](RB-003-hitl-recovery.md)                 | P1–P2          | AI Governance Lead | 2026-05-24    |
+| [RB-004 db-connection-failure.md](RB-004-db-connection-failure.md) | P1–P2          | SRE Lead           | 2026-05-31    |
+| [RB-005 kafka-consumer-lag.md](RB-005-kafka-consumer-lag.md)       | P2–P3          | SRE Lead           | 2026-05-31    |
+| [RB-006 auth-failure.md](RB-006-auth-failure.md)                   | P1–P2          | Security Lead      | 2026-05-31    |
 
 ---
 
