@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Changed
+
+- **`.github/pull_request_template.md`** — Updated SDD step count (7 → 10), added ISO 27001 change type section with RFC_ID field, expanded PR checklist with SOX/ISO 27001/DORA/OWASP/DevSecOps compliance gates from CLAUDE.md §7, and referenced harness compliance check IDs. Refs: ADR-0027, ADR-0028, ADR-0029.
+
 ## [1.18.0] — 2026-05-31
 
 ### Added

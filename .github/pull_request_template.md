@@ -4,11 +4,18 @@
 
 ## Workflow Compliance (CLAUDE.md §2)
 
-_Confirm that the mandatory 7-step cycle was followed before code was written:_
+_Confirm the mandatory 10-step SDD cycle was followed before code was written:_
 
-- [ ] **Step 1 — Registered:** Issue filed and linked below; spec exists in `specs/` before coding started
-- [ ] **Step 2 — Validated:** Rules (§3), relevant Skills (§4), and ADRs (`docs/adr/`) reviewed; no violations found
-- [ ] **Step 3 — Planned:** Implementation plan documented in the issue before coding started
+- [ ] **Step 1 — Spec read:** Relevant spec in `specs/` read before coding started; spec exists or was written first
+- [ ] **Step 2 — ADRs read:** Relevant ADRs in `docs/adr/` reviewed; no architectural violations
+- [ ] **Step 3 — Glossary checked:** All terms verified against `docs/glossary.md`
+- [ ] **Step 4 — Issue exists:** GitHub Issue filed and linked below; spec referenced in issue
+- [ ] **Step 5 — Privacy checked:** DPIA/RIPD review flagged if new PII processing introduced
+- [ ] **Step 6 — Implemented:** Code follows spec; no gold-plating or scope creep
+- [ ] **Step 7 — Tests written:** Unit coverage ≥ 80%; integration tests for service boundaries
+- [ ] **Step 8 — Guardrails run:** `pii_filter`, `prompt_injection_guard`, `audit_logger` verified
+- [ ] **Step 9 — ADR updated:** New ADR filed if an architectural decision was made
+- [ ] **Step 10 — CHANGELOG updated:** Entry added under `[Unreleased]`
 
 ## Linked Issue
 
@@ -16,50 +23,63 @@ Closes #<!-- issue number -->
 
 ## Referenced Spec
 
-<!-- Path to the spec governing this change, e.g. specs/ai/guardrails.md -->
-<!-- REQUIRED: No PR may be merged without a spec reference (see specs/README.md) -->
+<!-- Path to the spec governing this change, e.g. specs/api/rest-api-design.md -->
+<!-- REQUIRED for feat/fix/security/privacy/perf PRs (no-spec label to exempt) -->
 
 ## Impacted ADRs
 
-<!-- List any ADRs this change relates to, supersedes, or is governed by -->
-<!-- e.g. ADR-0011 (HITL/HOTL), ADR-0012 (PII Masking) -->
+<!-- ADRs this change relates to, supersedes, or is governed by -->
+<!-- e.g. ADR-0027 (ISO 27001 CM), ADR-0028 (DORA) -->
 
-## Change Type
+## Change Type (ISO 27001 — CLAUDE.md §11)
 
-- [ ] Standard — minor enhancement or bug fix; no RFC required
-- [ ] Normal — requires RFC and CAB review before merge
-- [ ] Emergency — hotfix; RFC must be filed within 24 h after merge
+- [ ] `standard-change` — pre-approved, low-risk; no RFC required; deploy window Mon–Thu 10:00–17:00
+- [ ] `normal-change` — RFC approved by CAB before merge; RFC_ID: `RFC-`<!-- number -->
+- [ ] `emergency-change` — TL + SecOps async approval; retroactive RFC within 24 h; post-mortem required
 
-## Deploy Command
+## Deploy & Rollback
 
 ```bash
-# Python:   make deploy-staging SERVICE=api-gateway VERSION=x.y.z
-# Java:     make deploy-staging SERVICE=domain-service VERSION=x.y.z
-# Go:       make deploy-staging SERVICE=event-worker VERSION=x.y.z
+# Deploy to staging
+make deploy-staging SERVICE=<name> VERSION=x.y.z
+
+# Rollback (if needed)
+make rollback SERVICE=<name>
 ```
 
-## Rollback Plan
-
-<!-- How to revert this change if it causes issues in production -->
-<!-- e.g. make rollback / helm rollback <service> --namespace production / feature flag off -->
+Rollback plan: <!-- describe or reference runbook -->
 
 ## Privacy Impact
 
 - [ ] This change introduces or modifies personal data processing
-  - If yes, DPIA/RIPD reference: `docs/privacy/dpia/dpia-v?.md`
-  - If yes, confirm DPIA/RIPD is approved by DPO before merge
+  - DPIA/RIPD reference: `docs/privacy/dpia/dpia-v?.md`
+  - DPO approval confirmed before merge
 
 ## PR Checklist
 
+### Core
+
 - [ ] Tests written and passing — coverage ≥ 80%
-  - Python: `make test-unit-python` · Java: `make test-unit-java SERVICE=<name>` · Go: `make test-unit-go SERVICE=<name>` · Frontend: `make test-unit-frontend`
 - [ ] No secrets or real PII in any changed file
 - [ ] `CHANGELOG.md` updated under `[Unreleased]`
 - [ ] Spec updated if implementation diverged from it
 - [ ] ADR filed if a new architectural decision was made
 - [ ] `services.yaml` updated if a new service, port, or Kafka topic was added
-- [ ] Privacy: guardrails unmodified or strengthened (never weakened)
+- [ ] Guardrails unmodified or strengthened (never weakened)
+- [ ] `CODEOWNERS` reviewers approved (auto-requested)
 - [ ] _(AI Agents Module only)_ HITL gateway used for any new agent action with real-world effects
-- [ ] `CODEOWNERS` reviewers have approved (auto-requested)
 
-> CI runs the same gates defined in `harness/code-check.yml` (lint, unit tests ≥ 80%, SAST, secret scan, PII scan). All blocking gates must pass before merge.
+### Compliance Gates (CLAUDE.md §7)
+
+- [ ] **[IF SOX APPLIES]** RFC_ID present in commit for `normal-change` / `emergency-change`
+- [ ] **[IF SOX APPLIES]** Financial data write paths produce audit records (`make test-security-python`)
+- [ ] ISO 27001: change type label applied above (one of `standard-change` / `normal-change` / `emergency-change`)
+- [ ] ISO 27001: deploy-rollback skill followed; rollback tested in staging before production
+- [ ] DORA: lead time from first commit ≤ 24 h, or exception documented
+- [ ] OWASP: DAST (ZAP) scan passed in staging — link report: <!-- docs/security/zap-reports/YYYY-MM-DD.html -->
+- [ ] OWASP: no new CRITICAL/HIGH SAST or SCA findings without documented risk acceptance
+- [ ] DevSecOps: container scan (Trivy) passed — zero CRITICAL CVEs
+- [ ] DevSecOps: IaC scan (Checkov) passed on any `infrastructure/` changes
+- [ ] DevSecOps: SBOM generated and signed (cosign attestation present)
+
+> CI gates defined in `harness/code-check.yml` (lint, unit tests ≥ 80%, SAST, secret scan, PII scan, ISO-CM-01/02, OWASP-A03/A08/A09, DSEC-01–03, DORA-01) must all pass before merge.
