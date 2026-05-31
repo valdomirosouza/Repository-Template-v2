@@ -13,6 +13,8 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.25.0] — 2026-05-31
+
 ### Added
 
 - **`skills/token-efficiency/`** — Token-efficiency skill group: `rtk-setup.md` (one-time install), `rtk-commands.md` (monorepo command reference), `rtk-context-hygiene.md` (session discipline rules). Estimated 60–80% token reduction per Claude Code session. Refs: RTK-001, ADR-0030.
@@ -20,6 +22,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 - **`CLAUDE.md §13`** — Token Efficiency Rules: mandatory RTK usage contract for every Claude Code session. Refs: RTK-001, ADR-0030.
 - **`docs/adr/ADR-0030-rtk-token-efficiency.md`** — ADR documenting RTK integration as a developer-only tool.
 - **`specs/tooling/rtk-token-efficiency.md`** — Spec RTK-001 defining problem statement, solution, scope, and acceptance criteria.
+- **`version.txt` / `pyproject.toml`** — Bumped to `1.25.0`.
 
 ## [1.24.0] — 2026-05-31
 
