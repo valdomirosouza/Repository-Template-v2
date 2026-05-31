@@ -18,6 +18,67 @@ permissions:
   contents: read
 
 jobs:
+  cab-check:
+    name: CAB Approval Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+      - name: Validate change type label and RFC approval
+        run: |
+          python3 - << 'EOF'
+          import os, sys, re
+          import urllib.request, json
+
+          token = os.environ.get("GITHUB_TOKEN", "")
+          repo  = os.environ["GITHUB_REPOSITORY"]
+          sha   = os.environ["GITHUB_SHA"]
+
+          # Find the PR associated with this SHA
+          url = f"https://api.github.com/repos/{repo}/commits/{sha}/pulls"
+          req = urllib.request.Request(url, headers={
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json",
+          })
+          with urllib.request.urlopen(req) as r:
+              prs = json.load(r)
+
+          if not prs:
+              print("No PR found for this SHA — assuming standard-change (workflow_dispatch).")
+              sys.exit(0)
+
+          pr = prs[0]
+          labels = {l["name"] for l in pr.get("labels", [])}
+          body   = pr.get("body", "") or ""
+
+          change_types = {"standard-change", "normal-change", "emergency-change"}
+          found = labels & change_types
+          if not found:
+              print(f"ERROR: PR #{pr['number']} has no change-type label. "
+                    f"Add one of: {change_types}")
+              sys.exit(1)
+
+          change_type = next(iter(found))
+          print(f"Change type: {change_type}")
+
+          if change_type in ("normal-change", "emergency-change"):
+              if not re.search(r"Refs:\s*RFC-\d+", body, re.IGNORECASE):
+                  print(f"ERROR: {change_type} requires 'Refs: RFC-NNNN' in PR body.")
+                  sys.exit(1)
+              print("RFC reference found.")
+
+          if change_type == "normal-change":
+              confirmed = os.environ.get("MANUAL_APPROVAL", "")
+              if confirmed != "confirmed":
+                  print("ERROR: normal-change requires MANUAL_APPROVAL=confirmed "
+                        "(set after CAB approves RFC).")
+                  sys.exit(1)
+              print("CAB approval confirmed.")
+
+          print("cab-check passed.")
+          EOF
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   check-error-budget:
     name: Check Error Budget
     runs-on: ubuntu-latest
@@ -138,6 +199,116 @@ if er > 0.01 or p99 > 0.5:
             --set image.tag=${{ inputs.version }} \
             --set canary.enabled=false \
             --wait --timeout 10m
+
+  emit-dora-event:
+    name: Emit DORA Metrics
+    runs-on: ubuntu-latest
+    needs: [promote-canary-100]
+    if: always()
+    steps:
+      - name: Resolve first commit timestamp for this PR
+        id: first-commit
+        run: |
+          TIMESTAMP=$(gh pr view --json commits \
+            --jq '.commits | sort_by(.committedDate) | first | .committedDate' \
+            "${{ github.event.pull_request.number }}" 2>/dev/null \
+            || date -u +%s)
+          echo "timestamp=${TIMESTAMP}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push DORA deployment event to Pushgateway
+        run: |
+          python3 - << 'EOF'
+          import os, time
+          from datetime import datetime, timezone
+          import urllib.request
+
+          outcome  = "success" if os.environ["DEPLOY_STATUS"] == "success" else "failure"
+          service  = "api-gateway"
+          env_name = "production"
+
+          try:
+              first_ts_raw = os.environ["FIRST_COMMIT_TIMESTAMP"]
+              if first_ts_raw.endswith("Z"):
+                  first_ts = datetime.fromisoformat(first_ts_raw.replace("Z", "+00:00")).timestamp()
+              else:
+                  first_ts = float(first_ts_raw)
+          except (ValueError, KeyError):
+              first_ts = time.time()
+
+          lead_time = max(0.0, time.time() - first_ts)
+          pushgateway = os.environ.get("PROMETHEUS_PUSHGATEWAY_URL", "")
+
+          metrics = (
+              "# HELP dora_deployments_total Total deployments by outcome\n"
+              "# TYPE dora_deployments_total counter\n"
+              f'dora_deployments_total{{service="{service}",environment="{env_name}",outcome="{outcome}"}} 1\n'
+              "# HELP dora_lead_time_seconds Lead time from first commit to production deploy\n"
+              "# TYPE dora_lead_time_seconds histogram\n"
+              f'dora_lead_time_seconds_sum{{service="{service}"}} {lead_time:.2f}\n'
+              f'dora_lead_time_seconds_count{{service="{service}"}} 1\n'
+          )
+
+          if pushgateway:
+              data = metrics.encode()
+              req = urllib.request.Request(
+                  f"{pushgateway}/metrics/job/dora/instance/{service}",
+                  data=data, method="POST",
+                  headers={"Content-Type": "text/plain"},
+              )
+              with urllib.request.urlopen(req) as r:
+                  print(f"Pushgateway: HTTP {r.status}")
+          else:
+              print("PROMETHEUS_PUSHGATEWAY_URL not set — metrics logged only.")
+
+          print(f"DORA event: outcome={outcome}, lead_time={lead_time:.0f}s")
+          EOF
+        env:
+          DEPLOY_STATUS: ${{ needs.promote-canary-100.result }}
+          FIRST_COMMIT_TIMESTAMP: ${{ steps.first-commit.outputs.timestamp }}
+          PROMETHEUS_PUSHGATEWAY_URL: ${{ vars.PROMETHEUS_PUSHGATEWAY_URL }}
+
+  record-change-evidence:
+    name: Record Change Evidence
+    runs-on: ubuntu-latest
+    needs: [promote-canary-100, emit-dora-event]
+    if: always()
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+        with:
+          persist-credentials: true
+
+      - name: Append deploy record to docs/change-log/
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          STATUS="${{ needs.promote-canary-100.result }}"
+          OUTCOME=$([ "$STATUS" = "success" ] && echo "success" || echo "failure")
+          FILE="docs/change-log/${DATE}.yaml"
+
+          mkdir -p docs/change-log
+
+          cat >> "$FILE" << YAML
+          - timestamp: "${TIMESTAMP}"
+            event: deploy
+            deployer: "${{ github.actor }}"
+            service: "api-gateway"
+            version: "${{ inputs.version }}"
+            environment: "production"
+            outcome: "${OUTCOME}"
+            image_digest: "${{ vars.IMAGE_DIGEST || 'unknown' }}"
+            sbom_hash: "${{ vars.SBOM_HASH || 'unknown' }}"
+            change_type: "${{ vars.CHANGE_TYPE || 'standard-change' }}"
+          YAML
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "docs/change-log/${DATE}.yaml"
+          git diff --cached --quiet || git commit -m "chore(change-log): record deploy ${{ inputs.version }} [skip ci]"
+          git push
 
   rollback-on-failure:
     name: Auto Rollback

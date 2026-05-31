@@ -160,7 +160,7 @@ RequestConsumer (asyncio background task in lifespan)
 | Memory        | `src/memory/`                             | Session memory, vector store, document indexer, bug history (opt-in, ADR-0017)                          |
 | Frontend      | `frontend/`                               | Next.js app; includes HITL operator approval UI                                                         |
 | PR Gates      | `harness/`                                | Claude Code harness specs (code-check, doc-check, release-check, staging-check)                         |
-| ADRs          | `docs/adr/`                               | ADR-0001–ADR-0025 all binding; 0016–0025 cover sandbox, memory, encryption, finops, testing, frontend   |
+| ADRs          | `docs/adr/`                               | ADR-0001–ADR-0029 all binding; 0026–0029 cover SOX audit log, ISO 27001 CM, DORA metrics, DevSecOps     |
 
 ### Infrastructure Fallback Pattern
 
@@ -248,6 +248,24 @@ Step 10: UPDATE CHANGELOG.md with the change under the correct category.
 - **ALWAYS** encrypt L1/L2 PII columns at rest using `EncryptedField` (AES-256-GCM) before storing in PostgreSQL or Redis (ADR-0018, ADR-0019).
 - **NEVER** store unencrypted HITL request payloads in Redis in production — `HITLRedisStore` must receive an `EncryptedField` instance.
 - **ALWAYS** verify `DB_ENCRYPTION_KEY` and `REDIS_TLS_ENABLED` are set before any production deployment (enforced by `Settings.reject_placeholder_secrets`).
+- OWASP Top 10 controls MUST be enforced at every API boundary:
+  - A01 (Broken Access Control): RBAC enforced; no IDOR patterns; resource ownership validated.
+  - A02 (Cryptographic Failures): TLS 1.2+ everywhere; AES-256-GCM at rest; no MD5/SHA-1.
+  - A03 (Injection): parameterized queries only; prompt injection guard always on.
+  - A04 (Insecure Design): threat model (`specs/security/threat-model.md`) updated each major release.
+  - A05 (Security Misconfiguration): no default credentials; Trivy scan blocks on CRITICAL CVEs.
+  - A06 (Vulnerable Components): SCA (OWASP dep-check / pip-audit) blocks on CRITICAL findings.
+  - A07 (Auth Failures): JWT with short expiry; refresh token rotation; brute-force protection.
+  - A08 (Software Integrity): Cosign-signed artifacts; SLSA Level 3 target; SBOM on every build.
+  - A09 (Logging Failures): every 4xx/5xx logged with `request_id`; no PII in logs.
+  - A10 (SSRF): outbound allow-list enforced; no user-controlled URLs in server-side fetches.
+- OWASP LLM Top 10 controls MUST be enforced for every AI/agent path (when `src/agents/` is active):
+  - LLM01 (Prompt Injection): `prompt_injection_guard.py` — never disabled.
+  - LLM02 (Insecure Output Handling): all LLM output sanitized before rendering or executing.
+  - LLM06 (Sensitive Info Disclosure): `pii_filter.py` runs before every LLM call and every log write.
+  - LLM08 (Excessive Agency): HITL gateway enforced; autonomy level controlled by feature flags only.
+  - LLM09 (Overreliance): evaluator in harness validates LLM output; human review threshold ≥ 0.7 risk score.
+- DAST (OWASP ZAP full scan) MUST run in staging as a blocking gate before every production promotion.
 
 ### 3.3 AI Governance Rules
 
@@ -283,24 +301,29 @@ When the user's request matches a skill domain, **Read the skill file listed in 
 
 ### Core Skills
 
-| Trigger / Domain                                | Skill Path                                     | Activation Condition                                      |
-| ----------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------- |
-| Golden Signals, SLO breach, alert               | `skills/sre/golden-signals.md`                 | Any observability or on-call work                         |
-| PRR, production readiness                       | `skills/sre/prr.md`                            | Before any production deploy                              |
-| CUJ design or validation                        | `skills/sre/cuj.md`                            | Defining or testing critical user journeys                |
-| Incident response, on-call, MTTD/MTTR           | `skills/sre/incident-response.md`              | Production incident or escalation                         |
-| PII, masking, classification                    | `skills/privacy/pii.md`                        | Any data handling code                                    |
-| LGPD compliance                                 | `skills/privacy/lgpd.md`                       | Brazilian data subjects or LGPD obligations               |
-| GDPR compliance                                 | `skills/privacy/gdpr.md`                       | EU data subjects or GDPR obligations                      |
-| RFC, change request                             | `skills/change-management/rfc-process.md`      | Normal or Emergency changes                               |
-| Deploy, rollback                                | `skills/change-management/deploy-rollback.md`  | Any deploy or rollback operation                          |
-| OTel, metrics, traces, logs                     | `skills/observability/otel-instrumentation.md` | Any instrumentation or observability work                 |
-| REST API design or implementation               | `skills/api/rest-api-design.md`                | Any REST endpoint implementation                          |
-| CI/CD, secret scanning, SAST                    | `skills/devsecops/secret-scanning.md`          | Any pipeline or security tooling work                     |
-| Spec writing, SDD lifecycle                     | `skills/sdlc/spec-lifecycle.md`                | Writing or reviewing a spec                               |
-| Aggregates, entities, repositories, DDD         | `skills/domain/domain-modeling.md`             | Any domain model design, new entity, or service layer     |
-| Test pyramid, coverage, markers, contract tests | `skills/engineering/testing-strategy.md`       | Writing, reviewing, or debugging tests in any language    |
-| Ethical AI review, bias audit, EU AI Act        | `skills/ethics/ethical-ai-review.md`           | Any AI/agent feature, new action_type, or autonomy change |
+| Trigger / Domain                                | Skill Path                                        | Activation Condition                                                   |
+| ----------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------- |
+| Golden Signals, SLO breach, alert               | `skills/sre/golden-signals.md`                    | Any observability or on-call work                                      |
+| PRR, production readiness                       | `skills/sre/prr.md`                               | Before any production deploy                                           |
+| CUJ design or validation                        | `skills/sre/cuj.md`                               | Defining or testing critical user journeys                             |
+| Incident response, on-call, MTTD/MTTR           | `skills/sre/incident-response.md`                 | Production incident or escalation                                      |
+| PII, masking, classification                    | `skills/privacy/pii.md`                           | Any data handling code                                                 |
+| LGPD compliance                                 | `skills/privacy/lgpd.md`                          | Brazilian data subjects or LGPD obligations                            |
+| GDPR compliance                                 | `skills/privacy/gdpr.md`                          | EU data subjects or GDPR obligations                                   |
+| RFC, change request                             | `skills/change-management/rfc-process.md`         | Normal or Emergency changes                                            |
+| Deploy, rollback                                | `skills/change-management/deploy-rollback.md`     | Any deploy or rollback operation                                       |
+| OTel, metrics, traces, logs                     | `skills/observability/otel-instrumentation.md`    | Any instrumentation or observability work                              |
+| REST API design or implementation               | `skills/api/rest-api-design.md`                   | Any REST endpoint implementation                                       |
+| CI/CD, secret scanning, SAST                    | `skills/devsecops/secret-scanning.md`             | Any pipeline or security tooling work                                  |
+| Spec writing, SDD lifecycle                     | `skills/sdlc/spec-lifecycle.md`                   | Writing or reviewing a spec                                            |
+| Aggregates, entities, repositories, DDD         | `skills/domain/domain-modeling.md`                | Any domain model design, new entity, or service layer                  |
+| Test pyramid, coverage, markers, contract tests | `skills/engineering/testing-strategy.md`          | Writing, reviewing, or debugging tests in any language                 |
+| Ethical AI review, bias audit, EU AI Act        | `skills/ethics/ethical-ai-review.md`              | Any AI/agent feature, new action_type, or autonomy change              |
+| SOX audit, financial data, access review        | `skills/compliance/sox.md`                        | **Only if organization is SEC-listed.** Any financial data path change |
+| ISO 27001 change management, CAB, RFC           | `skills/compliance/iso27001-change-management.md` | Any production deploy or config change                                 |
+| DORA metrics, deployment frequency, MTTR        | `skills/sre/dora-metrics.md`                      | Any pipeline or deploy work                                            |
+| OWASP Top 10, DAST, vulnerability remediation   | `skills/devsecops/owasp-top10.md`                 | Any API endpoint, auth, or data handling change                        |
+| DevSecOps pipeline, SAST, SCA, IaC scan         | `skills/devsecops/pipeline-security.md`           | Any CI/CD pipeline modification                                        |
 
 ### AI Agents Module Skills _(opt-in — only when `src/agents/` is present)_
 
@@ -365,6 +388,16 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `security`, `privacy`
 - [ ] DPIA/RIPD review flagged if new PII processing added
 - [ ] Guardrails unmodified or strengthened (never weakened)
 - [ ] _(AI Agents Module only)_ HITL gateway used for any new agent action
+- [ ] **[IF SOX APPLIES]** SOX: RFC_ID present in commit message for normal-change / emergency-change labels
+- [ ] **[IF SOX APPLIES]** SOX: financial data write paths produce audit records (verify with `make test-security-python`)
+- [ ] ISO 27001: change type label applied (`standard-change` / `normal-change` / `emergency-change`)
+- [ ] ISO 27001: deploy-rollback skill followed; rollback tested in staging before production
+- [ ] DORA: lead time from first commit to now is ≤ 24h target (or documented exception)
+- [ ] OWASP: DAST (ZAP) scan passed in staging (link scan report in PR body)
+- [ ] OWASP: no new CRITICAL/HIGH SAST or SCA findings without documented risk acceptance
+- [ ] DevSecOps: container scan (Trivy) passed with zero CRITICAL CVEs
+- [ ] DevSecOps: IaC scan (Checkov) passed on any `infrastructure/` changes
+- [ ] DevSecOps: SBOM generated and signed (cosign attestation present)
 
 ### 7.1 CI-Enforced Gates (not just advisory)
 
@@ -416,3 +449,59 @@ The hybrid workflow blends conversational exploration (Vibe Mode) with autonomou
 **Full guide:** `docs/quickstart/hybrid-workflow.md`
 
 **Governance gate for Phase 3:** `autonomous-mode` feature flag requires ADR-0015 approval. Never enable `FULL` autonomy without explicit governance sign-off.
+
+---
+
+## 10. SOX Compliance Rules
+
+> **APPLICABILITY:** These rules are MANDATORY only for organizations subject to SEC reporting
+> obligations (NYSE/NASDAQ-listed companies or SEC-regulated entities). For all other
+> organizations these are RECOMMENDED best practices, not inviolable rules.
+> If SOX does not apply to your organization, remove this section and the
+> `skills/compliance/sox.md` activation row from the Skill Activation Table (§4).
+
+- **[IF SOX APPLIES]** EVERY financial-data write path MUST produce an immutable audit record via `guardrails/audit_logger.py`.
+- **[IF SOX APPLIES]** AUDIT log retention MUST be ≥ 7 years. Verify `docs/sox/` retention policy enforces this (ADR-0026).
+- **[IF SOX APPLIES]** SEGREGATION OF DUTIES: the developer who writes code MUST NOT be the sole approver of their own PR for any change touching financial data paths. Enforce via CODEOWNERS (minimum 2 approvers on paths: `src/*`, `services/*`, `infrastructure/*`).
+- **[IF SOX APPLIES]** CHANGE EVIDENCE: every production deployment MUST be traceable to an approved RFC with ticket ID in the merge commit. The `pr-governance` workflow must block merge without RFC_ID for `normal-change` and `emergency-change` labels.
+- **[IF SOX APPLIES]** ACCESS REVIEW: privileged access to production secrets and DB encryption keys must be reviewed quarterly and documented in `docs/sox/access-review.md`.
+- **[IF SOX APPLIES]** NEVER allow direct database writes from any service without a traceable `request_id` that appears in the audit log.
+
+Full skill: `skills/compliance/sox.md` | Spec: `specs/compliance/sox-controls.md` | ADR: ADR-0026
+
+---
+
+## 11. ISO 27001 Change Management Rules
+
+- ALL changes to production follow the three-tier change classification:
+  - **Standard Change:** pre-approved, low-risk; deploy windows Mon–Thu 10:00–17:00.
+  - **Normal Change:** RFC approved by CAB before merge; RFC_ID mandatory in merge commit (`Refs: RFC-NNNN`).
+  - **Emergency Change:** TL + SecOps async approval; retroactive RFC within 24h; mandatory post-mortem.
+- DEPLOY procedure: must follow `skills/change-management/deploy-rollback.md` — build → sign → SBOM → staging smoke → canary 5%→25%→100% with SLO gate.
+- ROLLBACK procedure: `make rollback` must complete within the RTO defined in `docs/sre/slo/slo.yaml` (`dora_mttr_target_seconds: 3600`). Runbook RB-003 governs HITL recovery and rollback.
+- EVERY deployment MUST record: deployer identity, RFC_ID, image digest (SHA-256), SBOM hash, and timestamp in `docs/change-log/` (append-only). Schema: `docs/change-log/SCHEMA.md`.
+- CAB APPROVAL is required for Normal and Emergency changes before any production pipeline execution. The `cd-production.yml` workflow validates RFC approval status via the `cab-check` job before proceeding.
+- CONFIGURATION items (infra, secrets, feature flags) are in scope for change management. Flag changes in `infrastructure/feature-flags/` require governance review per ADR-0015.
+
+Full skill: `skills/compliance/iso27001-change-management.md` | Spec: `specs/compliance/iso27001-change-management.md` | ADR: ADR-0027
+
+---
+
+## 12. DORA Metrics — Mandatory Tracking
+
+DORA Elite targets for this repository:
+
+- **Deployment Frequency:** ≥ 1 deploy/day to staging; ≥ 1 deploy/week to production.
+- **Lead Time for Changes:** p50 ≤ 24h from commit to production deploy.
+- **Change Failure Rate:** < 5% of production deploys trigger rollback or hotfix.
+- **Time to Restore Service:** MTTR p50 < 1h (enforced via `dora_mttr_target_seconds` in `docs/sre/slo/slo.yaml`).
+
+Enforcement:
+
+- Prometheus DORA dashboard MUST exist at `infrastructure/monitoring/grafana/dora-metrics.json`.
+- `cd-production.yml` MUST emit a `dora_deployments_total` metric on every deploy (success/rollback/failure) via the `emit-dora-event` job.
+- A monthly DORA report MUST be generated using the template in `specs/observability/dora-metrics.md §5` and stored as `docs/sre/dora-report-YYYY-MM.md`.
+- LEAD TIME is measured from the first commit SHA on the PR to the production deploy timestamp.
+- Any DORA metric falling below Elite → Medium threshold triggers a required retrospective within 5 business days.
+
+Full skill: `skills/sre/dora-metrics.md` | Spec: `specs/observability/dora-metrics.md` | ADR: ADR-0028

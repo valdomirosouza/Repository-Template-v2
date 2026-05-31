@@ -51,3 +51,19 @@ gates:
       "
     blocking: true
     failure_message: "Unmasked PII detected in staging logs. PII masking must be verified before production promotion."
+
+staging_compliance_gates:
+  - id: STG-DAST-01
+    description: "OWASP ZAP full scan must pass before production promotion"
+    check: "ZAP scan report present in docs/security/zap-reports/ dated today"
+    severity: BLOCKING
+
+  - id: STG-ROLLBACK-01
+    description: "Rollback procedure must be validated in staging"
+    check: "make rollback executed and smoke tests passed post-rollback"
+    severity: BLOCKING (for normal-change and emergency-change)
+
+  - id: STG-DORA-01
+    description: "Lead time must be within DORA tracking threshold"
+    check: "Time from first commit to staging deploy logged in DORA metrics"
+    severity: WARNING

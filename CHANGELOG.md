@@ -13,6 +13,35 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **`docs/adr/ADR-0026-sox-audit-log-immutability.md`** — ADR for SOX-conditional three-layer immutable audit log strategy (PostgreSQL INSERT-only trigger + Kafka infinite retention + S3 cold storage). Refs: SPEC-sox-controls, ADR-0026.
+- **`docs/adr/ADR-0027-iso27001-change-management.md`** — ADR for three-tier change classification (Standard/Normal/Emergency) enforced via GitHub PR labels and `cab-check` CI gate. Refs: SPEC-iso27001-change-management, ADR-0027.
+- **`docs/adr/ADR-0028-dora-metrics.md`** — ADR for Prometheus-native DORA metrics instrumentation (four metrics, Pushgateway, Grafana dashboard, monthly report). Refs: SPEC-dora-metrics, ADR-0028.
+- **`docs/adr/ADR-0029-devsecops-pipeline-security.md`** — ADR for DevSecOps pipeline hardening: Checkov IaC scan, OWASP ZAP DAST, SHA-pinned actions, Gitleaks CI, digest-pinned base images, least-privilege workflow permissions. Refs: ADR-0029.
+- **`specs/compliance/sox-controls.md`** — SOX ITGC spec (CC1–CC7), audit event schema, retention policy, and acceptance criteria. Conditional on SEC-listed status.
+- **`specs/compliance/iso27001-change-management.md`** — ISO 27001 A.12.1 change management spec: classification matrix, deploy/rollback flowcharts, CAB integration, evidence retention.
+- **`specs/observability/dora-metrics.md`** — DORA metrics instrumentation spec: metric definitions, tier thresholds, Grafana panel spec, alerting rules, monthly report template.
+- **`skills/compliance/sox.md`** — SOX compliance skill with ITGC checklist, application controls, and evidence artifact matrix. Conditional on SEC-listed status.
+- **`skills/compliance/iso27001-change-management.md`** — ISO 27001 change management skill with deploy/rollback procedures and audit evidence matrix.
+- **`skills/sre/dora-metrics.md`** — DORA metrics skill with Prometheus metric definitions, `cd-production.yml` integration snippet, and monthly report guidance.
+- **`skills/devsecops/owasp-top10.md`** — OWASP Top 10 enforcement skill with per-control checklist (A01–A10), ZAP DAST integration, and OWASP LLM Top 10 cross-reference.
+- **`skills/devsecops/pipeline-security.md`** — DevSecOps pipeline security skill: stage security map, GitHub Actions hardening, Checkov, Gitleaks, container hardening, SBOM+provenance workflow.
+- **`src/observability/dora_metrics.py`** — Prometheus metric registrations for all four DORA metrics (`dora_deployments_total`, `dora_lead_time_seconds`, `dora_change_failure_rate`, `dora_mttr_seconds`). Refs: ADR-0028.
+- **`infrastructure/monitoring/grafana/dora-metrics.json`** — Grafana dashboard with four DORA panels (Deployment Frequency, Lead Time p50/p90, Change Failure Rate gauge, MTTR p50/p90) and Elite threshold annotations. Refs: ADR-0028.
+- **`docs/sox/access-review.md`** — Quarterly SOX access review template (CC7 evidence). Conditional on SEC-listed status.
+- **`docs/change-log/SCHEMA.md`** — Append-only change-log entry schema (deploy and rollback events) for ISO 27001 A.12.1 and SOX CC5 audit evidence. Refs: ADR-0027.
+
+### Changed
+
+- **`CLAUDE.md`** — §3.2 Security Rules expanded with OWASP Top 10 and OWASP LLM Top 10 controls; §4 Skill Activation Table gains five new rows (SOX, ISO 27001 CM, DORA, OWASP Top 10, DevSecOps Pipeline); §7 PR Checklist gains eleven compliance gate items (SOX, ISO 27001, DORA, OWASP, DevSecOps); new §10 SOX Compliance Rules (conditional), §11 ISO 27001 Change Management Rules, and §12 DORA Metrics — Mandatory Tracking; ADR reference updated to ADR-0026–0029.
+- **`harness/code-check.yml`** — Added `compliance_checks` block: SOX-01–03, ISO-CM-01–03, OWASP-A03/A08/A09, DSEC-01–03, DORA-01.
+- **`harness/release-check.yml`** — Added `pre_release_compliance` block: REL-SOX-01, REL-ISO-01, REL-DORA-01, REL-OWASP-01, REL-SBOM-01.
+- **`harness/staging-check.yml`** — Added `staging_compliance_gates` block: STG-DAST-01, STG-ROLLBACK-01, STG-DORA-01.
+- **`.github/workflows/cd-production.yml`** — Added `cab-check` job (validates change-type label and RFC_ID before deploy); `emit-dora-event` job (pushes DORA metrics to Pushgateway after every deploy); `record-change-evidence` job (appends deploy record to `docs/change-log/`). Refs: ADR-0027, ADR-0028.
+- **`.github/workflows/cd-staging.yml`** — Added `dast-scan` job (OWASP ZAP full scan as blocking gate after smoke tests; archives report to `docs/security/zap-reports/`). Refs: ADR-0029.
+- **`docs/sre/slo/slo.yaml`** — Bumped to v1.2; added `dora_mttr_target_seconds: 3600` (DORA Elite MTTR target). Refs: ADR-0028.
+
 ## [1.17.7] — 2026-05-29
 
 ### Changed

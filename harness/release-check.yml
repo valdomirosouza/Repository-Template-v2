@@ -60,3 +60,30 @@ gates:
       "
     blocking: true
     failure_message: "Manual CAB approval not confirmed. Set MANUAL_APPROVAL=confirmed after RFC is approved by CAB."
+
+pre_release_compliance:
+  - id: REL-SOX-01
+    description: "Release notes must document all financial data path changes [IF SOX APPLIES]"
+    check: "CHANGELOG.md [Unreleased] section must exist and be non-empty"
+    severity: BLOCKING
+    condition: sox_applicable == true
+
+  - id: REL-ISO-01
+    description: "Production deploy requires RFC approval"
+    check: "merge commit message for release tag must contain Refs: RFC-\\d+"
+    severity: BLOCKING (for normal-change)
+
+  - id: REL-DORA-01
+    description: "DORA metrics dashboard must be present"
+    check: "infrastructure/monitoring/grafana/dora-metrics.json must exist"
+    severity: WARNING
+
+  - id: REL-OWASP-01
+    description: "DAST scan report must be present for this release"
+    check: "docs/security/zap-reports/ must contain a report dated within 7 days of release"
+    severity: BLOCKING
+
+  - id: REL-SBOM-01
+    description: "SBOM must be generated and signed for release artifact"
+    check: "cosign verify-attestation on release image must succeed"
+    severity: BLOCKING

@@ -1,6 +1,7 @@
-version: "1.1"
-last_updated: "2026-05-28"
+version: "1.2"
+last_updated: "2026-05-31"
 owner: sre-lead
+dora_mttr_target_seconds: 3600 # DORA Elite threshold — MTTR p50 < 1h (ADR-0028)
 
 services:
   - name: api-gateway
