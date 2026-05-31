@@ -13,9 +13,12 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.19.0] — 2026-05-31
+
 ### Added
 
 - **`.github/ISSUE_TEMPLATE/feature_request.md`** — Feature request issue template with spec reference, acceptance criteria, ISO 27001 change type, pre-implementation checklist, and definition of done aligned with CLAUDE.md §2 SDD cycle.
+- **`version.txt` / `pyproject.toml`** — Bumped to `1.19.0`.
 
 ## [1.18.1] — 2026-05-31
 
