@@ -13,9 +13,19 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Fixed
+
+- **`.github/workflows/secret-scanning.yml`** — Added `frontend/frontend/pnpm-lock.yaml` to `--exclude-files` list; pnpm lock file hashes were generating 644 false-positive Base64 entropy findings. Closes #12.
+- **`.secrets.baseline`** — Regenerated with pnpm-lock.yaml exclusion; reduced from 645 to 1 entry.
+- **`.github/workflows/release.yml`** — Added `continue-on-error: true` to `release-please-action` step; workflow now degrades gracefully when the "Allow Actions to create PRs" GitHub repo setting is disabled (manual releases are used instead). Closes #12.
+- **`.github/workflows/sbom.yml`** — Registry login step now conditional on `REGISTRY_USERNAME` and `REGISTRY_PASSWORD` secrets being set; SBOM generation no longer fails when registry credentials are not configured. Closes #12.
+
+## [1.23.0] — 2026-05-31
+
 ### Added
 
 - **`docs/governance/raci-matrix.md`** — RACI matrix covering 7 process domains (SDLC, security, privacy, AI governance, change management, SRE, infrastructure) with 60+ process rows mapped to 8 roles (TL, PO, ENG, SEC, DPO, AIGOV, SRE, DEV) and validation rules. Closes #10.
+- **`version.txt` / `pyproject.toml`** — Bumped to `1.23.0`.
 
 ## [1.22.0] — 2026-05-31
 
