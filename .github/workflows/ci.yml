@@ -360,20 +360,24 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.9.0
+      - name: Set lowercase image name
+        id: image
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
       - name: Build image (no push on PR)
         uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5.4.0
         with:
           context: .
           push: false
           load: true # load into the local daemon so Trivy can scan it
-          tags: ${{ github.repository }}:${{ github.sha }}
+          tags: ${{ steps.image.outputs.name }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Scan image for vulnerabilities (Trivy)
         # REM-006 — fail the build on fixable CRITICAL/HIGH CVEs in the image (ISO 8.7, SOC 2 CC6.8).
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: ${{ github.repository }}:${{ github.sha }}
+          image-ref: ${{ steps.image.outputs.name }}:${{ github.sha }}
           format: table
           exit-code: "1"
           severity: CRITICAL,HIGH

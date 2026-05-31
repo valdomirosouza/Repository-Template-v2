@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **`docs/compliance/dependency-policy.md`** — Dependency policy covering approved registries (Python/Java/Go/Node/containers/Actions), licence allowlist/blocklist, new-dependency approval process, version pinning requirements, update SLAs by CVE severity, SCA gate thresholds, and vendoring rules.
+
 ## [1.20.1] — 2026-05-31
 
 ### Changed

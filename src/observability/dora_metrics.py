@@ -21,7 +21,7 @@ dora_lead_time_seconds = Histogram(
 
 dora_change_failure_rate = Gauge(
     "dora_change_failure_rate",
-    "Rolling 30-day change failure rate (0.0–1.0)",
+    "Rolling 30-day change failure rate (0.0-1.0)",
     ["service"],
 )
 
