@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Version:** 1.19.0 | **Last updated:** 2026-05-31
+> **Version:** 1.20.0 | **Last updated:** 2026-05-31
 > This file is the authoritative behavioral contract for Claude Code operating in this repository.
 > Claude must read this file at the start of every session and follow all rules without exception.
 
