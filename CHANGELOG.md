@@ -13,6 +13,8 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.18.0] — 2026-05-31
+
 ### Added
 
 - **`docs/adr/ADR-0026-sox-audit-log-immutability.md`** — ADR for SOX-conditional three-layer immutable audit log strategy (PostgreSQL INSERT-only trigger + Kafka infinite retention + S3 cold storage). Refs: SPEC-sox-controls, ADR-0026.
@@ -41,6 +43,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 - **`.github/workflows/cd-production.yml`** — Added `cab-check` job (validates change-type label and RFC_ID before deploy); `emit-dora-event` job (pushes DORA metrics to Pushgateway after every deploy); `record-change-evidence` job (appends deploy record to `docs/change-log/`). Refs: ADR-0027, ADR-0028.
 - **`.github/workflows/cd-staging.yml`** — Added `dast-scan` job (OWASP ZAP full scan as blocking gate after smoke tests; archives report to `docs/security/zap-reports/`). Refs: ADR-0029.
 - **`docs/sre/slo/slo.yaml`** — Bumped to v1.2; added `dora_mttr_target_seconds: 3600` (DORA Elite MTTR target). Refs: ADR-0028.
+- **`version.txt` / `pyproject.toml`** — Bumped to `1.18.0`.
 
 ## [1.17.7] — 2026-05-29
 
