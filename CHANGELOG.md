@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **`docs/sre/deployment-strategy.md`** — Deployment strategy guide covering the decision matrix (canary vs blue-green vs rolling vs feature flag), per-strategy mechanics and DB migration rules, SLO gate configuration, hotfix deploy path, feature flag as deployment substitute, risk scoring matrix, and DORA impact. Refs: ADR-0027, ADR-0028.
+
 ## [1.21.0] — 2026-05-31
 
 ### Added
