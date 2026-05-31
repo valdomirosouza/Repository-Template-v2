@@ -7,14 +7,78 @@ they focus on systems, processes, and improvements — not on individual mistake
 
 ## Runbook Index
 
-| Runbook                                                            | Severity scope | Owner              | Last reviewed |
-| ------------------------------------------------------------------ | -------------- | ------------------ | ------------- |
-| [RB-001 rollback-procedure.md](rollback-procedure.md)              | P1–P2          | SRE Lead           | 2026-05-24    |
-| [RB-002 disaster-recovery.md](disaster-recovery.md)                | P1             | SRE Lead           | 2026-05-24    |
-| [RB-003 hitl-recovery.md](RB-003-hitl-recovery.md)                 | P1–P2          | AI Governance Lead | 2026-05-24    |
-| [RB-004 db-connection-failure.md](RB-004-db-connection-failure.md) | P1–P2          | SRE Lead           | 2026-05-31    |
-| [RB-005 kafka-consumer-lag.md](RB-005-kafka-consumer-lag.md)       | P2–P3          | SRE Lead           | 2026-05-31    |
-| [RB-006 auth-failure.md](RB-006-auth-failure.md)                   | P1–P2          | Security Lead      | 2026-05-31    |
+| ID     | Runbook                                                            | Severity | Owner              | Last reviewed |
+| ------ | ------------------------------------------------------------------ | -------- | ------------------ | ------------- |
+| RB-001 | [rollback-procedure.md](rollback-procedure.md)                     | P1–P2    | SRE Lead           | 2026-05-24    |
+| RB-002 | [disaster-recovery.md](disaster-recovery.md)                       | P1       | SRE Lead           | 2026-05-24    |
+| RB-003 | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                 | P1–P2    | AI Governance Lead | 2026-05-24    |
+| RB-004 | [RB-004-db-connection-failure.md](RB-004-db-connection-failure.md) | P1–P2    | SRE Lead           | 2026-05-31    |
+| RB-005 | [RB-005-kafka-consumer-lag.md](RB-005-kafka-consumer-lag.md)       | P2–P3    | SRE Lead           | 2026-05-31    |
+| RB-006 | [RB-006-auth-failure.md](RB-006-auth-failure.md)                   | P1–P2    | Security Lead      | 2026-05-31    |
+
+---
+
+## Alert → Runbook Mapping
+
+When a Prometheus alert fires, reach for the runbook linked below.
+
+| Alert                              | Severity | Runbook                                                                                               |
+| ---------------------------------- | -------- | ----------------------------------------------------------------------------------------------------- |
+| `CriticalErrorRate`                | P1       | [RB-001 rollback-procedure.md](rollback-procedure.md)                                                 |
+| `HighErrorRate`                    | P2       | [RB-001 rollback-procedure.md](rollback-procedure.md)                                                 |
+| `CriticalP99Latency`               | P1       | [RB-001 rollback-procedure.md](rollback-procedure.md)                                                 |
+| `HighP99Latency`                   | P2       | [RB-001 rollback-procedure.md](rollback-procedure.md)                                                 |
+| `APIGatewayAvailabilityFastBurn`   | P1       | [RB-001 rollback-procedure.md](rollback-procedure.md)                                                 |
+| `APIGatewayAvailabilitySlowBurn`   | P2       | [RB-001 rollback-procedure.md](rollback-procedure.md)                                                 |
+| `AuditLogWriteFailure`             | P1       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `HITLAvailabilityFastBurn`         | P1       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `HITLAvailabilitySlowBurn`         | P2       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `HITLQueueDepthCritical`           | P1       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `HITLQueueDepthHigh`               | P2       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `HITLQueueDepthWarning`            | P3       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `HITLApprovalTimeout`              | P2       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `HITLDecisionLatencyP95Critical`   | P1       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `HITLDecisionLatencyP95Warning`    | P2       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `HITLNoApprovals`                  | P2       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `HITLRejectionRateHigh`            | P2       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `HITLWaitTimeHigh`                 | P3       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `CircuitBreakerOpen`               | P1       | [RB-004-db-connection-failure.md](RB-004-db-connection-failure.md)                                    |
+| `CircuitBreakerHalfOpen`           | P2       | [RB-004-db-connection-failure.md](RB-004-db-connection-failure.md)                                    |
+| `KafkaConsumerLagHigh`             | P2       | [RB-005-kafka-consumer-lag.md](RB-005-kafka-consumer-lag.md)                                          |
+| `ConsumerLagCritical`              | P1       | [RB-005-kafka-consumer-lag.md](RB-005-kafka-consumer-lag.md)                                          |
+| `ConsumerStale`                    | P2       | [RB-005-kafka-consumer-lag.md](RB-005-kafka-consumer-lag.md)                                          |
+| `DLQMessagesGrowing`               | P2       | [RB-005-kafka-consumer-lag.md](RB-005-kafka-consumer-lag.md)                                          |
+| `EventConsumerDLQBudgetBurning`    | P2       | [RB-005-kafka-consumer-lag.md](RB-005-kafka-consumer-lag.md)                                          |
+| `AgentActionErrorRate`             | P2       | [RB-006-auth-failure.md](RB-006-auth-failure.md) + [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md) |
+| `AgentMTTDHigh`                    | P2       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `AgentMTTRHigh`                    | P2       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `AgentAutonomousResolutionRateLow` | P2       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `AutonomousResolutionRateCritical` | P1       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `AutonomousResolutionRateWarning`  | P3       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `LLMCallLatencyHigh`               | P2       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `LLMTokenBudgetExceeded90Percent`  | P2       | [RB-003-hitl-recovery.md](RB-003-hitl-recovery.md)                                                    |
+| `HighCPUUsage`                     | P2       | [disaster-recovery.md](disaster-recovery.md)                                                          |
+| `HighMemoryUsage`                  | P2       | [disaster-recovery.md](disaster-recovery.md)                                                          |
+| `ZeroRequestRate`                  | P1       | [RB-001 rollback-procedure.md](rollback-procedure.md) + [disaster-recovery.md](disaster-recovery.md)  |
+
+---
+
+## Service → Runbook Mapping
+
+On-call quick reference: which runbook to reach for per affected service.
+
+| Service          | Scenario                                                | Runbook                                   |
+| ---------------- | ------------------------------------------------------- | ----------------------------------------- |
+| `api-gateway`    | Deploy caused error rate spike / latency degradation    | [RB-001](rollback-procedure.md)           |
+| `api-gateway`    | Total outage / all services unreachable                 | [RB-002](disaster-recovery.md)            |
+| `api-gateway`    | 401/403 flood — users cannot authenticate               | [RB-006](RB-006-auth-failure.md)          |
+| `agent-service`  | HITL queue backing up / approvals not flowing           | [RB-003](RB-003-hitl-recovery.md)         |
+| `agent-service`  | Agent actions failing / autonomous resolution stalled   | [RB-003](RB-003-hitl-recovery.md)         |
+| `event-consumer` | Kafka lag growing / pipeline stalled                    | [RB-005](RB-005-kafka-consumer-lag.md)    |
+| `event-consumer` | DLQ accumulating / messages not processing              | [RB-005](RB-005-kafka-consumer-lag.md)    |
+| `postgresql`     | API 500s correlated with DB — connection errors in logs | [RB-004](RB-004-db-connection-failure.md) |
+| `postgresql`     | Pool exhausted — `OperationalError` in all services     | [RB-004](RB-004-db-connection-failure.md) |
+| `all services`   | Infrastructure total failure / datacenter event         | [RB-002](disaster-recovery.md)            |
 
 ---
 

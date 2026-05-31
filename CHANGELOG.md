@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Changed
+
+- **`docs/runbooks/README.md`** — Runbook index expanded with Alert → Runbook mapping (all 35 Prometheus alerts linked to their runbook) and Service → Runbook mapping (on-call quick reference by service and scenario).
+
 ## [1.20.0] — 2026-05-31
 
 ### Added
