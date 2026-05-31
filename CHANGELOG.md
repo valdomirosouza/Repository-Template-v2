@@ -13,9 +13,17 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.21.0] — 2026-05-31
+
 ### Added
 
-- **`docs/compliance/dependency-policy.md`** — Dependency policy covering approved registries (Python/Java/Go/Node/containers/Actions), licence allowlist/blocklist, new-dependency approval process, version pinning requirements, update SLAs by CVE severity, SCA gate thresholds, and vendoring rules.
+- **`docs/compliance/dependency-policy.md`** — Dependency policy covering approved registries (Python/Java/Go/Node/containers/Actions), licence allowlist/blocklist, new-dependency approval process, version pinning requirements, update SLAs by CVE severity, SCA gate thresholds, and vendoring rules. Closes #7.
+- **`version.txt` / `pyproject.toml`** — Bumped to `1.21.0`.
+
+### Fixed
+
+- **`src/observability/dora_metrics.py`** — Replaced EN dash with hyphen in `dora_change_failure_rate` docstring (Ruff RUF001).
+- **`.github/workflows/ci.yml`** — Docker image tag and Trivy `image-ref` now lowercased via `tr '[:upper:]' '[:lower:]'`; prevents build failure when repository name contains uppercase letters.
 
 ## [1.20.1] — 2026-05-31
 
