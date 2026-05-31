@@ -1,0 +1,197 @@
+# .rtk/filters.toml — Repository-Template project-level RTK filters
+# Auto-loaded by RTK from the working directory.
+# Priority: this file > ~/.config/rtk/filters.toml > built-in filters
+# Docs: https://github.com/rtk-ai/rtk#configuration
+# Spec: RTK-001 | ADR: ADR-0030
+
+# ─── Make targets ─────────────────────────────────────────────────────────────
+
+[filters.make-setup]
+description = "Strip make setup boilerplate — show only errors and final status"
+match_command = "^make setup"
+strip_ansi = true
+strip_lines_matching = [
+  "^Synchronizing submodule",
+  "^Already up to date",
+  "^uv sync",
+  "^Resolved ",
+  "^  Built ",
+  "^  Installed ",
+  "^Downloading ",
+  "^Using Python",
+  "^make\\[",
+]
+max_lines = 40
+
+[filters.make-infra]
+description = "Strip docker-compose boilerplate from make infra-up/down"
+match_command = "^make infra"
+strip_ansi = true
+strip_lines_matching = [
+  "^\\[\\+\\]",
+  "^Network .* Created",
+  "^Volume .* Created",
+  "^Container .* Started",
+  "^Container .* Stopped",
+  "^Container .* Removed",
+  "^make\\[",
+]
+max_lines = 20
+
+[filters.make-lint]
+description = "Strip make lint boilerplate — show only violations"
+match_command = "^make lint"
+strip_ansi = true
+strip_lines_matching = [
+  "^make\\[",
+  "^Running ",
+  "^Checking ",
+  "^\\s*$",
+]
+max_lines = 50
+
+[filters.make-test]
+description = "Strip make test boilerplate — failures only"
+match_command = "^make test"
+strip_ansi = true
+strip_lines_matching = [
+  "^make\\[",
+  "^Running ",
+  "^collecting ",
+  "^platform ",
+  "^rootdir",
+  "^plugins",
+  "^cacheprovider",
+  "^\\s*$",
+]
+max_lines = 60
+
+# ─── Alembic ──────────────────────────────────────────────────────────────────
+
+[filters.alembic]
+description = "Strip Alembic migration boilerplate — show target and errors only"
+match_command = "^(uv run )?alembic"
+strip_ansi = true
+strip_lines_matching = [
+  "^INFO  \\[alembic\\.runtime\\.migration\\] Context impl",
+  "^INFO  \\[alembic\\.runtime\\.migration\\] Will assume",
+  "^INFO  \\[alembic\\.runtime\\.migration\\] Running upgrade",
+]
+max_lines = 20
+
+# ─── Trivy (container scanning) ───────────────────────────────────────────────
+
+[filters.trivy]
+description = "Trivy scan — show only CRITICAL and HIGH findings, suppress LOW/MEDIUM/INFO"
+match_command = "^trivy"
+strip_ansi = true
+strip_lines_matching = [
+  "^\\d{4}-\\d{2}-\\d{2}T.*INFO",
+  "^\\d{4}-\\d{2}-\\d{2}T.*DEBUG",
+  "^Fetching",
+  "^Loaded",
+  "^\\[.*\\].*MEDIUM",
+  "^\\[.*\\].*LOW",
+  "^\\[.*\\].*NEGLIGIBLE",
+  "^\\[.*\\].*UNKNOWN",
+  "^Total: \\d+ \\(UNKNOWN: \\d+, LOW:",
+]
+max_lines = 80
+
+# ─── Helm ─────────────────────────────────────────────────────────────────────
+
+[filters.helm-upgrade]
+description = "Helm upgrade — strip unchanged resources, show only changes and errors"
+match_command = "^helm upgrade"
+strip_ansi = true
+strip_lines_matching = [
+  "^Release \".*\" has been upgraded",
+  "^NAME:",
+  "^LAST DEPLOYED:",
+  "^NAMESPACE:",
+  "^STATUS:",
+  "^REVISION:",
+  "^TEST SUITE:",
+  "^NOTES:",
+  "^\\s*$",
+]
+max_lines = 30
+
+[filters.helm-diff]
+description = "Helm diff — compact output"
+match_command = "^helm diff"
+strip_ansi = true
+max_lines = 100
+
+# ─── Terraform / OpenTofu ─────────────────────────────────────────────────────
+
+[filters.terraform-plan]
+description = "Terraform plan — show only resource changes, suppress refresh noise"
+match_command = "^(terraform|tofu) plan"
+strip_ansi = true
+strip_lines_matching = [
+  "^Refreshing state\\.\\.\\.",
+  "^.*: Refreshing state\\.\\.\\.",
+  "^Note: Objects have changed outside of Terraform",
+  "^Unless you have made equivalent changes",
+  "^─────────────────────────────────────────────",
+  "^Terraform used the selected providers",
+  "^Terraform will perform the following actions",
+]
+max_lines = 80
+
+# ─── uv (Python package manager) ──────────────────────────────────────────────
+
+[filters.uv-sync]
+description = "uv sync — strip resolved/built/installed noise, show only adds/removes"
+match_command = "^uv (sync|install|add|remove)"
+strip_ansi = true
+strip_lines_matching = [
+  "^Resolved ",
+  "^  Built ",
+  "^  Installed ",
+  "^  Uninstalled ",
+  "^Downloading ",
+  "^Using Python",
+  "^Audited ",
+]
+max_lines = 20
+
+# ─── pre-commit ───────────────────────────────────────────────────────────────
+
+[filters.pre-commit]
+description = "pre-commit — show only failed hooks, suppress passed"
+match_command = "^(uv run )?pre-commit"
+strip_ansi = true
+strip_lines_matching = [
+  "\\.\\.\\.\\.\\.\\.\\.\\.\\.\\.\\.\\.\\.\\.\\.\\.\\.Passed",
+  "^\\[INFO\\]",
+  "^\\[WARNING\\] Skipping",
+]
+max_lines = 40
+
+# ─── SBOM / Cosign ────────────────────────────────────────────────────────────
+
+[filters.syft-sbom]
+description = "Syft SBOM generation — suppress package enumeration noise"
+match_command = "^syft"
+strip_ansi = true
+strip_lines_matching = [
+  "^ ✔ Cataloged packages",
+  "^ ✔ Indexed",
+  "^\\s+\\[",
+]
+max_lines = 10
+
+[filters.cosign]
+description = "Cosign sign/verify — one-line result"
+match_command = "^cosign"
+strip_ansi = true
+strip_lines_matching = [
+  "^Generating ephemeral keys\\.\\.\\.",
+  "^Retrieving signed certificate\\.\\.\\.",
+  "^using ephemeral certificate",
+  "^Successfully verified",
+  "^tlog entry created",
+]
+max_lines = 5
