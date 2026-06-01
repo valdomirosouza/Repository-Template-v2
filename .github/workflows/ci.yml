@@ -435,9 +435,8 @@ jobs:
 
       - name: Sign SBOM and attach to image
         if: github.event_name == 'push'
-        env:
-          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
         run: |
+          IMAGE="${REGISTRY}/$(echo "${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]'):${GITHUB_SHA}"
           cosign attest \
             --predicate sbom.json \
             --type cyclonedx \
