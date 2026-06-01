@@ -13,6 +13,8 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.26.10] — 2026-06-01
+
 ### Changed
 
 - **Go 1.23 → 1.24** (`services/event-worker/go.mod`, `event-worker/Dockerfile`, `scaffold/templates/go/Dockerfile`) — Go 1.23 reached EOL 2025-08-13. Closes #31.
