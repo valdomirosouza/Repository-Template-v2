@@ -13,6 +13,11 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Fixed
+
+- **`.github/workflows/pr-governance.yml`** — `issue-referenced` job now exempts `docs:` type PR titles and adds a `no-issue` label escape hatch; previous behaviour caused every documentation-only PR to fail even when no issue was required.
+- **`.github/workflows/` (13 files)** — Updated four GitHub Actions from Node.js 20 to Node.js 24 compatible versions ahead of the June 16 deprecation: `actions/checkout` v4.3.1→v6.0.2, `actions/setup-python` v5.6.0→v6.2.0, `actions/upload-artifact` v4.6.2→v7.0.1, `actions/github-script` v7.1.0→v9.0.0.
+
 ## [1.26.1] — 2026-05-31
 
 ### Changed
