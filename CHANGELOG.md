@@ -13,6 +13,15 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **`LICENSE`** — MIT License (Copyright 2026 Valdomiro Souza).
+
+### Changed
+
+- **`README.md`** — License badge updated from `Proprietary` to `MIT`.
+- **`pyproject.toml`** — Added `license = {text = "MIT"}` to `[project]` metadata.
+
 ## [1.26.5] — 2026-06-01
 
 ### Added
