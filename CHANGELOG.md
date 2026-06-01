@@ -13,6 +13,8 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.26.18] — 2026-06-01
+
 ### Added
 
 - **`SETUP.md`** — First-run onboarding checklist with 6 numbered steps; clearly flags the 3 CI-gate blockers (CODEOWNERS, image registry, `.env` secrets) that prevent every PR from merging until resolved. Closes #56.
