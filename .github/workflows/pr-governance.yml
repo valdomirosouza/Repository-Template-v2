@@ -120,6 +120,9 @@ jobs:
           if printf '%s' "$TITLE" | grep -qE '^\w+\(ci\):'; then
             echo "CI-scoped PR — spec not required"; exit 0
           fi
+          if printf '%s' "$TITLE" | grep -qE '^\w+\(docs\):'; then
+            echo "Docs-scoped PR — spec not required"; exit 0
+          fi
           if printf '%s' "$TITLE" | grep -qE '^(feat|fix|security|privacy|perf)(\(|!|:)'; then
             if printf '%s' "$BODY" | grep -qE 'specs/[A-Za-z0-9/._-]+\.md'; then
               echo "spec reference found"

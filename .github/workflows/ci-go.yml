@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GO_VERSION: "1.23"
+  GO_VERSION: "1.24"
 
 permissions:
   contents: read
@@ -35,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff  # v5.6.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -48,7 +48,7 @@ jobs:
           find services -name go.mod | while read gomod; do
             dir=$(dirname "$gomod")
             echo "Linting $dir..."
-            golangci-lint run "$dir/..."
+            (cd "$dir" && golangci-lint run ./...)
           done
 
       - name: govulncheck (blocks on known Go vulnerabilities)
@@ -58,7 +58,7 @@ jobs:
             dir=$(dirname "$gomod")
             service=$(basename "$dir")
             echo "govulncheck: scanning $service..."
-            govulncheck "$dir/..."
+            (cd "$dir" && govulncheck ./...)
           done
         # Fails the build when any imported package has a known vulnerability in the Go vuln DB.
         # govulncheck only reports vulnerabilities reachable via the call graph — not transitive
@@ -82,7 +82,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff  # v5.6.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -97,17 +97,18 @@ jobs:
 
       - name: Unit tests (short mode — no external services)
         run: |
+          WORKSPACE=$(pwd)
           find services -name go.mod | while read gomod; do
             dir=$(dirname "$gomod")
             service=$(basename "$dir")
             echo "Testing $service (unit)..."
-            go test -short -race -coverprofile="coverage-${service}.out" "$dir/..."
-            go tool cover -func="coverage-${service}.out" | tail -1
+            (cd "$dir" && go test -short -race -coverprofile="${WORKSPACE}/coverage-${service}.out" ./...)
+            go tool cover -func="${WORKSPACE}/coverage-${service}.out" | tail -1
           done
 
       - name: Enforce coverage threshold (≥ 80%)
         run: |
-          find . -name "coverage-*.out" | while read cov; do
+          find . -maxdepth 1 -name "coverage-*.out" | while read cov; do
             total=$(go tool cover -func="$cov" | grep total | awk '{print $3}' | tr -d '%')
             if [ "$(echo "$total < 80" | bc)" -eq 1 ]; then
               echo "::error::Coverage $total% is below 80% threshold in $cov"
@@ -144,7 +145,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       kafka:
-        image: confluentinc/cp-kafka:7.7.0
+        image: confluentinc/cp-kafka:7.8.0
         ports:
           - 9092:9092
         env:
@@ -166,7 +167,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff  # v5.6.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -177,7 +178,7 @@ jobs:
             dir=$(dirname "$gomod")
             service=$(basename "$dir")
             echo "Testing $service (integration)..."
-            go test -race -timeout 5m -run Integration "$dir/..."
+            (cd "$dir" && go test -race -timeout 5m -run Integration ./...)
           done
         env:
           DATABASE_URL: postgres://testuser:testpassword@localhost:5432/testdb?sslmode=disable
@@ -192,7 +193,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5  # v4.1.0
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       - name: Build images (no push on PR)
         run: |
