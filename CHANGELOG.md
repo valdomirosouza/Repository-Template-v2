@@ -13,6 +13,13 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.26.5] — 2026-06-01
+
+### Added
+
+- **`.claude/skills/run-repository-template/`** — Run skill for the FastAPI server: `smoke.sh` driver exercises 7 endpoints (health, ready, docs, metrics, HITL status, POST/GET requests) with no Docker required; `SKILL.md` documents the agent path, gotchas, and troubleshooting. All checks verified passing.
+- **`version.txt` / `pyproject.toml`** — Bumped to `1.26.5`.
+
 ## [1.26.4] — 2026-06-01
 
 ### Changed
