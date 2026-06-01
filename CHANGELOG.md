@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Fixed
+
+- **`pr-governance.yml`** — Added `chore(release):` exemption to the issue-reference gate (PR #49); release version-bump PRs have no associated feature issue. Added `\w+(ci):` scope exemptions to both the issue-reference and spec-reference gates; CI maintenance PRs (`fix(ci):`, `chore(ci):`) require neither a feature issue nor a product spec.
+
 ## [1.26.13] — 2026-06-01
 
 ### Fixed
