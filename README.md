@@ -107,18 +107,22 @@ Also read after your language guide:
 
 - [`docs/quickstart/contract-driven-dev.md`](docs/quickstart/contract-driven-dev.md) — generate code from OpenAPI / AsyncAPI / proto
 - [`docs/quickstart/add-new-service.md`](docs/quickstart/add-new-service.md) — 10-step checklist for registering a new service
+- [`docs/quickstart/deploy-to-production.md`](docs/quickstart/deploy-to-production.md) — canary deploy, CAB approval, rollback procedure
 
 **Minimum required customisations before committing your first feature:**
 
-| File                 | What to change                                                    |
-| -------------------- | ----------------------------------------------------------------- |
-| **`services.yaml`**  | **Rename services, update ports and topic names — do this first** |
-| `.github/CODEOWNERS` | Replace `@your-org/*` placeholders with your team handles         |
-| `version.txt`        | Reset to `0.1.0`                                                  |
-| `.env.example`       | Add project-specific environment variables                        |
-| `docs/adr/`          | Add ADRs for your own architectural decisions                     |
-| `specs/`             | Write specs for features before implementing                      |
-| `CLAUDE.md`          | Adjust AI behavioural contract for your team                      |
+> ⚠️ **Start here → [`SETUP.md`](SETUP.md)** — three steps are enforced by CI gates and will block every PR until completed (CODEOWNERS teams, image registry, `.env` secrets).
+
+| File                     | What to change                                                                  |
+| ------------------------ | ------------------------------------------------------------------------------- |
+| **`.github/CODEOWNERS`** | **Replace `@your-org/*` — CI blocks every PR until done** `[BLOCKER]`           |
+| **`services.yaml`**      | **Replace `yourorg/` image registry — Helm deploy fails otherwise** `[BLOCKER]` |
+| **`.env`**               | **Set `[REQUIRED]` secrets — app refuses to start in prod** `[BLOCKER]`         |
+| `version.txt`            | Reset to `0.1.0`                                                                |
+| `.env.example`           | Add project-specific environment variables                                      |
+| `docs/adr/`              | Add ADRs for your own architectural decisions                                   |
+| `specs/`                 | Write specs for features before implementing                                    |
+| `CLAUDE.md`              | Adjust AI behavioural contract for your team                                    |
 
 > For term definitions (SDD, HITL/HOTL, CUJ, PRR) see [`docs/glossary.md`](docs/glossary.md).
 
@@ -135,7 +139,7 @@ A production-ready scaffold for enterprise teams. Everything is wired together f
 
 | Layer                    | What's included                                                                                 |
 | ------------------------ | ----------------------------------------------------------------------------------------------- |
-| **Languages**            | Python 3.13 · Java 21 · Go 1.23 · Node 20 / Next.js 14                                          |
+| **Languages**            | Python 3.13 · Java 21 · Go 1.24 · Node 22 / Next.js 15                                          |
 | **Service scaffolds**    | `services/domain-service/` (Spring Boot) · `services/event-worker/` (Go) · `frontend/frontend/` |
 | **Infrastructure**       | PostgreSQL · Redis · Kafka (KRaft) · Schema Registry · flagd                                    |
 | **IaC**                  | Helm chart for Kubernetes · Terraform modules for VPC, EKS, and ElastiCache Redis               |
@@ -240,11 +244,11 @@ make new-service NAME=my-service LANG=python   # or java / go
 │   └── shared/                  ← Config, models, retry, DB pool, feature flags
 │
 ├── services/
-│   ├── domain-service/          ← Java 21 / Spring Boot 3.3 — CRUD API + Kafka consumer
-│   └── event-worker/            ← Go 1.23 — stateless Kafka consumer
+│   ├── domain-service/          ← Java 21 / Spring Boot 3.4 — CRUD API + Kafka consumer
+│   └── event-worker/            ← Go 1.24 — stateless Kafka consumer
 │
 ├── frontend/
-│   └── frontend/                ← Next.js 14 / TypeScript — HITL approval UI
+│   └── frontend/                ← Next.js 15 / TypeScript — HITL approval UI
 │
 ├── infrastructure/
 │   ├── helm/api-gateway/        ← Helm chart (Deployment · HPA · PDB · Ingress)
