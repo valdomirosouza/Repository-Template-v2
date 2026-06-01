@@ -47,6 +47,9 @@ jobs:
           if printf '%s' "$TITLE" | grep -qE '^chore\(release\):'; then
             echo "release PR — issue reference not required"; exit 0
           fi
+          if printf '%s' "$TITLE" | grep -qE '^\w+\(ci\):'; then
+            echo "CI-scoped PR — issue reference not required"; exit 0
+          fi
           if printf '%s\n%s' "$BODY" "$TITLE" | grep -qiE '(closes|fixes|resolves|references|ref|see)? *#[0-9]+|GH-[0-9]+'; then
             echo "Issue reference found."
           else
@@ -113,6 +116,9 @@ jobs:
         run: |
           if printf ',%s,' "$LABELS" | grep -q ',no-spec,'; then
             echo "no-spec label present — exempt"; exit 0
+          fi
+          if printf '%s' "$TITLE" | grep -qE '^\w+\(ci\):'; then
+            echo "CI-scoped PR — spec not required"; exit 0
           fi
           if printf '%s' "$TITLE" | grep -qE '^(feat|fix|security|privacy|perf)(\(|!|:)'; then
             if printf '%s' "$BODY" | grep -qE 'specs/[A-Za-z0-9/._-]+\.md'; then
