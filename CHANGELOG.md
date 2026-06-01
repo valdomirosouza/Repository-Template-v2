@@ -13,13 +13,18 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.26.3] — 2026-06-01
+
 ### Changed
 
 - **`.gitignore`** — Added patterns for Claude Code session prompt files (`*-improvement-prompt.md`, `*-token-efficiency-prompt.md`) and `frontend/frontend/pnpm-lock.yaml` (environment-specific lock file).
-- **`docs/compliance/remediation-register.md`** — Deduplicated accumulated duplicate table sections (file had Open/Done tables repeated 3–4× from incremental edits); replaced instance-specific `@valdomirosouza` handle with generic placeholder; content and resolution details preserved.
+- **`docs/compliance/remediation-register.md`** — Deduplicated accumulated duplicate table sections (file had Open/Done tables repeated 3–4× from incremental edits); replaced instance-specific handle with generic placeholder; content and resolution details preserved.
 - **`.github/workflows/secret-scanning.yml`** — Removed `--exclude-files 'frontend/frontend/pnpm-lock\.yaml'` exclusion (file no longer tracked).
+- **`version.txt` / `pyproject.toml`** — Bumped to `1.26.3`.
 
 ### Removed
+
+- **`frontend/frontend/pnpm-lock.yaml`** — Untracked from git (environment-specific; was causing 644 secret-scanner false positives; regenerated on `pnpm install`).
 
 - **`frontend/frontend/pnpm-lock.yaml`** — Untracked from git (environment-specific; was causing secret-scanner false positives; regenerated on `pnpm install`).
 
