@@ -13,6 +13,12 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.26.15] — 2026-06-01
+
+### Changed
+
+- **`docs/sbom.json`** — Refreshed by CI Syft scan (auto-committed; reflects current dependency graph).
+
 ## [1.26.14] — 2026-06-01
 
 ### Fixed
