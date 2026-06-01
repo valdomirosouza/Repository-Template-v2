@@ -16,6 +16,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 ### Added
 
 - **`SETUP.md`** — First-run onboarding checklist with 6 numbered steps; clearly flags the 3 CI-gate blockers (CODEOWNERS, image registry, `.env` secrets) that prevent every PR from merging until resolved. Closes #56.
+- **`docs/quickstart/deploy-to-production.md`** — End-to-end production deployment guide: change classification (standard/normal/emergency), PRR pre-flight, canary rollout (5%→25%→100% with SLO gates), rollback procedure (`make rollback`, RTO < 1h), and post-deploy DORA/change-log verification. Linked from `docs/quickstart/README.md` and `README.md`. Closes #59.
 
 ### Removed
 

@@ -17,10 +17,11 @@ working in this monorepo. Start with the guide that matches your stack.
 
 After reading your language guide, read these in order:
 
-| Topic                                           | Guide                                            |
-| ----------------------------------------------- | ------------------------------------------------ |
-| Generating code from OpenAPI / AsyncAPI / proto | [contract-driven-dev.md](contract-driven-dev.md) |
-| Registering a new service in the monorepo       | [add-new-service.md](add-new-service.md)         |
+| Topic                                           | Guide                                              |
+| ----------------------------------------------- | -------------------------------------------------- |
+| Generating code from OpenAPI / AsyncAPI / proto | [contract-driven-dev.md](contract-driven-dev.md)   |
+| Registering a new service in the monorepo       | [add-new-service.md](add-new-service.md)           |
+| Deploying to production (canary, CAB, rollback) | [deploy-to-production.md](deploy-to-production.md) |
 
 ---
 

@@ -107,6 +107,7 @@ Also read after your language guide:
 
 - [`docs/quickstart/contract-driven-dev.md`](docs/quickstart/contract-driven-dev.md) — generate code from OpenAPI / AsyncAPI / proto
 - [`docs/quickstart/add-new-service.md`](docs/quickstart/add-new-service.md) — 10-step checklist for registering a new service
+- [`docs/quickstart/deploy-to-production.md`](docs/quickstart/deploy-to-production.md) — canary deploy, CAB approval, rollback procedure
 
 **Minimum required customisations before committing your first feature:**
 
