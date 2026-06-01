@@ -13,12 +13,15 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.26.0] — 2026-05-31
+
 ### Added
 
 - **`docs/sre/finops.md`** — FinOps budget template and cost-allocation guide: cost centers, monthly budget table, required cost allocation tags, alert thresholds (70/90/100%), 15-item optimization checklist, chargeback/showback model, maturity self-assessment, and cost review cadence. Closes #22. Refs: FIN-001, ADR-0020.
 - **`docs/sre/capacity-planning.md`** — Capacity planning template: baseline resource sizing per runtime (Python/Java/Go/Node), headroom rules with Prometheus alerts, horizontal vs vertical scaling decision matrix, HPA configuration template, per-service capacity worksheet, traffic growth model, load testing prerequisites, and quarterly review checklist. Closes #23. Refs: CAP-001.
 - **`docs/governance/team-topology.md`** — Team topology guide: four team types (stream-aligned, enabling, platform, complicated-subsystem), three interaction modes, squad ownership map, Team API definition template, interaction mode map, RACI/CODEOWNERS sync rules, and customization guide. Closes #24. Refs: TT-001.
 - **`specs/sre/finops.md`**, **`specs/sre/capacity-planning.md`**, **`specs/governance/team-topology.md`** — Specs FIN-001, CAP-001, TT-001.
+- **`version.txt` / `pyproject.toml`** — Bumped to `1.26.0`.
 
 ## [1.25.1] — 2026-05-31
 
