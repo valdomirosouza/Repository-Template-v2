@@ -13,6 +13,13 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **`docs/eol-inventory.yaml`** — Quarterly EOL inventory covering 11 runtime/framework/infra components (Python, Java, Go, Node.js, FastAPI, Spring Boot, Next.js, PostgreSQL, Redis, Kafka, Kubernetes). Six components flagged `eol`; upgrade tracking issues: #31 #32 #33 #34 #35 #36.
+- **`docs/sbom.json`** — CycloneDX SBOM placeholder; replaced automatically by CI on every push via Syft.
+- **`ci.yml` — `sbom` job** — Generates a CycloneDX SBOM with Syft after `build`, uploads a 90-day workflow artifact, and attaches a keyless Cosign OCI attestation on push events. Closes PDR SBOM gap.
+- **`cd-staging.yml` — cosign pre-flight** — `cosign verify-attestation` step added to `deploy-staging` before Helm upgrade; `id-token: write` permission added for keyless OIDC signing.
+
 ## [1.26.6] — 2026-06-01
 
 ### Added
