@@ -21,15 +21,15 @@ runtimes:
     action_if_eol: Migrate to next LTS and update all Spring Boot dependencies
 
   - name: Go
-    version: "1.23"
-    eol_date: "2025-08-13"
-    status: eol # EOL when Go 1.25 released (~2025-08-13); upgrade to Go 1.24+
+    version: "1.24"
+    eol_date: "2026-08-01"
+    status: active # Upgraded from 1.23 (EOL); closes #31
     action_if_eol: Upgrade Go toolchain and rebuild event-worker
 
   - name: Node.js
-    version: "20"
-    eol_date: "2026-04-30"
-    status: eol # Maintenance ended 2026-04-30; upgrade to Node.js 22 LTS
+    version: "22"
+    eol_date: "2027-04-30"
+    status: active # Upgraded from 20 (EOL); closes #32
     action_if_eol: Upgrade Node.js version in Dockerfile and devcontainer
 
 frameworks:
@@ -40,15 +40,15 @@ frameworks:
     action_if_eol: Upgrade to latest stable
 
   - name: Spring Boot
-    version: "3.3.5"
-    eol_date: "2025-11-23"
-    status: eol # OSS support ended 2025-11-23 (18 months from GA 2024-05-23)
-    action_if_eol: Migrate to next supported minor version (3.4.x or later)
+    version: "3.4.5"
+    eol_date: "2026-11-21"
+    status: active # Upgraded from 3.3.5 (EOL); closes #33
+    action_if_eol: Migrate to next supported minor version
 
   - name: Next.js
-    version: "14.2.29"
-    eol_date: "2025-10-17"
-    status: eol # Next.js 14 EOL 2025-10-17; upgrade to Next.js 15+
+    version: "15.2.4"
+    eol_date: "2026-10-01"
+    status: active # Upgraded from 14.2.29 (EOL); closes #34
     action_if_eol: Upgrade to next major, verify HITL UI compatibility
 
 infrastructure:
@@ -65,13 +65,13 @@ infrastructure:
     action_if_eol: Upgrade ElastiCache engine version
 
   - name: Apache Kafka
-    version: "3.7" # Confluent Platform 7.7.0 ships Apache Kafka 3.7
-    eol_date: "2025-10-15"
-    status: eol # Kafka 3.7 community EOL ~2025-10; upgrade to 3.8+ / CP 7.8+
+    version: "3.8" # Confluent Platform 7.8.0 ships Apache Kafka 3.8
+    eol_date: "2026-10-01"
+    status: active # Upgraded from 3.7/CP 7.7.0 (EOL); closes #35
     action_if_eol: Upgrade broker and Schema Registry versions together
 
   - name: Kubernetes (EKS)
-    version: "1.31"
-    eol_date: "2025-10-28"
-    status: eol # Community EOL 2025-10-28; AWS EKS extended support ends ~2026-10
+    version: "1.32"
+    eol_date: "2026-12-28"
+    status: active # Upgraded from 1.31 (EOL); closes #36
     action_if_eol: Upgrade EKS cluster version via Terraform, test Helm chart compatibility

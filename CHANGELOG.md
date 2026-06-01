@@ -13,6 +13,16 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Changed
+
+- **Go 1.23 → 1.24** (`services/event-worker/go.mod`, `event-worker/Dockerfile`, `scaffold/templates/go/Dockerfile`) — Go 1.23 reached EOL 2025-08-13. Closes #31.
+- **Node.js 20 → 22** (`frontend/frontend/package.json` engines, `frontend/frontend/Dockerfile`, `scaffold/templates/frontend/Dockerfile`) — Node.js 20 LTS reached EOL 2026-04-30. Closes #32.
+- **Spring Boot 3.3.5 → 3.4.5** (`services/domain-service/pom.xml`) — Spring Boot 3.3.x OSS support ended 2025-11-23. Closes #33.
+- **Next.js 14.2.29 → 15.2.4** (`frontend/frontend/package.json` — `next` + `eslint-config-next`) — Next.js 14 reached EOL 2025-10-17. Closes #34.
+- **Apache Kafka CP 7.7.0 → 7.8.0** (`docker-compose.yml`, `ci.yml` integration test service) — Kafka 3.7 community EOL ~2025-10. Closes #35.
+- **Kubernetes 1.31 → 1.32** (`infrastructure/terraform/modules/kubernetes/variables.tf`) — K8s 1.31 community EOL 2025-10-28. Closes #36.
+- **`docs/eol-inventory.yaml`** — Updated versions and statuses for all six upgraded components; zero EOL items remaining.
+
 ## [1.26.9] — 2026-06-01
 
 ### Fixed

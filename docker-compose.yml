@@ -62,7 +62,7 @@ services:
 
   # ── Kafka (KRaft mode — no Zookeeper) ───────────────────────────────────────
   kafka:
-    image: confluentinc/cp-kafka:7.7.0
+    image: confluentinc/cp-kafka:7.8.0
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -95,7 +95,7 @@ services:
 
   # ── Kafka Schema Registry ────────────────────────────────────────────────────
   schema-registry:
-    image: confluentinc/cp-schema-registry:7.7.0
+    image: confluentinc/cp-schema-registry:7.8.0
     depends_on:
       kafka:
         condition: service_healthy
