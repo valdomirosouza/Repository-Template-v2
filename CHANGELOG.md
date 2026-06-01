@@ -13,6 +13,13 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.26.9] — 2026-06-01
+
+### Fixed
+
+- **`ci.yml` — `sbom` job** — Removed cosign install + attest steps; the `build` job uses `push: false` so no image exists in the registry for CI to sign. The job now only generates the SBOM with Syft and uploads it as a 90-day workflow artifact. Fixes CI failure in run [26752567193](https://github.com/valdomirosouza/Repository-Template/actions/runs/26752567193).
+- **`cd-staging.yml` — `deploy-staging` job** — Added Syft SBOM generation from the pushed image + `cosign attest` immediately after the image push (where the image is actually in the registry). Updated `cosign verify-attestation` certificate identity to reference `cd-staging.yml`. Lowercased image name consistently across all new steps.
+
 ## [1.26.8] — 2026-06-01
 
 ### Fixed
