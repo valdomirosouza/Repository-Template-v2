@@ -13,6 +13,8 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.26.19] — 2026-06-01
+
 ### Fixed
 
 - **`pr-governance.yml`** — Added `\w+(docs):` scope exemption to the spec-reference check; `feat(docs):` and similar docs-scoped PRs do not require a product spec (same rationale as `\w+(ci):`). Fixes retroactive failure on PR #60.
