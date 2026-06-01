@@ -13,6 +13,8 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.26.7] — 2026-06-01
+
 ### Added
 
 - **`docs/eol-inventory.yaml`** — Quarterly EOL inventory covering 11 runtime/framework/infra components (Python, Java, Go, Node.js, FastAPI, Spring Boot, Next.js, PostgreSQL, Redis, Kafka, Kubernetes). Six components flagged `eol`; upgrade tracking issues: #31 #32 #33 #34 #35 #36.
