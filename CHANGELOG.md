@@ -13,6 +13,13 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Changed
+
+- **`README.md`** — Updated ADR count (21→30), added `docs/governance/` to repo tree, added `skills/token-efficiency/` to skills tree, added ADR-0026–0030 to key decisions table.
+- **`docs/adr/README.md`** — Added ADR-0026–0030 to the Core Architecture index table.
+- **`mkdocs.yml`** — Added `sre/on-call-schedule.md`, `sre/deployment-strategy.md`, `sre/finops.md`, `sre/capacity-planning.md` to SRE nav; added new Governance section (team-topology, RACI matrix, owner onboarding).
+- **`skills/README.md`** — Added three `token-efficiency/` skill rows (rtk-setup, rtk-commands, rtk-context-hygiene) to the skills catalog.
+
 ## [1.26.0] — 2026-05-31
 
 ### Added

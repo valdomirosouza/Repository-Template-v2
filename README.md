@@ -211,11 +211,12 @@ make new-service NAME=my-service LANG=python   # or java / go
 │
 ├── docs/
 │   ├── quickstart/              ← Role-specific onboarding guides (5 languages)
-│   ├── adr/                     ← Architecture Decision Records (ADR-0001–0021)
+│   ├── adr/                     ← Architecture Decision Records (ADR-0001–0030)
 │   ├── api/                     ← OpenAPI · AsyncAPI · gRPC proto contracts
 │   ├── privacy/                 ← PII inventory, DPIA/RIPD, data retention
-│   ├── sre/                     ← SLOs, error budget policy, PRR, CUJ
+│   ├── sre/                     ← SLOs, error budget policy, PRR, CUJ, FinOps, capacity planning
 │   ├── runbooks/                ← RB-003 HITL recovery + rollback + DR
+│   ├── governance/              ← Team topology, RACI matrix, owner onboarding
 │   ├── ai-governance/           ← Model card, EU AI Act, NIST AI RMF
 │   └── dependency-manifest.yaml ← AI model versions, cost rates, governance metadata
 │
@@ -276,7 +277,8 @@ make new-service NAME=my-service LANG=python   # or java / go
     ├── observability/           ← otel-instrumentation
     ├── api/                     ← rest-api-design
     ├── devsecops/               ← secret-scanning
-    └── sdlc/                    ← spec-lifecycle
+    ├── sdlc/                    ← spec-lifecycle
+    └── token-efficiency/        ← rtk-setup · rtk-commands · rtk-context-hygiene
 ```
 
 Full annotated tree: [`docs/repo-structure.md`](docs/repo-structure.md)
@@ -382,7 +384,7 @@ CD workflows:
 
 ## Architecture Decisions
 
-All 21 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
+All 30 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
 
 | ADR                                                                | Decision                                               |
 | ------------------------------------------------------------------ | ------------------------------------------------------ |
@@ -399,6 +401,11 @@ All 21 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
 | [ADR-0019](docs/adr/ADR-0019-redis-tls-value-encryption.md)        | Redis TLS and value encryption                         |
 | [ADR-0020](docs/adr/ADR-0020-finops-cost-allocation.md)            | LLM cost allocation and budget enforcement             |
 | [ADR-0021](docs/adr/ADR-0021-agent-communication-protocol.md)      | Agent communication protocol (Protobuf)                |
+| [ADR-0026](docs/adr/ADR-0026-sox-audit-log-immutability.md)        | SOX audit log immutability and retention               |
+| [ADR-0027](docs/adr/ADR-0027-iso27001-change-management.md)        | ISO 27001 three-tier change management                 |
+| [ADR-0028](docs/adr/ADR-0028-dora-metrics.md)                      | DORA metrics — Elite targets and enforcement           |
+| [ADR-0029](docs/adr/ADR-0029-devsecops-pipeline-security.md)       | DevSecOps pipeline security (SAST, SCA, IaC, SBOM)     |
+| [ADR-0030](docs/adr/ADR-0030-rtk-token-efficiency.md)              | RTK token efficiency integration (developer tool)      |
 
 ---
 
