@@ -13,6 +13,13 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.26.11] — 2026-06-01
+
+### Fixed
+
+- **`secret-scanning.yml`** — Added `--exclude-files 'docs/sbom\.json'` to the detect-secrets scan command; Syft-generated SBOM content (hex hashes, UUIDs, SHA digests, CPE strings) was producing 48 false positives on every CI push.
+- **`.secrets.baseline`** — Regenerated with the same exclusion filter; zero genuine new findings.
+
 ## [1.26.10] — 2026-06-01
 
 ### Changed
