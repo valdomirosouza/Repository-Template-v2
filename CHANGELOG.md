@@ -13,6 +13,13 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.26.4] — 2026-06-01
+
+### Changed
+
+- **`.secrets.baseline`** — Removed stale `frontend/frontend/pnpm-lock\\.yaml` entry from the `should_exclude_file` patterns array; the file was removed from git tracking in v1.26.3, making the filter entry obsolete.
+- **`version.txt` / `pyproject.toml`** — Bumped to `1.26.4`.
+
 ## [1.26.3] — 2026-06-01
 
 ### Changed
