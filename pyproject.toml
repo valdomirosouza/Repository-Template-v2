@@ -7,7 +7,7 @@ packages = ["src"]
 
 [project]
 name = "template-service"
-version = "1.26.18"
+version = "1.26.19"
 description = "Enterprise monorepo template — production-ready, multi-language, with optional AI/agent components"
 license = {text = "MIT"}
 requires-python = ">=3.13"
