@@ -404,7 +404,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     permissions:
-      contents: write
+      contents: read
 
     steps:
       - name: Checkout
@@ -416,8 +416,7 @@ jobs:
       - name: Generate SBOM (CycloneDX JSON)
         run: |
           syft . \
-            --output cyclonedx-json=sbom.json \
-            --output cyclonedx-json=docs/sbom.json
+            --output cyclonedx-json=sbom.json
           echo "SBOM generated — $(jq '.components | length' sbom.json) components"
 
       - name: Upload SBOM as workflow artifact
@@ -426,11 +425,3 @@ jobs:
           name: sbom-${{ github.sha }}
           path: sbom.json
           retention-days: 90
-
-      - name: Commit docs/sbom.json to repo
-        if: github.event_name == 'push'
-        uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7.1.0
-        with:
-          commit_message: "chore(sbom): update SBOM for ${{ github.sha }} [skip ci]"
-          file_pattern: docs/sbom.json
-          branch: ${{ github.ref_name }}
