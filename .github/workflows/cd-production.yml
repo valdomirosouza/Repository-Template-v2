@@ -22,7 +22,7 @@ jobs:
     name: CAB Approval Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Validate change type label and RFC approval
         run: |
           python3 - << 'EOF'
@@ -101,10 +101,10 @@ jobs:
     environment: production
     if: ${{ inputs.strategy == 'canary' }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Set up Helm
-        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4  # v4.3.1
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           version: "3.14.0"
 
@@ -131,23 +131,23 @@ jobs:
             | jq -r '.data.result[0].value[1]')
           echo "Error rate: $ERROR_RATE | p99 latency: $P99s"
           python3 -c "
-import sys
-er = float('$ERROR_RATE')
-p99 = float('$P99')
-if er > 0.01 or p99 > 0.5:
-    print(f'Golden Signals gate FAILED at 5% canary: error_rate={er:.4f}, p99={p99:.3f}s')
-    sys.exit(1)
-"
+          import sys
+          er = float('$ERROR_RATE')
+          p99 = float('$P99')
+          if er > 0.01 or p99 > 0.5:
+              print(f'Golden Signals gate FAILED at 5% canary: error_rate={er:.4f}, p99={p99:.3f}s')
+              sys.exit(1)
+          "
 
   promote-canary-25:
     name: Canary — 25%
     runs-on: ubuntu-latest
     needs: deploy-canary
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Set up Helm
-        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4  # v4.3.1
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           version: "3.14.0"
 
@@ -171,23 +171,23 @@ if er > 0.01 or p99 > 0.5:
             --data-urlencode 'query=histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))' \
             | jq -r '.data.result[0].value[1]')
           python3 -c "
-import sys
-er = float('$ERROR_RATE')
-p99 = float('$P99')
-if er > 0.01 or p99 > 0.5:
-    print(f'Golden Signals gate FAILED at 25% canary: error_rate={er:.4f}, p99={p99:.3f}s')
-    sys.exit(1)
-"
+          import sys
+          er = float('$ERROR_RATE')
+          p99 = float('$P99')
+          if er > 0.01 or p99 > 0.5:
+              print(f'Golden Signals gate FAILED at 25% canary: error_rate={er:.4f}, p99={p99:.3f}s')
+              sys.exit(1)
+          "
 
   promote-canary-100:
     name: Full Deploy — 100%
     runs-on: ubuntu-latest
     needs: promote-canary-25
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Set up Helm
-        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4  # v4.3.1
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           version: "3.14.0"
 
@@ -277,7 +277,7 @@ if er > 0.01 or p99 > 0.5:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: true
 
@@ -316,6 +316,6 @@ if er > 0.01 or p99 > 0.5:
     needs: [deploy-canary, promote-canary-25, promote-canary-100]
     if: failure()
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Execute rollback
         run: bash infrastructure/scripts/deploy/rollback.sh --env production

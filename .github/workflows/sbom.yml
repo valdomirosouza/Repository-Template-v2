@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   sbom:
@@ -17,11 +18,14 @@ jobs:
       id-token: write
       contents: read
       packages: write
+    env:
+      REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Login to container registry
-        if: ${{ secrets.REGISTRY_USERNAME != '' && secrets.REGISTRY_PASSWORD != '' }}
+        if: env.REGISTRY_USERNAME != '' && env.REGISTRY_PASSWORD != ''
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ${{ vars.CONTAINER_REGISTRY }}
@@ -43,6 +47,7 @@ jobs:
         uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3.9.2
 
       - name: Attest SBOM to container image
+        if: vars.CONTAINER_REGISTRY != ''
         run: |
           cosign attest \
             --predicate sbom.cyclonedx.json \
