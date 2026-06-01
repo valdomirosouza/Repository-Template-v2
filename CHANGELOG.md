@@ -13,6 +13,12 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.26.8] — 2026-06-01
+
+### Fixed
+
+- **`ci.yml` — `sbom` job** — Lowercased the image name in the `cosign attest` step using `tr '[:upper:]' '[:lower:]'`; `github.repository` contains uppercase letters (`Repository-Template`) which are invalid in OCI references and caused cosign to fail with `could not parse reference`. Matches the pattern already used in the `build` job. Fixes run [26751670496](https://github.com/valdomirosouza/Repository-Template/actions/runs/26751670496).
+
 ## [1.26.7] — 2026-06-01
 
 ### Added
