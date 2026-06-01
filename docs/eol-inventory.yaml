@@ -1,0 +1,77 @@
+# docs/eol-inventory.yaml
+# Reviewed quarterly. Owner: platform-team.
+# Update trigger: any dependency change or new EOL announcement.
+
+schema_version: "1.0"
+last_reviewed: "2026-05-31"
+next_review_due: "2026-08-29"
+owner: platform-team
+
+runtimes:
+  - name: Python
+    version: "3.13"
+    eol_date: "2029-10-31"
+    status: active # active | approaching (< 6 months) | eol
+    action_if_eol: Upgrade runtime and rebuild all Docker images
+
+  - name: Java (OpenJDK)
+    version: "21"
+    eol_date: "2031-09-30"
+    status: active
+    action_if_eol: Migrate to next LTS and update all Spring Boot dependencies
+
+  - name: Go
+    version: "1.23"
+    eol_date: "2025-08-13"
+    status: eol # EOL when Go 1.25 released (~2025-08-13); upgrade to Go 1.24+
+    action_if_eol: Upgrade Go toolchain and rebuild event-worker
+
+  - name: Node.js
+    version: "20"
+    eol_date: "2026-04-30"
+    status: eol # Maintenance ended 2026-04-30; upgrade to Node.js 22 LTS
+    action_if_eol: Upgrade Node.js version in Dockerfile and devcontainer
+
+frameworks:
+  - name: FastAPI
+    version: "0.136.3"
+    eol_date: null # No fixed EOL — track major version deprecations
+    status: active
+    action_if_eol: Upgrade to latest stable
+
+  - name: Spring Boot
+    version: "3.3.5"
+    eol_date: "2025-11-23"
+    status: eol # OSS support ended 2025-11-23 (18 months from GA 2024-05-23)
+    action_if_eol: Migrate to next supported minor version (3.4.x or later)
+
+  - name: Next.js
+    version: "14.2.29"
+    eol_date: "2025-10-17"
+    status: eol # Next.js 14 EOL 2025-10-17; upgrade to Next.js 15+
+    action_if_eol: Upgrade to next major, verify HITL UI compatibility
+
+infrastructure:
+  - name: PostgreSQL
+    version: "16"
+    eol_date: "2028-11-09"
+    status: active
+    action_if_eol: Upgrade RDS engine version, run migration tests
+
+  - name: Redis
+    version: "7"
+    eol_date: "2027-01-31"
+    status: active # Tracking redis:7 (7.4.x); EOL 2027-01-31
+    action_if_eol: Upgrade ElastiCache engine version
+
+  - name: Apache Kafka
+    version: "3.7" # Confluent Platform 7.7.0 ships Apache Kafka 3.7
+    eol_date: "2025-10-15"
+    status: eol # Kafka 3.7 community EOL ~2025-10; upgrade to 3.8+ / CP 7.8+
+    action_if_eol: Upgrade broker and Schema Registry versions together
+
+  - name: Kubernetes (EKS)
+    version: "1.31"
+    eol_date: "2025-10-28"
+    status: eol # Community EOL 2025-10-28; AWS EKS extended support ends ~2026-10
+    action_if_eol: Upgrade EKS cluster version via Terraform, test Helm chart compatibility

@@ -13,6 +13,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   governance:
     name: Governance Checks
@@ -394,3 +398,56 @@ jobs:
           severity: CRITICAL,HIGH
           skip-dirs: ".venv,node_modules,target,.gradle,.git,infrastructure/terraform"
           trivyignores: .trivyignore
+
+  sbom:
+    name: Generate and sign SBOM
+    runs-on: ubuntu-latest
+    needs: [build]
+    permissions:
+      id-token: write # required for keyless Cosign signing via OIDC
+      contents: write
+      packages: write # required to push attestation to the registry
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@v0
+
+      - name: Generate SBOM (CycloneDX JSON)
+        run: |
+          syft . \
+            --output cyclonedx-json=sbom.json \
+            --output cyclonedx-json=docs/sbom.json
+          echo "SBOM generated — $(jq '.components | length' sbom.json) components"
+
+      - name: Upload SBOM as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom.json
+          retention-days: 90
+
+      - name: Install Cosign
+        if: github.event_name == 'push'
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign SBOM and attach to image
+        if: github.event_name == 'push'
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        run: |
+          cosign attest \
+            --predicate sbom.json \
+            --type cyclonedx \
+            --yes \
+            "$IMAGE"
+
+      - name: Commit docs/sbom.json to repo
+        if: github.event_name == 'push'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(sbom): update SBOM for ${{ github.sha }} [skip ci]"
+          file_pattern: docs/sbom.json
+          branch: ${{ github.ref_name }}
