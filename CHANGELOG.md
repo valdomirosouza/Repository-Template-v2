@@ -13,6 +13,12 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.26.13] — 2026-06-01
+
+### Fixed
+
+- **`pr-governance.yml`** — Added `chore(release):` title exemption to the issue-reference gate; release PRs are version bumps with no associated feature issue and were failing this check on every release (first caught in run [26756255904](https://github.com/valdomirosouza/Repository-Template/actions/runs/26756255904) for v1.26.12).
+
 ## [1.26.12] — 2026-06-01
 
 ### Changed
