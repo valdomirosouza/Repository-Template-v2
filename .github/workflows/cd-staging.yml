@@ -48,16 +48,34 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@v0
+
+      - name: Generate SBOM from image
+        run: |
+          IMAGE="${{ vars.CONTAINER_REGISTRY }}/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]'):staging-${{ inputs.sha }}"
+          syft "$IMAGE" \
+            --output cyclonedx-json=sbom.json
+          echo "SBOM generated — $(jq '.components | length' sbom.json) components"
+
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3
 
-      - name: Verify SBOM attestation before deploy
-        env:
-          IMAGE: ${{ vars.CONTAINER_REGISTRY }}/${{ github.repository }}:staging-${{ inputs.sha }}
+      - name: Attest SBOM to image
         run: |
+          IMAGE="${{ vars.CONTAINER_REGISTRY }}/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]'):staging-${{ inputs.sha }}"
+          cosign attest \
+            --predicate sbom.json \
+            --type cyclonedx \
+            --yes \
+            "$IMAGE"
+
+      - name: Verify SBOM attestation before deploy
+        run: |
+          IMAGE="${{ vars.CONTAINER_REGISTRY }}/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]'):staging-${{ inputs.sha }}"
           cosign verify-attestation \
             --type cyclonedx \
-            --certificate-identity-regexp "https://github.com/${{ github.repository }}/.github/workflows/ci.yml" \
+            --certificate-identity-regexp "https://github.com/${{ github.repository }}/.github/workflows/cd-staging.yml" \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
             "$IMAGE"
 
