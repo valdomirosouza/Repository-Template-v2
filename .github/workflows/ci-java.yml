@@ -40,24 +40,37 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9  # v4.8.0
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: microsoft
           cache: maven
 
       - name: Checkstyle
-        run: mvn checkstyle:check -pl $(find services -name pom.xml -not -path '*/target/*' | xargs dirname | tr '\n' ',')
+        run: |
+          find services -name pom.xml -not -path '*/target/*' | while read pomfile; do
+            dir=$(dirname "$pomfile")
+            echo "Checkstyle: $dir"
+            (cd "$dir" && mvn checkstyle:check)
+          done
 
       - name: SpotBugs (SAST)
-        run: mvn spotbugs:check -pl $(find services -name pom.xml -not -path '*/target/*' | xargs dirname | tr '\n' ',')
+        run: |
+          find services -name pom.xml -not -path '*/target/*' | while read pomfile; do
+            dir=$(dirname "$pomfile")
+            echo "SpotBugs: $dir"
+            (cd "$dir" && mvn spotbugs:check)
+          done
 
       - name: OWASP Dependency-Check (blocks on CVSS ≥ 7.0)
         run: |
-          mvn dependency-check:check \
-            -pl $(find services -name pom.xml -not -path '*/target/*' | xargs dirname | tr '\n' ',') \
-            -Ddependency-check.failBuildOnCVSS=7 \
-            -Ddependency-check.suppressionFile=services/domain-service/dependency-check-suppressions.xml
+          find services -name pom.xml -not -path '*/target/*' | while read pomfile; do
+            dir=$(dirname "$pomfile")
+            echo "Dependency-Check: $dir"
+            (cd "$dir" && mvn dependency-check:check \
+              -Ddependency-check.failBuildOnCVSS=7 \
+              -Ddependency-check.suppressionFile=dependency-check-suppressions.xml)
+          done
         # Fails the build when any dependency has a CVE with CVSS ≥ 7.0 (HIGH or CRITICAL).
         # False positives must be documented in dependency-check-suppressions.xml with CVE ID and rationale.
 
@@ -76,20 +89,35 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9  # v4.8.0
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: microsoft
           cache: maven
 
       - name: Generate sources (OpenAPI stubs + Avro classes)
-        run: mvn generate-sources -pl $(find services -name pom.xml -not -path '*/target/*' | xargs dirname | tr '\n' ',') -am
+        run: |
+          find services -name pom.xml -not -path '*/target/*' | while read pomfile; do
+            dir=$(dirname "$pomfile")
+            echo "Generate sources: $dir"
+            (cd "$dir" && mvn generate-sources)
+          done
 
       - name: Unit tests with JaCoCo
-        run: mvn test -pl $(find services -name pom.xml -not -path '*/target/*' | xargs dirname | tr '\n' ',') -am
+        run: |
+          find services -name pom.xml -not -path '*/target/*' | while read pomfile; do
+            dir=$(dirname "$pomfile")
+            echo "Unit tests: $dir"
+            (cd "$dir" && mvn test)
+          done
 
       - name: Enforce coverage threshold (≥ 80%)
-        run: mvn jacoco:check -pl $(find services -name pom.xml -not -path '*/target/*' | xargs dirname | tr '\n' ',')
+        run: |
+          find services -name pom.xml -not -path '*/target/*' | while read pomfile; do
+            dir=$(dirname "$pomfile")
+            echo "JaCoCo check: $dir"
+            (cd "$dir" && mvn jacoco:check)
+          done
 
       - name: Upload coverage report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -126,7 +154,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       kafka:
-        image: confluentinc/cp-kafka:7.7.0
+        image: confluentinc/cp-kafka:7.8.0
         ports:
           - 9092:9092
         env:
@@ -148,14 +176,19 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9  # v4.8.0
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: microsoft
           cache: maven
 
       - name: Run integration tests (Testcontainers disabled — using services above)
-        run: mvn verify -P integration-tests -pl $(find services -name pom.xml -not -path '*/target/*' | xargs dirname | tr '\n' ',') -am
+        run: |
+          find services -name pom.xml -not -path '*/target/*' | while read pomfile; do
+            dir=$(dirname "$pomfile")
+            echo "Integration tests: $dir"
+            (cd "$dir" && mvn verify -P integration-tests)
+          done
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/testdb
           SPRING_DATASOURCE_USERNAME: testuser
@@ -170,14 +203,14 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9  # v4.8.0
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: microsoft
           cache: maven
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5  # v4.1.0
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       - name: Build container image (Spring Boot buildpack, no push on PR)
         run: |

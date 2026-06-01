@@ -13,6 +13,13 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Fixed
+
+- **`pr-governance.yml`** — Added `\w+(docs):` scope exemption to the spec-reference check; `feat(docs):` and similar docs-scoped PRs do not require a product spec (same rationale as `\w+(ci):`). Fixes retroactive failure on PR #60.
+- **`ci-go.yml`** — Updated `GO_VERSION` from `1.23` to `1.24`; fixed `golangci-lint`, `govulncheck`, and all `go test` commands to run inside the module directory via subshell `(cd "$dir" && ...)` — they were failing with `directory prefix does not contain main module` when invoked from the repo root; fixed coverage profile path to write to `$WORKSPACE` so the coverage threshold step can find the files; bumped Kafka integration service image to `cp-kafka:7.8.0`.
+- **`ci-frontend.yml`** — Updated `NODE_VERSION` from `20` to `22`; removed `cache: pnpm` and `cache-dependency-path: .../pnpm-lock.yaml` from all three `setup-node` steps — `pnpm-lock.yaml` is not tracked in this repo (removed v1.26.3) so the cache step was failing with `specified paths were not resolved`.
+- **`ci-java.yml`** — Replaced all `mvn ... -pl $(find services ...)` invocations with per-service `(cd "$dir" && mvn ...)` loops; Maven's `-pl` flag requires a parent `pom.xml` in the working directory which this repo does not have; bumped Kafka integration service image to `cp-kafka:7.8.0`.
+
 ## [1.26.18] — 2026-06-01
 
 ### Added
