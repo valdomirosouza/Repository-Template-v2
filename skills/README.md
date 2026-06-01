@@ -12,22 +12,25 @@ You can also reference a skill explicitly by mentioning it in your request.
 
 ## Full Catalog
 
-| Skill                | Path                                           | Domain        | Activation Trigger                                       |
-| -------------------- | ---------------------------------------------- | ------------- | -------------------------------------------------------- |
-| Golden Signals       | `skills/sre/golden-signals.md`                 | SRE           | Any observability, SLO, or on-call work                  |
-| PRR                  | `skills/sre/prr.md`                            | SRE           | Before any production deploy                             |
-| CUJ                  | `skills/sre/cuj.md`                            | SRE           | Defining or testing critical user journeys               |
-| AI Guardrails        | `skills/ai/guardrails.md`                      | AI Safety     | Any agent or guardrail implementation                    |
-| PII                  | `skills/privacy/pii.md`                        | Privacy       | Any data handling code                                   |
-| LGPD                 | `skills/privacy/lgpd.md`                       | Privacy       | Brazilian data subjects or LGPD obligations              |
-| GDPR                 | `skills/privacy/gdpr.md`                       | Privacy       | EU data subjects or GDPR obligations                     |
-| RFC Process          | `skills/change-management/rfc-process.md`      | Change Mgmt   | Normal or Emergency changes                              |
-| Deploy & Rollback    | `skills/change-management/deploy-rollback.md`  | Change Mgmt   | Any deploy or rollback operation                         |
-| OTel Instrumentation | `skills/observability/otel-instrumentation.md` | Observability | Metrics, traces, or structured logs                      |
-| REST API Design      | `skills/api/rest-api-design.md`                | API           | Any REST endpoint design or implementation               |
-| DevSecOps            | `skills/devsecops/secret-scanning.md`          | DevSecOps     | CI/CD, secret scanning, SAST, dep audit                  |
-| Spec Lifecycle (SDD) | `skills/sdlc/spec-lifecycle.md`                | SDLC          | Writing, reviewing, or updating a spec                   |
-| Multi-Agent Harness  | `skills/ai/harness.md`                         | AI Agents     | Multi-step agent tasks, sprint contracts, harness design |
+| Skill                | Path                                             | Domain           | Activation Trigger                                       |
+| -------------------- | ------------------------------------------------ | ---------------- | -------------------------------------------------------- |
+| Golden Signals       | `skills/sre/golden-signals.md`                   | SRE              | Any observability, SLO, or on-call work                  |
+| PRR                  | `skills/sre/prr.md`                              | SRE              | Before any production deploy                             |
+| CUJ                  | `skills/sre/cuj.md`                              | SRE              | Defining or testing critical user journeys               |
+| AI Guardrails        | `skills/ai/guardrails.md`                        | AI Safety        | Any agent or guardrail implementation                    |
+| PII                  | `skills/privacy/pii.md`                          | Privacy          | Any data handling code                                   |
+| LGPD                 | `skills/privacy/lgpd.md`                         | Privacy          | Brazilian data subjects or LGPD obligations              |
+| GDPR                 | `skills/privacy/gdpr.md`                         | Privacy          | EU data subjects or GDPR obligations                     |
+| RFC Process          | `skills/change-management/rfc-process.md`        | Change Mgmt      | Normal or Emergency changes                              |
+| Deploy & Rollback    | `skills/change-management/deploy-rollback.md`    | Change Mgmt      | Any deploy or rollback operation                         |
+| OTel Instrumentation | `skills/observability/otel-instrumentation.md`   | Observability    | Metrics, traces, or structured logs                      |
+| REST API Design      | `skills/api/rest-api-design.md`                  | API              | Any REST endpoint design or implementation               |
+| DevSecOps            | `skills/devsecops/secret-scanning.md`            | DevSecOps        | CI/CD, secret scanning, SAST, dep audit                  |
+| Spec Lifecycle (SDD) | `skills/sdlc/spec-lifecycle.md`                  | SDLC             | Writing, reviewing, or updating a spec                   |
+| Multi-Agent Harness  | `skills/ai/harness.md`                           | AI Agents        | Multi-step agent tasks, sprint contracts, harness design |
+| RTK Setup            | `skills/token-efficiency/rtk-setup.md`           | Token Efficiency | First session on a new machine; "install rtk"            |
+| RTK Commands         | `skills/token-efficiency/rtk-commands.md`        | Token Efficiency | Any test/lint/build/git/docker command                   |
+| RTK Context Hygiene  | `skills/token-efficiency/rtk-context-hygiene.md` | Token Efficiency | Session start, context window concerns                   |
 
 ---
 

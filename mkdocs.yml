@@ -43,8 +43,16 @@ nav:
       - Rollback: runbooks/rollback-procedure.md
       - HITL Recovery: runbooks/RB-003-hitl-recovery.md
       - SLO Error Budget: sre/slo/error-budget-policy.md
+      - On-Call Schedule: sre/on-call-schedule.md
+      - Deployment Strategy: sre/deployment-strategy.md
+      - FinOps: sre/finops.md
+      - Capacity Planning: sre/capacity-planning.md
       - CUJ-001: sre/cuj/CUJ-001-user-request-processing.md
       - PRR Template: sre/prr/PRR-TEMPLATE.md
+  - Governance:
+      - Team Topology: governance/team-topology.md
+      - RACI Matrix: governance/raci-matrix.md
+      - Owner Onboarding: governance/owner-onboarding.md
   - Change Management:
       - Overview: change-management/README.md
       - RFC Template: change-management/RFC-TEMPLATE.md

@@ -86,6 +86,11 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0023](ADR-0023-frontend-architecture.md)             | Frontend Architecture               | Accepted | 2026-05-28 |
 | [ADR-0024](ADR-0024-api-versioning-strategy.md)           | API Versioning Strategy             | Accepted | 2026-05-28 |
 | [ADR-0025](ADR-0025-language-selection.md)                | Language Selection for New Services | Accepted | 2026-05-24 |
+| [ADR-0026](ADR-0026-sox-audit-log-immutability.md)        | SOX Audit Log Immutability          | Accepted | 2026-05-31 |
+| [ADR-0027](ADR-0027-iso27001-change-management.md)        | ISO 27001 Change Management         | Accepted | 2026-05-31 |
+| [ADR-0028](ADR-0028-dora-metrics.md)                      | DORA Metrics                        | Accepted | 2026-05-31 |
+| [ADR-0029](ADR-0029-devsecops-pipeline-security.md)       | DevSecOps Pipeline Security         | Accepted | 2026-05-31 |
+| [ADR-0030](ADR-0030-rtk-token-efficiency.md)              | RTK Token Efficiency Integration    | Accepted | 2026-05-31 |
 
 ### AI Agents Module _(opt-in)_
 
