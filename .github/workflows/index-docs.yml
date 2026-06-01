@@ -30,7 +30,7 @@ jobs:
         env:
           POSTGRES_DB: template_db
           POSTGRES_USER: template_user
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'dev-postgres' }}
         options: >-
           --health-cmd "pg_isready -U template_user"
           --health-interval 10s
@@ -40,10 +40,10 @@ jobs:
           - 5432:5432
 
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Install uv
-        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86  # v5.4.2
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
         with:
           version: "latest"
 
@@ -52,12 +52,12 @@ jobs:
 
       - name: Run Alembic migrations
         env:
-          DATABASE_URL: postgresql+asyncpg://template_user:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/template_db
+          DATABASE_URL: postgresql+asyncpg://template_user:${{ secrets.POSTGRES_PASSWORD || 'dev-postgres' }}@localhost:5432/template_db
         run: uv run alembic upgrade head
 
       - name: Index docs into agent memory
         env:
-          DATABASE_URL: postgresql+asyncpg://template_user:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/template_db
+          DATABASE_URL: postgresql+asyncpg://template_user:${{ secrets.POSTGRES_PASSWORD || 'dev-postgres' }}@localhost:5432/template_db
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
           uv run python -c "
