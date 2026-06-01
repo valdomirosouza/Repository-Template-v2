@@ -400,13 +400,11 @@ jobs:
           trivyignores: .trivyignore
 
   sbom:
-    name: Generate and sign SBOM
+    name: Generate SBOM
     runs-on: ubuntu-latest
     needs: [build]
     permissions:
-      id-token: write # required for keyless Cosign signing via OIDC
       contents: write
-      packages: write # required to push attestation to the registry
 
     steps:
       - name: Checkout
@@ -428,20 +426,6 @@ jobs:
           name: sbom-${{ github.sha }}
           path: sbom.json
           retention-days: 90
-
-      - name: Install Cosign
-        if: github.event_name == 'push'
-        uses: sigstore/cosign-installer@v3
-
-      - name: Sign SBOM and attach to image
-        if: github.event_name == 'push'
-        run: |
-          IMAGE="${REGISTRY}/$(echo "${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]'):${GITHUB_SHA}"
-          cosign attest \
-            --predicate sbom.json \
-            --type cyclonedx \
-            --yes \
-            "$IMAGE"
 
       - name: Commit docs/sbom.json to repo
         if: github.event_name == 'push'
