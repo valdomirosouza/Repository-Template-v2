@@ -13,6 +13,19 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- **`.claude/skills/` (29 skill directories)** — Ported all skills from `skills/` to proper Claude Code slash-command format (`<name>/SKILL.md` with `name:` + `description:` frontmatter). Each skill is now auto-discoverable by the Claude Code harness and available as a `/skill-name` command. Replaced 21 flat `.md` files (wrong format, not discoverable) with proper directories: `ai-guardrails`, `ai-harness`, `cab-process`, `capacity-planning`, `cuj`, `data-subject-rights`, `deploy-rollback`, `domain-modeling`, `dora-metrics`, `ethical-ai-review`, `gdpr`, `golden-signals`, `incident-response`, `iso27001`, `lgpd`, `otel`, `owasp-top10`, `pii`, `pipeline-security`, `prr`, `rest-api-design`, `rfc-process`, `rtk-commands`, `rtk-hygiene`, `rtk-setup`, `secret-scanning`, `sox-compliance`, `spec-lifecycle`, `testing-strategy`.
+
+### Added (MIT License)
+
+- **`LICENSE`** — MIT License (Copyright 2026 Valdomiro Souza).
+
+### Changed
+
+- **`README.md`** — License badge updated from `Proprietary` to `MIT`.
+- **`pyproject.toml`** — Added `license = {text = "MIT"}` to `[project]` metadata.
+
 ## [1.26.5] — 2026-06-01
 
 ### Added
