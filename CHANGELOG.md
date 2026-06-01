@@ -13,12 +13,15 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [1.25.1] — 2026-05-31
+
 ### Fixed
 
 - **`.github/workflows/secret-scanning.yml`** — YAML parse error: indented Python heredoc content inside `run: |` block so YAML block scalar is not terminated prematurely. Closes #17.
 - **`.github/workflows/cd-production.yml`** — YAML parse errors in `deploy-canary` and `promote-canary-25` jobs: indented `python3 -c "..."` body lines to stay within YAML block scalar. Closes #18.
 - **`.github/workflows/sbom.yml`** — Workflow file issue: moved `id-token: write` to workflow-level permissions; replaced `secrets.*` comparison in step `if:` with env-var pattern; guarded `cosign attest` with `if: vars.CONTAINER_REGISTRY != ''` so it skips gracefully when no registry is configured. Closes #19.
 - **`.github/workflows/index-docs.yml`** — Postgres service container failed to start: added `|| 'dev-postgres'` fallback to `POSTGRES_PASSWORD` and both `DATABASE_URL` references so the workflow runs in repos without the secret configured. Closes #20.
+- **`version.txt` / `pyproject.toml`** — Bumped to `1.25.1`.
 
 ## [1.25.0] — 2026-05-31
 
