@@ -6,7 +6,8 @@
 #   • spec reference for product/code changes (feat/fix/security/privacy/perf)
 #   • version.txt ⇄ pyproject.toml consistency when either is changed
 #
-# Escape hatches: `skip-changelog` and `no-spec` labels; Dependabot and the
+# Escape hatches: `no-issue` (issue check), `skip-changelog`, `no-spec` labels;
+# docs: PR titles are exempt from the issue check; Dependabot and the
 # release-please bot are exempted where appropriate.
 #
 # Runs on `pull_request` (read-only token; only the version-consistency job checks
@@ -33,14 +34,22 @@ jobs:
     env:
       BODY: ${{ github.event.pull_request.body }}
       TITLE: ${{ github.event.pull_request.title }}
+      LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
     steps:
       - name: Require a GitHub Issue link (Step 1 — CLAUDE.md §2)
         run: |
+          if printf ',%s,' "$LABELS" | grep -q ',no-issue,'; then
+            echo "no-issue label present — exempt"; exit 0
+          fi
+          if printf '%s' "$TITLE" | grep -qE '^docs(\(|!|:)'; then
+            echo "docs-only PR — issue reference not required"; exit 0
+          fi
           if printf '%s\n%s' "$BODY" "$TITLE" | grep -qiE '(closes|fixes|resolves|references|ref|see)? *#[0-9]+|GH-[0-9]+'; then
             echo "Issue reference found."
           else
             echo "::error::No GitHub Issue reference found. Every PR must link to an Issue (e.g. 'Closes #42')."
             echo "Step 1 of the mandatory development workflow requires a registered issue before any work begins."
+            echo "Escape hatches: add the 'no-issue' label, or use a 'docs:' PR title for documentation-only changes."
             exit 1
           fi
 
@@ -123,7 +132,7 @@ jobs:
       PR: ${{ github.event.pull_request.number }}
       REPO: ${{ github.repository }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: version.txt must match pyproject.toml when either changes (REM-010)
