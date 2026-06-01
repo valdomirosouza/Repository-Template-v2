@@ -56,6 +56,12 @@ src/shared/generated/grpc/   # generated gRPC stubs — run make gen-proto-pytho
 # Test outputs
 test-results/
 
-# Claude Code session data — per-project memory, not part of the codebase
+# Claude Code session data — per-project memory and session-specific prompt files
 .claude/memory/
 resumo-*.md
+*-improvement-prompt.md
+*-token-efficiency-prompt.md
+
+# Node.js lock files — regenerated on install; not committed in template
+# (pnpm-lock.yaml was causing secret-scanner false positives due to hash content)
+frontend/frontend/pnpm-lock.yaml
