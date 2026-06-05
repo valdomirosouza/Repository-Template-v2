@@ -561,3 +561,46 @@ When the task involves token efficiency, install, or context hygiene:
 
 Run `rtk discover --since 7` at the start of each week. Any command with 0% savings
 that appears > 3 times should be added to `.rtk/filters.toml`.
+
+---
+
+## 14. Agentic Escalation Protocol
+
+> **Applies to all Claude Code sessions.** These rules define when the agent MUST stop
+> and request human input rather than proceeding autonomously. **ADR:** ADR-0034
+
+### 14.1 Mandatory Escalation Triggers
+
+Emit a `[HITL-ESCALATE]` block and **stop all file writes** before proceeding when ANY of the following is true:
+
+| Trigger                                                                                  | Reason                                                        |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| The task requires modifying more than 3 ADRs simultaneously                              | Architectural impact requires human judgment                  |
+| The implementation touches `src/guardrails/` or `src/agents/hitl_gateway.py`             | Dual-approval paths — Security + AI Governance required       |
+| A spec reference cannot be found after two distinct search attempts                      | SDD invariant: no code without a spec                         |
+| Test coverage would drop below 75% due to the proposed change                            | Quality gate — exception requires explicit approval           |
+| The task involves enabling, disabling, or modifying any feature flag                     | Autonomy level changes require governance sign-off (ADR-0015) |
+| A `[HITL-ESCALATE]` has already been emitted in the current session and was not resolved | Cascading escalations must not be auto-resolved               |
+
+### 14.2 Escalation Block Format
+
+```
+[HITL-ESCALATE]
+reason: <one sentence describing why escalation is triggered>
+proposed_action: <what I was about to do>
+risk_level: low | medium | high
+files_affected: <comma-separated list of files that would be modified>
+awaiting_human_decision: true
+```
+
+Do NOT proceed until the human explicitly approves, modifies, or cancels the proposed action.
+
+### 14.3 Non-Escalation Acknowledgement
+
+For tasks that are close to but do not meet an escalation trigger, emit a brief inline note:
+
+```
+[HITL-NOTE] This change touches <sensitive area> but does not trigger escalation because <reason>.
+```
+
+Full ADR: `docs/adr/ADR-0034-agentic-escalation-protocol.md`

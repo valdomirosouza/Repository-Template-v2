@@ -88,6 +88,9 @@ This system incorporates AI agents. We are particularly interested in reports of
 - **Excessive agency** (OWASP LLM08): agents performing actions beyond their defined scope
 - **HITL bypass**: any mechanism that allows agent actions to skip human approval
 - **Audit log tampering**: any mechanism to alter or delete immutable audit records
+- **Dual-use exploitation**: using an agentic action type for purposes outside its approved scope (e.g., using a document-generation action to exfiltrate data)
+
+Every new agentic `action_type` is subject to a mandatory dual-use risk assessment before activation. See `specs/ethics/ethical-ai-principles.md §4` for the checklist and `docs/ai-governance/dual-use-registry.md` for the recorded assessments. If you identify an action type that passes the checklist but can still be misused, please report it.
 
 ---
 

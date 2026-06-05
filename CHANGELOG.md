@@ -13,6 +13,20 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 1 — Safety & Compliance (Agentic SDLC)
+
+#### Added
+
+- **`docs/adr/ADR-0034-agentic-escalation-protocol.md`** — Decision record for the mandatory in-session escalation protocol. Closes #3.
+- **`docs/ai-governance/dual-use-registry.md`** — Append-only registry for dual-use risk assessments per `action_type`. Closes #1.
+- **`specs/ethics/ethical-ai-principles.md §4`** — New "Dual-Use Risk Assessment" section with a six-question mandatory checklist (D-01–D-06) and mitigation registry format. Closes #1.
+- **`CLAUDE.md §14`** — New "Agentic Escalation Protocol" section defining six hard escalation triggers, `[HITL-ESCALATE]` block format, and `[HITL-NOTE]` for near-miss acknowledgement. Closes #3.
+
+#### Security
+
+- **`SECURITY.md`** — Added dual-use exploitation as a reportable AI-specific security class; linked to the dual-use registry and ethical-ai-principles checklist. Closes #1.
+- **`.github/workflows/ci.yml` (sbom job)** — Added SBOM component-count gate (fails on 0 components) and cosign attestation step for push events. Closes #2.
+
 ## [2.0.0] — 2026-06-05
 
 ### Added
