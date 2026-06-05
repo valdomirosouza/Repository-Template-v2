@@ -13,6 +13,17 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+## [2.0.0] — 2026-06-05
+
+### Added
+
+- **Repository-Template-v2** — Initial release of the v2 generation of the enterprise monorepo template, published as a GitHub Template Repository (`is_template: true`).
+
+### Changed
+
+- Repository renamed from `Repository-Template` to `Repository-Template-v2`; remote origin updated accordingly.
+- Version lineage reset to `2.0.0`; codebase based on `v1.26.19` of the original template.
+
 ## [1.26.19] — 2026-06-01
 
 ### Fixed
