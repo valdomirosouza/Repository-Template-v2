@@ -44,12 +44,19 @@ A story / PR is **Done** only when **ALL** applicable criteria below are checked
 
 - [ ] K8s health probes configured for any new Deployment (`startupProbe`, `livenessProbe`, `readinessProbe`)
 - [ ] `ci-k8s-probe-lint.yml` passes
+- [ ] **SBOM generated** (Syft/CycloneDX) and cosign-attested when the change ships a build artifact
+- [ ] **Release & rollback strategy documented** — deploy steps + rollback trigger/criteria (ADR-0056) for any production-impacting change
+
+### Release Readiness _(production-impacting changes)_
+
+- [ ] **PRR completed** and signed off (`docs/sre/prr/PRR-TEMPLATE.md`) before release-candidate promotion
 
 ### AI Agents Module _(only when `src/agents/` is involved)_
 
 - [ ] All agent actions with real-world effects route through `hitl_gateway.py`
 - [ ] New action types have a corresponding schema in `infrastructure/agent-tools/action-schemas/`
 - [ ] `RuntimePolicyGateway` rules updated in `infrastructure/agent-policies/policies.yaml` if new action types are introduced
+- [ ] **AI Safety & Agent Governance checklist completed** (`docs/ai-governance/ai-safety-checklist.md`, Phase 10 / ADR-0058)
 
 ### Review & Merge
 

@@ -14,6 +14,22 @@ assignees: []
 <!-- What user or business problem does this solve? -->
 <!-- e.g. Operators cannot bulk-approve HITL requests, forcing them to click through each one individually -->
 
+## Value Hypothesis (Phase 0 — Intake)
+
+<!-- One line: the expected user/business value and how we'll know it worked. -->
+<!-- e.g. "Bulk approval cuts operator review time ~40%; measured via PR/HITL review-time metric." -->
+
+## Risk Class (Phase 0 — Intake)
+
+<!-- Selects which downstream gates apply (risk-based flow, ADR-0058). Pick one: -->
+
+- [ ] Small bug fix — Issue → PR → CI/security → deploy → observe
+- [ ] Normal feature — Discovery → Spec → Dev → Review → Test → Release
+- [ ] High-risk feature — full lifecycle + architecture/security/observability/release gates
+- [ ] AI / LLM / agentic feature — full lifecycle + **AI Safety & Agent Governance** gate (Phase 10)
+- [ ] Security-sensitive — full lifecycle + threat model + stricter approval/auditability
+- [ ] Infrastructure / platform — full lifecycle + rollback plan + PRR
+
 ## Discovery Link
 
 <!-- Link to docs/product/FEAT-{id}/discovery.md once the Discovery Primer is created (Phase 1).

@@ -2,15 +2,20 @@
 
 > **Version:** 2.5.0 | **Last updated:** 2026-06-06
 
-Thank you for contributing. This guide describes the full contribution process for this repository, including the Agentic SDLC 13-phase lifecycle, SDD (Spec-Driven Development) cycle, branch naming, PR process, and commit conventions.
+Thank you for contributing. This guide describes the full contribution process for this repository, including the Agentic Spec-Driven Delivery Workflow (15-phase lifecycle), SDD (Spec-Driven Development) cycle, branch naming, PR process, and commit conventions.
 
 ---
 
-## 1. Agentic SDLC — 13-Phase Lifecycle
+## 1. Agentic Spec-Driven Delivery Workflow
 
-This repository follows the **Agentic SDLC E2E Workflow** (ADR-0052). Every feature travels through 13 phases from idea to post-deploy learning. See `docs/process/WORKFLOW.md` for the full reference.
+This repository follows the **Agentic Spec-Driven Delivery Workflow** (ADR-0052, ADR-0058) — a modern Agentic SDLC operating model that **replaces Gitflow-style release governance** while **preserving Agile principles**. _Agents draft, analyze, test, explain, recommend; humans approve, own, operate._
+
+**Canonical reference:** [`docs/sdlc/agentic-spec-driven-delivery.md`](docs/sdlc/agentic-spec-driven-delivery.md) — positioning, risk-based flow, agent-participation model, and the Mermaid lifecycle diagram.
+
+Every feature travels through a risk-based **15-phase (0–14)** lifecycle from intake to post-deploy learning. Low-risk changes take a short path; only high-impact / AI / security / infra changes pass every gate. See `docs/process/WORKFLOW.md` for the full per-phase reference.
 
 ```
+Phase 0:  Intake          → Problem statement, value hypothesis, risk class, owner
 Phase 1:  Conception      → GitHub Issue (feature_request.md template)
 Phase 2:  Discovery       → Agent-generated discovery.md + nfr.md (Spec-as-PR)
 Phase 3:  Grooming        → DoR checklist; Issue → status: ready
@@ -20,13 +25,14 @@ Phase 6:  Development     → Branch + implementation against spec
 Phase 7:  Code Review     → PR opened; DoD checklist; CI gates
 Phase 8:  Testing         → Unit ≥ 80%, integration, security, abuse cases
 Phase 9:  DevSecOps       → SAST, SCA, container scan, SBOM, DAST in staging
-Phase 10: Observability   → OTel spans, Prometheus metrics, PRR sign-off
-Phase 11: Release RC      → DoR-Release checklist; rc-approved label
-Phase 12: Production      → Canary deploy 5% → 25% → 100%; GitHub Release tag
-Phase 13: Post-Deploy     → DORA metrics, retrospective, learn stage
+Phase 10: AI Safety       → Injection/leakage tests, tool-permission review (AI/agent features)
+Phase 11: Observability   → OTel spans, Prometheus metrics, PRR sign-off
+Phase 12: Release RC      → DoR-Release checklist; rc-approved label
+Phase 13: Production      → Canary deploy 5% → 25% → 100%; GitHub Release tag
+Phase 14: Post-Deploy     → DORA metrics, retrospective, learn stage
 ```
 
-**Quick reference:** `docs/process/WORKFLOW.md` · `docs/process/DEFINITION_OF_READY.md` · `docs/process/DEFINITION_OF_DONE.md` · `docs/process/DEFINITION_OF_RELEASE.md`
+**Quick reference:** `docs/sdlc/agentic-spec-driven-delivery.md` · `docs/process/WORKFLOW.md` · `docs/process/DEFINITION_OF_READY.md` · `docs/process/DEFINITION_OF_DONE.md` · `docs/process/DEFINITION_OF_RELEASE.md` · `docs/ai-governance/ai-safety-checklist.md`
 
 ---
 
