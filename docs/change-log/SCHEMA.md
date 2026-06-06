@@ -18,8 +18,10 @@ for that calendar date.
   deployer: "github-actor-login" # GitHub Actions actor — required
   service: "api-gateway" # service name from services.yaml — required
   version: "1.18.0" # SemVer — required
-  image_digest: "sha256:abc123..." # full SHA-256 digest of signed container image — required
-  sbom_hash: "sha256:def456..." # SHA-256 of the CycloneDX SBOM artifact — required
+  commit_sha: "abc123def456..." # git SHA deployed — required (ADR-0056)
+  image_digest: "sha256:abc123..." # full SHA-256 digest of the verified, signed container image — required
+  sbom_hash: "sha256:def456..." # SHA-256 of the verified CycloneDX SBOM attestation — required
+  lead_time_source: "version_tag" # version_tag | workflow_dispatch — DORA lead-time provenance (ADR-0056)
   environment: "production" # production | staging — required
   change_type: "normal-change" # standard-change | normal-change | emergency-change — required
   outcome: "success" # success | rollback | failure — required
