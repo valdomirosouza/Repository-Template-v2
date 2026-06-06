@@ -13,6 +13,23 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 8 — Governed Tool Registry (Agentic SDLC)
+
+#### Added
+
+- **`specs/ai/tool-registry.md`** — Spec for the governed tool registry: `ToolDefinition` schema, registry interface, permission check matrix, aggregate risk window (Gap T3). Closes #16. ADR-0039.
+- **`src/agents/tool_registry.py`** — `ToolRegistry` singleton: `register()`, `get()`, `check_permission()`, `list_by_risk()`, `assert_registered()` (raises `UnregisteredToolError` for unregistered calls); module-level `default_tool_registry` with 3 starter tools. Closes #16.
+- **`infrastructure/agent-tools/tools.yaml`** — Canonical tool catalog: `send-email` (high, HITL), `read-db-record` (low), `write-db-record` (medium, HITL), `post-webhook` (high, HITL), `generate-report` (low). Closes #16.
+- **`docs/adr/ADR-0039-governed-tool-registry.md`** — Decision record for the governed tool registry.
+- **`tests/unit/agents/test_tool_registry.py`** — 21 unit tests covering register, get, unregister, permission checks, list-by-risk, assert_registered, and default registry. All passing.
+
+#### Changed
+
+- **`src/guardrails/audit_logger.py`** — Add `log_tool_invocation(tool_name, session_id, payload_hash, risk_level, outcome)`: records metric, maintains 5-minute rolling risk-weight deque, returns `False` when aggregate exceeds threshold (Gap T3). `__init__` accepts `aggregate_risk_threshold` (default 3.0). Closes #16.
+- **`src/observability/metrics.py`** — Add `AGENT_TOOL_INVOCATIONS` Counter (`agent_tool_invocations_total`, labels: `tool_name`, `risk_level`, `outcome`). Closes #16.
+
+---
+
 ### Wave 7 — Learn Stage Feedback Loop (Agentic SDLC)
 
 #### Added

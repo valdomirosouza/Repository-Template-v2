@@ -1,0 +1,76 @@
+# Canonical agent tool catalog
+# Spec:  specs/ai/tool-registry.md
+# ADR:   ADR-0039
+# Owner: Security Lead
+#
+# Every tool an agent may invoke MUST have an entry here.
+# Unregistered tool calls are blocked at the orchestrator level.
+# Add new tools and re-deploy — runtime registration is for tests only.
+#
+# Fields:
+#   name:                 unique kebab-case identifier
+#   description:          human-readable purpose
+#   version:              semver; bump when endpoint signature changes
+#   risk_level:           low | medium | high
+#   pii_access:           list of L1-L4 PII classification levels accessible
+#   requires_hitl:        true = always routed through HITL gateway
+#   rate_limit_per_minute: max invocations per minute per session
+#   rate_limit_per_hour:  max invocations per hour per session
+#   owner_team:           team responsible for this tool
+#   adr_reference:        ADR governing this tool (optional)
+
+tools:
+  - name: send-email
+    description: Send an email notification to one or more recipients
+    version: "1.0"
+    risk_level: high
+    pii_access: [L1, L2]
+    requires_hitl: true
+    rate_limit_per_minute: 2
+    rate_limit_per_hour: 20
+    owner_team: platform
+    adr_reference: ADR-0011
+
+  - name: read-db-record
+    description: Read a single record from the database by primary key
+    version: "1.0"
+    risk_level: low
+    pii_access: [L3]
+    requires_hitl: false
+    rate_limit_per_minute: 60
+    rate_limit_per_hour: 1000
+    owner_team: platform
+    adr_reference: ADR-0039
+
+  - name: write-db-record
+    description: Create or update a record in the database
+    version: "1.0"
+    risk_level: medium
+    pii_access: [L2, L3]
+    requires_hitl: true
+    rate_limit_per_minute: 10
+    rate_limit_per_hour: 100
+    owner_team: platform
+    adr_reference: ADR-0039
+
+  - name: post-webhook
+    description: POST a payload to a registered external webhook endpoint
+    version: "1.0"
+    risk_level: high
+    pii_access: [L2]
+    requires_hitl: true
+    rate_limit_per_minute: 5
+    rate_limit_per_hour: 50
+    owner_team: integrations
+    adr_reference: ADR-0039
+
+  - name: generate-report
+    description: Render a data report to PDF or CSV and store it in object storage
+    version: "1.0"
+    risk_level: low
+    pii_access: [L3, L4]
+    requires_hitl: false
+    rate_limit_per_minute: 5
+    rate_limit_per_hour: 50
+    owner_team: data
+    adr_reference: ADR-0039
