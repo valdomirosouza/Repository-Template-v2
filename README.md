@@ -324,6 +324,41 @@ SLO definitions: [`docs/sre/slo/slo.yaml`](docs/sre/slo/slo.yaml)
 
 ---
 
+## Agentic SDLC Workflow (v2.6.0)
+
+Features travel through a **13-phase lifecycle** from idea to post-deploy learning (ADR-0052). AI agents participate as first-class actors in Phases 2, 4, and 6 — with human review required at each phase boundary.
+
+```
+Phase  1: Conception      → GitHub Issue (feature_request template)
+Phase  2: Discovery       → Agent drafts discovery.md + nfr.md → Spec-as-PR review
+Phase  3: Grooming        → DoR checklist; Issue reaches status: ready
+Phase  4: Specification   → Agent drafts feature-spec.md → Spec-as-PR review
+Phase  5: Architecture    → ADR filed if new architectural decision required
+Phase  6: Development     → Branch + implementation against approved spec
+Phase  7: Code Review     → PR + DoD checklist + CI gates
+Phase  8: Testing         → Unit ≥ 80%, integration, security, abuse cases
+Phase  9: DevSecOps       → SAST, SCA, Trivy, SBOM, DAST in staging
+Phase 10: Observability   → OTel spans, Prometheus metrics, PRR sign-off
+Phase 11: Release RC      → DoR-Release checklist; rc-approved label
+Phase 12: Production      → Canary 5% → 25% → 100%; GitHub Release tag
+Phase 13: Post-Deploy     → DORA metrics, sprint + release retrospectives
+```
+
+| Process Document                | Path                                                                             |
+| ------------------------------- | -------------------------------------------------------------------------------- |
+| 13-phase workflow               | [`docs/process/WORKFLOW.md`](docs/process/WORKFLOW.md)                           |
+| HITL two-tier governance        | [`docs/process/HITL-GOVERNANCE.md`](docs/process/HITL-GOVERNANCE.md)             |
+| RACI matrix                     | [`docs/process/RACI.md`](docs/process/RACI.md)                                   |
+| Definition of Ready             | [`docs/process/DEFINITION_OF_READY.md`](docs/process/DEFINITION_OF_READY.md)     |
+| Definition of Done              | [`docs/process/DEFINITION_OF_DONE.md`](docs/process/DEFINITION_OF_DONE.md)       |
+| Definition of Release           | [`docs/process/DEFINITION_OF_RELEASE.md`](docs/process/DEFINITION_OF_RELEASE.md) |
+| Retrospective guide             | [`docs/process/RETROSPECTIVE-GUIDE.md`](docs/process/RETROSPECTIVE-GUIDE.md)     |
+| Progressive adoption (Tier 0–4) | [`CUSTOMISING.md §8`](CUSTOMISING.md)                                            |
+
+**HITL Governance:** Pre-code artefacts (discovery.md, nfr.md, feature-spec.md) use **Spec-as-PR** review — not the runtime HITL gateway. The gateway is reserved for agent actions with real-world effects. See [`docs/process/HITL-GOVERNANCE.md`](docs/process/HITL-GOVERNANCE.md).
+
+---
+
 ## AI Governance
 
 Every agent action with a real-world effect **must** route through the HITL gateway:

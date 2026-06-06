@@ -1,0 +1,102 @@
+name: Issue Lifecycle — Auto-label on PR Events
+
+on:
+  pull_request:
+    types: [opened, reopened, closed]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  label-linked-issues:
+    name: Update linked issue status labels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract linked issue numbers
+        id: extract
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            const body = context.payload.pull_request.body || '';
+            // Match "Closes #N", "Fixes #N", "Resolves #N" (case-insensitive)
+            const pattern = /(?:closes?|fixes?|resolves?)\s+#(\d+)/gi;
+            const matches = [...body.matchAll(pattern)];
+            const numbers = matches.map(m => m[1]);
+            return numbers.join(',');
+
+      - name: Apply "status: in-review" on PR open
+        if: |
+          steps.extract.outputs.result != '' &&
+          (github.event.action == 'opened' || github.event.action == 'reopened')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const numbers = '${{ steps.extract.outputs.result }}'.split(',').filter(Boolean);
+            for (const num of numbers) {
+              const issue_number = parseInt(num, 10);
+              // Remove status: in-progress if present, add status: in-review
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number,
+                  name: 'status: in-progress',
+                });
+              } catch (_) { /* label may not exist — ignore */ }
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number,
+                  labels: ['status: in-review'],
+                });
+              } catch (e) {
+                core.warning(`Could not label issue #${issue_number}: ${e.message}`);
+              }
+            }
+
+      - name: Apply "status: done" and close on PR merge
+        if: |
+          steps.extract.outputs.result != '' &&
+          github.event.action == 'closed' &&
+          github.event.pull_request.merged == true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const numbers = '${{ steps.extract.outputs.result }}'.split(',').filter(Boolean);
+            for (const num of numbers) {
+              const issue_number = parseInt(num, 10);
+              // Remove in-review label, add done label
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number,
+                  name: 'status: in-review',
+                });
+              } catch (_) { /* ignore */ }
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number,
+                  labels: ['status: done'],
+                });
+              } catch (e) {
+                core.warning(`Could not label issue #${issue_number}: ${e.message}`);
+              }
+              // Close the issue
+              try {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number,
+                  state: 'closed',
+                  state_reason: 'completed',
+                });
+              } catch (e) {
+                core.warning(`Could not close issue #${issue_number}: ${e.message}`);
+              }
+            }

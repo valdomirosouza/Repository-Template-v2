@@ -1,16 +1,40 @@
 # Contributing Guide
 
-> **Version:** 2.2.0 | **Last updated:** 2026-06-05
+> **Version:** 2.5.0 | **Last updated:** 2026-06-06
 
-Thank you for contributing. This guide describes the full contribution process for this repository, including the SDD (Spec-Driven Development) cycle, branch naming, PR process, and commit conventions.
+Thank you for contributing. This guide describes the full contribution process for this repository, including the Agentic SDLC 13-phase lifecycle, SDD (Spec-Driven Development) cycle, branch naming, PR process, and commit conventions.
 
 ---
 
-## 1. Spec-Driven Development (SDD)
+## 1. Agentic SDLC — 13-Phase Lifecycle
+
+This repository follows the **Agentic SDLC E2E Workflow** (ADR-0052). Every feature travels through 13 phases from idea to post-deploy learning. See `docs/process/WORKFLOW.md` for the full reference.
+
+```
+Phase 1:  Conception      → GitHub Issue (feature_request.md template)
+Phase 2:  Discovery       → Agent-generated discovery.md + nfr.md (Spec-as-PR)
+Phase 3:  Grooming        → DoR checklist; Issue → status: ready
+Phase 4:  Specification   → specs/features/FEAT-{id}/feature-spec.md (Spec-as-PR)
+Phase 5:  Architecture    → ADR filed if new architectural decision required
+Phase 6:  Development     → Branch + implementation against spec
+Phase 7:  Code Review     → PR opened; DoD checklist; CI gates
+Phase 8:  Testing         → Unit ≥ 80%, integration, security, abuse cases
+Phase 9:  DevSecOps       → SAST, SCA, container scan, SBOM, DAST in staging
+Phase 10: Observability   → OTel spans, Prometheus metrics, PRR sign-off
+Phase 11: Release RC      → DoR-Release checklist; rc-approved label
+Phase 12: Production      → Canary deploy 5% → 25% → 100%; GitHub Release tag
+Phase 13: Post-Deploy     → DORA metrics, retrospective, learn stage
+```
+
+**Quick reference:** `docs/process/WORKFLOW.md` · `docs/process/DEFINITION_OF_READY.md` · `docs/process/DEFINITION_OF_DONE.md` · `docs/process/DEFINITION_OF_RELEASE.md`
+
+---
+
+## 2. Spec-Driven Development (SDD)
 
 **No code is written without a referenced spec.** This is the most important rule in this repository.
 
-### SDD Cycle
+### SDD Cycle (aligned with Phase 4–7 above)
 
 ```
 1. SPEC    → Write or identify the spec in specs/* that governs the change
@@ -27,7 +51,7 @@ Thank you for contributing. This guide describes the full contribution process f
 
 ---
 
-## 2. Branch Naming
+## 3. Branch Naming
 
 All branches must follow this pattern:
 
@@ -55,7 +79,7 @@ hotfix/SPEC-001-agent-timeout-crash
 
 ---
 
-## 3. Commit Conventions
+## 4. Commit Conventions
 
 This repository uses **Conventional Commits** to drive automated changelogs and release versioning.
 
@@ -97,7 +121,7 @@ Refs: #99, SPEC-010, ADR-0006, RFC-0007
 
 ---
 
-## 4. Pull Request Process
+## 5. Pull Request Process
 
 ### Before opening a PR
 
@@ -150,7 +174,7 @@ Use `.github/pull_request_template.md` — it is automatically populated when yo
 
 ---
 
-## 5. Change Management
+## 6. Change Management
 
 ### Standard changes
 
@@ -182,7 +206,7 @@ See `docs/change-management/README.md` for full process.
 
 ---
 
-## 6. Privacy-by-Design Requirements
+## 7. Privacy-by-Design Requirements
 
 All contributors must adhere to these rules:
 
@@ -193,7 +217,7 @@ All contributors must adhere to these rules:
 
 ---
 
-## 7. Testing Requirements
+## 8. Testing Requirements
 
 | Test type         | When required                 | Location             |
 | ----------------- | ----------------------------- | -------------------- |
@@ -207,7 +231,7 @@ Run the full suite: `make test`
 
 ---
 
-## 8. Documentation Requirements
+## 9. Documentation Requirements
 
 - **CHANGELOG.md** — update `[Unreleased]` section for every change
 - **ADR** — file a new ADR for every significant architectural decision
@@ -216,13 +240,24 @@ Run the full suite: `make test`
 
 ---
 
-## 9. Code of Conduct
+## 10. Retrospectives
+
+Every contributor participates in the bi-weekly sprint retrospective and the per-release retrospective. See `docs/process/RETROSPECTIVE-GUIDE.md` for templates and cadence.
+
+- **Sprint retrospective:** async, 30 min, within 48h of sprint close
+- **Release retrospective:** synchronous, 60–90 min, within 5 business days of production release
+
+Retrospective outputs (action items) are filed as GitHub Issues and assigned to the next sprint.
+
+---
+
+## 11. Code of Conduct
 
 All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ---
 
-## 10. Questions?
+## 12. Questions?
 
 - Architecture questions → open a GitHub Discussion or ping the Tech Lead
 - Privacy questions → contact dpo@\<org-domain\>

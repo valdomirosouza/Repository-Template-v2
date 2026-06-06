@@ -1,7 +1,7 @@
 ---
 name: Feature Request
 description: Propose a new feature or enhancement
-labels: ["feature", "needs-triage"]
+labels: ["type: feature", "status: discovery"]
 assignees: []
 ---
 
@@ -13,6 +13,22 @@ assignees: []
 
 <!-- What user or business problem does this solve? -->
 <!-- e.g. Operators cannot bulk-approve HITL requests, forcing them to click through each one individually -->
+
+## Discovery Link
+
+<!-- Link to docs/product/FEAT-{id}/discovery.md once the Discovery Primer is created (Phase 1).
+     Leave blank until the agent generates it. -->
+
+`docs/product/FEAT-` <!-- id --> `/discovery.md` — _pending_
+
+## Size Estimate
+
+<!-- S = 1–2 days · M = 3–5 days · L = 1–2 weeks · XL = > 2 weeks -->
+
+- [ ] S
+- [ ] M
+- [ ] L
+- [ ] XL
 
 ## Proposed Solution
 
@@ -80,6 +96,19 @@ Before writing any code, the implementer must confirm:
 - [ ] `services.yaml` updated if a new service, port, or Kafka topic was added
 - [ ] Guardrails unmodified or strengthened (never weakened)
 - [ ] _(AI Agents Module only)_ HITL gateway used for any new agent action with real-world effects
+
+## Definition of Ready Checklist
+
+_This Issue may not enter a sprint until ALL items are checked (see `docs/process/DEFINITION_OF_READY.md`)._
+
+- [ ] Problem statement written and linked to discovery doc (`docs/product/FEAT-{id}/discovery.md`)
+- [ ] NFR doc created and approved by Security Lead — or "N/A: no new PII surface" stated explicitly
+- [ ] Acceptance criteria written in Gherkin format and reviewed by Product Owner
+- [ ] Feature spec template created (`specs/features/FEAT-{id}/feature-spec.md`) — sections 1–5 complete
+- [ ] Size label applied (S / M / L / XL)
+- [ ] Component labels applied (`component: api` / `frontend` / `infra` / `agent`)
+- [ ] Tech Lead has commented on this Issue
+- [ ] No unresolved blocking dependencies on other open Issues
 
 ## Additional Context
 

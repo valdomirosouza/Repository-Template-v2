@@ -3,6 +3,11 @@ name: Model Contract Tests
 # Runs only when the model dependency manifest or AI specs change.
 # Requires ANTHROPIC_API_KEY to be set in repository secrets.
 # See ADR-0051 and docs/dependency-manifest.yaml for the contract versioning scheme.
+#
+# Budget circuit breaker (Q5 — non-blocking):
+# If LLM_CI_CURRENT_MONTH_SPEND_USD >= LLM_CI_MONTHLY_BUDGET_USD (default $50),
+# the model-contract-tests job is skipped and a PR comment is posted instead.
+# The overall workflow still passes (non-blocking gate).
 on:
   pull_request:
     paths:
@@ -18,11 +23,31 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
-  model-contract:
+  budget-check:
+    name: LLM Budget Circuit Breaker
+    runs-on: ubuntu-latest
+    outputs:
+      budget_ok: ${{ steps.check.outputs.budget_ok }}
+      remaining_usd: ${{ steps.check.outputs.remaining_usd }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check LLM CI budget
+        id: check
+        env:
+          LLM_CI_CURRENT_MONTH_SPEND_USD: ${{ vars.LLM_CI_CURRENT_MONTH_SPEND_USD || '0' }}
+          LLM_CI_MONTHLY_BUDGET_USD: ${{ vars.LLM_CI_MONTHLY_BUDGET_USD || '50' }}
+        run: python3 scripts/check_llm_budget.py
+
+  model-contract-tests:
     name: Model Behavioral Contract (ML1 / ADR-0051)
     runs-on: ubuntu-latest
+    needs: budget-check
+    if: needs.budget-check.outputs.budget_ok == 'true'
     timeout-minutes: 15
 
     env:
@@ -63,3 +88,38 @@ jobs:
           path: |
             .pytest_cache/
           retention-days: 30
+
+  budget-warning:
+    name: Post budget exhaustion comment
+    runs-on: ubuntu-latest
+    needs: budget-check
+    if: |
+      needs.budget-check.outputs.budget_ok != 'true' &&
+      github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Comment on PR — budget exhausted
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const remaining = '${{ needs.budget-check.outputs.remaining_usd }}';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                '> **⚠️ Model Contract Tests Skipped — LLM CI Budget Exhausted**',
+                '>',
+                '> The monthly LLM CI spend cap has been reached.',
+                `> Remaining budget: **$${remaining}**`,
+                '>',
+                '> Model behavioral contract tests (`tests/model_contract/`) were **not run** for this PR.',
+                '> They will resume automatically next calendar month when the budget resets.',
+                '>',
+                '> To override: re-run with `workflow_dispatch` after increasing `LLM_CI_MONTHLY_BUDGET_USD` in repo variables.',
+                '>',
+                '> _This is a non-blocking gate (ADR-0051 Q5). The PR may still be merged with Tech Lead acknowledgement._',
+              ].join('\n'),
+            });

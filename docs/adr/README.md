@@ -112,6 +112,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0049](ADR-0049-runtime-behavioral-monitoring.md)              | Runtime Behavioral Monitoring                      | Accepted | 2026-06-06 |
 | [ADR-0050](ADR-0050-adversarial-abuse-testing.md)                  | Adversarial Abuse Testing Strategy                 | Accepted | 2026-06-06 |
 | [ADR-0051](ADR-0051-model-behavioral-contracts.md)                 | Model Behavioral Contracts                         | Accepted | 2026-06-06 |
+| [ADR-0052](ADR-0052-agentic-sdlc-e2e-workflow.md)                  | Agentic SDLC E2E Workflow                          | Accepted | 2026-06-06 |
 
 ### AI Agents Module _(opt-in)_
 

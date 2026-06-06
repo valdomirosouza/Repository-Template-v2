@@ -86,6 +86,53 @@ gates:
     blocking: false
     failure_message: "Referenced ADR file not found in docs/adr/. Create the ADR or correct the reference."
 
+  - name: feature-spec-lint
+    command: >
+      bash -c "
+        if [ -n \"${PR_BODY_FILE:-}\" ] && [ -f \"${PR_BODY_FILE}\" ]; then
+          # Extract FEAT-ID from PR body (e.g. FEAT-42 or specs/features/FEAT-42/)
+          FEAT_ID=\$(grep -oE 'FEAT-[0-9]+' \"${PR_BODY_FILE}\" | head -1);
+          if [ -z \"\$FEAT_ID\" ]; then
+            echo 'No FEAT-ID found in PR body — spec lint skipped (not a feature PR).';
+            exit 0;
+          fi;
+          SPEC_DIR=\"specs/features/\${FEAT_ID}\";
+          SPEC_FILE=\"\${SPEC_DIR}/feature-spec.md\";
+          # Gate 1: spec file must exist
+          if [ ! -f \"\$SPEC_FILE\" ]; then
+            echo \"Feature spec not found: \$SPEC_FILE\" >&2;
+            echo \"Create specs/features/\${FEAT_ID}/feature-spec.md before implementing.\" >&2;
+            exit 1;
+          fi;
+          echo \"Spec file exists: \$SPEC_FILE\";
+          # Gate 2: all ADR references in the spec must resolve to files on disk
+          SPEC_ADRS=\$(grep -oE 'ADR-[0-9]+' \"\$SPEC_FILE\" | sort -u);
+          for adr in \$SPEC_ADRS; do
+            FILE=\$(ls docs/adr/\${adr}-*.md 2>/dev/null | head -1);
+            if [ -z \"\$FILE\" ]; then
+              echo \"ADR reference in spec not found on disk: \$adr\" >&2;
+              exit 1;
+            fi;
+            echo \"ADR resolved: \$FILE\";
+          done;
+          # Gate 3: agent PRs touching src/agents/ must declare allowed_action_types in spec
+          AGENTS_CHANGED=\$(git diff --name-only origin/main...HEAD | grep -c '^src/agents/' || true);
+          if [ \"\$AGENTS_CHANGED\" -gt 0 ]; then
+            if ! grep -q 'allowed_action_types' \"\$SPEC_FILE\"; then
+              echo \"src/agents/ changed but spec is missing 'allowed_action_types' section (Section 6 of FEATURE_SPEC_TEMPLATE.md)\" >&2;
+              exit 1;
+            fi;
+            echo 'allowed_action_types present in spec — agent PR gate passed.';
+          fi;
+          echo 'Feature spec lint: all gates passed.';
+        else
+          echo 'PR_BODY_FILE not set — feature-spec-lint skipped (set it in CI).';
+          exit 0
+        fi
+      "
+    blocking: true
+    failure_message: "Feature spec lint failed. Ensure: (1) specs/features/FEAT-{id}/feature-spec.md exists, (2) all ADR references resolve to files in docs/adr/, (3) spec contains 'allowed_action_types' if src/agents/ is touched."
+
   - name: runbook-linked
     command: >
       bash -c "
