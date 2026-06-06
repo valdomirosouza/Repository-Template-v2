@@ -11,6 +11,16 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [2.7.2] - 2026-06-06
+
+> **Completes the CI-green work.** A pip advisory (PYSEC-2026-196) landed during the
+> 2.7.1 cut; this release pins it so the full CI pipeline — including the Security
+> Tests `pip-audit` gate — is green end to end.
+
+### Security
+
+- Pinned `pip>=26.1.2` in dev dependencies and re-locked — clears `pip-audit` finding **PYSEC-2026-196** (`pip 26.1.1`, fixed in 26.1.2) that failed the Security Tests gate
+
 ## [2.7.1] - 2026-06-06
 
 > **CI-green cleanup.** Clears long-standing lint/type/contract debt so the full CI
@@ -2336,7 +2346,8 @@ API or configuration keys were removed.
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.1...HEAD
+[Unreleased]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.2...HEAD
+[2.7.2]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.1...v2.7.2
 [2.7.1]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.0...v2.7.1
 [2.7.0]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.5.0...v2.6.0
