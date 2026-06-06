@@ -1,0 +1,172 @@
+name: AI-Assisted Code Review
+
+# Informational gate — findings posted as PR comment; does NOT block merge.
+# ADR-0035 | Issue #8
+# Activation: requires ANTHROPIC_API_KEY secret to be configured.
+# If the secret is absent the job exits cleanly with a warning.
+
+on:
+  pull_request:
+    branches: ["main", "develop"]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "specs/**"
+
+concurrency:
+  group: ai-review-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write # required to post the review comment
+
+jobs:
+  ai-review:
+    name: Claude Code Review (Informational)
+    runs-on: ubuntu-latest
+    # Skip entirely if the API key is not configured — no noise for forks or template users
+    if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Fetch PR diff (capped at 200 lines)
+        id: diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr diff ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            | head -200 > /tmp/pr_diff.txt
+          echo "lines=$(wc -l < /tmp/pr_diff.txt)" >> "$GITHUB_OUTPUT"
+          echo "Captured $(wc -l < /tmp/pr_diff.txt) lines of diff"
+
+      - name: Fetch PR metadata
+        id: meta
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr view ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --json title,body,author \
+            > /tmp/pr_meta.json
+          echo "PR metadata saved"
+
+      - name: Run Claude code review
+        id: review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python3 - <<'PYEOF'
+          import json, os, sys, urllib.request, urllib.error
+
+          api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+          if not api_key:
+              print("ANTHROPIC_API_KEY not set — skipping AI review")
+              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                  f.write("findings=⚠️ ANTHROPIC_API_KEY not configured — AI review skipped.\n")
+              sys.exit(0)
+
+          diff = open("/tmp/pr_diff.txt").read().strip() or "(empty diff)"
+          meta = json.load(open("/tmp/pr_meta.json"))
+          pr_title  = meta.get("title", "")
+          pr_body   = meta.get("body", "")
+
+          review_prompt = f"""You are a senior engineer performing a code review for a
+          pull request in an enterprise monorepo.
+
+          ## PR Title
+          {pr_title}
+
+          ## PR Description
+          {pr_body[:500]}
+
+          ## Diff (first 200 lines)
+          ```diff
+          {diff}
+          ```
+
+          ## Review Checklist
+          Evaluate the diff against each item. For each finding, output a brief comment.
+          If a check is clean, say "✅ <check>: OK".
+          If a finding exists, say "⚠️ <check>: <brief description> — <file:line if visible>".
+
+          1. **Spec reference** — Does the PR title or description reference a spec file
+             (e.g. `specs/...` path) or spec ID (e.g. `SPEC-NNN`)? If not, flag it.
+          2. **Guardrail preservation** — Are any files under `src/guardrails/` or
+             `src/agents/hitl_gateway.py` modified? If so, confirm changes strengthen
+             (not weaken) the guardrail; flag any weakening pattern.
+          3. **Test coverage** — Does the diff add or delete tests proportional to the
+             code change? Flag if new code has no corresponding test additions.
+          4. **PII handling** — Does the diff introduce any string literals that look like
+             real PII (email addresses, CPF/SSN patterns, phone numbers)? Flag any found.
+          5. **Architecture rules** (CLAUDE.md §3) — Check for:
+             - Direct DB access from API layer (no domain service)
+             - `eval()` / `exec()` / `pickle.loads()` on untrusted input
+             - SQL string concatenation (not parameterised)
+             - Secrets or API keys hardcoded in code
+
+          End your review with a one-line summary:
+          "**Overall:** <CLEAN | MINOR_FINDINGS | REVIEW_RECOMMENDED> — <one sentence>"
+          """
+
+          payload = {
+              "model": "claude-sonnet-4-6",
+              "max_tokens": 1024,
+              "messages": [{"role": "user", "content": review_prompt}],
+          }
+
+          req = urllib.request.Request(
+              "https://api.anthropic.com/v1/messages",
+              data=json.dumps(payload).encode(),
+              headers={
+                  "x-api-key": api_key,
+                  "anthropic-version": "2023-06-01",
+                  "content-type": "application/json",
+              },
+          )
+
+          try:
+              with urllib.request.urlopen(req, timeout=60) as resp:
+                  body = json.loads(resp.read())
+              findings = body["content"][0]["text"].strip()
+          except urllib.error.HTTPError as e:
+              findings = f"⚠️ Claude API error {e.code}: {e.read().decode()[:200]}"
+          except Exception as e:
+              findings = f"⚠️ AI review failed: {e}"
+
+          # Write to file to avoid GitHub Output size limits
+          with open("/tmp/review_findings.txt", "w") as f:
+              f.write(findings)
+
+          print("Review complete")
+          PYEOF
+
+      - name: Post review comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          FINDINGS=$(cat /tmp/review_findings.txt 2>/dev/null || echo "No findings file generated.")
+          DIFF_LINES=${{ steps.diff.outputs.lines }}
+
+          COMMENT=$(cat <<COMMENT_EOF
+          ## 🤖 AI Code Review (Informational)
+
+          > Generated by Claude (claude-sonnet-4-6) • Diff: first ${DIFF_LINES} lines
+          > **This comment is informational only and does not block merge.**
+          > ADR-0035 | [Skill: agentic-cyber-defense](skills/devsecops/agentic-cyber-defense.md)
+
+          ${FINDINGS}
+
+          ---
+          *To disable this review for a PR, add the label \`skip-ai-review\`.*
+          COMMENT_EOF
+          )
+
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "$COMMENT"

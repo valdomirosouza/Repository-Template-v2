@@ -331,7 +331,9 @@ When the user's request matches a skill domain, **Read the skill file listed in 
 | OTel, metrics, traces, logs                     | `skills/observability/otel-instrumentation.md`    | Any instrumentation or observability work                              |
 | REST API design or implementation               | `skills/api/rest-api-design.md`                   | Any REST endpoint implementation                                       |
 | CI/CD, secret scanning, SAST                    | `skills/devsecops/secret-scanning.md`             | Any pipeline or security tooling work                                  |
+| CI security gate failure, HIGH/CRITICAL finding | `skills/devsecops/agentic-cyber-defense.md`       | Any security gate (Bandit/gosec/Trivy/SpotBugs) failure                |
 | Spec writing, SDD lifecycle                     | `skills/sdlc/spec-lifecycle.md`                   | Writing or reviewing a spec                                            |
+| Agentic session bootstrap, new service context  | `skills/sdlc/agent-onboarding.md`                 | Start of every agentic Claude Code session                             |
 | Aggregates, entities, repositories, DDD         | `skills/domain/domain-modeling.md`                | Any domain model design, new entity, or service layer                  |
 | Test pyramid, coverage, markers, contract tests | `skills/engineering/testing-strategy.md`          | Writing, reviewing, or debugging tests in any language                 |
 | Ethical AI review, bias audit, EU AI Act        | `skills/ethics/ethical-ai-review.md`              | Any AI/agent feature, new action_type, or autonomy change              |

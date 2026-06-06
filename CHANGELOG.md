@@ -13,6 +13,20 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 4 — CI Intelligence (Agentic SDLC)
+
+#### Added
+
+- **`.github/workflows/ci-ai-review.yml`** — Informational AI-assisted PR review: captures first 200 lines of diff, sends to Claude API, posts structured findings comment covering spec reference, guardrail preservation, test coverage, PII literals, and architecture rules. Gracefully skips if `ANTHROPIC_API_KEY` is absent. Closes #8.
+- **`docs/adr/ADR-0035-ai-assisted-ci-review.md`** — Decision record for the AI-assisted CI review gate; includes path-to-blocking-gate criteria. Closes #8.
+- **`skills/devsecops/agentic-cyber-defense.md`** — 6-section skill: 5-step automated response protocol, agent-readable finding format, GitHub Security Advisory creation, tool-specific remediation guidance (Bandit/Trivy/gosec), and escalation decision tree. Closes #9.
+- **`docs/adr/ADR-0036-agentic-cyber-defense.md`** — Decision record for automated security advisory creation and `security_finding_total` metric integration. Closes #9.
+
+#### Changed
+
+- **`CLAUDE.md §4`** — Added two new rows to the Core Skills Activation Table: `skills/devsecops/agentic-cyber-defense.md` and `skills/sdlc/agent-onboarding.md`. Closes #8, #9.
+- **`docs/adr/README.md`** — Added index entries for ADR-0031 through ADR-0036 (all Agentic SDLC ADRs from Waves 1–4).
+
 ### Wave 3 — Multi-Agent Infrastructure (Agentic SDLC)
 
 #### Added
