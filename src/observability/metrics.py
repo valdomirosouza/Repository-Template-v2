@@ -344,3 +344,18 @@ AGENT_LEARN_PRECEDENTS_INJECTED = Counter(
     "Precedents injected into the Reason-stage LLM context from the Learn stage",
     ["action_type", "outcome_influenced"],
 )
+
+# ── Behavioral monitoring metrics (BM1/BM2 — ADR-0049) ───────────────────────
+# Spec: secure-by-design-agentic-ai-compliance-v2.md §Pillar 3
+
+AGENT_BEHAVIORAL_ANOMALY_COUNTER = Counter(
+    "agent_behavioral_anomaly_total",
+    "Agent proposed an action outside its historical behavioral envelope (possible drift or injection)",
+    ["task_type", "action_type"],
+)
+
+AGENT_POLICY_DECISION_COUNTER = Counter(
+    "agent_policy_decision_total",
+    "Runtime policy gateway decisions by policy name and decision",
+    ["policy_name", "decision"],  # decision: ALLOW | REQUIRE_HITL | BLOCK
+)

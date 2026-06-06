@@ -1,0 +1,54 @@
+# Runtime Policy Gateway — adaptive policy rules
+# Spec:  secure-by-design-agentic-ai-compliance-v2.md §Pillar 3 (BM2)
+# ADR:   ADR-0049
+# Owner: AI Governance Lead + Security Lead
+#
+# Policies are evaluated in order; the first matching policy wins.
+# Default (no match): ALLOW
+#
+# Fields:
+#   name:                   unique policy identifier (kebab-case)
+#   condition:
+#     task_type_pattern:    glob pattern for task_type (e.g. "summarise*")
+#     proposed_action_type: exact match on action_type
+#     method:               list of HTTP methods (for send-external-request)
+#     pii_level_gte:        match if action touches PII at this level or more sensitive
+#                           order: L1 (most sensitive) ... L4 (least sensitive)
+#   decision:               ALLOW | REQUIRE_HITL | BLOCK
+#   reason:                 human-readable explanation (logged and returned in errors)
+#
+# Hot-reload: POST /admin/policy/reload (admin JWT required) or SIGHUP to the worker.
+
+policies:
+  - name: no-code-execution-on-summarize
+    condition:
+      task_type_pattern: "summarise*"
+      proposed_action_type: "execute-code"
+    decision: BLOCK
+    reason: "Code execution is not a permitted operation for summarization tasks"
+
+  - name: external-write-always-hitl
+    condition:
+      proposed_action_type: "send-external-request"
+      method: ["POST", "PUT", "DELETE", "PATCH"]
+    decision: REQUIRE_HITL
+    reason: "All external write operations require human approval regardless of risk score"
+
+  - name: pii-write-l2-always-hitl
+    condition:
+      proposed_action_type: "write-db-record"
+      pii_level_gte: "L2"
+    decision: REQUIRE_HITL
+    reason: "Database writes touching L1/L2 PII always require HITL approval (privacy, ADR-0012)"
+
+  - name: execute-code-always-hitl
+    condition:
+      proposed_action_type: "execute-code"
+    decision: REQUIRE_HITL
+    reason: "All code execution requires human approval; sandbox provides runtime isolation but not policy override"
+
+  - name: execute-code-sandbox-pattern
+    condition:
+      proposed_action_type: "execute_code"
+    decision: REQUIRE_HITL
+    reason: "Code execution (underscore variant) requires human approval"

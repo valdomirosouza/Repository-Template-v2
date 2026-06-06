@@ -13,6 +13,24 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 23 — Runtime Behavioral Monitoring (Secure by Design Pillar 3)
+
+#### Added
+
+- `src/agents/behavioral_monitor.py` — `BehavioralMonitor` tracks per-task-type action proposal frequency; `is_anomalous()` flags actions with <1% historical frequency (and not in allowed list) as behavioral drift; sets OTel span attribute `behavioral.drift_detected` and increments `agent_behavioral_anomaly_total` Prometheus counter (Issue #34, BM1+BM3, ADR-0049)
+- `src/agents/runtime_policy_gateway.py` — `RuntimePolicyGateway` evaluates declarative YAML policies (ALLOW|REQUIRE_HITL|BLOCK); first-match-wins; hot-reload via `reload(path)`; `evaluate_or_raise()` raises `RuntimePolicyError` on BLOCK; increments `agent_policy_decision_total` counter (Issue #34, BM2, ADR-0049)
+- `infrastructure/agent-policies/policies.yaml` — starter policies: `no-code-execution-on-summarize` (BLOCK), `external-write-always-hitl` (REQUIRE_HITL), `pii-write-l2-always-hitl` (REQUIRE_HITL), `execute-code-always-hitl` (REQUIRE_HITL) (Issue #34)
+- `docs/adr/ADR-0049-runtime-behavioral-monitoring.md` — documents BM1/BM2/BM3 controls, frequency threshold design, policy evaluation semantics, and deferred Redis backend
+- `tests/unit/agents/test_behavioral_monitor.py` — 19 unit tests for BehavioralMonitor
+- `tests/unit/agents/test_runtime_policy_gateway.py` — 18 unit tests for RuntimePolicyGateway (task_type patterns, method matching, PII level, first-match, hot reload, from_yaml)
+
+#### Changed
+
+- `src/observability/metrics.py` — adds `AGENT_BEHAVIORAL_ANOMALY_COUNTER` and `AGENT_POLICY_DECISION_COUNTER` Prometheus metrics (Issue #34, BM1+BM2)
+- `infrastructure/monitoring/prometheus/rules/agent-alerts.yaml` — adds `AgentBehavioralDrift` (critical) and `RuntimePolicyBlocked` (warning) alert rules (Issue #34, BM1+BM2)
+
+---
+
 ### Wave 22 — Zero-Trust Tooling (Secure by Design Pillar 2)
 
 #### Added
