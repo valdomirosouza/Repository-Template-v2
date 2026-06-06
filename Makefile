@@ -11,6 +11,7 @@ APP         ?= frontend
         test-go test-unit-go lint-go format-go build-go run-go \
         test-frontend test-unit-frontend lint-frontend format-frontend build-frontend run-frontend \
         gen-proto-go gen-proto-python gen-sources-java gen-api-client-ts gen-api-client-python \
+        gen-context-graph check-version \
         new-service \
         deploy-staging rollback \
         docs-serve openapi-ui asyncapi-ui \
@@ -147,6 +148,12 @@ gen-api-client-python: ## Python: regenerate REST client from OpenAPI spec into 
 		--path docs/api/openapi/v1/openapi.yaml \
 		--output-path src/shared/generated/rest_client \
 		--overwrite
+
+gen-context-graph: ## Generate .agent/context-graph.json for agent session bootstrap (ADR-0057)
+	uv run python scripts/generate_context_graph.py
+
+check-version: ## Verify version.txt is the single source of truth (ADR-0057)
+	uv run python scripts/check_version_consistency.py
 
 # ── Frontend ───────────────────────────────────────────────────────────────
 

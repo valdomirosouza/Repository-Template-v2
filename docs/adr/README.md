@@ -117,6 +117,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0054](ADR-0054-machine-readable-governance-contracts.md)              | Machine-Readable Governance Contracts                    | Accepted | 2026-06-06 |
 | [ADR-0055](ADR-0055-hotl-operationalization.md)                            | HOTL Operationalization (monitor/override/compensation)  | Accepted | 2026-06-06 |
 | [ADR-0056](ADR-0056-release-hardening.md)                                  | Release Hardening (CAB gate / DORA / artifact integrity) | Accepted | 2026-06-06 |
+| [ADR-0057](ADR-0057-repository-hygiene.md)                                 | Repository Hygiene (version SoT / refs / context graph)  | Accepted | 2026-06-06 |
 
 ### AI Agents Module _(opt-in)_
 

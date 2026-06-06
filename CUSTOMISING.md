@@ -194,7 +194,7 @@ Do **not** remove existing rules without a governance decision — they exist be
 This template evolves. To pull upstream improvements without overwriting your changes:
 
 ```bash
-git remote add template https://github.com/valdomirosouza/Repository-Template.git
+git remote add template https://github.com/valdomirosouza/Repository-Template-v2.git
 git fetch template
 git merge template/main --allow-unrelated-histories --no-commit
 # Resolve conflicts — keep your project-specific files, take template improvements

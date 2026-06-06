@@ -1,0 +1,36 @@
+name: CI — Version Consistency
+
+# Enforces that version.txt is the single source of truth (ADR-0057):
+#   - pyproject.toml version must match version.txt
+#   - README.md **Version:** must match version.txt
+# CLAUDE.md carries an independent behavioral-contract version (excluded).
+
+on:
+  pull_request:
+    paths:
+      - version.txt
+      - pyproject.toml
+      - README.md
+      - scripts/check_version_consistency.py
+      - .github/workflows/ci-version-check.yml
+  push:
+    branches: [main, develop]
+    paths:
+      - version.txt
+      - pyproject.toml
+      - README.md
+
+permissions:
+  contents: read
+
+jobs:
+  version-consistency:
+    name: Version Consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.13"
+      - name: Check version consistency
+        run: python3 scripts/check_version_consistency.py
