@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+---
+
+## [2.2.0] — 2026-06-05
+
 ### Wave 10 — Context Graph & Autonomy Tier (Agentic SDLC)
 
 #### Added
