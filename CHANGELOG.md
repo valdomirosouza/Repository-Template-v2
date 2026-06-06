@@ -13,6 +13,23 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave C — HOTL Operationalization (ADR-0055)
+
+#### Added
+
+- `src/agents/compensation_registry.py` — **P1-1**: reversibility + HOTL-eligibility lookups over the tool catalog; `can_run_under_hotl()` fail-closed gate (Issue #45, ADR-0055)
+- `src/agents/override_service.py` — **P1-1**: HOTL override window + compensation flow; event chain (override.requested → compensation.started → succeeded/failed → escalation.raised / confirmed); window enforcement; overrides audited with actor/reason/timestamp (Issue #45, ADR-0055)
+- `src/agents/hotl_monitor.py` — **P1-1**: reviewer notification within SLO (`hotl_notification_slo_seconds`, default 60s) + override-window opening; SLO-breach detection (Issue #45, ADR-0055)
+- `infrastructure/agent-tools/tools.yaml` — **P1-2**: `reversible`, `compensating_action`, `max_hotl_risk_score`, `allowed_autonomy_levels`, `requires_dual_approval` for every tool (Issue #45, ADR-0055)
+- `tests/unit/agents/test_compensation_registry.py`, `test_override_service.py`, `test_hotl_monitor.py`, `test_tool_catalog_loading.py` — coverage for override/compensation success+failure, escalation, window enforcement, and strict catalog validation (Issue #45)
+- `docs/adr/ADR-0055-hotl-operationalization.md` — records the HOTL lifecycle + reversibility decisions (Issue #45)
+
+#### Changed
+
+- `src/agents/tool_registry.py` — **P1-2**: `ToolDefinition` gains reversibility fields; `default_tool_registry` now loads from the canonical `tools.yaml` (`load_tools_from_yaml`), failing startup in production on missing reversibility metadata (`ToolCatalogError`); added reversibility accessors (Issue #45, ADR-0055)
+- `src/agents/orchestrator/orchestrator.py` — reversibility gate routes non-reversible / over-ceiling HOTL actions to HITL (`HITL_NON_REVERSIBLE`); optional `hotl_monitor` drives the post-execution notify + override window, returning `hotl_action_id` (Issue #45, ADR-0055)
+- `src/shared/config.py` — added `hotl_notification_slo_seconds` (default 60) (Issue #45)
+
 ### Wave B — Machine-Readable Governance Contracts (ADR-0054)
 
 #### Added

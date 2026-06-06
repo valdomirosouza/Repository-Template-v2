@@ -1,6 +1,6 @@
 # Canonical agent tool catalog
 # Spec:  specs/ai/tool-registry.md
-# ADR:   ADR-0039
+# ADR:   ADR-0039, ADR-0055 (reversibility metadata)
 # Owner: Security Lead
 #
 # Every tool an agent may invoke MUST have an entry here.
@@ -8,19 +8,27 @@
 # Add new tools and re-deploy — runtime registration is for tests only.
 #
 # Fields:
-#   name:                 unique kebab-case identifier
-#   description:          human-readable purpose
-#   version:              semver; bump when endpoint signature changes
-#   risk_level:           low | medium | high
-#   pii_access:           list of L1-L4 PII classification levels accessible
-#   requires_hitl:        true = always routed through HITL gateway
-#   execution_mode:       direct | sandbox
-#                         sandbox = MUST be routed through SandboxExecutor (ADR-0016, ADR-0047)
-#                         direct  = executed in-process via Python function (subject to HITL gating)
+#   name:                  unique kebab-case identifier
+#   description:           human-readable purpose
+#   version:               semver; bump when endpoint signature changes
+#   risk_level:            low | medium | high
+#   pii_access:            list of L1-L4 PII classification levels accessible
+#   requires_hitl:         true = always routed through HITL gateway
+#   execution_mode:        direct | sandbox
+#                          sandbox = MUST be routed through SandboxExecutor (ADR-0016, ADR-0047)
+#                          direct  = executed in-process via Python function (subject to HITL gating)
 #   rate_limit_per_minute: max invocations per minute per session
-#   rate_limit_per_hour:  max invocations per hour per session
-#   owner_team:           team responsible for this tool
-#   adr_reference:        ADR governing this tool (optional)
+#   rate_limit_per_hour:   max invocations per hour per session
+#   owner_team:            team responsible for this tool
+#   adr_reference:         ADR governing this tool (optional)
+#
+# HOTL reversibility metadata (ADR-0055) — REQUIRED for every tool in production:
+#   reversible:            true if the action can be undone by a compensating action
+#   compensating_action:   name of the tool that reverses this one (null if none / not reversible)
+#   max_hotl_risk_score:   highest risk_score at which this tool may auto-execute under HOTL
+#                          (0.0 = never auto-executes; always routes through HITL)
+#   allowed_autonomy_levels: autonomy levels permitted to invoke this tool autonomously
+#   requires_dual_approval: true = two distinct human approvers required (segregation of duties)
 
 tools:
   - name: send-email
@@ -34,6 +42,11 @@ tools:
     rate_limit_per_hour: 20
     owner_team: platform
     adr_reference: ADR-0011
+    reversible: false
+    compensating_action: null
+    max_hotl_risk_score: 0.0
+    allowed_autonomy_levels: []
+    requires_dual_approval: false
 
   - name: read-db-record
     description: Read a single record from the database by primary key
@@ -46,6 +59,11 @@ tools:
     rate_limit_per_hour: 1000
     owner_team: platform
     adr_reference: ADR-0039
+    reversible: true
+    compensating_action: null
+    max_hotl_risk_score: 0.3
+    allowed_autonomy_levels: [low-risk, medium-risk, full]
+    requires_dual_approval: false
 
   - name: write-db-record
     description: Create or update a record in the database
@@ -58,6 +76,11 @@ tools:
     rate_limit_per_hour: 100
     owner_team: platform
     adr_reference: ADR-0039
+    reversible: true
+    compensating_action: restore-db-record
+    max_hotl_risk_score: 0.0
+    allowed_autonomy_levels: [medium-risk, full]
+    requires_dual_approval: false
 
   - name: execute-code
     description: Execute AI-generated Python code in an isolated Docker sandbox
@@ -70,6 +93,11 @@ tools:
     rate_limit_per_hour: 10
     owner_team: platform
     adr_reference: ADR-0047
+    reversible: false
+    compensating_action: null
+    max_hotl_risk_score: 0.0
+    allowed_autonomy_levels: []
+    requires_dual_approval: true
 
   - name: send-external-request
     description: Send an HTTP request to a registered external endpoint
@@ -82,6 +110,11 @@ tools:
     rate_limit_per_hour: 50
     owner_team: integrations
     adr_reference: ADR-0048
+    reversible: false
+    compensating_action: null
+    max_hotl_risk_score: 0.0
+    allowed_autonomy_levels: []
+    requires_dual_approval: false
 
   - name: post-webhook
     description: POST a payload to a registered external webhook endpoint
@@ -94,6 +127,11 @@ tools:
     rate_limit_per_hour: 50
     owner_team: integrations
     adr_reference: ADR-0039
+    reversible: false
+    compensating_action: null
+    max_hotl_risk_score: 0.0
+    allowed_autonomy_levels: []
+    requires_dual_approval: false
 
   - name: generate-report
     description: Render a data report to PDF or CSV and store it in object storage
@@ -106,3 +144,8 @@ tools:
     rate_limit_per_hour: 50
     owner_team: data
     adr_reference: ADR-0039
+    reversible: true
+    compensating_action: delete-report
+    max_hotl_risk_score: 0.3
+    allowed_autonomy_levels: [low-risk, medium-risk, full]
+    requires_dual_approval: false

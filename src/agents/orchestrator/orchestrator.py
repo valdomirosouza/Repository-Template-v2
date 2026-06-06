@@ -23,8 +23,10 @@ from opentelemetry import trace
 from opentelemetry.trace import StatusCode
 
 from src.agents.action_policy import requires_mandatory_hitl
+from src.agents.compensation_registry import CompensationRegistry
 from src.agents.feedback_learner import FeedbackLearner, default_feedback_learner
 from src.agents.hitl_gateway import HITLGateway, HITLRequest, HITLStatus
+from src.agents.hotl_monitor import HOTLMonitor
 from src.agents.risk_scorer import RiskScorer
 from src.agents.schemas import parse_agent_action
 from src.agents.spec_contract_enforcer import SpecContractEnforcer, SpecViolationError
@@ -96,6 +98,8 @@ class AgentOrchestrator:
         feedback_learner: FeedbackLearner | None = None,
         spec_contract_enforcer: SpecContractEnforcer | None = None,
         tool_executor: ToolExecutor | None = None,
+        compensation_registry: CompensationRegistry | None = None,
+        hotl_monitor: HOTLMonitor | None = None,
     ) -> None:
         self._agent_id = agent_id
         self._audit = audit_logger
@@ -107,6 +111,12 @@ class AgentOrchestrator:
         self._learner = feedback_learner or default_feedback_learner
         self._spec_enforcer = spec_contract_enforcer
         self._tool_executor = tool_executor or ToolExecutor(audit_logger=audit_logger)
+        # HOTL reversibility gate (ADR-0055): non-reversible / over-ceiling actions
+        # cannot run autonomously under HOTL — they fall back to HITL.
+        self._compensation_registry = compensation_registry or CompensationRegistry()
+        # Optional HOTL post-execution lifecycle (notify + override window). When None,
+        # behaviour is unchanged (no notification / window is opened).
+        self._hotl_monitor = hotl_monitor
 
     async def run(self, raw_input: dict[str, Any], trace_id: str | None = None) -> dict[str, Any]:
         """Execute the full Perception → Reason → Act loop.
@@ -338,8 +348,24 @@ class AgentOrchestrator:
             route_to_hitl = True
             oversight_mode = "HITL"
         elif permits_autonomous:
-            route_to_hitl = False
-            oversight_mode = f"HOTL_{autonomy_level.name}"
+            # HOTL reversibility gate (ADR-0055): a non-reversible action — or one
+            # above the tool's HOTL risk ceiling — cannot run autonomously; it falls
+            # back to HITL for explicit human approval.
+            hotl_ok, hotl_reason = self._compensation_registry.can_run_under_hotl(
+                action_name, ctx.risk_score
+            )
+            if hotl_ok:
+                route_to_hitl = False
+                oversight_mode = f"HOTL_{autonomy_level.name}"
+            else:
+                route_to_hitl = True
+                oversight_mode = "HITL_NON_REVERSIBLE"
+                logger.info(
+                    "HOTL reversibility gate routed action to HITL",
+                    agent_id=ctx.agent_id,
+                    action=action_name,
+                    reason=hotl_reason,
+                )
         else:
             route_to_hitl = True
             oversight_mode = "HITL"
@@ -478,6 +504,7 @@ class AgentOrchestrator:
 
         # ToolExecutor handles its own audit records (steps 8-10).
         # Log orchestrator-level executed outcome for span correlation.
+        hotl_action_id: str | None = None
         if tool_result.outcome == "EXECUTED":
             logger.info(
                 "Agent action executed",
@@ -497,7 +524,22 @@ class AgentOrchestrator:
                 )
             )
 
-        return {
+            # HOTL lifecycle (ADR-0055): for autonomously-executed (HOTL) actions,
+            # notify the reviewer and open the override window. Skipped when no
+            # monitor is configured or the action went through HITL.
+            if self._hotl_monitor is not None and oversight_mode.startswith("HOTL_"):
+                hotl_action_id = str(uuid.uuid4())
+                await self._hotl_monitor.on_hotl_executed(
+                    action_id=hotl_action_id,
+                    agent_id=ctx.agent_id,
+                    action_type=ctx.proposed_action or "unknown",
+                    parameters=ctx.proposed_parameters,
+                    risk_score=ctx.risk_score,
+                    oversight_mode=oversight_mode,
+                    trace_id=ctx.trace_id,
+                )
+
+        result = {
             "agent_id": ctx.agent_id,
             "action": ctx.proposed_action,
             "parameters": ctx.proposed_parameters,
@@ -508,3 +550,6 @@ class AgentOrchestrator:
             "sandbox_used": tool_result.sandbox_used,
             "trace_id": ctx.trace_id,
         }
+        if hotl_action_id is not None:
+            result["hotl_action_id"] = hotl_action_id
+        return result
