@@ -26,7 +26,7 @@ jobs:
             const numbers = matches.map(m => m[1]);
             return numbers.join(',');
 
-      - name: Apply "status: in-review" on PR open
+      - name: 'Apply "status: in-review" on PR open'
         if: |
           steps.extract.outputs.result != '' &&
           (github.event.action == 'opened' || github.event.action == 'reopened')
@@ -57,7 +57,7 @@ jobs:
               }
             }
 
-      - name: Apply "status: done" and close on PR merge
+      - name: 'Apply "status: done" and close on PR merge'
         if: |
           steps.extract.outputs.result != '' &&
           github.event.action == 'closed' &&

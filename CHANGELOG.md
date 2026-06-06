@@ -11,6 +11,15 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- `.github/workflows/ci-ai-review.yml` — removed the invalid job-level `if: ${{ secrets.* }}` (the `secrets` context is not allowed in `if:`), replaced with a step-level guard output; the workflow no longer fails GitHub's workflow-file validation on every push
+- `.github/workflows/issue-lifecycle.yml` — quoted step `name:` values containing `status: …` (unquoted colon-space was an invalid YAML mapping), fixing a parse error that failed validation on every push
+
+---
+
 ## [2.7.2] - 2026-06-06
 
 > **Completes the CI-green work.** A pip advisory (PYSEC-2026-196) landed during the
