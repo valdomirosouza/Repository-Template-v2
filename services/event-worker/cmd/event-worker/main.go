@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/yourorg/monorepo/services/event-worker/internal/config"
 	"github.com/yourorg/monorepo/services/event-worker/internal/handler"
+	"github.com/yourorg/monorepo/services/event-worker/internal/health"
 	kafkainfra "github.com/yourorg/monorepo/services/event-worker/internal/infra/kafka"
 )
 
@@ -21,6 +22,13 @@ func main() {
 	slog.SetDefault(logger)
 
 	cfg := config.Load()
+
+	// Health server on dedicated port — serves /healthz (liveness) and /readyz (readiness).
+	// Starts before Kafka so the startupProbe can verify the process is alive immediately.
+	// SetReady(true) is called after the Kafka consumer group join completes. (specs/k8s/probe-strategy.md §3.3)
+	healthSrv := health.New()
+	healthSrv.Start(cfg.HealthPort)
+	logger.Info("health server listening", slog.Int("port", cfg.HealthPort))
 
 	brokers := strings.Split(cfg.KafkaBootstrapServers, ",")
 	topics := []string{cfg.KafkaTopicInput1, cfg.KafkaTopicInput2}
@@ -34,7 +42,7 @@ func main() {
 	consumer := kafkainfra.NewConsumer(brokers, topics, cfg.KafkaConsumerGroup, h, logger)
 	defer consumer.Close() //nolint:errcheck
 
-	// Prometheus metrics endpoint
+	// Prometheus metrics + legacy /health endpoint (kept for backward compat with non-K8s scrapers)
 	go func() {
 		mux := http.NewServeMux()
 		mux.Handle("/metrics", promhttp.Handler())
@@ -55,6 +63,10 @@ func main() {
 		slog.String("topics", strings.Join(topics, ",")),
 		slog.String("group", cfg.KafkaConsumerGroup),
 	)
+
+	// Signal readiness after the Kafka consumer group has joined and received partition assignment.
+	healthSrv.SetReady(true)
+	logger.Info("event-worker ready — Kafka consumer group joined")
 
 	if err := consumer.Run(ctx); err != nil {
 		logger.Error("consumer exited with error", slog.String("error", err.Error()))

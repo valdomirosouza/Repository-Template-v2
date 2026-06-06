@@ -19,6 +19,7 @@ serviceAccount:
 service:
   type: ClusterIP
   metricsPort: 8080
+  healthPort: 8081
 
 resources:
   requests:
@@ -54,22 +55,26 @@ env:
   LOG_LEVEL: info
   WORKER_ID: "" # Injected by Downward API (pod name) — see deployment.yaml
   METRICS_PORT: "8080"
+  HEALTH_PORT: "8081"
 
 # Secrets injected from Kubernetes Secret — never hardcode values here.
 secretRef: event-worker-secrets
 
 probes:
+  startup:
+    path: /healthz
+    failureThreshold: 12 # 12 × 5s = 60s max startup window (Go starts fast)
+    periodSeconds: 5
+    timeoutSeconds: 2
   liveness:
     path: /healthz
-    initialDelaySeconds: 5
     periodSeconds: 15
-    timeoutSeconds: 5
+    timeoutSeconds: 3
     failureThreshold: 3
   readiness:
     path: /readyz
-    initialDelaySeconds: 5
     periodSeconds: 10
-    timeoutSeconds: 5
+    timeoutSeconds: 3
     failureThreshold: 3
 
 terminationGracePeriodSeconds: 30

@@ -13,6 +13,21 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 11 — Go Event-Worker Health Server + startupProbe (K8s Probe Compliance)
+
+#### Added
+
+- `services/event-worker/internal/health/server.go` — dedicated HTTP health server on port 8081; atomic-bool ready state; `/healthz` (liveness) and `/readyz` (readiness) endpoints; isolated from Prometheus metrics port (Issue #20, specs/k8s/probe-strategy.md §3.3)
+- `services/event-worker/internal/health/server_test.go` — 8 unit tests covering liveness always-200, readiness 503→200 lifecycle, concurrent access safety
+- `infrastructure/helm/event-worker/values.yaml` — `probes.startup` section (failureThreshold=12, periodSeconds=5, 60s window); `service.healthPort: 8081`; removed `initialDelaySeconds` from liveness/readiness
+- `specs/k8s/probe-strategy.md` — formal probe strategy spec (K8S-001) covering all three workloads, parameter reference table, canary gate requirements (Issue #20–#24, ADR-0042)
+
+#### Changed
+
+- `services/event-worker/cmd/event-worker/main.go` — wires `health.New()` + `health.Start(cfg.HealthPort)`; calls `SetReady(true)` after Kafka consumer group joins
+- `services/event-worker/internal/config/config.go` — adds `HealthPort` field (default 8081, env `HEALTH_PORT`)
+- `infrastructure/helm/event-worker/templates/deployment.yaml` — adds `startupProbe` on `/healthz:health`; moves all probes from `port: metrics` to `port: health` (8081); removes `initialDelaySeconds` anti-pattern
+
 ---
 
 ## [2.2.0] — 2026-06-05
