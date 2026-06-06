@@ -13,6 +13,20 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 17 — Hierarchical Spans in Orchestrator + Harness (OTel Agentic Observability)
+
+#### Added
+
+- `src/observability/span_hierarchy.py` — OTel span name constants (`agent.task`, `agent.perceive`, `agent.reason`, `agent.act`, `llm.inference`, `tool.hitl_gateway`, `harness.coordinator`, `harness.planner`, `harness.evaluator`) and shared `tracer` instance (OTEL-001 §2, ADR-0044, Issue #27)
+- `tests/unit/observability/test_span_hierarchy.py` — 16 unit tests covering all span names, orchestrator hierarchy (all 4 spans emitted, agent.id on task span, act.risk_score on act span, perceive.pii_fields_masked on perceive span), and harness.coordinator span with stage attribute
+
+#### Changed
+
+- `src/agents/orchestrator/orchestrator.py` — `run()` wrapped in `agent.task` span with `agent.id`, `agent.task_id`, `agent.harness_mode` attributes; `_perceive()` wrapped in `agent.perceive` span with `perceive.pii_fields_masked`, `perceive.injection_guard_passed`, `perceive.injection_risk_score`; `_reason()` wrapped in `agent.reason` span with `reason.model`, `reason.precedents_injected`; `_act()` wrapped in `agent.act` span with `act.action_type`, `act.risk_score`, `act.hitl_required`, `act.autonomous`; errors set `StatusCode.ERROR` (Issue #27, OTEL-001 §3)
+- `src/agents/harness/coordinator.py` — `run()` wrapped in `harness.coordinator` span with `harness.stage`, `harness.iteration`, `harness.passed`; `_run_full()` planner call wrapped in `harness.planner` span; evaluator call in `_run_sprint()` wrapped in `harness.evaluator` span with `harness.stage`, `harness.iteration`, `harness.is_retry`, `harness.passed` (Issue #27, OTEL-001 §3.6)
+
+---
+
 ### Wave 16 — OTel Collector OTTL PII Redaction + Tail Sampling + CI Lint Gate (OTel Agentic Observability)
 
 #### Added
