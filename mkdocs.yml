@@ -37,6 +37,7 @@ nav:
       - Add a Service: quickstart/add-new-service.md
   - ADRs: adr/README.md
   - AI Governance:
+      - AI Safety Checklist: ai-governance/ai-safety-checklist.md
       - Autonomy Boundaries: ai-governance/autonomy-boundaries.md
       - Model Card: ai-governance/model-card.md
       - EU AI Act: ai-governance/eu-ai-act-compliance.md
