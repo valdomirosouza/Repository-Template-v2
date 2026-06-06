@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Version:** 1.26.19 | **Last updated:** 2026-06-01
+> **Version:** 2.2.0 | **Last updated:** 2026-06-05
 > This file is the authoritative behavioral contract for Claude Code operating in this repository.
 > Claude must read this file at the start of every session and follow all rules without exception.
 
@@ -146,21 +146,21 @@ RequestConsumer (asyncio background task in lifespan)
 
 ### Key Layers
 
-| Layer         | Path                                      | Role                                                                                                    |
-| ------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| API           | `src/api/rest/`                           | FastAPI routers; `/v1/requests`, `/v1/hitl`, `/health`                                                  |
-| Worker        | `src/workers/request_consumer.py`         | Asyncio task that drives the orchestrator                                                               |
-| Orchestrator  | `src/agents/orchestrator/orchestrator.py` | Perception → Reason → Act loop                                                                          |
-| Harness       | `src/agents/harness/`                     | Optional Planner→Generator→Evaluator wrapper (controlled by `harness_mode` setting)                     |
-| Guardrails    | `src/guardrails/`                         | PII filter, prompt injection guard, action limits, audit logger                                         |
-| HITL Gateway  | `src/agents/hitl_gateway.py`              | Approval store + decision routing; **all agent actions with real-world effects must pass through here** |
-| Feature Flags | `src/shared/feature_flags.py`             | OpenFeature/flagd-backed autonomy levels (NONE → LOW_RISK → MEDIUM_RISK → FULL)                         |
-| Config        | `src/shared/config.py`                    | Pydantic Settings; all env vars with documented defaults                                                |
-| Observability | `src/observability/`                      | OTel traces, Prometheus Golden Signals metrics, structured JSON logs                                    |
-| Memory        | `src/memory/`                             | Session memory, vector store, document indexer, bug history (opt-in, ADR-0017)                          |
-| Frontend      | `frontend/`                               | Next.js app; includes HITL operator approval UI                                                         |
-| PR Gates      | `harness/`                                | Claude Code harness specs (code-check, doc-check, release-check, staging-check)                         |
-| ADRs          | `docs/adr/`                               | ADR-0001–ADR-0029 all binding; 0026–0029 cover SOX audit log, ISO 27001 CM, DORA metrics, DevSecOps     |
+| Layer         | Path                                      | Role                                                                                                                                                                                                                                                       |
+| ------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API           | `src/api/rest/`                           | FastAPI routers; `/v1/requests`, `/v1/hitl`, `/health`                                                                                                                                                                                                     |
+| Worker        | `src/workers/request_consumer.py`         | Asyncio task that drives the orchestrator                                                                                                                                                                                                                  |
+| Orchestrator  | `src/agents/orchestrator/orchestrator.py` | Perception → Reason → Act loop                                                                                                                                                                                                                             |
+| Harness       | `src/agents/harness/`                     | Optional Planner→Generator→Evaluator wrapper (controlled by `harness_mode` setting)                                                                                                                                                                        |
+| Guardrails    | `src/guardrails/`                         | PII filter, prompt injection guard, action limits, audit logger                                                                                                                                                                                            |
+| HITL Gateway  | `src/agents/hitl_gateway.py`              | Approval store + decision routing; **all agent actions with real-world effects must pass through here**                                                                                                                                                    |
+| Feature Flags | `src/shared/feature_flags.py`             | OpenFeature/flagd-backed autonomy levels (NONE → LOW_RISK → MEDIUM_RISK → FULL)                                                                                                                                                                            |
+| Config        | `src/shared/config.py`                    | Pydantic Settings; all env vars with documented defaults                                                                                                                                                                                                   |
+| Observability | `src/observability/`                      | OTel traces, Prometheus Golden Signals metrics, structured JSON logs                                                                                                                                                                                       |
+| Memory        | `src/memory/`                             | Session memory, vector store, document indexer, bug history (opt-in, ADR-0017)                                                                                                                                                                             |
+| Frontend      | `frontend/`                               | Next.js app; includes HITL operator approval UI                                                                                                                                                                                                            |
+| PR Gates      | `harness/`                                | Claude Code harness specs (code-check, doc-check, release-check, staging-check)                                                                                                                                                                            |
+| ADRs          | `docs/adr/`                               | ADR-0001–ADR-0041 all binding; 0030–0041 cover RTK, Agentic SDLC onboarding, sub-agent registry, session durability, escalation protocol, AI-assisted CI review, cyber defense, governance gate, learn stage, tool registry, maturity model, context graph |
 
 ### Infrastructure Fallback Pattern
 

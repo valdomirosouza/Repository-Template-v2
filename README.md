@@ -1,7 +1,7 @@
 # Enterprise Monorepo Template
 
 > Production-ready monorepo template for enterprise software systems. AI/agent capabilities are optional opt-in extensions.
-> **Version:** 1.26.19 | **Status:** Active | **License:** MIT
+> **Version:** 2.2.0 | **Status:** Active | **License:** MIT
 
 [![CI](https://github.com/valdomirosouza/Repository-Template/actions/workflows/ci.yml/badge.svg)](https://github.com/valdomirosouza/Repository-Template/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/valdomirosouza/Repository-Template)](https://github.com/valdomirosouza/Repository-Template/releases/latest)
@@ -137,20 +137,20 @@ Also read after your language guide:
 
 A production-ready scaffold for enterprise teams. Everything is wired together from day one:
 
-| Layer                    | What's included                                                                                 |
-| ------------------------ | ----------------------------------------------------------------------------------------------- |
-| **Languages**            | Python 3.13 · Java 21 · Go 1.24 · Node 22 / Next.js 15                                          |
-| **Service scaffolds**    | `services/domain-service/` (Spring Boot) · `services/event-worker/` (Go) · `frontend/frontend/` |
-| **Infrastructure**       | PostgreSQL · Redis · Kafka (KRaft) · Schema Registry · flagd                                    |
-| **IaC**                  | Helm chart for Kubernetes · Terraform modules for VPC, EKS, and ElastiCache Redis               |
-| **Observability**        | OpenTelemetry · Prometheus · Grafana (Golden Signals + CUJ) · Jaeger (with sampling policy)     |
-| **Alerting**             | Golden Signals rules + 14 agent-specific alert rules (HITL, feedback loop, MTTD/MTTR, LLM cost) |
-| **Governance**           | 21 ADRs · SDD cycle · STRIDE threat model · privacy-by-design (LGPD + GDPR) · PRR checklist     |
-| **Specs**                | System · AI/agents · Privacy · Security (STRIDE) · Ethics (EU AI Act) · SDLC lifecycle          |
-| **CI/CD**                | GitHub Actions for Python · Java · Go · Frontend — all path-filtered · canary CD with SLO gates |
-| **Testing**              | Unit · Integration · Security · Chaos · Contract tests (harness message schema invariants)      |
-| **Dev experience**       | Devcontainer · `docker compose up -d` · per-language `make` targets · skills catalog            |
-| **AI/Agents** _(opt-in)_ | Anthropic Claude · HITL/HOTL gateway · multi-agent harness · guardrails · ethical AI principles |
+| Layer                    | What's included                                                                                                                                                                                                                                                              |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Languages**            | Python 3.13 · Java 21 · Go 1.24 · Node 22 / Next.js 15                                                                                                                                                                                                                       |
+| **Service scaffolds**    | `services/domain-service/` (Spring Boot) · `services/event-worker/` (Go) · `frontend/frontend/`                                                                                                                                                                              |
+| **Infrastructure**       | PostgreSQL · Redis · Kafka (KRaft) · Schema Registry · flagd                                                                                                                                                                                                                 |
+| **IaC**                  | Helm chart for Kubernetes · Terraform modules for VPC, EKS, and ElastiCache Redis                                                                                                                                                                                            |
+| **Observability**        | OpenTelemetry · Prometheus · Grafana (Golden Signals + CUJ) · Jaeger (with sampling policy)                                                                                                                                                                                  |
+| **Alerting**             | Golden Signals rules + 14 agent-specific alert rules (HITL, feedback loop, MTTD/MTTR, LLM cost)                                                                                                                                                                              |
+| **Governance**           | 21 ADRs · SDD cycle · STRIDE threat model · privacy-by-design (LGPD + GDPR) · PRR checklist                                                                                                                                                                                  |
+| **Specs**                | System · AI/agents · Privacy · Security (STRIDE) · Ethics (EU AI Act) · SDLC lifecycle                                                                                                                                                                                       |
+| **CI/CD**                | GitHub Actions for Python · Java · Go · Frontend — all path-filtered · canary CD with SLO gates                                                                                                                                                                              |
+| **Testing**              | Unit · Integration · Security · Chaos · Contract tests (harness message schema invariants)                                                                                                                                                                                   |
+| **Dev experience**       | Devcontainer · `docker compose up -d` · per-language `make` targets · skills catalog                                                                                                                                                                                         |
+| **AI/Agents** _(opt-in)_ | Anthropic Claude · HITL/HOTL gateway · multi-agent harness (Planner/Generator/Evaluator) · guardrails · ethical AI · feedback learner (Learn stage) · governed tool registry · context graph (autonomy tier) · agentic maturity self-assessment · governance gate · personas |
 
 ---
 
@@ -207,7 +207,7 @@ make new-service NAME=my-service LANG=python   # or java / go
 
 ```
 .
-├── CLAUDE.md                    ← AI behavioral contract (v2.1.1)
+├── CLAUDE.md                    ← AI behavioral contract (v2.2.0)
 ├── services.yaml                ← Service catalog (all languages, ports, topics)
 ├── docker-compose.yml           ← Full dev infrastructure stack
 ├── docker-compose.test.yml      ← Lightweight test stack (offset ports)
@@ -215,7 +215,7 @@ make new-service NAME=my-service LANG=python   # or java / go
 │
 ├── docs/
 │   ├── quickstart/              ← Role-specific onboarding guides (5 languages)
-│   ├── adr/                     ← Architecture Decision Records (ADR-0001–0030)
+│   ├── adr/                     ← Architecture Decision Records (ADR-0001–0041)
 │   ├── api/                     ← OpenAPI · AsyncAPI · gRPC proto contracts
 │   ├── privacy/                 ← PII inventory, DPIA/RIPD, data retention
 │   ├── sre/                     ← SLOs, error budget policy, PRR, CUJ, FinOps, capacity planning

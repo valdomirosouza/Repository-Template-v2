@@ -1,7 +1,7 @@
 # Customising This Template
 
 This guide walks you through adopting this repository as the foundation for a new project.
-Read it after completing the [5-step setup in README.md](README.md#5-step-setup).
+Read it after completing the [Quick Start in README.md](README.md#quick-start-clone--initial-setup--code).
 
 ---
 

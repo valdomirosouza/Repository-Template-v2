@@ -88,4 +88,4 @@ cp .env.example .env
 | [ADR-0011](../adr/ADR-0011-hitl-hotl-model.md)                   | HITL/HOTL human oversight model                       |
 | [ADR-0012](../adr/ADR-0012-pii-masking-strategy.md)              | PII masking before LLM ingestion and logging          |
 | [ADR-0015](../adr/ADR-0015-feature-flag-strategy.md)             | Feature flags via OpenFeature + flagd                 |
-| ADR-0016                                                         | Language selection — when to use Python vs Java vs Go |
+| [ADR-0025](../adr/ADR-0025-language-selection.md)                | Language selection — when to use Python vs Java vs Go |

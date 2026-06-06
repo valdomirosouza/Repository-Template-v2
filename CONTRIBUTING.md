@@ -1,6 +1,6 @@
 # Contributing Guide
 
-> **Version:** 2.0.0 | **Last updated:** 2026-05-24
+> **Version:** 2.2.0 | **Last updated:** 2026-06-05
 
 Thank you for contributing. This guide describes the full contribution process for this repository, including the SDD (Spec-Driven Development) cycle, branch naming, PR process, and commit conventions.
 
