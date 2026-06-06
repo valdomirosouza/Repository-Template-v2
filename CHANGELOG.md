@@ -11,7 +11,14 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
-## [Unreleased]
+## [2.8.0] - 2026-06-06
+
+> **Agentic Spec-Driven Delivery Workflow.** Adopts the documentation-recommendation
+> positioning (Gitflow-replacement, Agile-preserving), evolves the lifecycle to 15
+> phases (0–14) with **Phase 0 Intake** and a conditional **Phase 10 AI Safety &
+> Agent Governance** (ADR-0058), publishes the process docs in mkdocs, and adds the
+> AI Safety checklist + DoR/DoD/template refinements. Also includes the glossary
+> expansion and the CI workflow/lint/migration fixes accumulated since 2.7.2.
 
 ### Added
 
@@ -2373,7 +2380,8 @@ API or configuration keys were removed.
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.2...HEAD
+[Unreleased]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.8.0...HEAD
+[2.8.0]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.2...v2.8.0
 [2.7.2]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.1...v2.7.2
 [2.7.1]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.0...v2.7.1
 [2.7.0]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.6.0...v2.7.0
