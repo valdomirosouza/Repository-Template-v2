@@ -13,6 +13,20 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 12 — Python API Gateway Probe Tuning (K8s Probe Compliance)
+
+#### Added
+
+- `tests/unit/api/test_health.py` — `TestProbeCompliance` class: 3 explicit probe-contract tests verifying `/health` returns 200 regardless of dependency state and `/ready` returns 503 (not 500) on DB failure (Issue #21, specs/k8s/probe-strategy.md §3.1)
+
+#### Changed
+
+- `infrastructure/helm/api-gateway/values.yaml` — added `probes.startup` section (failureThreshold=30, periodSeconds=5, 150s window); bumped `terminationGracePeriodSeconds` 30→60 (HITL in-flight SLA, ADR-0011/ADR-0042); removed `initialDelaySeconds` from liveness and readiness (anti-pattern per K8S-001 spec)
+- `infrastructure/helm/api-gateway/templates/deployment.yaml` — `startupProbe` is now fully values-driven via `{{ .Values.probes.startup.* }}`; removed hardcoded `failureThreshold`/`periodSeconds`; removed `initialDelaySeconds` from liveness and readiness
+- `infrastructure/k8s/deployment.yaml` — startup probe `periodSeconds` 10→5; `terminationGracePeriodSeconds` 30→60; removed `initialDelaySeconds` from liveness and readiness
+
+---
+
 ### Wave 11 — Go Event-Worker Health Server + startupProbe (K8s Probe Compliance)
 
 #### Added
