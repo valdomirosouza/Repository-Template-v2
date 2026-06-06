@@ -20,6 +20,8 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from opentelemetry.trace import StatusCode
+
 from src.agents.harness.context_manager import ContextManager
 from src.agents.harness.decision_tree_logger import DecisionTreeLogger
 from src.agents.harness.evaluator import EvaluatorAgent
@@ -37,6 +39,12 @@ from src.agents.harness.planner import PlannerAgent
 from src.guardrails.audit_logger import AuditLogger
 from src.guardrails.pii_filter import mask_dict, mask_text
 from src.observability.logger import get_logger
+from src.observability.span_hierarchy import (
+    SPAN_HARNESS_COORDINATOR,
+    SPAN_HARNESS_EVALUATOR,
+    SPAN_HARNESS_PLANNER,
+    tracer,
+)
 from src.shared.config import settings
 from src.shared.models import AuditEvent
 
@@ -68,21 +76,34 @@ class HarnessCoordinator:
 
     async def run(self, brief: TaskBrief) -> HarnessResult:
         """Execute the harness pipeline for the given brief."""
-        logger.info(
-            "Harness coordinator starting",
-            task_id=brief.task_id,
-            mode=settings.harness_mode,
-        )
-
-        match settings.harness_mode:
-            case "solo":
-                return await self._run_solo(brief)
-            case "simplified":
-                return await self._run_simplified(brief)
-            case "full":
-                return await self._run_full(brief)
-            case _:
-                raise ValueError(f"Unknown harness_mode: {settings.harness_mode!r}")
+        with tracer.start_as_current_span(SPAN_HARNESS_COORDINATOR) as span:
+            span.set_attributes(
+                {
+                    "harness.stage": "coordinator",
+                    "harness.iteration": 0,
+                    "harness.is_retry": False,
+                }
+            )
+            logger.info(
+                "Harness coordinator starting",
+                task_id=brief.task_id,
+                mode=settings.harness_mode,
+            )
+            try:
+                match settings.harness_mode:
+                    case "solo":
+                        result = await self._run_solo(brief)
+                    case "simplified":
+                        result = await self._run_simplified(brief)
+                    case "full":
+                        result = await self._run_full(brief)
+                    case _:
+                        raise ValueError(f"Unknown harness_mode: {settings.harness_mode!r}")
+                span.set_attribute("harness.passed", not result.escalated_to_hitl)
+                return result
+            except Exception as exc:
+                span.set_status(StatusCode.ERROR, str(exc))
+                raise
 
     # ── solo ─────────────────────────────────────────────────────────────────
 
@@ -136,7 +157,16 @@ class HarnessCoordinator:
             logger.warning("Planner disabled via config — falling back to simplified mode")
             return await self._run_simplified(brief)
 
-        spec = await self._planner.plan(brief)
+        with tracer.start_as_current_span(SPAN_HARNESS_PLANNER) as span:
+            span.set_attributes(
+                {
+                    "harness.stage": "planner",
+                    "harness.iteration": 1,
+                    "harness.is_retry": False,
+                }
+            )
+            spec = await self._planner.plan(brief)
+            span.set_attribute("harness.passed", True)
 
         # Optional HITL review of the ProductSpec before execution
         if settings.harness_planner_hitl_review:
@@ -245,7 +275,20 @@ class HarnessCoordinator:
                 await self._log_execution_summary(summary, brief.trace_id)
                 return artifact, None, iteration, False
 
-            score = await self._evaluator.evaluate(contract, artifact, iteration=iteration)
+            with tracer.start_as_current_span(SPAN_HARNESS_EVALUATOR) as eval_span:
+                eval_span.set_attributes(
+                    {
+                        "harness.stage": "evaluator",
+                        "harness.iteration": iteration,
+                        "harness.is_retry": iteration > 1,
+                    }
+                )
+                score = await self._evaluator.evaluate(contract, artifact, iteration=iteration)
+                eval_span.set_attributes(
+                    {
+                        "harness.passed": score.passed,
+                    }
+                )
             last_score = score
 
             if score.passed:

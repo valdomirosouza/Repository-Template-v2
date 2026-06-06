@@ -18,6 +18,9 @@ import unicodedata
 from dataclasses import dataclass
 from enum import Enum
 
+from opentelemetry import trace as otel_trace
+from opentelemetry.trace import StatusCode
+
 from src.observability.logger import get_logger
 
 logger = get_logger("prompt_injection_guard")
@@ -81,6 +84,16 @@ class PromptInjectionGuard:
 
             if risk_score >= self._risk_threshold:
                 self._log_rejection(user_input, dominant_reason)
+                span = otel_trace.get_current_span()
+                if span.is_recording():
+                    span.add_event(
+                        "guardrail.injection_blocked",
+                        {
+                            "rejection_reason": dominant_reason.value,
+                            "risk_score": risk_score,
+                        },
+                    )
+                    span.set_status(StatusCode.ERROR, f"injection guard: {dominant_reason.value}")
                 return ValidationResult(
                     is_valid=False,
                     rejection_reason=dominant_reason,

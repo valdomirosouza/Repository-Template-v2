@@ -19,6 +19,9 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
+from opentelemetry import trace
+from opentelemetry.trace import StatusCode
+
 from src.agents.feedback_learner import FeedbackLearner, default_feedback_learner
 from src.agents.hitl_gateway import HITLGateway, HITLRequest, HITLStatus
 from src.agents.risk_scorer import RiskScorer
@@ -27,6 +30,13 @@ from src.guardrails.audit_logger import AuditLogger, AuditWriteError
 from src.guardrails.pii_filter import mask_dict
 from src.guardrails.prompt_injection_guard import PromptInjectionGuard
 from src.observability.logger import get_logger
+from src.observability.span_hierarchy import (
+    SPAN_AGENT_ACT,
+    SPAN_AGENT_PERCEIVE,
+    SPAN_AGENT_REASON,
+    SPAN_AGENT_TASK,
+    tracer,
+)
 from src.shared.config import settings
 from src.shared.feature_flags import get_learning_mode, is_autonomous_mode_enabled
 from src.shared.llm_client import LLMClient
@@ -92,92 +102,134 @@ class AgentOrchestrator:
 
         Returns the action outcome. Raises on guardrail failure or HITL rejection.
         """
-        ctx = AgentContext(
-            agent_id=self._agent_id,
-            raw_input=raw_input,
-            trace_id=trace_id,
-        )
-
-        ctx = await self._perceive(ctx)
-        ctx = await self._reason(ctx)
-        return await self._act(ctx)
+        with tracer.start_as_current_span(SPAN_AGENT_TASK) as span:
+            span.set_attributes(
+                {
+                    "agent.task_id": trace_id or "",
+                    "agent.session_id": trace_id or "",
+                    "agent.id": self._agent_id,
+                    "agent.harness_mode": settings.harness_mode,
+                }
+            )
+            ctx = AgentContext(
+                agent_id=self._agent_id,
+                raw_input=raw_input,
+                trace_id=trace_id,
+            )
+            try:
+                ctx = await self._perceive(ctx)
+                ctx = await self._reason(ctx)
+                return await self._act(ctx)
+            except Exception as exc:
+                span.set_status(StatusCode.ERROR, str(exc))
+                raise
 
     async def _perceive(self, ctx: AgentContext) -> AgentContext:
         """Phase 1: mask PII and validate input structure.
 
         Mandatory: PII masking before any further processing (ADR-0012).
         """
-        logger.info("Agent perception phase", agent_id=ctx.agent_id, trace_id=ctx.trace_id)
+        with tracer.start_as_current_span(SPAN_AGENT_PERCEIVE) as span:
+            logger.info("Agent perception phase", agent_id=ctx.agent_id, trace_id=ctx.trace_id)
 
-        # L1: mask PII before any processing
-        ctx.masked_input = mask_dict(ctx.raw_input)
-
-        # L2: validate for injection attempts
-        summary_text = str(ctx.masked_input)
-        validation = self._injection_guard.validate(summary_text)
-        if not validation.is_valid:
-            logger.warning(
-                "Input rejected by injection guard",
-                agent_id=ctx.agent_id,
-                reason=str(validation.rejection_reason),
+            # L1: mask PII before any processing
+            ctx.masked_input = mask_dict(ctx.raw_input)
+            pii_fields_masked = len(ctx.raw_input) - len(
+                [k for k in ctx.raw_input if ctx.raw_input[k] == ctx.masked_input.get(k)]
             )
-            raise ValueError(f"Input rejected: {validation.rejection_reason}")
 
-        return ctx
+            # L2: validate for injection attempts
+            summary_text = str(ctx.masked_input)
+            validation = self._injection_guard.validate(summary_text)
+
+            span.set_attributes(
+                {
+                    "perceive.pii_fields_masked": pii_fields_masked,
+                    "perceive.injection_guard_passed": validation.is_valid,
+                    "perceive.injection_risk_score": float(
+                        getattr(validation, "risk_score", 0.0) or 0.0
+                    ),
+                }
+            )
+
+            if not validation.is_valid:
+                span.set_status(StatusCode.ERROR, "injection guard rejected input")
+                logger.warning(
+                    "Input rejected by injection guard",
+                    agent_id=ctx.agent_id,
+                    reason=str(validation.rejection_reason),
+                )
+                raise ValueError(f"Input rejected: {validation.rejection_reason}")
+
+            return ctx
 
     async def _reason(self, ctx: AgentContext) -> AgentContext:
         """Phase 2: call LLM with masked context to produce a proposed action.
 
         The LLM receives ONLY the masked context — never the raw input.
         """
-        logger.info("Agent reasoning phase", agent_id=ctx.agent_id)
+        with tracer.start_as_current_span(SPAN_AGENT_REASON) as span:
+            logger.info("Agent reasoning phase", agent_id=ctx.agent_id)
 
-        import json
+            import json
 
-        # Learn stage: inject precedents into system prompt when learning-mode=active.
-        learning_mode = get_learning_mode()
-        precedents_block = self._learner.build_precedents_block(
-            action_type=str(ctx.masked_input.get("action_type", "")),
-            payload_hash="",
-            mode=learning_mode,
-        )
-        system_prompt = (
-            "You are an AI agent. Analyse the provided context and respond with a JSON object "
-            'containing: {"action": "<action_name>", "parameters": {}, "risk_score": 0.0}. '
-            "risk_score must be between 0.0 (low) and 1.0 (high). "
-            "The context has already been PII-masked — never request raw personal data."
-        )
-        if precedents_block:
-            system_prompt = f"{system_prompt}\n\n{precedents_block}"
+            # Learn stage: inject precedents into system prompt when learning-mode=active.
+            learning_mode = get_learning_mode()
+            precedents_block = self._learner.build_precedents_block(
+                action_type=str(ctx.masked_input.get("action_type", "")),
+                payload_hash="",
+                mode=learning_mode,
+            )
+            precedents_injected = bool(precedents_block)
 
-        response_text = await self._llm.complete(
-            system=system_prompt,
-            user=json.dumps(ctx.masked_input),
-            trace_id=ctx.trace_id,
-        )
+            system_prompt = (
+                "You are an AI agent. Analyse the provided context and respond with a JSON object "
+                'containing: {"action": "<action_name>", "parameters": {}, "risk_score": 0.0}. '
+                "risk_score must be between 0.0 (low) and 1.0 (high). "
+                "The context has already been PII-masked — never request raw personal data."
+            )
+            if precedents_block:
+                system_prompt = f"{system_prompt}\n\n{precedents_block}"
 
-        try:
-            parsed = json.loads(response_text)
-        except (json.JSONDecodeError, ValueError):
-            parsed = {"action": "unknown", "parameters": {}, "risk_score": 1.0}
+            response_text = await self._llm.complete(
+                system=system_prompt,
+                user=json.dumps(ctx.masked_input),
+                trace_id=ctx.trace_id,
+            )
 
-        ctx.proposed_action = str(parsed.get("action", "unknown"))
-        ctx.proposed_parameters = dict(parsed.get("parameters", {}))
-        ctx.risk_score = float(parsed.get("risk_score", 1.0))
+            try:
+                parsed = json.loads(response_text)
+            except (json.JSONDecodeError, ValueError):
+                parsed = {"action": "unknown", "parameters": {}, "risk_score": 1.0}
 
-        logger.info(
-            "Agent reasoning complete",
-            agent_id=ctx.agent_id,
-            proposed_action=ctx.proposed_action,
-            risk_score=ctx.risk_score,
-        )
-        return ctx
+            ctx.proposed_action = str(parsed.get("action", "unknown"))
+            ctx.proposed_parameters = dict(parsed.get("parameters", {}))
+            ctx.risk_score = float(parsed.get("risk_score", 1.0))
+
+            span.set_attributes(
+                {
+                    "reason.model": settings.llm_model,
+                    "reason.precedents_injected": precedents_injected,
+                }
+            )
+
+            logger.info(
+                "Agent reasoning complete",
+                agent_id=ctx.agent_id,
+                proposed_action=ctx.proposed_action,
+                risk_score=ctx.risk_score,
+            )
+            return ctx
 
     async def _act(self, ctx: AgentContext) -> dict[str, Any]:
         """Phase 3: route proposed action through HITL/HOTL gateway and execute.
 
         All actions with real-world effects MUST route through HITLGateway (CLAUDE.md rule 3.3).
         """
+        with tracer.start_as_current_span(SPAN_AGENT_ACT) as span:
+            return await self._act_inner(ctx, span)
+
+    async def _act_inner(self, ctx: AgentContext, span: trace.Span) -> dict[str, Any]:
         logger.info(
             "Agent act phase",
             agent_id=ctx.agent_id,
@@ -198,6 +250,15 @@ class AgentOrchestrator:
             ctx.proposed_action or "unknown", ctx.proposed_parameters
         )
         ctx.risk_score = scored
+        hitl_required = ctx.risk_score >= settings.hitl_risk_threshold and not is_autonomous_mode_enabled()
+        span.set_attributes(
+            {
+                "act.action_type": ctx.proposed_action or "unknown",
+                "act.risk_score": ctx.risk_score,
+                "act.hitl_required": hitl_required,
+                "act.autonomous": is_autonomous_mode_enabled(),
+            }
+        )
         logger.info(
             "Risk scored",
             agent_id=ctx.agent_id,

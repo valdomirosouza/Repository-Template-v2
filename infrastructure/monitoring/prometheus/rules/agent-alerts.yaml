@@ -189,6 +189,35 @@ spec:
             description: "Token consumption has exceeded 90% of the monthly budget for {{ $labels.service }}. Service will be degraded when the budget is exhausted."
             runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
 
+    # ── OTel Collector ───────────────────────────────────────────────────────
+    - name: agent.otel
+      interval: 60s
+      rules:
+        - alert: OtelCollectorTransformErrors
+          expr: |
+            increase(otelcol_processor_transform_metric_errors_total[5m]) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "OTel Collector transform processor errors — PII redaction may be failing"
+            description: "{{ $value }} OTTL transform errors in the last 5 minutes. PII redaction patterns may be malformed or the collector needs updating. Inspect collector logs immediately."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+        - alert: AgentTraceSamplingBudgetHigh
+          expr: |
+            (
+              otelcol_processor_tail_sampling_sampling_decision_timer_ms_count
+              / on() otelcol_processor_tail_sampling_num_traces_sampled
+            ) > 0.80
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Tail sampling trace buffer above 80% capacity"
+            description: "The OTel Collector tail sampling buffer is above 80% of num_traces (50k). Increase num_traces or reduce trace volume to prevent forced early decisions."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
     # ── Dead letter queue ────────────────────────────────────────────────────
     - name: agent.dlq
       interval: 60s

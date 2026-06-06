@@ -13,6 +13,81 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 20 — ADRs + Skill + CLAUDE.md Updates (OTel Agentic Observability)
+
+#### Added
+
+- `docs/adr/ADR-0043-otel-collector-pii-redaction-tail-sampling.md` — documents value-based OTTL redaction rationale, tail-sampling policy design, pipeline order, collector image requirement (contrib, not slim), and trade-offs (Issue #30)
+- `docs/adr/ADR-0044-otel-agent-span-hierarchy.md` — documents span name constants, mandatory attributes per span, error propagation to root span, and test patching rules for Python `from ... import` binding semantics (Issue #30)
+- `docs/adr/ADR-0045-genai-semantic-conventions.md` — documents `complete_with_metadata()` decision, `OtelLLMClientWrapper` design, `request_id` exemplar label, `otel_capture_prompts` safety invariant, and deferred `LLMResponse` protocol refactor (Issue #30)
+- `docs/adr/ADR-0046-hitl-trace-linking-guardrail-events.md` — documents HITL span context storage on `HITLRequest`, linked decision span creation, guardrail span events contract, and `pii_field_count` double-detection trade-off (Issue #30)
+
+#### Changed
+
+- `docs/adr/README.md` — ADR-0043–0046 indexed
+- `CLAUDE_SESSION_INIT.md` — ADR-0043–0046 added to quick index
+- `CLAUDE.md` — Version bumped to 2.3.0; ADR row updated to 0001–0046; new skill row for OTel agent spans/GenAI/HITL trace (Issue #30)
+- `skills/observability/otel-instrumentation.md` — Added agentic span hierarchy section (OTEL-001, ADR-0044), LLM inference span section (ADR-0045), HITL trace linking section (ADR-0046), and guardrail span events section (ADR-0046); updated spec and ADR references
+
+---
+
+### Wave 19 — HITL Trace Linking + Guardrail Span Events (OTel Agentic Observability)
+
+#### Changed
+
+- `src/agents/hitl_gateway.py` — `HITLRequest` gains `otel_trace_id` and `otel_span_id` fields; `submit_for_approval()` captures the active span context at submission time; `record_decision()` calls `_emit_decision_span()` which creates a `tool.hitl_gateway` span with `SpanContext.links` referencing the original `agent.task` trace and sets `hitl.decision`, `hitl.decided_by`, `hitl.wait_duration_seconds`, `hitl.action_type`, `hitl.risk_score` attributes (Issue #29, OTEL-001 §7, ADR-0046)
+- `src/guardrails/pii_filter.py` — `PIIFilter.mask_dict()` adds a `guardrail.pii_detected` span event with `pii_field_count` and `pii_max_level` attributes on the active span whenever PII is found (Issue #29, OTEL-001 §3.8)
+- `src/guardrails/prompt_injection_guard.py` — `PromptInjectionGuard.validate()` adds a `guardrail.injection_blocked` span event with `rejection_reason` and `risk_score` attributes and sets `StatusCode.ERROR` on the active span when injection is detected (Issue #29, OTEL-001 §3.8)
+
+---
+
+### Wave 18 — GenAI Semantic Conventions + LLM OTel Wrapper (OTel Agentic Observability)
+
+#### Added
+
+- `src/agents/llm_client_otel.py` — `OtelLLMClientWrapper` wraps any LLMClient and emits an `llm.inference` child span with GenAI semantic conventions: `gen_ai.system`, `gen_ai.request.model`, `gen_ai.request.max_tokens`, `gen_ai.request.temperature`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.response.finish_reason`; optional `llm.prompt` / `llm.response` span events gated by `otel_capture_prompts`; records Prometheus token usage with `request_id` exemplar label (Issue #28, OTEL-001 §3.4, ADR-0045)
+- `LLMCallMetadata` dataclass in `src/shared/llm_client.py` — carries `input_tokens`, `output_tokens`, `finish_reason`, `model` from Anthropic API response
+
+#### Changed
+
+- `src/shared/llm_client.py` — `AnthropicLLMClient.complete()` now delegates to new `complete_with_metadata()` which returns `(str, LLMCallMetadata)`; token counts are no longer discarded (Issue #28)
+- `src/observability/metrics.py` — `LLM_TOKEN_COUNTER` gains `request_id` label for Grafana Exemplar pivot to Jaeger traces; `record_llm_call()` accepts optional `request_id` parameter (Issue #28, OTEL-001 §6)
+
+---
+
+### Wave 17 — Hierarchical Spans in Orchestrator + Harness (OTel Agentic Observability)
+
+#### Added
+
+- `src/observability/span_hierarchy.py` — OTel span name constants (`agent.task`, `agent.perceive`, `agent.reason`, `agent.act`, `llm.inference`, `tool.hitl_gateway`, `harness.coordinator`, `harness.planner`, `harness.evaluator`) and shared `tracer` instance (OTEL-001 §2, ADR-0044, Issue #27)
+- `tests/unit/observability/test_span_hierarchy.py` — 16 unit tests covering all span names, orchestrator hierarchy (all 4 spans emitted, agent.id on task span, act.risk_score on act span, perceive.pii_fields_masked on perceive span), and harness.coordinator span with stage attribute
+
+#### Changed
+
+- `src/agents/orchestrator/orchestrator.py` — `run()` wrapped in `agent.task` span with `agent.id`, `agent.task_id`, `agent.harness_mode` attributes; `_perceive()` wrapped in `agent.perceive` span with `perceive.pii_fields_masked`, `perceive.injection_guard_passed`, `perceive.injection_risk_score`; `_reason()` wrapped in `agent.reason` span with `reason.model`, `reason.precedents_injected`; `_act()` wrapped in `agent.act` span with `act.action_type`, `act.risk_score`, `act.hitl_required`, `act.autonomous`; errors set `StatusCode.ERROR` (Issue #27, OTEL-001 §3)
+- `src/agents/harness/coordinator.py` — `run()` wrapped in `harness.coordinator` span with `harness.stage`, `harness.iteration`, `harness.passed`; `_run_full()` planner call wrapped in `harness.planner` span; evaluator call in `_run_sprint()` wrapped in `harness.evaluator` span with `harness.stage`, `harness.iteration`, `harness.is_retry`, `harness.passed` (Issue #27, OTEL-001 §3.6)
+
+---
+
+### Wave 16 — OTel Collector OTTL PII Redaction + Tail Sampling + CI Lint Gate (OTel Agentic Observability)
+
+#### Added
+
+- `specs/observability/otel-agentic-observability.md` — OTEL-001 formal spec: span hierarchy (agent.task → agent.{perceive,reason,act} → llm.inference), mandatory span attributes (GenAI semantic conventions), Collector PII redaction rules, tail sampling policy table, HITL trace linking contract, retry span links (Issues #26–#30, ADR-0043)
+- `transform/redact_pii` OTTL processor in `infrastructure/monitoring/opentelemetry/otel-collector.yaml` — value-based regex redaction for Anthropic API keys (`sk-ant-*`), Bearer tokens, email addresses, and Brazilian CPF (LGPD L1); applied to both traces and logs pipelines (Issue #26, OTEL-001 §4)
+- `transform/redact_span_status` OTTL processor — redacts API keys that leak into span status messages (Issue #26)
+- `tail_sampling` processor — three-policy tail sampling: `errors-and-rejections` (100%), `hitl-full` (100%), `standard-agent-tasks` (10%); `decision_wait: 10s` (Issue #26, OTEL-001 §5)
+- `.github/workflows/ci-otel-collector-lint.yml` — validates collector config syntax via Docker (`otel/opentelemetry-collector-contrib:0.104.0 validate`), checks that `transform/redact_pii`, `transform/redact_span_status`, `tail_sampling`, and `attributes/mask-pii` are present in the correct pipeline, verifies all four PII patterns are configured; posts PR comment on findings (informational)
+- Two new Prometheus alert rules in `infrastructure/monitoring/prometheus/rules/agent-alerts.yaml`: `OtelCollectorTransformErrors` (warning on any OTTL error — PII redaction may be failing) and `AgentTraceSamplingBudgetHigh` (warning when tail sampling buffer exceeds 80% capacity) (Issue #26)
+
+#### Changed
+
+- `infrastructure/monitoring/opentelemetry/otel-collector.yaml` — traces pipeline updated to `[memory_limiter, transform/redact_pii, transform/redact_span_status, attributes/mask-pii, resource, tail_sampling, batch]`; logs pipeline updated to include `transform/redact_pii` (Issue #26)
+- `src/shared/config.py` — added `otel_capture_prompts: bool = False` (OTEL_LLM_CAPTURE_PROMPTS env var); controls whether `llm.prompt`/`llm.response` span events are captured on `llm.inference` spans; MUST remain False in production (OTEL-001 §3.4)
+- `.env.example` — added `OTEL_LLM_CAPTURE_PROMPTS=false` and `DEPLOYMENT_ENVIRONMENT=development` to Observability section (Issue #26)
+
+---
+
 ### Wave 15 — Probe CI Lint Gate + probe-strategy Skill + ADR-0042 (K8s Probe Compliance)
 
 #### Added

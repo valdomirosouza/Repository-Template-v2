@@ -68,6 +68,16 @@ class TimeoutLLMClientWrapper:
         )
 
 
+@dataclass
+class LLMCallMetadata:
+    """Token usage and finish metadata from an LLM call — used by OTel wrapper."""
+
+    input_tokens: int = 0
+    output_tokens: int = 0
+    finish_reason: str = ""
+    model: str = ""
+
+
 class AnthropicLLMClient:
     """Thin wrapper around the Anthropic SDK for production use.
 
@@ -89,18 +99,37 @@ class AnthropicLLMClient:
         system: str = "",
         trace_id: str | None = None,
     ) -> str:
+        text, _ = await self.complete_with_metadata(user=user, system=system, trace_id=trace_id)
+        return text
+
+    async def complete_with_metadata(
+        self,
+        user: str,
+        system: str = "",
+        trace_id: str | None = None,
+    ) -> tuple[str, LLMCallMetadata]:
+        """Call the Anthropic API and return the response text plus token metadata."""
+        from anthropic.types import TextBlock
+
+        from src.shared.config import settings
+
         message = await self._client.messages.create(
             model=self._model,
-            max_tokens=4096,
+            max_tokens=settings.llm_max_tokens,
             system=system or "You are a helpful assistant.",
             messages=[{"role": "user", "content": user}],
         )
-        from anthropic.types import TextBlock
-
         block = message.content[0]
-        if isinstance(block, TextBlock):
-            return block.text
-        raise RuntimeError(f"Unexpected content block type: {type(block).__name__}")
+        if not isinstance(block, TextBlock):
+            raise RuntimeError(f"Unexpected content block type: {type(block).__name__}")
+
+        meta = LLMCallMetadata(
+            input_tokens=message.usage.input_tokens,
+            output_tokens=message.usage.output_tokens,
+            finish_reason=message.stop_reason or "",
+            model=message.model,
+        )
+        return block.text, meta
 
 
 class StubLLMClient:
