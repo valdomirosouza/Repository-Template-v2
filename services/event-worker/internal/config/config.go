@@ -12,6 +12,7 @@ type Config struct {
 	KafkaTopicInput2      string
 	KafkaTopicOutput      string
 	PrometheusPort        int
+	HealthPort            int
 	AppEnv                string
 }
 
@@ -23,6 +24,7 @@ func Load() Config {
 		KafkaTopicInput2:      getEnv("KAFKA_TOPIC_ENTITY_UPDATED", "domain.entity.updated.v1"),
 		KafkaTopicOutput:      getEnv("KAFKA_TOPIC_EVENT_PROCESSED", "event.processed.v1"),
 		PrometheusPort:        getEnvInt("PROMETHEUS_PORT", 9091),
+		HealthPort:            getEnvInt("HEALTH_PORT", 8081),
 		AppEnv:                getEnv("APP_ENV", "development"),
 	}
 }

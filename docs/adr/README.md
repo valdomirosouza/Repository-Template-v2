@@ -102,6 +102,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0039](ADR-0039-governed-tool-registry.md)                | Governed Tool Registry                | Accepted | 2026-06-05 |
 | [ADR-0040](ADR-0040-agentic-maturity-model.md)                | Agentic Maturity Self-Assessment      | Accepted | 2026-06-05 |
 | [ADR-0041](ADR-0041-context-graph-autonomy-tier.md)           | Context Graph — Autonomy Tier         | Accepted | 2026-06-05 |
+| [ADR-0042](ADR-0042-kubernetes-probe-strategy.md)             | Kubernetes Probe Strategy             | Accepted | 2026-06-05 |
 
 ### AI Agents Module _(opt-in)_
 

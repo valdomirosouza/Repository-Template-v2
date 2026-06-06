@@ -47,17 +47,21 @@ env:
 secretRef: domain-service-secrets
 
 probes:
+  startup:
+    path: /actuator/health/liveness
+    failureThreshold: 36 # 36 × 5s = 180s max JVM warmup window
+    periodSeconds: 5
+    timeoutSeconds: 3
   liveness:
     path: /actuator/health/liveness
-    initialDelaySeconds: 60
-    periodSeconds: 30
-    timeoutSeconds: 10
+    periodSeconds: 20
+    timeoutSeconds: 5
     failureThreshold: 3
   readiness:
     path: /actuator/health/readiness
-    initialDelaySeconds: 30
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
 
-terminationGracePeriodSeconds: 60
+# 90s — JVM shutdown + in-flight Kafka message processing (ADR-0042)
+terminationGracePeriodSeconds: 90

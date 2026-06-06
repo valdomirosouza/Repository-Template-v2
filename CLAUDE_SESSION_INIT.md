@@ -51,5 +51,11 @@ Wave labels: `wave-1` (done) → `wave-2` → `wave-3` → `wave-4` → `wave-5`
 | ADR-0034 | Agentic escalation protocol           |
 | ADR-0035 | AI-assisted CI review                 |
 | ADR-0036 | Agentic cyber defense protocol        |
+| ADR-0037 | Governance gate enforcement           |
+| ADR-0038 | Learn stage feedback loop             |
+| ADR-0039 | Governed tool registry                |
+| ADR-0040 | Agentic maturity self-assessment      |
+| ADR-0041 | Context graph — autonomy tier         |
+| ADR-0042 | Kubernetes probe strategy             |
 
 Full index: `docs/adr/README.md`

@@ -13,6 +13,73 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 15 — Probe CI Lint Gate + probe-strategy Skill + ADR-0042 (K8s Probe Compliance)
+
+#### Added
+
+- `skills/sre/probe-strategy.md` — decision tree (which probe for which check), endpoint contract table for all 3 workloads, parameter tuning guide (startup window sizing, terminationGracePeriodSeconds rationale), local testing commands, escalation rules (Issue #24, ADR-0042)
+- `.github/workflows/ci-k8s-probe-lint.yml` — kubeconform schema validation of `infrastructure/k8s/` and rendered Helm templates; custom probe-completeness check for missing startupProbe/livenessProbe/readinessProbe/terminationGracePeriodSeconds and `initialDelaySeconds` anti-pattern; posts PR comment on findings (informational, HELM-1)
+- `docs/adr/ADR-0042-kubernetes-probe-strategy.md` — documents probe role separation, Go health server rationale, Spring Boot probe groups requirement, values-driven configuration rule, terminationGracePeriodSeconds alignment, canary gates
+- `docs/adr/README.md` — ADR-0042 added to index
+
+#### Changed
+
+- `CLAUDE.md` §4 — added `skills/sre/probe-strategy.md` row to Skill Activation Table; trigger: any Helm chart, Deployment manifest, or health endpoint change
+- `CLAUDE_SESSION_INIT.md` — ADR-0042 added to quick index
+
+---
+
+### Wave 14 — Canary CD Readiness Gate (K8s Probe Compliance)
+
+#### Added
+
+- `docs/sre/runbooks/RB-004-canary-probe-validation.md` — runbook covering probe failure diagnosis (`kubectl describe`, port-forward curl), rollback steps, parameter tuning, and re-trigger procedure (Issue #23)
+
+#### Changed
+
+- `.github/workflows/cd-production.yml` — added "Verify canary readiness stability" step before 5%→25% promotion and before 25%→100% promotion; gates abort with `::error::` annotation and `kubectl describe` dump if any canary pod has `Ready=False` (specs/k8s/probe-strategy.md §6, CD-1)
+
+---
+
+### Wave 13 — Spring Actuator Health Groups + Domain Service Probe Tuning (K8s Probe Compliance)
+
+#### Changed
+
+- `services/domain-service/src/main/resources/application.yml` — enabled Spring Boot native K8s probe groups: `management.endpoint.health.probes.enabled: true`, `livenessState.enabled: true`, `readinessState.enabled: true`; activates `/actuator/health/liveness` and `/actuator/health/readiness` as distinct endpoints (Issue #22, JAVA-2)
+- `infrastructure/helm/domain-service/values.yaml` — added `probes.startup` section (failureThreshold=36, periodSeconds=5, 180s JVM warmup window); bumped `terminationGracePeriodSeconds` 60→90; removed `initialDelaySeconds` from liveness and readiness
+- `infrastructure/helm/domain-service/templates/deployment.yaml` — `startupProbe` now fully values-driven via `{{ .Values.probes.startup.* }}`; removed hardcoded `failureThreshold`/`periodSeconds`; removed `initialDelaySeconds` anti-pattern from liveness and readiness
+
+---
+
+### Wave 12 — Python API Gateway Probe Tuning (K8s Probe Compliance)
+
+#### Added
+
+- `tests/unit/api/test_health.py` — `TestProbeCompliance` class: 3 explicit probe-contract tests verifying `/health` returns 200 regardless of dependency state and `/ready` returns 503 (not 500) on DB failure (Issue #21, specs/k8s/probe-strategy.md §3.1)
+
+#### Changed
+
+- `infrastructure/helm/api-gateway/values.yaml` — added `probes.startup` section (failureThreshold=30, periodSeconds=5, 150s window); bumped `terminationGracePeriodSeconds` 30→60 (HITL in-flight SLA, ADR-0011/ADR-0042); removed `initialDelaySeconds` from liveness and readiness (anti-pattern per K8S-001 spec)
+- `infrastructure/helm/api-gateway/templates/deployment.yaml` — `startupProbe` is now fully values-driven via `{{ .Values.probes.startup.* }}`; removed hardcoded `failureThreshold`/`periodSeconds`; removed `initialDelaySeconds` from liveness and readiness
+- `infrastructure/k8s/deployment.yaml` — startup probe `periodSeconds` 10→5; `terminationGracePeriodSeconds` 30→60; removed `initialDelaySeconds` from liveness and readiness
+
+---
+
+### Wave 11 — Go Event-Worker Health Server + startupProbe (K8s Probe Compliance)
+
+#### Added
+
+- `services/event-worker/internal/health/server.go` — dedicated HTTP health server on port 8081; atomic-bool ready state; `/healthz` (liveness) and `/readyz` (readiness) endpoints; isolated from Prometheus metrics port (Issue #20, specs/k8s/probe-strategy.md §3.3)
+- `services/event-worker/internal/health/server_test.go` — 8 unit tests covering liveness always-200, readiness 503→200 lifecycle, concurrent access safety
+- `infrastructure/helm/event-worker/values.yaml` — `probes.startup` section (failureThreshold=12, periodSeconds=5, 60s window); `service.healthPort: 8081`; removed `initialDelaySeconds` from liveness/readiness
+- `specs/k8s/probe-strategy.md` — formal probe strategy spec (K8S-001) covering all three workloads, parameter reference table, canary gate requirements (Issue #20–#24, ADR-0042)
+
+#### Changed
+
+- `services/event-worker/cmd/event-worker/main.go` — wires `health.New()` + `health.Start(cfg.HealthPort)`; calls `SetReady(true)` after Kafka consumer group joins
+- `services/event-worker/internal/config/config.go` — adds `HealthPort` field (default 8081, env `HEALTH_PORT`)
+- `infrastructure/helm/event-worker/templates/deployment.yaml` — adds `startupProbe` on `/healthz:health`; moves all probes from `port: metrics` to `port: health` (8081); removes `initialDelaySeconds` anti-pattern
+
 ---
 
 ## [2.2.0] — 2026-06-05

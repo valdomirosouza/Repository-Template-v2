@@ -1,0 +1,132 @@
+name: K8s Probe Lint
+
+# Validates all Kubernetes manifests for probe completeness.
+# Spec: specs/k8s/probe-strategy.md §7 | ADR-0042 | Issue #24
+#
+# Currently informational (continue-on-error: true).
+# Change to continue-on-error: false once all workloads are confirmed compliant.
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "infrastructure/k8s/**"
+      - "infrastructure/helm/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  probe-lint:
+    name: Probe Completeness Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Helm
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        with:
+          version: "3.14.0"
+
+      - name: Install kubeconform
+        run: |
+          curl -sL https://github.com/yannh/kubeconform/releases/download/v0.6.4/kubeconform-linux-amd64.tar.gz \
+            | tar -xz -C /usr/local/bin kubeconform
+          kubeconform -v
+
+      - name: Render Helm templates
+        run: |
+          mkdir -p /tmp/rendered
+          for chart in infrastructure/helm/*/; do
+            name=$(basename "$chart")
+            helm template "$name" "$chart" \
+              --values "${chart}values.yaml" \
+              > "/tmp/rendered/${name}.yaml" 2>/dev/null || true
+          done
+
+      - name: Validate static manifests with kubeconform
+        continue-on-error: true
+        run: |
+          kubeconform \
+            -strict \
+            -summary \
+            -output pretty \
+            -kubernetes-version 1.29.0 \
+            infrastructure/k8s/*.yaml
+
+      - name: Validate rendered Helm manifests with kubeconform
+        continue-on-error: true
+        run: |
+          kubeconform \
+            -strict \
+            -summary \
+            -output pretty \
+            -kubernetes-version 1.29.0 \
+            /tmp/rendered/*.yaml
+
+      - name: Check probe completeness
+        id: probe-check
+        continue-on-error: true
+        run: |
+          set +e
+          ISSUES=""
+
+          check_file() {
+            local file="$1"
+            local label="$2"
+
+            # Only check Deployment resources
+            if ! grep -q "kind: Deployment" "$file"; then
+              return
+            fi
+
+            if ! grep -q "startupProbe" "$file"; then
+              ISSUES="${ISSUES}\n::warning file=${label}::Missing startupProbe in Deployment"
+            fi
+            if ! grep -q "livenessProbe" "$file"; then
+              ISSUES="${ISSUES}\n::warning file=${label}::Missing livenessProbe in Deployment"
+            fi
+            if ! grep -q "readinessProbe" "$file"; then
+              ISSUES="${ISSUES}\n::warning file=${label}::Missing readinessProbe in Deployment"
+            fi
+            if ! grep -q "terminationGracePeriodSeconds" "$file"; then
+              ISSUES="${ISSUES}\n::warning file=${label}::Missing terminationGracePeriodSeconds in Deployment"
+            fi
+            if grep -q "initialDelaySeconds" "$file"; then
+              ISSUES="${ISSUES}\n::warning file=${label}::initialDelaySeconds present — replace with startupProbe (ADR-0042)"
+            fi
+          }
+
+          for f in infrastructure/k8s/*.yaml; do
+            check_file "$f" "$f"
+          done
+          for f in /tmp/rendered/*.yaml; do
+            name=$(basename "$f")
+            check_file "$f" "helm/${name}"
+          done
+
+          if [ -n "$ISSUES" ]; then
+            echo -e "$ISSUES"
+            echo "probe_issues=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "All Deployments have complete probe configuration."
+            echo "probe_issues=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post PR annotation summary
+        if: steps.probe-check.outputs.probe_issues == 'true'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## K8s Probe Lint — Issues Found\n\n` +
+                    `One or more Deployments are missing required probe configuration.\n` +
+                    `See workflow annotations for details.\n\n` +
+                    `**Spec:** \`specs/k8s/probe-strategy.md\` | **ADR:** ADR-0042\n\n` +
+                    `> This check is currently **informational**. It will become blocking ` +
+                    `once all workloads are confirmed compliant.`
+            })

@@ -54,15 +54,18 @@ env:
 secretRef: api-gateway-secrets
 
 probes:
+  startup:
+    path: /health
+    failureThreshold: 30 # 30 × 5s = 150s max startup window
+    periodSeconds: 5
+    timeoutSeconds: 3
   liveness:
     path: /health
-    initialDelaySeconds: 5
-    periodSeconds: 30
+    periodSeconds: 15
     timeoutSeconds: 5
     failureThreshold: 3
   readiness:
     path: /ready
-    initialDelaySeconds: 10
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
@@ -72,4 +75,5 @@ canary:
   enabled: false
   weight: 0
 
-terminationGracePeriodSeconds: 30
+# 60s — must exceed the longest HITL in-flight request (ADR-0011, ADR-0042)
+terminationGracePeriodSeconds: 60

@@ -168,3 +168,9 @@ topics:
     partitions: 6
     retention_ms: 604800000
     owner: platform-team
+
+  - name: domain.request.dlq
+    schema: infrastructure/message-broker/schema-registry/avro/domain-request-dlq-v1.avsc
+    partitions: 6
+    retention_ms: 2592000000 # 30 days — error recovery window (REM-012)
+    owner: platform-team

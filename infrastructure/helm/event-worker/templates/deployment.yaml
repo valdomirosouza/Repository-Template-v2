@@ -42,6 +42,9 @@ spec:
             - name: metrics
               containerPort: {{ .Values.service.metricsPort }}
               protocol: TCP
+            - name: health
+              containerPort: {{ .Values.service.healthPort }}
+              protocol: TCP
           env:
             # Pod name injected as WORKER_ID for audit trail correlation
             - name: WORKER_ID
@@ -61,19 +64,24 @@ spec:
                 name: {{ .Values.secretRef }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.probes.startup.path }}
+              port: health
+            failureThreshold: {{ .Values.probes.startup.failureThreshold }}
+            periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
           livenessProbe:
             httpGet:
               path: {{ .Values.probes.liveness.path }}
-              port: metrics
-            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+              port: health
             periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
             failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
           readinessProbe:
             httpGet:
               path: {{ .Values.probes.readiness.path }}
-              port: metrics
-            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+              port: health
             periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
             failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
