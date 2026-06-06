@@ -14,6 +14,9 @@
 #   risk_level:           low | medium | high
 #   pii_access:           list of L1-L4 PII classification levels accessible
 #   requires_hitl:        true = always routed through HITL gateway
+#   execution_mode:       direct | sandbox
+#                         sandbox = MUST be routed through SandboxExecutor (ADR-0016, ADR-0047)
+#                         direct  = executed in-process via Python function (subject to HITL gating)
 #   rate_limit_per_minute: max invocations per minute per session
 #   rate_limit_per_hour:  max invocations per hour per session
 #   owner_team:           team responsible for this tool
@@ -26,6 +29,7 @@ tools:
     risk_level: high
     pii_access: [L1, L2]
     requires_hitl: true
+    execution_mode: direct
     rate_limit_per_minute: 2
     rate_limit_per_hour: 20
     owner_team: platform
@@ -37,6 +41,7 @@ tools:
     risk_level: low
     pii_access: [L3]
     requires_hitl: false
+    execution_mode: direct
     rate_limit_per_minute: 60
     rate_limit_per_hour: 1000
     owner_team: platform
@@ -48,10 +53,35 @@ tools:
     risk_level: medium
     pii_access: [L2, L3]
     requires_hitl: true
+    execution_mode: direct
     rate_limit_per_minute: 10
     rate_limit_per_hour: 100
     owner_team: platform
     adr_reference: ADR-0039
+
+  - name: execute-code
+    description: Execute AI-generated Python code in an isolated Docker sandbox
+    version: "1.0"
+    risk_level: high
+    pii_access: []
+    requires_hitl: true
+    execution_mode: sandbox # MANDATORY: must route through SandboxExecutor (ADR-0016, ADR-0047)
+    rate_limit_per_minute: 2
+    rate_limit_per_hour: 10
+    owner_team: platform
+    adr_reference: ADR-0047
+
+  - name: send-external-request
+    description: Send an HTTP request to a registered external endpoint
+    version: "1.0"
+    risk_level: high
+    pii_access: [L1, L2]
+    requires_hitl: true
+    execution_mode: direct
+    rate_limit_per_minute: 5
+    rate_limit_per_hour: 50
+    owner_team: integrations
+    adr_reference: ADR-0048
 
   - name: post-webhook
     description: POST a payload to a registered external webhook endpoint
@@ -59,6 +89,7 @@ tools:
     risk_level: high
     pii_access: [L2]
     requires_hitl: true
+    execution_mode: direct
     rate_limit_per_minute: 5
     rate_limit_per_hour: 50
     owner_team: integrations
@@ -70,6 +101,7 @@ tools:
     risk_level: low
     pii_access: [L3, L4]
     requires_hitl: false
+    execution_mode: direct
     rate_limit_per_minute: 5
     rate_limit_per_hour: 50
     owner_team: data

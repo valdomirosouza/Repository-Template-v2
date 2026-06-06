@@ -13,6 +13,24 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 22 — Zero-Trust Tooling (Secure by Design Pillar 2)
+
+#### Added
+
+- `ExecutionMode` enum (`DIRECT | SANDBOX`) added to `src/agents/tool_registry.py`; `execute-code` tool registered with `execution_mode=SANDBOX` making sandbox routing a registry-declared invariant (Issue #33, ZT1, ADR-0048)
+- `ToolRegistry.is_sandbox_required(name)` — normalizes underscore/hyphen names and returns `True` if the tool requires `SandboxExecutor` routing (Issue #33, ZT2, ADR-0048)
+- `execute-code` and `send-external-request` entries added to `infrastructure/agent-tools/tools.yaml` and `tool_registry.py` default catalog (Issue #33, ZT1)
+- `docs/adr/ADR-0048-zero-trust-tool-registry.md` — documents execution_mode field, sandbox enforcement, and ZT3 gap closure
+- 14 new unit tests in `tests/unit/agents/test_tool_registry.py` for `ExecutionMode`, `is_sandbox_required`, and new default registry entries
+
+#### Changed
+
+- `src/agents/tool_registry.py` — `ToolDefinition` gains `execution_mode: ExecutionMode = DIRECT`; `is_sandbox_required()` and `_normalize()` helpers added; new `execute-code` (SANDBOX) and `send-external-request` (DIRECT) entries in default registry (Issue #33, ZT1+ZT2)
+- `infrastructure/agent-tools/tools.yaml` — all tools updated with `execution_mode` annotations; `execute-code` and `send-external-request` added (Issue #33)
+- `specs/security/threat-model.md` — HITL operator impersonation residual updated from Medium → Low; notes JWT auth + hitl-operator role already in place (REM-001 ✅, ADR-0048, ZT3)
+
+---
+
 ### Wave 21 — Spec-Driven Guardrails (Secure by Design Pillar 1)
 
 #### Added

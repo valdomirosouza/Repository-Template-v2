@@ -65,49 +65,50 @@ What other options were evaluated and why were they rejected?
 
 These ADRs apply to every project using this template, regardless of whether the AI Agents Module is enabled.
 
-| ADR                                                                | Title                                             | Status   | Date       |
-| ------------------------------------------------------------------ | ------------------------------------------------- | -------- | ---------- |
-| [ADR-0001](ADR-0001-monorepo-structure-and-governance.md)          | Monorepo Structure and Governance                 | Accepted | 2026-05-24 |
-| [ADR-0002](ADR-0002-technology-stack-selection.md)                 | Technology Stack Selection                        | Accepted | 2026-05-24 |
-| [ADR-0003](ADR-0003-async-api-strategy.md)                         | Async API Strategy                                | Accepted | 2026-05-24 |
-| [ADR-0004](ADR-0004-observability-stack.md)                        | Observability Stack                               | Accepted | 2026-05-24 |
-| [ADR-0005](ADR-0005-message-broker-selection.md)                   | Message Broker Selection                          | Accepted | 2026-05-24 |
-| [ADR-0006](ADR-0006-deployment-strategy.md)                        | Deployment Strategy                               | Accepted | 2026-05-24 |
-| [ADR-0007](ADR-0007-service-mesh.md)                               | Service Mesh                                      | Proposed | 2026-05-24 |
-| [ADR-0008](ADR-0008-secrets-management.md)                         | Secrets Management                                | Accepted | 2026-05-24 |
-| [ADR-0009](ADR-0009-caching-strategy.md)                           | Caching Strategy                                  | Accepted | 2026-05-24 |
-| [ADR-0012](ADR-0012-pii-masking-strategy.md)                       | PII Masking Strategy                              | Accepted | 2026-05-24 |
-| [ADR-0013](ADR-0013-data-retention-policy.md)                      | Data Retention Policy                             | Accepted | 2026-05-24 |
-| [ADR-0015](ADR-0015-feature-flag-strategy.md)                      | Feature Flag Strategy                             | Accepted | 2026-05-25 |
-| [ADR-0018](ADR-0018-db-encryption-at-rest.md)                      | Database Encryption at Rest                       | Accepted | 2026-05-28 |
-| [ADR-0019](ADR-0019-redis-tls-value-encryption.md)                 | Redis TLS and Value Encryption                    | Accepted | 2026-05-28 |
-| [ADR-0020](ADR-0020-finops-cost-allocation.md)                     | FinOps: LLM Cost Allocation                       | Accepted | 2026-05-28 |
-| [ADR-0022](ADR-0022-testing-strategy.md)                           | Testing Strategy                                  | Accepted | 2026-05-28 |
-| [ADR-0023](ADR-0023-frontend-architecture.md)                      | Frontend Architecture                             | Accepted | 2026-05-28 |
-| [ADR-0024](ADR-0024-api-versioning-strategy.md)                    | API Versioning Strategy                           | Accepted | 2026-05-28 |
-| [ADR-0025](ADR-0025-language-selection.md)                         | Language Selection for New Services               | Accepted | 2026-05-24 |
-| [ADR-0026](ADR-0026-sox-audit-log-immutability.md)                 | SOX Audit Log Immutability                        | Accepted | 2026-05-31 |
-| [ADR-0027](ADR-0027-iso27001-change-management.md)                 | ISO 27001 Change Management                       | Accepted | 2026-05-31 |
-| [ADR-0028](ADR-0028-dora-metrics.md)                               | DORA Metrics                                      | Accepted | 2026-05-31 |
-| [ADR-0029](ADR-0029-devsecops-pipeline-security.md)                | DevSecOps Pipeline Security                       | Accepted | 2026-05-31 |
-| [ADR-0030](ADR-0030-rtk-token-efficiency.md)                       | RTK Token Efficiency Integration                  | Accepted | 2026-05-31 |
-| [ADR-0031](ADR-0031-agent-onboarding-protocol.md)                  | Agent Onboarding Protocol                         | Accepted | 2026-06-05 |
-| [ADR-0032](ADR-0032-sub-agent-specialization-registry.md)          | Sub-Agent Specialization Registry                 | Accepted | 2026-06-05 |
-| [ADR-0033](ADR-0033-long-running-agent-session-durability.md)      | Long-Running Agent Session Durability             | Accepted | 2026-06-05 |
-| [ADR-0034](ADR-0034-agentic-escalation-protocol.md)                | Agentic Escalation Protocol                       | Accepted | 2026-06-05 |
-| [ADR-0035](ADR-0035-ai-assisted-ci-review.md)                      | AI-Assisted CI Code Review                        | Accepted | 2026-06-05 |
-| [ADR-0036](ADR-0036-agentic-cyber-defense.md)                      | Agentic Cyber Defense Automation                  | Accepted | 2026-06-05 |
-| [ADR-0037](ADR-0037-governance-gate-enforcement.md)                | Governance Gate CI Enforcement                    | Accepted | 2026-06-05 |
-| [ADR-0038](ADR-0038-learn-stage-feedback-loop.md)                  | Learn Stage Feedback Loop                         | Accepted | 2026-06-05 |
-| [ADR-0039](ADR-0039-governed-tool-registry.md)                     | Governed Tool Registry                            | Accepted | 2026-06-05 |
-| [ADR-0040](ADR-0040-agentic-maturity-model.md)                     | Agentic Maturity Self-Assessment                  | Accepted | 2026-06-05 |
-| [ADR-0041](ADR-0041-context-graph-autonomy-tier.md)                | Context Graph — Autonomy Tier                     | Accepted | 2026-06-05 |
-| [ADR-0042](ADR-0042-kubernetes-probe-strategy.md)                  | Kubernetes Probe Strategy                         | Accepted | 2026-06-05 |
-| [ADR-0043](ADR-0043-otel-collector-pii-redaction-tail-sampling.md) | OTel Collector OTTL PII Redaction + Tail Sampling | Accepted | 2026-06-06 |
-| [ADR-0044](ADR-0044-otel-agent-span-hierarchy.md)                  | OTel Agent Span Hierarchy                         | Accepted | 2026-06-06 |
-| [ADR-0045](ADR-0045-genai-semantic-conventions.md)                 | GenAI Semantic Conventions for LLM                | Accepted | 2026-06-06 |
-| [ADR-0046](ADR-0046-hitl-trace-linking-guardrail-events.md)        | HITL Trace Linking + Guardrail Events             | Accepted | 2026-06-06 |
-| [ADR-0047](ADR-0047-spec-contract-enforcement.md)                  | Spec Contract Enforcement at Runtime              | Accepted | 2026-06-06 |
+| ADR                                                                | Title                                              | Status   | Date       |
+| ------------------------------------------------------------------ | -------------------------------------------------- | -------- | ---------- |
+| [ADR-0001](ADR-0001-monorepo-structure-and-governance.md)          | Monorepo Structure and Governance                  | Accepted | 2026-05-24 |
+| [ADR-0002](ADR-0002-technology-stack-selection.md)                 | Technology Stack Selection                         | Accepted | 2026-05-24 |
+| [ADR-0003](ADR-0003-async-api-strategy.md)                         | Async API Strategy                                 | Accepted | 2026-05-24 |
+| [ADR-0004](ADR-0004-observability-stack.md)                        | Observability Stack                                | Accepted | 2026-05-24 |
+| [ADR-0005](ADR-0005-message-broker-selection.md)                   | Message Broker Selection                           | Accepted | 2026-05-24 |
+| [ADR-0006](ADR-0006-deployment-strategy.md)                        | Deployment Strategy                                | Accepted | 2026-05-24 |
+| [ADR-0007](ADR-0007-service-mesh.md)                               | Service Mesh                                       | Proposed | 2026-05-24 |
+| [ADR-0008](ADR-0008-secrets-management.md)                         | Secrets Management                                 | Accepted | 2026-05-24 |
+| [ADR-0009](ADR-0009-caching-strategy.md)                           | Caching Strategy                                   | Accepted | 2026-05-24 |
+| [ADR-0012](ADR-0012-pii-masking-strategy.md)                       | PII Masking Strategy                               | Accepted | 2026-05-24 |
+| [ADR-0013](ADR-0013-data-retention-policy.md)                      | Data Retention Policy                              | Accepted | 2026-05-24 |
+| [ADR-0015](ADR-0015-feature-flag-strategy.md)                      | Feature Flag Strategy                              | Accepted | 2026-05-25 |
+| [ADR-0018](ADR-0018-db-encryption-at-rest.md)                      | Database Encryption at Rest                        | Accepted | 2026-05-28 |
+| [ADR-0019](ADR-0019-redis-tls-value-encryption.md)                 | Redis TLS and Value Encryption                     | Accepted | 2026-05-28 |
+| [ADR-0020](ADR-0020-finops-cost-allocation.md)                     | FinOps: LLM Cost Allocation                        | Accepted | 2026-05-28 |
+| [ADR-0022](ADR-0022-testing-strategy.md)                           | Testing Strategy                                   | Accepted | 2026-05-28 |
+| [ADR-0023](ADR-0023-frontend-architecture.md)                      | Frontend Architecture                              | Accepted | 2026-05-28 |
+| [ADR-0024](ADR-0024-api-versioning-strategy.md)                    | API Versioning Strategy                            | Accepted | 2026-05-28 |
+| [ADR-0025](ADR-0025-language-selection.md)                         | Language Selection for New Services                | Accepted | 2026-05-24 |
+| [ADR-0026](ADR-0026-sox-audit-log-immutability.md)                 | SOX Audit Log Immutability                         | Accepted | 2026-05-31 |
+| [ADR-0027](ADR-0027-iso27001-change-management.md)                 | ISO 27001 Change Management                        | Accepted | 2026-05-31 |
+| [ADR-0028](ADR-0028-dora-metrics.md)                               | DORA Metrics                                       | Accepted | 2026-05-31 |
+| [ADR-0029](ADR-0029-devsecops-pipeline-security.md)                | DevSecOps Pipeline Security                        | Accepted | 2026-05-31 |
+| [ADR-0030](ADR-0030-rtk-token-efficiency.md)                       | RTK Token Efficiency Integration                   | Accepted | 2026-05-31 |
+| [ADR-0031](ADR-0031-agent-onboarding-protocol.md)                  | Agent Onboarding Protocol                          | Accepted | 2026-06-05 |
+| [ADR-0032](ADR-0032-sub-agent-specialization-registry.md)          | Sub-Agent Specialization Registry                  | Accepted | 2026-06-05 |
+| [ADR-0033](ADR-0033-long-running-agent-session-durability.md)      | Long-Running Agent Session Durability              | Accepted | 2026-06-05 |
+| [ADR-0034](ADR-0034-agentic-escalation-protocol.md)                | Agentic Escalation Protocol                        | Accepted | 2026-06-05 |
+| [ADR-0035](ADR-0035-ai-assisted-ci-review.md)                      | AI-Assisted CI Code Review                         | Accepted | 2026-06-05 |
+| [ADR-0036](ADR-0036-agentic-cyber-defense.md)                      | Agentic Cyber Defense Automation                   | Accepted | 2026-06-05 |
+| [ADR-0037](ADR-0037-governance-gate-enforcement.md)                | Governance Gate CI Enforcement                     | Accepted | 2026-06-05 |
+| [ADR-0038](ADR-0038-learn-stage-feedback-loop.md)                  | Learn Stage Feedback Loop                          | Accepted | 2026-06-05 |
+| [ADR-0039](ADR-0039-governed-tool-registry.md)                     | Governed Tool Registry                             | Accepted | 2026-06-05 |
+| [ADR-0040](ADR-0040-agentic-maturity-model.md)                     | Agentic Maturity Self-Assessment                   | Accepted | 2026-06-05 |
+| [ADR-0041](ADR-0041-context-graph-autonomy-tier.md)                | Context Graph — Autonomy Tier                      | Accepted | 2026-06-05 |
+| [ADR-0042](ADR-0042-kubernetes-probe-strategy.md)                  | Kubernetes Probe Strategy                          | Accepted | 2026-06-05 |
+| [ADR-0043](ADR-0043-otel-collector-pii-redaction-tail-sampling.md) | OTel Collector OTTL PII Redaction + Tail Sampling  | Accepted | 2026-06-06 |
+| [ADR-0044](ADR-0044-otel-agent-span-hierarchy.md)                  | OTel Agent Span Hierarchy                          | Accepted | 2026-06-06 |
+| [ADR-0045](ADR-0045-genai-semantic-conventions.md)                 | GenAI Semantic Conventions for LLM                 | Accepted | 2026-06-06 |
+| [ADR-0046](ADR-0046-hitl-trace-linking-guardrail-events.md)        | HITL Trace Linking + Guardrail Events              | Accepted | 2026-06-06 |
+| [ADR-0047](ADR-0047-spec-contract-enforcement.md)                  | Spec Contract Enforcement at Runtime               | Accepted | 2026-06-06 |
+| [ADR-0048](ADR-0048-zero-trust-tool-registry.md)                   | Zero-Trust Tool Registry & Operator Authentication | Accepted | 2026-06-06 |
 
 ### AI Agents Module _(opt-in)_
 

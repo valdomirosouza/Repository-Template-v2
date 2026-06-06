@@ -33,12 +33,12 @@ Internet ──▶ Ingress (nginx, TLS) ──▶ FastAPI (rate-limited)
 
 ### S — Spoofing
 
-| Threat                                                                            | Component            | Likelihood | Impact   | Controls                                                                                                                                | Residual |
-| --------------------------------------------------------------------------------- | -------------------- | ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| Unauthenticated API calls                                                         | FastAPI routers      | Medium     | High     | JWT bearer token (`SECRET_KEY`, HS256); `Settings.reject_placeholder_secrets` blocks deploy without real key                            | Low      |
-| Agent identity spoofing — a compromised agent claims a different `agent_id`       | `AgentOrchestrator`  | Low        | Medium   | `agent_id` is set at orchestrator init from trusted config; not user-controlled; audit log records every action against the declared id | Low      |
-| HITL operator impersonation — forged `decided_by` field in `/v1/hitl/{id}/decide` | `hitl.py` router     | Medium     | High     | `decided_by` must come from authenticated session; add operator auth token before production (gap — see Remediation)                    | Medium   |
-| LLM provider impersonation                                                        | `AnthropicLLMClient` | Low        | Critical | TLS + official SDK; no custom CA; SDK validates Anthropic server cert                                                                   | Low      |
+| Threat                                                                            | Component            | Likelihood | Impact   | Controls                                                                                                                                         | Residual |
+| --------------------------------------------------------------------------------- | -------------------- | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| Unauthenticated API calls                                                         | FastAPI routers      | Medium     | High     | JWT bearer token (`SECRET_KEY`, HS256); `Settings.reject_placeholder_secrets` blocks deploy without real key                                     | Low      |
+| Agent identity spoofing — a compromised agent claims a different `agent_id`       | `AgentOrchestrator`  | Low        | Medium   | `agent_id` is set at orchestrator init from trusted config; not user-controlled; audit log records every action against the declared id          | Low      |
+| HITL operator impersonation — forged `decided_by` field in `/v1/hitl/{id}/decide` | `hitl.py` router     | Medium     | High     | JWT bearer auth + `hitl-operator` role; `approver_id` taken from token subject — not from request body; audit-logged (REM-001 ✅ Done, ADR-0048) | Low      |
+| LLM provider impersonation                                                        | `AnthropicLLMClient` | Low        | Critical | TLS + official SDK; no custom CA; SDK validates Anthropic server cert                                                                            | Low      |
 
 ### T — Tampering
 
