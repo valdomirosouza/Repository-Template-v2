@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
+from src.agents.feedback_learner import FeedbackLearner, default_feedback_learner
 from src.agents.hitl_gateway import HITLGateway, HITLRequest, HITLStatus
 from src.agents.risk_scorer import RiskScorer
 from src.guardrails.action_limits import ActionLimiter
@@ -27,7 +28,7 @@ from src.guardrails.pii_filter import mask_dict
 from src.guardrails.prompt_injection_guard import PromptInjectionGuard
 from src.observability.logger import get_logger
 from src.shared.config import settings
-from src.shared.feature_flags import is_autonomous_mode_enabled
+from src.shared.feature_flags import get_learning_mode, is_autonomous_mode_enabled
 from src.shared.llm_client import LLMClient
 from src.shared.models import AuditEvent
 
@@ -75,6 +76,7 @@ class AgentOrchestrator:
         injection_guard: PromptInjectionGuard | None = None,
         action_limiter: ActionLimiter | None = None,
         risk_scorer: RiskScorer | None = None,
+        feedback_learner: FeedbackLearner | None = None,
     ) -> None:
         self._agent_id = agent_id
         self._audit = audit_logger
@@ -83,6 +85,7 @@ class AgentOrchestrator:
         self._injection_guard = injection_guard or PromptInjectionGuard()
         self._action_limiter = action_limiter
         self._risk_scorer = risk_scorer or RiskScorer()
+        self._learner = feedback_learner or default_feedback_learner
 
     async def run(self, raw_input: dict[str, Any], trace_id: str | None = None) -> dict[str, Any]:
         """Execute the full Perception → Reason → Act loop.
@@ -131,13 +134,24 @@ class AgentOrchestrator:
 
         import json
 
+        # Learn stage: inject precedents into system prompt when learning-mode=active.
+        learning_mode = get_learning_mode()
+        precedents_block = self._learner.build_precedents_block(
+            action_type=str(ctx.masked_input.get("action_type", "")),
+            payload_hash="",
+            mode=learning_mode,
+        )
+        system_prompt = (
+            "You are an AI agent. Analyse the provided context and respond with a JSON object "
+            'containing: {"action": "<action_name>", "parameters": {}, "risk_score": 0.0}. '
+            "risk_score must be between 0.0 (low) and 1.0 (high). "
+            "The context has already been PII-masked — never request raw personal data."
+        )
+        if precedents_block:
+            system_prompt = f"{system_prompt}\n\n{precedents_block}"
+
         response_text = await self._llm.complete(
-            system=(
-                "You are an AI agent. Analyse the provided context and respond with a JSON object "
-                'containing: {"action": "<action_name>", "parameters": {}, "risk_score": 0.0}. '
-                "risk_score must be between 0.0 (low) and 1.0 (high). "
-                "The context has already been PII-masked — never request raw personal data."
-            ),
+            system=system_prompt,
             user=json.dumps(ctx.masked_input),
             trace_id=ctx.trace_id,
         )
@@ -264,6 +278,17 @@ class AgentOrchestrator:
             agent_id=ctx.agent_id,
             action=ctx.proposed_action,
             risk_score=ctx.risk_score,
+        )
+
+        # Learn stage: record the approved outcome for future precedent retrieval.
+        self._learner.record(
+            FeedbackLearner.feedback_from_hitl_decision(
+                action_type=ctx.proposed_action or "unknown",
+                action_parameters=ctx.proposed_parameters,
+                decision="approved",
+                rationale="HOTL or HITL-approved execution",
+                agent_id=ctx.agent_id,
+            )
         )
 
         return {

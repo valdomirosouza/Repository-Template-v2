@@ -13,6 +13,25 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 7 — Learn Stage Feedback Loop (Agentic SDLC)
+
+#### Added
+
+- **`specs/ai/learn-stage.md`** — Spec for the Learn stage of the Perceive→Reason→Act→Learn cycle: `OutcomeFeedback` schema, `BiasReport`, learning modes (passive/active), governance guard, metrics. Closes #15. ADR-0038.
+- **`src/agents/feedback_learner.py`** — `FeedbackLearner` implementation: `record()` stores HITL outcomes, `get_similar_precedents()` retrieves precedents by action type and payload hash, `build_precedents_block()` renders a `[PRECEDENTS]` prompt block in active mode, `get_bias_summary()` feeds `make agent-feedback-check`. Closes #15.
+- **`infrastructure/feature-flags/flags/learning-mode.yaml`** — `learning-mode` feature flag (default: `passive`; `active` requires ADR-0038 sign-off). Closes #15.
+- **`docs/adr/ADR-0038-learn-stage-feedback-loop.md`** — Decision record for the Learn stage.
+- **`tests/unit/agents/test_feedback_learner.py`** — 21 unit tests covering record, precedent retrieval, block rendering, bias summary, and factory method.
+
+#### Changed
+
+- **`src/agents/orchestrator/orchestrator.py`** — Accept optional `FeedbackLearner`; inject precedents into Reason-stage LLM system prompt when `learning-mode=active`; call `record()` after successful action execution (approved outcome). Closes #15.
+- **`src/agents/hitl_gateway.py`** — Accept optional `FeedbackLearner`; call `record()` after every `record_decision()` with the HITL outcome (approved or rejected). Closes #15.
+- **`src/shared/feature_flags.py`** — Add `get_learning_mode()` function: reads `learning-mode` flag via OpenFeature SDK, falls back to `"passive"`. Closes #15.
+- **`src/observability/metrics.py`** — Add `AGENT_LEARN_PRECEDENTS_INJECTED` Counter (`agent_learn_precedents_injected_total`, labels: `action_type`, `outcome_influenced`). Closes #15.
+
+---
+
 ### Wave 6 — Gartner Governance Gate & Business Value (Agentic SDLC)
 
 #### Added

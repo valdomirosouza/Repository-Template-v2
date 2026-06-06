@@ -137,3 +137,19 @@ def _flag_enabled(client: Any, flag_name: str) -> bool:
 def _parse_action_types(csv: str) -> frozenset[str]:
     """Parse a comma-separated action type list from settings into a frozenset."""
     return frozenset(part.strip() for part in csv.split(",") if part.strip())
+
+
+def get_learning_mode() -> str:
+    """Return the current learning-mode flag value: 'passive' (default) or 'active'.
+
+    Spec: specs/ai/learn-stage.md §3 | ADR: ADR-0038
+    - passive: precedents stored, surfaced in logs/Grafana only (safe default)
+    - active:  precedents injected into Reason-stage LLM prompt (requires governance sign-off)
+    """
+    try:
+        from openfeature import api
+
+        client = api.get_client()
+        return str(client.get_string_value("learning-mode", "passive"))
+    except Exception:
+        return "passive"

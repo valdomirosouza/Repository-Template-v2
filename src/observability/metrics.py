@@ -323,3 +323,13 @@ def record_session_task(
 
 def record_cycle_time(stage: str, duration_seconds: float) -> None:
     AGENT_CYCLE_TIME.labels(stage).observe(duration_seconds)
+
+
+# ── Learn-stage metrics (Issue #15) ──────────────────────────────────────────
+# Spec: specs/ai/learn-stage.md | ADR: ADR-0038
+
+AGENT_LEARN_PRECEDENTS_INJECTED = Counter(
+    "agent_learn_precedents_injected_total",
+    "Precedents injected into the Reason-stage LLM context from the Learn stage",
+    ["action_type", "outcome_influenced"],
+)

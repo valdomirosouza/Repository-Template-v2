@@ -1,0 +1,10 @@
+flags:
+  learning-mode:
+    state: ENABLED
+    variants:
+      passive: "passive"
+      active: "active"
+    defaultVariant: "passive"
+    targeting: {}
+    # passive: precedents stored and surfaced in logs/Grafana only (default, safe)
+    # active:  precedents injected into Reason-stage LLM prompt — requires ADR-0038 sign-off

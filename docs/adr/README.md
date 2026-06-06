@@ -98,6 +98,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0035](ADR-0035-ai-assisted-ci-review.md)                 | AI-Assisted CI Code Review            | Accepted | 2026-06-05 |
 | [ADR-0036](ADR-0036-agentic-cyber-defense.md)                 | Agentic Cyber Defense Automation      | Accepted | 2026-06-05 |
 | [ADR-0037](ADR-0037-governance-gate-enforcement.md)           | Governance Gate CI Enforcement        | Accepted | 2026-06-05 |
+| [ADR-0038](ADR-0038-learn-stage-feedback-loop.md)             | Learn Stage Feedback Loop             | Accepted | 2026-06-05 |
 
 ### AI Agents Module _(opt-in)_
 
