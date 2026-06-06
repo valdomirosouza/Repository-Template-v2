@@ -13,6 +13,24 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 2 — Agentic SDLC Core (Agentic SDLC)
+
+#### Added
+
+- **`skills/sdlc/agent-onboarding.md`** — 5-step machine-readable session bootstrap skill for Claude Code. Closes #4.
+- **`CLAUDE_SESSION_INIT.md`** — Compact repo-specific session primer; loaded at every session start to orient the agent without reading the full codebase. Closes #4.
+- **`docs/quickstart/agent-onboarding.md`** — Human guide for supervising and verifying agentic session bootstraps. Closes #4.
+- **`docs/adr/ADR-0031-agent-onboarding-protocol.md`** — Decision record for the agent onboarding protocol. Closes #4.
+- **`specs/ai/long-running-session.md`** — Spec for durable agent sessions: checkpoint format, resume protocol, failure taxonomy, `task_type` field. Closes #5.
+- **`src/agents/harness/session_checkpoint.py`** — `SessionCheckpoint` class: Redis-backed (TTL=7d) with local JSON fallback; `save`, `resume`, `mark_step_complete`, `delete`. Closes #5.
+- **`docs/adr/ADR-0033-long-running-agent-session-durability.md`** — Decision record for session checkpoint/resume strategy. Closes #5.
+- **`docs/sre/runbooks/RB-005-agent-session-recovery.md`** — Runbook for inspecting, resuming, and force-deleting interrupted agent session checkpoints. Closes #5.
+- **`tests/unit/agents/harness/test_session_checkpoint.py`** — Unit tests for `SessionCheckpoint` lifecycle (≥ 80% coverage). Closes #5.
+
+#### Changed
+
+- **`CLAUDE.md §2`** — Added "Agentic Session Bootstrap" pre-step (Pre-0a–0e) before the SDD Cycle; references `skills/sdlc/agent-onboarding.md` and §14 escalation. Closes #4.
+
 ### Wave 1 — Safety & Compliance (Agentic SDLC)
 
 #### Added

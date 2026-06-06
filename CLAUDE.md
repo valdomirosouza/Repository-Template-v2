@@ -200,6 +200,22 @@ You operate within **Spec-Driven Development (SDD)**: no code is written without
 
 ## 2. SDD Cycle — Mandatory Workflow
 
+### Agentic Session Bootstrap (run before Step 1)
+
+At the start of every Claude Code session, follow `skills/sdlc/agent-onboarding.md`:
+
+```
+Pre-0a: Read CLAUDE_SESSION_INIT.md (repo-specific primer).
+Pre-0b: Read services.yaml to establish service registry awareness.
+Pre-0c: Load ≤ 2 relevant skill files for the task domain.
+Pre-0d: Identify the GitHub Issue for this task (create one if absent).
+Pre-0e: Confirm spec status is Approved before any file write.
+```
+
+If a spec cannot be found after two searches → emit `[HITL-ESCALATE]` (§14).
+
+---
+
 Every task follows this 10-step standard workflow. Do not skip steps.
 
 ```
