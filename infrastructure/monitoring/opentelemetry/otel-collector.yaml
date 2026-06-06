@@ -34,8 +34,42 @@ processors:
         value: ${env:DEPLOYMENT_REGION}
         action: upsert
 
-  # Strip any remaining PII that might appear in span attributes
-  # Uses attribute key-name-based filtering (structural, not value-based)
+  # Value-based PII redaction via OTTL regex patterns (OTEL-001 §4).
+  # Complements attributes/mask-pii (key-name deletion) with value-level scanning.
+  # Runs on traces and logs; error_mode=ignore ensures a bad pattern never blocks export.
+  transform/redact_pii:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          # Anthropic API keys
+          - replace_all_patterns(attributes, "value", "sk-ant-[A-Za-z0-9_\\-]+", "sk-ant-***REDACTED***")
+          # Authorization bearer tokens
+          - replace_all_patterns(attributes, "value", "Bearer [A-Za-z0-9._\\-]+", "Bearer ***REDACTED***")
+          # Email addresses
+          - replace_all_patterns(attributes, "value", "[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}", "***EMAIL_REDACTED***")
+          # Brazilian CPF (LGPD L1 — e.g. 123.456.789-09)
+          - replace_all_patterns(attributes, "value", "\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}", "***CPF_REDACTED***")
+    log_statements:
+      - context: log
+        statements:
+          - replace_all_patterns(attributes, "value", "sk-ant-[A-Za-z0-9_\\-]+", "sk-ant-***REDACTED***")
+          - replace_all_patterns(attributes, "value", "Bearer [A-Za-z0-9._\\-]+", "Bearer ***REDACTED***")
+          - replace_all_patterns(attributes, "value", "[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}", "***EMAIL_REDACTED***")
+          - replace_all_patterns(attributes, "value", "\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}", "***CPF_REDACTED***")
+
+  # Redact API keys leaking into span status messages (OTEL-001 §4).
+  transform/redact_span_status:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          - replace_pattern(status.message, "sk-ant-[A-Za-z0-9_\\-]+", "sk-ant-***REDACTED***")
+          - replace_pattern(status.message, "Bearer [A-Za-z0-9._\\-]+", "Bearer ***REDACTED***")
+
+  # Strip any remaining PII that might appear in span attributes by key name.
+  # Uses attribute key-name-based filtering (structural, not value-based).
+  # Complements transform/redact_pii which handles value-based patterns.
   attributes/mask-pii:
     actions:
       - key: user.email
@@ -46,6 +80,41 @@ processors:
         action: delete
       - key: http.request.header.cookie
         action: delete
+
+  # Tail-based trace sampling — agent spans only (OTEL-001 §5).
+  # decision_wait=10s: Collector buffers spans for 10s before deciding.
+  # Policies evaluated in order; first match wins (OR semantics across policies).
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 50000
+    expected_new_traces_per_sec: 500
+    policies:
+      # Always sample error traces and HITL-rejected decisions (100%)
+      - name: errors-and-rejections
+        type: or
+        or:
+          and_sub_policy:
+            - name: error-status
+              type: status_code
+              status_code:
+                status_codes: [ERROR]
+            - name: hitl-rejected
+              type: string_attribute
+              string_attribute:
+                key: "act.hitl_decision"
+                values: [rejected]
+      # Always sample HITL and request submission endpoints (100%)
+      - name: hitl-full
+        type: string_attribute
+        string_attribute:
+          key: "http.route"
+          values: ["/v1/hitl", "/v1/requests"]
+          enabled_regex_matching: true
+      # Sample all remaining agent spans at 10%
+      - name: standard-agent-tasks
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
 
 exporters:
   otlp/jaeger:
@@ -82,7 +151,14 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [memory_limiter, attributes/mask-pii, resource, batch]
+      processors:
+        - memory_limiter
+        - transform/redact_pii
+        - transform/redact_span_status
+        - attributes/mask-pii
+        - resource
+        - tail_sampling
+        - batch
       exporters: [otlp/jaeger, logging]
 
     metrics:
@@ -92,7 +168,12 @@ service:
 
     logs:
       receivers: [otlp]
-      processors: [memory_limiter, attributes/mask-pii, resource, batch]
+      processors:
+        - memory_limiter
+        - transform/redact_pii
+        - attributes/mask-pii
+        - resource
+        - batch
       exporters: [logging]
 
   telemetry:

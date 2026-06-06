@@ -95,6 +95,9 @@ class Settings(BaseSettings):
     otel_service_name: str = "template-service"
     prometheus_port: int = 9090
     jaeger_agent_host: str = "localhost"
+    # When True, prompt/response content is attached as span events on llm.inference spans.
+    # MUST remain False in production — Collector strips these events before Jaeger export.
+    otel_capture_prompts: bool = False
 
     # ── Feature flags ─────────────────────────────────────────────────────────
     feature_flag_provider: str = "local"

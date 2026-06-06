@@ -13,6 +13,25 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 16 — OTel Collector OTTL PII Redaction + Tail Sampling + CI Lint Gate (OTel Agentic Observability)
+
+#### Added
+
+- `specs/observability/otel-agentic-observability.md` — OTEL-001 formal spec: span hierarchy (agent.task → agent.{perceive,reason,act} → llm.inference), mandatory span attributes (GenAI semantic conventions), Collector PII redaction rules, tail sampling policy table, HITL trace linking contract, retry span links (Issues #26–#30, ADR-0043)
+- `transform/redact_pii` OTTL processor in `infrastructure/monitoring/opentelemetry/otel-collector.yaml` — value-based regex redaction for Anthropic API keys (`sk-ant-*`), Bearer tokens, email addresses, and Brazilian CPF (LGPD L1); applied to both traces and logs pipelines (Issue #26, OTEL-001 §4)
+- `transform/redact_span_status` OTTL processor — redacts API keys that leak into span status messages (Issue #26)
+- `tail_sampling` processor — three-policy tail sampling: `errors-and-rejections` (100%), `hitl-full` (100%), `standard-agent-tasks` (10%); `decision_wait: 10s` (Issue #26, OTEL-001 §5)
+- `.github/workflows/ci-otel-collector-lint.yml` — validates collector config syntax via Docker (`otel/opentelemetry-collector-contrib:0.104.0 validate`), checks that `transform/redact_pii`, `transform/redact_span_status`, `tail_sampling`, and `attributes/mask-pii` are present in the correct pipeline, verifies all four PII patterns are configured; posts PR comment on findings (informational)
+- Two new Prometheus alert rules in `infrastructure/monitoring/prometheus/rules/agent-alerts.yaml`: `OtelCollectorTransformErrors` (warning on any OTTL error — PII redaction may be failing) and `AgentTraceSamplingBudgetHigh` (warning when tail sampling buffer exceeds 80% capacity) (Issue #26)
+
+#### Changed
+
+- `infrastructure/monitoring/opentelemetry/otel-collector.yaml` — traces pipeline updated to `[memory_limiter, transform/redact_pii, transform/redact_span_status, attributes/mask-pii, resource, tail_sampling, batch]`; logs pipeline updated to include `transform/redact_pii` (Issue #26)
+- `src/shared/config.py` — added `otel_capture_prompts: bool = False` (OTEL_LLM_CAPTURE_PROMPTS env var); controls whether `llm.prompt`/`llm.response` span events are captured on `llm.inference` spans; MUST remain False in production (OTEL-001 §3.4)
+- `.env.example` — added `OTEL_LLM_CAPTURE_PROMPTS=false` and `DEPLOYMENT_ENVIRONMENT=development` to Observability section (Issue #26)
+
+---
+
 ### Wave 15 — Probe CI Lint Gate + probe-strategy Skill + ADR-0042 (K8s Probe Compliance)
 
 #### Added

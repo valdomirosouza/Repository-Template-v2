@@ -1,0 +1,150 @@
+name: OTel Collector Config Lint
+
+on:
+  pull_request:
+    paths:
+      - "infrastructure/monitoring/opentelemetry/**"
+      - ".github/workflows/ci-otel-collector-lint.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate-collector-config:
+    name: Validate OTel Collector configuration
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull OTel Collector contrib image
+        run: |
+          docker pull otel/opentelemetry-collector-contrib:0.104.0
+
+      - name: Validate collector config syntax
+        id: validate
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/infrastructure/monitoring/opentelemetry:/config:ro" \
+            otel/opentelemetry-collector-contrib:0.104.0 \
+            validate --config=/config/otel-collector.yaml
+        continue-on-error: true
+
+      - name: Check required processors in traces pipeline
+        id: check-processors
+        run: |
+          CONFIG=infrastructure/monitoring/opentelemetry/otel-collector.yaml
+          ERRORS=""
+
+          # Verify transform/redact_pii processor exists
+          if ! grep -q "transform/redact_pii:" "$CONFIG"; then
+            ERRORS="${ERRORS}\n- Missing transform/redact_pii processor (OTEL-001 §4)"
+          fi
+
+          # Verify transform/redact_span_status processor exists
+          if ! grep -q "transform/redact_span_status:" "$CONFIG"; then
+            ERRORS="${ERRORS}\n- Missing transform/redact_span_status processor (OTEL-001 §4)"
+          fi
+
+          # Verify tail_sampling processor exists
+          if ! grep -q "^  tail_sampling:" "$CONFIG"; then
+            ERRORS="${ERRORS}\n- Missing tail_sampling processor (OTEL-001 §5)"
+          fi
+
+          # Verify attributes/mask-pii still present
+          if ! grep -q "attributes/mask-pii:" "$CONFIG"; then
+            ERRORS="${ERRORS}\n- Missing attributes/mask-pii processor (required key-name deletion)"
+          fi
+
+          # Verify traces pipeline includes redact_pii and tail_sampling
+          PIPELINE=$(awk '/pipelines:/,0' "$CONFIG" | awk '/traces:/,/metrics:/' | head -30)
+          if ! echo "$PIPELINE" | grep -q "transform/redact_pii"; then
+            ERRORS="${ERRORS}\n- Traces pipeline missing transform/redact_pii"
+          fi
+          if ! echo "$PIPELINE" | grep -q "tail_sampling"; then
+            ERRORS="${ERRORS}\n- Traces pipeline missing tail_sampling"
+          fi
+
+          if [ -n "$ERRORS" ]; then
+            echo "PROCESSOR_ERRORS<<EOF" >> "$GITHUB_OUTPUT"
+            echo -e "$ERRORS" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+            echo "has_errors=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_errors=false" >> "$GITHUB_OUTPUT"
+          fi
+        continue-on-error: true
+
+      - name: Check OTTL PII patterns completeness
+        id: check-patterns
+        run: |
+          CONFIG=infrastructure/monitoring/opentelemetry/otel-collector.yaml
+          ERRORS=""
+
+          # Verify all required PII patterns are present (OTEL-001 §4)
+          if ! grep -q "sk-ant-" "$CONFIG"; then
+            ERRORS="${ERRORS}\n- Missing Anthropic API key pattern (sk-ant-)"
+          fi
+          if ! grep -q "Bearer " "$CONFIG"; then
+            ERRORS="${ERRORS}\n- Missing Bearer token pattern"
+          fi
+          if ! grep -q "EMAIL_REDACTED" "$CONFIG"; then
+            ERRORS="${ERRORS}\n- Missing email redaction pattern"
+          fi
+          if ! grep -q "CPF_REDACTED" "$CONFIG"; then
+            ERRORS="${ERRORS}\n- Missing CPF redaction pattern (LGPD L1)"
+          fi
+
+          if [ -n "$ERRORS" ]; then
+            echo "PATTERN_ERRORS<<EOF" >> "$GITHUB_OUTPUT"
+            echo -e "$ERRORS" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+            echo "has_errors=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_errors=false" >> "$GITHUB_OUTPUT"
+          fi
+        continue-on-error: true
+
+      - name: Post PR comment on findings
+        if: >
+          github.event_name == 'pull_request' &&
+          (steps.validate.outcome == 'failure' ||
+           steps.check-processors.outputs.has_errors == 'true' ||
+           steps.check-patterns.outputs.has_errors == 'true')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const validateFailed = '${{ steps.validate.outcome }}' === 'failure';
+            const processorErrors = `${{ steps.check-processors.outputs.PROCESSOR_ERRORS }}`;
+            const patternErrors = `${{ steps.check-patterns.outputs.PATTERN_ERRORS }}`;
+
+            let body = '## :warning: OTel Collector Config Issues\n\n';
+
+            if (validateFailed) {
+              body += '### Config Syntax Error\nCollector rejected the config. Run `docker run --rm -v ./infrastructure/monitoring/opentelemetry:/config otel/opentelemetry-collector-contrib:0.104.0 validate --config=/config/otel-collector.yaml` locally.\n\n';
+            }
+            if (processorErrors) {
+              body += `### Missing Processors\n${processorErrors}\n\n`;
+            }
+            if (patternErrors) {
+              body += `### Missing PII Patterns\n${patternErrors}\n\n`;
+            }
+
+            body += '_Spec: [OTEL-001](specs/observability/otel-agentic-observability.md) | ADR-0043_';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+
+      - name: Fail on syntax error
+        if: steps.validate.outcome == 'failure'
+        run: |
+          echo "::error::OTel Collector config validation failed. See collector output above."
+          exit 1
+
+      # Processor/pattern checks are currently informational (continue-on-error: true above).
+      # Remove continue-on-error once all collector configs are compliant to make them blocking.
