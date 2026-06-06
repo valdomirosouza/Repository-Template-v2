@@ -11,6 +11,46 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [2.6.0] - 2026-06-06
+
+### Waves 26–29 — Agentic SDLC E2E Workflow (ADR-0052)
+
+#### Added
+
+- `docs/process/WORKFLOW.md` — 13-phase lifecycle reference: Conception → Discovery → Grooming → Specification → Architecture → Development → Code Review → Testing → DevSecOps → Observability/PRR → Release RC → Production → Post-Deploy & Learn (Issue #38, ADR-0052)
+- `docs/process/DEFINITION_OF_READY.md` — 8-criteria DoR checklist; exemptions table (bug, spike, chore, security); Grooming Ceremony gate (Issue #38)
+- `docs/process/DEFINITION_OF_DONE.md` — 21-criteria global DoD across 7 groups; per-service addendum pattern (Issue #38)
+- `docs/process/DEFINITION_OF_RELEASE.md` — 19-criteria DoR-Release checklist; canary promotion sequence (Issue #38)
+- `docs/process/RACI.md` — 5-tier RACI matrix: governing DoD, applying DoD per PR, enforcement escalation, DoR, DoR-Release (Issue #39, Q1, ADR-0052)
+- `docs/process/HITL-GOVERNANCE.md` — two-tier HITL governance: Spec-as-PR (pre-code artefacts) + Runtime gateway (real-world effects); autonomy levels; enterprise best practices (Issue #39, Q2, ADR-0052)
+- `docs/process/SPRINT-TRACKING.md` — GitHub Issues + Projects decision; 5-view board; team-size decision guide Tier 0–3; label taxonomy (Issue #39, Q3, ADR-0052)
+- `docs/process/RETROSPECTIVE-GUIDE.md` — dual cadence: per-sprint (30 min async) + per-release (60–90 min); ISO 27001 A.5.36 + EU AI Act Article 72 aligned; both templates (Issue #39, Q4, ADR-0052)
+- `docs/process/retrospectives/.gitkeep` — directory seeded for retrospective documents
+- `docs/product/README.md` — agent-disclosure header requirement; Spec-as-PR governance rules; minimum reviewer table; decisions.log format (Issue #38, ADR-0052)
+- `specs/features/README.md` — spec lifecycle states; review requirements; naming conventions; CI lint gate description (Issue #38)
+- `.github/FEATURE_SPEC_TEMPLATE.md` — 10-section feature spec template covering goal/metrics, user stories (Gherkin), API contract, event contract, data model, agent config, security/privacy, observability, operational readiness, implementation notes (Issue #38)
+- `.github/ISSUE_TEMPLATE/spike.md` — time-boxed spike template with DoD checklist and output artefact path (Issue #38)
+- `.github/DISCUSSION_TEMPLATE/rfc.md` — RFC discussion template with agent-disclosure header and impact analysis table (Issue #38)
+- `.github/workflows/issue-lifecycle.yml` — auto-labels linked Issues `status: in-review` on PR open and `status: done` + closes on PR merge (Issue #40, ADR-0052)
+- `.github/workflows/llm-budget-tracker.yml` — hourly cron fetching Anthropic usage API; updates `LLM_CI_CURRENT_MONTH_SPEND_USD` repository variable (Issue #40, Q5, ADR-0051)
+- `scripts/check_llm_budget.py` — non-blocking budget circuit breaker; writes `budget_ok` and `remaining_usd` to GITHUB_OUTPUT (Issue #40, Q5, ADR-0051)
+- `.github/project-board-definition.json` — 5-view GitHub Projects board: Backlog, Sprint Board, Security Debt, Release Tracker, DORA Dashboard (Issue #40, Q3, ADR-0052)
+- `docs/adr/ADR-0052-agentic-sdlc-e2e-workflow.md` — documents 13-phase workflow, Q1–Q6 decisions, two-tier HITL governance rationale, alternatives considered (Issue #41)
+
+#### Changed
+
+- `.github/workflows/ci-model-contract.yml` — restructured into 3 jobs: `budget-check` → `model-contract-tests` (conditional) → `budget-warning` (PR comment when budget exhausted, non-blocking) (Issue #40, Q5, ADR-0051)
+- `.github/ISSUE_TEMPLATE/feature_request.md` — labels updated to `status: discovery`; Discovery Link section and DoR checklist appended (Issue #38)
+- `harness/doc-check.yml` — added `feature-spec-lint` gate: spec file existence, ADR reference resolution, `allowed_action_types` required for agent PRs (Issue #41, ADR-0052)
+- `CONTRIBUTING.md` — version 2.2.0 → 2.5.0; §1 rewritten as Agentic SDLC 13-phase overview; §2–§12 section numbering updated; §10 retrospective requirement added (Issue #39)
+- `CUSTOMISING.md` — §8 appended: Tier 0–4 progressive adoption guide with per-tier activation checklists (Issue #39, Q6, ADR-0052)
+- `CLAUDE.md` — Pre-0f bootstrap step for Phase 1–2 discovery; Process layer row in Key Layers table; ADR range updated to ADR-0001–ADR-0052 (Issue #41)
+- `CLAUDE_SESSION_INIT.md` — ADR-0052 in ADR Quick Index; Process Quick Reference table with 8 docs/process/ entries (Issue #41)
+- `README.md` — new "Agentic SDLC Workflow (v2.6.0)" section with 13-phase summary, process document index, HITL governance note (Issue #41)
+- `docs/adr/README.md` — ADR-0052 added to master index
+
+---
+
 ## [2.5.0] - 2026-06-06
 
 ### Wave 25 — MLSecOps + Docs (Secure by Design Cross-Cutting)
