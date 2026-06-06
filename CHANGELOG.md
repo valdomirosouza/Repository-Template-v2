@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+---
+
+## [2.1.0] — 2026-06-05
+
 ### Wave 5 — Personas & Expansion (Agentic SDLC)
 
 #### Added
