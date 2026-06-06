@@ -419,6 +419,36 @@ This template implements a five-wave **Secure by Design** framework for agentic 
 
 ---
 
+## Agentic SDLC E2E Workflow — Wave Summary (v2.6.0)
+
+Four waves implementing the **13-phase Agentic SDLC E2E Workflow** (ADR-0052). Each wave is tracked as a GitHub Issue and delivered as a standalone, reviewable commit on `main`.
+
+| Wave        | Issue | Theme                                                   | ADR                | Key Deliverables                                                                                                                                                                                                   | Main Betterments                                                                                                                                                                                                                                                                                                                 |
+| ----------- | ----- | ------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Wave 26** | #38   | Foundation Templates + Process Directory                | ADR-0052           | `docs/process/WORKFLOW.md`, `DEFINITION_OF_READY.md`, `DEFINITION_OF_DONE.md`, `DEFINITION_OF_RELEASE.md`, `FEATURE_SPEC_TEMPLATE.md`, spike + RFC templates, `docs/product/README.md`, `specs/features/README.md` | 13-phase lifecycle documented end-to-end; global DoR/DoD/DoR-Release checklists give every team a single source of truth for phase entry/exit; 10-section feature spec template bounds agent implementation with Gherkin ACs, agent config, and security gates                                                                   |
+| **Wave 27** | #39   | Governance Documents                                    | ADR-0052           | `docs/process/RACI.md`, `HITL-GOVERNANCE.md`, `SPRINT-TRACKING.md`, `RETROSPECTIVE-GUIDE.md`, `CONTRIBUTING.md` v2.5.0, `CUSTOMISING.md` Tier 0–4 guide                                                            | Two-tier HITL governance clarifies Spec-as-PR (pre-code artefacts) vs. runtime gateway (real-world actions) — no more ambiguity; 5-tier RACI eliminates ownership gaps at every DoD enforcement layer; dual retrospective cadence (sprint + release) aligns to ISO 27001 A.5.36 and EU AI Act Art. 72                            |
+| **Wave 28** | #40   | Issue Lifecycle Automation + LLM Budget Circuit Breaker | ADR-0051, ADR-0052 | `issue-lifecycle.yml`, `llm-budget-tracker.yml`, `scripts/check_llm_budget.py`, updated `ci-model-contract.yml` (3-job budget-gated), `project-board-definition.json`                                              | Issue status labels transition automatically on PR events — zero manual label management; non-blocking LLM CI budget circuit breaker prevents unexpected spend spikes from blocking PRs while still surfacing cost alerts as PR comments; 5-view GitHub Projects board covers the full sprint lifecycle without external tooling |
+| **Wave 29** | #41   | Harness Spec Lint Gate + ADR-0052 + Wire-up             | ADR-0052           | `harness/doc-check.yml` spec lint gate, `ADR-0052`, `CLAUDE.md` Pre-0f bootstrap step, `CLAUDE_SESSION_INIT.md` process quick reference, `README.md` SDLC section                                                  | CI now enforces spec-driven development automatically: FEAT-{id} spec file must exist, all ADR references must resolve on disk, and agent PRs must declare `allowed_action_types` — unblockable via convention; CLAUDE.md and SESSION_INIT updated so agents bootstrap Phase 1–2 correctly from the first session                |
+
+### Process Gaps Closed by Waves 26–29
+
+| Gap (pre-Wave 26)                                            | Closed by | Mechanism                                                                                   |
+| ------------------------------------------------------------ | --------- | ------------------------------------------------------------------------------------------- |
+| No defined phase lifecycle — every team improvised           | Wave 26   | `docs/process/WORKFLOW.md` 13-phase reference; quality gate at each phase boundary          |
+| DoR/DoD existed only informally (PR checklist)               | Wave 26   | `DEFINITION_OF_READY.md` + `DEFINITION_OF_DONE.md` — global, versioned, CI-enforced         |
+| No ownership clarity for DoD governance                      | Wave 27   | `RACI.md` 5-tier matrix; enforcement escalation path documented                             |
+| Pre-code artefacts (discovery.md, nfr.md) had no HITL policy | Wave 27   | `HITL-GOVERNANCE.md` two-tier model — Spec-as-PR for artefacts, runtime gateway for actions |
+| Issue status tracking was manual                             | Wave 28   | `issue-lifecycle.yml` auto-transitions on PR open/merge                                     |
+| Model contract tests could exhaust LLM budget and block PRs  | Wave 28   | Non-blocking budget circuit breaker; skip + PR comment when cap reached                     |
+| No sprint board — teams chose their own tools                | Wave 28   | `project-board-definition.json` 5-view GitHub Projects board (zero external SaaS)           |
+| Spec-Driven Development enforced only by convention          | Wave 29   | `harness/doc-check.yml` `feature-spec-lint` gate — blocking CI check                        |
+| Agent sessions had no Phase 1–2 guidance                     | Wave 29   | `CLAUDE.md` Pre-0f bootstrap step + `CLAUDE_SESSION_INIT.md` process quick reference        |
+| No cross-cutting ADR for the full lifecycle                  | Wave 29   | `ADR-0052` — 13-phase workflow + Q1–Q6 decisions permanently recorded                       |
+
+> **All four waves are committed to `main` and governed by ADR-0052.** See [`docs/process/WORKFLOW.md`](docs/process/WORKFLOW.md) for the full lifecycle reference.
+
+---
+
 ## Feature Flags
 
 Flags use the [OpenFeature](https://openfeature.dev/) SDK (CNCF standard) backed by [flagd](https://flagd.dev/). No external SaaS dependency — flags are YAML files mounted via ConfigMap.
