@@ -130,7 +130,51 @@ The following uses are unconditionally prohibited regardless of business justifi
 
 ---
 
-## 4. Incident Response for Ethical Violations
+## 4. Dual-Use Risk Assessment
+
+Every new `action_type` registered in the agent registry **MUST** pass this checklist before activation. Record the outcome in `docs/ai-governance/` with AI Governance Lead sign-off.
+
+### 4.1 Mandatory Checklist (per new action_type)
+
+| #    | Question                                                                       | If YES → required mitigation                                                                 |
+| ---- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| D-01 | Can this capability enumerate, probe, fingerprint, or attack external systems? | Restrict to allowlisted targets; add rate-limiting; HITL approval mandatory                  |
+| D-02 | Does it generate, execute, or transmit code without human review?              | Route through `sandbox_executor.py`; HITL approval required; audit every execution           |
+| D-03 | Does it have access to credentials, API keys, or external-service tokens?      | Use Vault-backed secrets only; prohibit plaintext credential access; log every secret access |
+| D-04 | Could it be used to scrape, exfiltrate, or aggregate PII at scale?             | Enforce PII filter; output rate-limit; HITL approval for any bulk data operation             |
+| D-05 | Does it invoke outbound HTTP/network calls to user-controlled URLs?            | Enforce server-side outbound allowlist (OWASP A10 SSRF control)                              |
+| D-06 | Could a malicious actor misuse this action to cause harm to third parties?     | Threat model update required (append to `specs/security/threat-model.md`); governance review |
+
+### 4.2 Mitigation Registry
+
+All "YES" answers must be recorded in `docs/ai-governance/dual-use-registry.md`:
+
+```yaml
+action_type: <name>
+assessed_by: <AI Governance Lead>
+assessment_date: <YYYY-MM-DD>
+dual_use_risks:
+  - question: D-01
+    answer: yes
+    mitigation: <description>
+    adr_reference: ADR-XXXX
+approved: true | false
+```
+
+### 4.3 Re-assessment Triggers
+
+Re-run the checklist if:
+
+- The action type gains access to new external systems or APIs
+- Autonomy level for the action type is elevated
+- A security incident is attributed to this action type
+- The EU AI Act risk classification for the system changes
+
+**Compliance mapping:** EU AI Act Art. 9 (risk management system); NIST AI RMF MAP 5.1; OWASP LLM Top 10 (LLM08 Excessive Agency)
+
+---
+
+## 5. Incident Response for Ethical Violations
 
 If an agent produces output that violates these principles:
 
