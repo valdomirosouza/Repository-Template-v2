@@ -46,7 +46,10 @@ Wave labels: `wave-1` (done) → `wave-2` → `wave-3` → `wave-4` → `wave-5`
 | -------- | ------------------------------------- |
 | ADR-0030 | RTK token efficiency integration      |
 | ADR-0031 | Agent onboarding protocol             |
+| ADR-0032 | Sub-agent specialization registry     |
 | ADR-0033 | Long-running agent session durability |
 | ADR-0034 | Agentic escalation protocol           |
+| ADR-0035 | AI-assisted CI review                 |
+| ADR-0036 | Agentic cyber defense protocol        |
 
 Full index: `docs/adr/README.md`

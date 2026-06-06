@@ -332,6 +332,7 @@ When the user's request matches a skill domain, **Read the skill file listed in 
 | REST API design or implementation               | `skills/api/rest-api-design.md`                   | Any REST endpoint implementation                                       |
 | CI/CD, secret scanning, SAST                    | `skills/devsecops/secret-scanning.md`             | Any pipeline or security tooling work                                  |
 | CI security gate failure, HIGH/CRITICAL finding | `skills/devsecops/agentic-cyber-defense.md`       | Any security gate (Bandit/gosec/Trivy/SpotBugs) failure                |
+| Data pipelines, analytics, PII in datasets      | `skills/data/data-pipeline.md`                    | Any data science, analytics, or data engineering workflow              |
 | Spec writing, SDD lifecycle                     | `skills/sdlc/spec-lifecycle.md`                   | Writing or reviewing a spec                                            |
 | Agentic session bootstrap, new service context  | `skills/sdlc/agent-onboarding.md`                 | Start of every agentic Claude Code session                             |
 | Aggregates, entities, repositories, DDD         | `skills/domain/domain-modeling.md`                | Any domain model design, new entity, or service layer                  |
@@ -470,6 +471,25 @@ The hybrid workflow blends conversational exploration (Vibe Mode) with autonomou
 **Full guide:** `docs/quickstart/hybrid-workflow.md`
 
 **Governance gate for Phase 3:** `autonomous-mode` feature flag requires ADR-0015 approval. Never enable `FULL` autonomy without explicit governance sign-off.
+
+### 9.1 Personas
+
+Personas adapt the behavioral contract for non-engineering users without modifying
+`CLAUDE.md` itself. Each persona file lives in `.claude/personas/` and defines:
+`role`, `autonomy_ceiling`, `skills_to_load`, and `prohibited_paths`.
+
+| Persona        | File                                 | Autonomy ceiling | Primary skills                                   |
+| -------------- | ------------------------------------ | ---------------- | ------------------------------------------------ |
+| Legal Reviewer | `.claude/personas/legal-reviewer.md` | `LOW_RISK`       | privacy, gdpr, lgpd, ethical-ai-review           |
+| Ops Analyst    | `.claude/personas/ops-analyst.md`    | `MEDIUM_RISK`    | golden-signals, incident-response, data-pipeline |
+
+**Activating a persona:** at the start of a Claude Code session, read the relevant
+persona file before `CLAUDE.md`. The persona's `prohibited_paths` and `autonomy_ceiling`
+take precedence over the default behavioral contract for that session.
+
+**Adding a new persona:** create `.claude/personas/<name>.md` following the existing
+template. Personas must not grant permissions beyond those in the default `CLAUDE.md`;
+they may only restrict.
 
 ---
 

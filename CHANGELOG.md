@@ -13,6 +13,27 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 5 — Personas & Expansion (Agentic SDLC)
+
+#### Added
+
+- **`docs/quickstart/non-engineer-automation.md`** — Step-by-step guide for product managers, legal, and ops to automate repetitive workflows without writing code; covers workflow spec, GitHub Issue submission, implementation review, and HITL approval. Closes #10.
+- **`skills/data/data-pipeline.md`** — Data pipeline skill: Pandas/Polars ingestion patterns, PII classification for analytical datasets (L1–L4), OTel instrumentation, output validation, and synthetic-fixture testing conventions. Closes #10.
+- **`skills/sdlc/new-language-extension.md`** — 5-step protocol for adding a language outside the default stack (Python/Java/Go/Node.js): ADR → scaffold → CI gates → skills entry → CLAUDE.md update. Closes #10.
+- **`.claude/personas/legal-reviewer.md`** — Legal reviewer persona: `LOW_RISK` autonomy ceiling, permitted paths `docs/**` and `specs/**` only, privacy/compliance skill set. Closes #11.
+- **`.claude/personas/ops-analyst.md`** — Ops analyst persona: `MEDIUM_RISK` autonomy ceiling, observability and data-pipeline skill set, permitted read-only commands. Closes #11.
+- **`specs/automation/automation-spec-template.md`** — Plain-language automation spec template with sections for trigger, input, steps, output, guardrails (PII checklist), rollback, SLA, and HITL approval gate. Closes #11.
+- **`docs/quickstart/self-service-automation.md`** — End-to-end guide: spec → GitHub Issue (`automation-request` label) → Claude scaffolds → PR review → HITL approval → HOTL promotion. Closes #11.
+
+#### Changed
+
+- **`CLAUDE.md §4`** — Added `skills/data/data-pipeline.md` row to the Core Skills Activation Table. Closes #10.
+- **`CLAUDE.md §9`** — Added §9.1 Personas subsection: persona table, activation instructions, and constraint that personas may only restrict (never expand) default permissions. Closes #11.
+
+#### Closed (already implemented in Wave 3)
+
+- **Issue #12** — `docs/adr/ADR-0020-finops-cost-allocation.md` ROI model appendix (cost-per-task formula, net-new multiplier, metrics table, budget allocation) was delivered in Wave 3 as part of Issue #7. Closes #12.
+
 ### Wave 4 — CI Intelligence (Agentic SDLC)
 
 #### Added
