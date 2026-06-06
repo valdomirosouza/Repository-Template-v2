@@ -11,7 +11,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
-## [Unreleased]
+## [2.5.0] - 2026-06-06
 
 ### Wave 25 — MLSecOps + Docs (Secure by Design Cross-Cutting)
 
