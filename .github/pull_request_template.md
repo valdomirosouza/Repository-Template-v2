@@ -69,6 +69,15 @@ Rollback plan: <!-- describe or reference runbook -->
 - [ ] `CODEOWNERS` reviewers approved (auto-requested)
 - [ ] _(AI Agents Module only)_ HITL gateway used for any new agent action with real-world effects
 
+### AI Safety & Agent Governance (Phase 10 — required for AI/LLM/agentic changes)
+
+_Only when this PR touches `src/agents/`, `src/guardrails/`, a new `action_type`, or autonomy. Otherwise mark N/A._
+
+- [ ] N/A — this PR is not an AI/LLM/agentic change
+- [ ] AI Safety & Agent Governance checklist completed ([`docs/ai-governance/ai-safety-checklist.md`](../docs/ai-governance/ai-safety-checklist.md))
+- [ ] Prompt-injection + data-leakage tests cover the change (`tests/abuse_cases/`, `tests/security/`, `tests/model_contract/`)
+- [ ] Tool permissions reviewed in `infrastructure/agent-tools/tools.yaml`; AI Governance Lead approval obtained
+
 ### Compliance Gates (CLAUDE.md §7)
 
 - [ ] **[IF SOX APPLIES]** RFC_ID present in commit for `normal-change` / `emergency-change`
