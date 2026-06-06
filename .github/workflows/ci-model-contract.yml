@@ -1,0 +1,65 @@
+name: Model Contract Tests
+
+# Runs only when the model dependency manifest or AI specs change.
+# Requires ANTHROPIC_API_KEY to be set in repository secrets.
+# See ADR-0051 and docs/dependency-manifest.yaml for the contract versioning scheme.
+on:
+  pull_request:
+    paths:
+      - "docs/dependency-manifest.yaml"
+      - "specs/ai/**"
+      - "tests/model_contract/**"
+  workflow_dispatch:
+    inputs:
+      model_id:
+        description: "Model ID to test against (overrides CONTRACT_MODEL_ID default)"
+        required: false
+        default: "claude-sonnet-4-6"
+
+permissions:
+  contents: read
+
+jobs:
+  model-contract:
+    name: Model Behavioral Contract (ML1 / ADR-0051)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CONTRACT_MODEL_ID: ${{ github.event.inputs.model_id || 'claude-sonnet-4-6' }}
+      PYTHONPATH: .
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Verify ANTHROPIC_API_KEY is present
+        run: |
+          if [ -z "${ANTHROPIC_API_KEY}" ]; then
+            echo "::error::ANTHROPIC_API_KEY secret is not set. Add it in repo Settings → Secrets."
+            exit 1
+          fi
+
+      - name: Run model contract tests
+        run: |
+          uv run pytest tests/model_contract/ -m model_contract \
+            -v \
+            --tb=short \
+            --timeout=60 \
+            -p no:cacheprovider
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-contract-report
+          path: |
+            .pytest_cache/
+          retention-days: 30

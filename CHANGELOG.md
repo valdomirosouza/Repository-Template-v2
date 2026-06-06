@@ -13,6 +13,29 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 25 — MLSecOps + Docs (Secure by Design Cross-Cutting)
+
+#### Added
+
+- `tests/model_contract/` — real-LLM behavioral contract test suite (`@pytest.mark.model_contract`); skips automatically when `ANTHROPIC_API_KEY` is absent; uses synthetic PII only (Issue #36, ML1, ADR-0051):
+  - `conftest.py` — session-scoped `anthropic_client` and `model_id` fixtures; auto-skip hook when no API key
+  - `test_refusal_behavior.py` — 5 tests: jailbreak prompts, authority bypass, PII extraction, credential generation refusal
+  - `test_spec_adherence.py` — 3 tests: allowed action_types, prohibited operation refusal, scope boundary enforcement
+  - `test_pii_non_leakage.py` — 3 tests: PII not echoed in summaries, SSN not reproduced, masked fields not inferred
+- `.github/workflows/ci-model-contract.yml` — path-triggered workflow (fires on `docs/dependency-manifest.yaml`, `specs/ai/**`, `tests/model_contract/**` changes); supports manual dispatch with `model_id` input (Issue #36, ML1, ADR-0051)
+- `docs/adr/ADR-0051-model-behavioral-contracts.md` — documents contract versioning scheme, test suite design, path-triggered CI, and cost/maintenance trade-offs (Issue #36)
+
+#### Changed
+
+- `docs/dependency-manifest.yaml` — both model entries (`claude-sonnet-4-6`, `claude-haiku-4-5-20251001`) gain `behavioral_contract_version: "1.0"`, `last_contract_tested: "2026-06-06"`, `contract_test_suite: "tests/model_contract/"` (Issue #36, ML1, ADR-0051)
+- `pyproject.toml` — `model_contract` pytest marker registered
+- `docs/adr/README.md` — ADR-0051 added to master index
+- `CLAUDE_SESSION_INIT.md` — ADR-0047–0051 added to ADR Quick Index
+- `skills/ai/guardrails.md` — Secure-by-Design stack (Pillars 1–4 + MLSecOps) documented with component table; last updated 2026-06-06
+- `CLAUDE.md` — version bumped 2.3.0 → 2.4.0; §3.2 Security Rules gains: mandatory `make test-abuse-cases` before agent/guardrail PRs; mandatory model contract run before promoting new model versions; ADR range updated to ADR-0001–ADR-0051
+
+---
+
 ### Wave 24 — Continuous Verification (Secure by Design Pillar 4)
 
 #### Added

@@ -1,8 +1,54 @@
 # Skill — AI Guardrails
 
-**Owner:** Security Lead | **Reviewer:** AI Lead | **Status:** Active | **Last updated:** 2026-05-24
+**Owner:** Security Lead | **Reviewer:** AI Lead | **Status:** Active | **Last updated:** 2026-06-06
 
 Activate this skill for any agent implementation, guardrail change, or AI safety review.
+
+---
+
+## Secure-by-Design Guardrail Stack (Waves 21–25)
+
+This repository implements a five-wave Secure-by-Design framework on top of the four mandatory guardrail layers. All components are active when `src/agents/` is present.
+
+### Pillar 1 — Spec-Driven Guardrails (ADR-0047)
+
+| Component              | File                                   | Purpose                                                                                                                                        |
+| ---------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SpecContractEnforcer` | `src/agents/spec_contract_enforcer.py` | Validates proposed actions against spec's `allowed_action_types` / `prohibited_operations`; injects `[SPEC_CONTRACT]` block into system prompt |
+| `ContextSeal`          | `src/agents/harness/context_seal.py`   | SHA-256 integrity seal on Planner→Generator context; raises `ContextTamperingError` on mismatch                                                |
+| `CodePreFlight`        | `src/agents/code_pre_flight.py`        | Python AST gate before sandbox; blocks forbidden imports (`subprocess`, `socket`, `ctypes`…) and calls (`eval`, `exec`, `open`…)               |
+
+### Pillar 2 — Zero-Trust Tooling (ADR-0048)
+
+| Component                            | File                           | Purpose                                                                             |
+| ------------------------------------ | ------------------------------ | ----------------------------------------------------------------------------------- |
+| `ExecutionMode`                      | `src/agents/tool_registry.py`  | Enum: `DIRECT \| SANDBOX`; tools declare required execution mode at registry time   |
+| `ToolRegistry.is_sandbox_required()` | `src/agents/tool_registry.py`  | Returns True for any tool declared as `ExecutionMode.SANDBOX` (e.g. `execute-code`) |
+| Operator auth                        | `src/api/rest/routers/hitl.py` | JWT-gated HITL decisions; `approver_id` from token subject (REM-001)                |
+
+### Pillar 3 — Runtime Behavioral Monitoring (ADR-0049)
+
+| Component              | File                                   | Purpose                                                                                            |
+| ---------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `BehavioralMonitor`    | `src/agents/behavioral_monitor.py`     | Frequency baseline per task-type; emits OTel span attr + Prometheus counter on drift               |
+| `RuntimePolicyGateway` | `src/agents/runtime_policy_gateway.py` | Declarative YAML policy evaluation: `ALLOW \| REQUIRE_HITL \| BLOCK`; first-match-wins; hot-reload |
+
+Policy file: `infrastructure/agent-policies/policies.yaml`
+
+### Pillar 4 — Continuous Verification (ADR-0050)
+
+| Component               | File                                    | Purpose                                                                                                                                    |
+| ----------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Abuse case tests        | `tests/abuse_cases/`                    | 34 mock-LLM tests covering jailbreak, goal hijacking, context overflow, multi-agent trust abuse, spec boundary violations; run on every PR |
+| `ActionSchemaValidator` | `src/agents/action_schema_validator.py` | YAML-schema structural validation before HITL queuing; normalizes underscore→hyphen; blocks on size/required/type failures                 |
+
+### MLSecOps Cross-Cut — Model Behavioral Contracts (ADR-0051)
+
+| Component           | File                                      | Purpose                                                                                                   |
+| ------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Contract metadata   | `docs/dependency-manifest.yaml`           | `behavioral_contract_version`, `last_contract_tested` per model entry                                     |
+| Contract test suite | `tests/model_contract/`                   | Real LLM tests: refusal behavior, spec adherence, PII non-leakage; skipped unless `ANTHROPIC_API_KEY` set |
+| Contract CI         | `.github/workflows/ci-model-contract.yml` | Path-triggered on manifest / `specs/ai/**` changes                                                        |
 
 ---
 

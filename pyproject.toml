@@ -134,6 +134,7 @@ markers = [
     "security: defensive validation tests",
     "chaos: game-day / fault injection tests",
     "abuse_case: structured abuse-case tests (mock LLMs, no API cost); run on every PR",
+    "model_contract: real LLM contract tests; requires ANTHROPIC_API_KEY; run on model-version PRs only",
     "e2e: full user journey tests; set BASE_URL env var to run against a live server",
     "benchmark: performance benchmark; measures latency against SLO thresholds",
 ]

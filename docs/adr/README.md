@@ -111,6 +111,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0048](ADR-0048-zero-trust-tool-registry.md)                   | Zero-Trust Tool Registry & Operator Authentication | Accepted | 2026-06-06 |
 | [ADR-0049](ADR-0049-runtime-behavioral-monitoring.md)              | Runtime Behavioral Monitoring                      | Accepted | 2026-06-06 |
 | [ADR-0050](ADR-0050-adversarial-abuse-testing.md)                  | Adversarial Abuse Testing Strategy                 | Accepted | 2026-06-06 |
+| [ADR-0051](ADR-0051-model-behavioral-contracts.md)                 | Model Behavioral Contracts                         | Accepted | 2026-06-06 |
 
 ### AI Agents Module _(opt-in)_
 
