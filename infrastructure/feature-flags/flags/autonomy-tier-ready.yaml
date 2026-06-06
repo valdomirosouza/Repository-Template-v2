@@ -1,0 +1,13 @@
+flags:
+  autonomy-tier-ready:
+    state: ENABLED
+    variants:
+      "true": true
+      "false": false
+    defaultVariant: "false"
+    targeting: {}
+    # Enabling this flag requires ALL prerequisites to be met (ADR-0041):
+    #   1. learning-mode flag set to "active"
+    #   2. agent_context_graphs table reachable in the database
+    #   3. governance-council-approved label on the enabling PR (ADR-0037)
+    # AutonomyPrerequisiteError is raised in feature_flags.py if prerequisites are unmet.

@@ -19,6 +19,17 @@ from typing import Any
 from src.shared.config import settings
 
 
+class AutonomyPrerequisiteError(RuntimeError):
+    """Raised when autonomy-tier-ready is enabled but prerequisites are unmet.
+
+    Spec: specs/ai/context-graph.md §5 | ADR: ADR-0041
+    Prerequisites:
+      1. learning-mode flag is 'active'
+      2. src/agents/context_graph.py is present (context graph implemented)
+      3. governance-council-approved label was applied to the enabling PR
+    """
+
+
 class AutonomyLevel(StrEnum):
     """Graduated autonomy levels from most to least permissive.
 
@@ -137,6 +148,45 @@ def _flag_enabled(client: Any, flag_name: str) -> bool:
 def _parse_action_types(csv: str) -> frozenset[str]:
     """Parse a comma-separated action type list from settings into a frozenset."""
     return frozenset(part.strip() for part in csv.split(",") if part.strip())
+
+
+def is_autonomy_tier_ready() -> bool:
+    """Return True if the autonomy-tier-ready flag is enabled.
+
+    Raises AutonomyPrerequisiteError if the flag is enabled but prerequisites
+    are not met (learning-mode not active, or context_graph.py absent).
+
+    Spec: specs/ai/context-graph.md §5 | ADR: ADR-0041
+    """
+    try:
+        from openfeature import api
+
+        client = api.get_client()
+        enabled = client.get_boolean_value("autonomy-tier-ready", False)
+    except Exception:
+        return False
+
+    if not enabled:
+        return False
+
+    # Guard: check prerequisites before allowing FULL autonomy.
+    missing: list[str] = []
+
+    if get_learning_mode() != "active":
+        missing.append("learning-mode flag must be set to 'active' (currently passive)")
+
+    from pathlib import Path
+
+    if not (Path(__file__).parent.parent / "agents" / "context_graph.py").exists():
+        missing.append("src/agents/context_graph.py not found — implement context graph first")
+
+    if missing:
+        raise AutonomyPrerequisiteError(
+            "autonomy-tier-ready flag is enabled but prerequisites are unmet:\n"
+            + "\n".join(f"  - {m}" for m in missing)
+        )
+
+    return True
 
 
 def get_learning_mode() -> str:

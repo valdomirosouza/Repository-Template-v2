@@ -13,6 +13,23 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 10 — Context Graph & Autonomy Tier (Agentic SDLC)
+
+#### Added
+
+- **`specs/ai/context-graph.md`** — Spec for the context graph: `GoalState` schema, `ContextGraph` API, `[CONTEXT_GRAPH]` prompt block format, Autonomy-tier prerequisites guard. Closes #18. ADR-0041.
+- **`src/agents/context_graph.py`** — `ContextGraph` implementation: `add_sub_goal()`, `mark_complete()`, `mark_blocked()`, `add_constraint()`, `add_gathered_context()`, `add_decision()`, `to_prompt_block()`, `to_dict()` / `from_dict()` for PostgreSQL JSONB persistence. Closes #18.
+- **`alembic/versions/0006_add_context_graph_table.py`** — Migration adding `agent_context_graphs` table with JSONB `graph_data` column and indexes on `session_id` and `status`. Closes #18.
+- **`infrastructure/feature-flags/flags/autonomy-tier-ready.yaml`** — Guard flag (default: false); comments document all 3 prerequisites required before enabling. Closes #18.
+- **`docs/adr/ADR-0041-context-graph-autonomy-tier.md`** — Decision record for the context graph and autonomy-tier prerequisites guard.
+- **`tests/unit/agents/test_context_graph.py`** — 25 unit tests covering init, sub-goals, status transitions, constraints, gathered context, decisions, prompt block rendering, serialisation roundtrip, and `AutonomyPrerequisiteError`. All passing.
+
+#### Changed
+
+- **`src/shared/feature_flags.py`** — Add `AutonomyPrerequisiteError` (RuntimeError subclass) and `is_autonomy_tier_ready()`: checks `autonomy-tier-ready` flag then validates learning-mode=active and context_graph.py present; raises `AutonomyPrerequisiteError` if any prerequisite is unmet. Closes #18.
+
+---
+
 ### Wave 9 — Agentic Maturity Self-Assessment (Agentic SDLC)
 
 #### Added
