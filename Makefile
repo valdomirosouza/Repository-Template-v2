@@ -273,6 +273,9 @@ agent-feedback-check: ## Check feedback loop convergence — queries Prometheus 
 		  [print(f\"  {r['metric'].get('action_type','?'):30s} dir={r['metric'].get('direction','?'):4s} count={r['value'][1]}\") for r in results] \
 		  or print('  (no adjustments made yet)')"
 
+agentic-maturity-check: ## Evaluate repo against Gartner 4-level maturity model (informational)
+	@python3 scripts/agentic_maturity_check.py
+
 clean: ## Remove all build artefacts and caches
 	rm -rf dist/ build/ htmlcov/ .pytest_cache/ .mypy_cache/ .ruff_cache/ coverage.out
 	find . -type d -name __pycache__ -exec rm -rf {} +

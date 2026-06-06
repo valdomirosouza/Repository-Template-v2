@@ -13,6 +13,21 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 9 — Agentic Maturity Self-Assessment (Agentic SDLC)
+
+#### Added
+
+- **`specs/ai/agentic-maturity-assessment.md`** — Machine-checkable criteria for the four Gartner maturity levels (Assistance/Automation/Augmentation/Autonomy) with per-level criterion tables and structured output format. Closes #17. ADR-0040.
+- **`scripts/agentic_maturity_check.py`** — Self-contained stdlib-only script: evaluates file-system and flag configuration against the four maturity levels; emits a structured report with missing criteria and remediation hints. Current result: AUGMENTATION (Level 3, ~80% Gartner coverage). Closes #17.
+- **`docs/adr/ADR-0040-agentic-maturity-model.md`** — Decision record for the anti-agent-washing maturity model.
+
+#### Changed
+
+- **`Makefile`** — Add `agentic-maturity-check` target: `python3 scripts/agentic_maturity_check.py`. Closes #17.
+- **`.github/workflows/ci.yml`** — Add informational `agentic-maturity` job: runs on every PR, posts maturity report as a PR comment (non-blocking). Closes #17.
+
+---
+
 ### Wave 8 — Governed Tool Registry (Agentic SDLC)
 
 #### Added
