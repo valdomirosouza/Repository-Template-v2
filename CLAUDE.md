@@ -200,6 +200,22 @@ You operate within **Spec-Driven Development (SDD)**: no code is written without
 
 ## 2. SDD Cycle — Mandatory Workflow
 
+### Agentic Session Bootstrap (run before Step 1)
+
+At the start of every Claude Code session, follow `skills/sdlc/agent-onboarding.md`:
+
+```
+Pre-0a: Read CLAUDE_SESSION_INIT.md (repo-specific primer).
+Pre-0b: Read services.yaml to establish service registry awareness.
+Pre-0c: Load ≤ 2 relevant skill files for the task domain.
+Pre-0d: Identify the GitHub Issue for this task (create one if absent).
+Pre-0e: Confirm spec status is Approved before any file write.
+```
+
+If a spec cannot be found after two searches → emit `[HITL-ESCALATE]` (§14).
+
+---
+
 Every task follows this 10-step standard workflow. Do not skip steps.
 
 ```
@@ -315,7 +331,10 @@ When the user's request matches a skill domain, **Read the skill file listed in 
 | OTel, metrics, traces, logs                     | `skills/observability/otel-instrumentation.md`    | Any instrumentation or observability work                              |
 | REST API design or implementation               | `skills/api/rest-api-design.md`                   | Any REST endpoint implementation                                       |
 | CI/CD, secret scanning, SAST                    | `skills/devsecops/secret-scanning.md`             | Any pipeline or security tooling work                                  |
+| CI security gate failure, HIGH/CRITICAL finding | `skills/devsecops/agentic-cyber-defense.md`       | Any security gate (Bandit/gosec/Trivy/SpotBugs) failure                |
+| Data pipelines, analytics, PII in datasets      | `skills/data/data-pipeline.md`                    | Any data science, analytics, or data engineering workflow              |
 | Spec writing, SDD lifecycle                     | `skills/sdlc/spec-lifecycle.md`                   | Writing or reviewing a spec                                            |
+| Agentic session bootstrap, new service context  | `skills/sdlc/agent-onboarding.md`                 | Start of every agentic Claude Code session                             |
 | Aggregates, entities, repositories, DDD         | `skills/domain/domain-modeling.md`                | Any domain model design, new entity, or service layer                  |
 | Test pyramid, coverage, markers, contract tests | `skills/engineering/testing-strategy.md`          | Writing, reviewing, or debugging tests in any language                 |
 | Ethical AI review, bias audit, EU AI Act        | `skills/ethics/ethical-ai-review.md`              | Any AI/agent feature, new action_type, or autonomy change              |
@@ -453,6 +472,25 @@ The hybrid workflow blends conversational exploration (Vibe Mode) with autonomou
 
 **Governance gate for Phase 3:** `autonomous-mode` feature flag requires ADR-0015 approval. Never enable `FULL` autonomy without explicit governance sign-off.
 
+### 9.1 Personas
+
+Personas adapt the behavioral contract for non-engineering users without modifying
+`CLAUDE.md` itself. Each persona file lives in `.claude/personas/` and defines:
+`role`, `autonomy_ceiling`, `skills_to_load`, and `prohibited_paths`.
+
+| Persona        | File                                 | Autonomy ceiling | Primary skills                                   |
+| -------------- | ------------------------------------ | ---------------- | ------------------------------------------------ |
+| Legal Reviewer | `.claude/personas/legal-reviewer.md` | `LOW_RISK`       | privacy, gdpr, lgpd, ethical-ai-review           |
+| Ops Analyst    | `.claude/personas/ops-analyst.md`    | `MEDIUM_RISK`    | golden-signals, incident-response, data-pipeline |
+
+**Activating a persona:** at the start of a Claude Code session, read the relevant
+persona file before `CLAUDE.md`. The persona's `prohibited_paths` and `autonomy_ceiling`
+take precedence over the default behavioral contract for that session.
+
+**Adding a new persona:** create `.claude/personas/<name>.md` following the existing
+template. Personas must not grant permissions beyond those in the default `CLAUDE.md`;
+they may only restrict.
+
 ---
 
 ## 10. SOX Compliance Rules
@@ -561,3 +599,46 @@ When the task involves token efficiency, install, or context hygiene:
 
 Run `rtk discover --since 7` at the start of each week. Any command with 0% savings
 that appears > 3 times should be added to `.rtk/filters.toml`.
+
+---
+
+## 14. Agentic Escalation Protocol
+
+> **Applies to all Claude Code sessions.** These rules define when the agent MUST stop
+> and request human input rather than proceeding autonomously. **ADR:** ADR-0034
+
+### 14.1 Mandatory Escalation Triggers
+
+Emit a `[HITL-ESCALATE]` block and **stop all file writes** before proceeding when ANY of the following is true:
+
+| Trigger                                                                                  | Reason                                                        |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| The task requires modifying more than 3 ADRs simultaneously                              | Architectural impact requires human judgment                  |
+| The implementation touches `src/guardrails/` or `src/agents/hitl_gateway.py`             | Dual-approval paths — Security + AI Governance required       |
+| A spec reference cannot be found after two distinct search attempts                      | SDD invariant: no code without a spec                         |
+| Test coverage would drop below 75% due to the proposed change                            | Quality gate — exception requires explicit approval           |
+| The task involves enabling, disabling, or modifying any feature flag                     | Autonomy level changes require governance sign-off (ADR-0015) |
+| A `[HITL-ESCALATE]` has already been emitted in the current session and was not resolved | Cascading escalations must not be auto-resolved               |
+
+### 14.2 Escalation Block Format
+
+```
+[HITL-ESCALATE]
+reason: <one sentence describing why escalation is triggered>
+proposed_action: <what I was about to do>
+risk_level: low | medium | high
+files_affected: <comma-separated list of files that would be modified>
+awaiting_human_decision: true
+```
+
+Do NOT proceed until the human explicitly approves, modifies, or cancels the proposed action.
+
+### 14.3 Non-Escalation Acknowledgement
+
+For tasks that are close to but do not meet an escalation trigger, emit a brief inline note:
+
+```
+[HITL-NOTE] This change touches <sensitive area> but does not trigger escalation because <reason>.
+```
+
+Full ADR: `docs/adr/ADR-0034-agentic-escalation-protocol.md`

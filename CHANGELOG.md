@@ -13,6 +13,88 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 5 — Personas & Expansion (Agentic SDLC)
+
+#### Added
+
+- **`docs/quickstart/non-engineer-automation.md`** — Step-by-step guide for product managers, legal, and ops to automate repetitive workflows without writing code; covers workflow spec, GitHub Issue submission, implementation review, and HITL approval. Closes #10.
+- **`skills/data/data-pipeline.md`** — Data pipeline skill: Pandas/Polars ingestion patterns, PII classification for analytical datasets (L1–L4), OTel instrumentation, output validation, and synthetic-fixture testing conventions. Closes #10.
+- **`skills/sdlc/new-language-extension.md`** — 5-step protocol for adding a language outside the default stack (Python/Java/Go/Node.js): ADR → scaffold → CI gates → skills entry → CLAUDE.md update. Closes #10.
+- **`.claude/personas/legal-reviewer.md`** — Legal reviewer persona: `LOW_RISK` autonomy ceiling, permitted paths `docs/**` and `specs/**` only, privacy/compliance skill set. Closes #11.
+- **`.claude/personas/ops-analyst.md`** — Ops analyst persona: `MEDIUM_RISK` autonomy ceiling, observability and data-pipeline skill set, permitted read-only commands. Closes #11.
+- **`specs/automation/automation-spec-template.md`** — Plain-language automation spec template with sections for trigger, input, steps, output, guardrails (PII checklist), rollback, SLA, and HITL approval gate. Closes #11.
+- **`docs/quickstart/self-service-automation.md`** — End-to-end guide: spec → GitHub Issue (`automation-request` label) → Claude scaffolds → PR review → HITL approval → HOTL promotion. Closes #11.
+
+#### Changed
+
+- **`CLAUDE.md §4`** — Added `skills/data/data-pipeline.md` row to the Core Skills Activation Table. Closes #10.
+- **`CLAUDE.md §9`** — Added §9.1 Personas subsection: persona table, activation instructions, and constraint that personas may only restrict (never expand) default permissions. Closes #11.
+
+#### Closed (already implemented in Wave 3)
+
+- **Issue #12** — `docs/adr/ADR-0020-finops-cost-allocation.md` ROI model appendix (cost-per-task formula, net-new multiplier, metrics table, budget allocation) was delivered in Wave 3 as part of Issue #7. Closes #12.
+
+### Wave 4 — CI Intelligence (Agentic SDLC)
+
+#### Added
+
+- **`.github/workflows/ci-ai-review.yml`** — Informational AI-assisted PR review: captures first 200 lines of diff, sends to Claude API, posts structured findings comment covering spec reference, guardrail preservation, test coverage, PII literals, and architecture rules. Gracefully skips if `ANTHROPIC_API_KEY` is absent. Closes #8.
+- **`docs/adr/ADR-0035-ai-assisted-ci-review.md`** — Decision record for the AI-assisted CI review gate; includes path-to-blocking-gate criteria. Closes #8.
+- **`skills/devsecops/agentic-cyber-defense.md`** — 6-section skill: 5-step automated response protocol, agent-readable finding format, GitHub Security Advisory creation, tool-specific remediation guidance (Bandit/Trivy/gosec), and escalation decision tree. Closes #9.
+- **`docs/adr/ADR-0036-agentic-cyber-defense.md`** — Decision record for automated security advisory creation and `security_finding_total` metric integration. Closes #9.
+
+#### Changed
+
+- **`CLAUDE.md §4`** — Added two new rows to the Core Skills Activation Table: `skills/devsecops/agentic-cyber-defense.md` and `skills/sdlc/agent-onboarding.md`. Closes #8, #9.
+- **`docs/adr/README.md`** — Added index entries for ADR-0031 through ADR-0036 (all Agentic SDLC ADRs from Waves 1–4).
+
+### Wave 3 — Multi-Agent Infrastructure (Agentic SDLC)
+
+#### Added
+
+- **`specs/ai/sub-agent-specialization.md`** — Spec for pluggable sub-agent registry: `AgentConfig` schema, risk-level semantics, built-in specializations, observability contract. Closes #6.
+- **`src/agents/harness/sub_agent_registry.py`** — `SubAgentRegistry` with `register`, `get`, `list_by_risk_level`, `all`, `unregister`; module-level `default_registry` pre-populated with `security-reviewer` (high) and `document-generator` (low). Closes #6.
+- **`docs/adr/ADR-0032-sub-agent-specialization-registry.md`** — Decision record for sub-agent registry. Closes #6.
+- **`tests/unit/agents/harness/test_sub_agent_registry.py`** — 19 unit tests for `SubAgentRegistry` (100% pass). Closes #6.
+- **`infrastructure/monitoring/grafana/dashboards/agent-productivity.json`** — Grafana dashboard: session velocity, net-new/planned ratio, cycle time p50/p95, token cost per task, sub-agent latency/errors, session duration. Closes #7.
+
+#### Changed
+
+- **`src/observability/metrics.py`** — Added 5 new metrics: `agent_subtask_duration_seconds`, `agent_subtask_error_total` (Issue #6); `agent_session_tasks_total`, `agent_session_duration_seconds`, `agent_cycle_time_seconds` (Issue #7); plus `security_finding_total` (pre-emptive for Issue #9). Added helpers `record_subtask`, `record_session_task`, `record_cycle_time`. Closes #6, #7.
+- **`docs/adr/ADR-0020-finops-cost-allocation.md`** — Added ROI model appendix: cost-per-task formula, net-new work multiplier, metrics table, budget allocation guidance for formerly non-viable work. Closes #7.
+
+### Wave 2 — Agentic SDLC Core (Agentic SDLC)
+
+#### Added
+
+- **`skills/sdlc/agent-onboarding.md`** — 5-step machine-readable session bootstrap skill for Claude Code. Closes #4.
+- **`CLAUDE_SESSION_INIT.md`** — Compact repo-specific session primer; loaded at every session start to orient the agent without reading the full codebase. Closes #4.
+- **`docs/quickstart/agent-onboarding.md`** — Human guide for supervising and verifying agentic session bootstraps. Closes #4.
+- **`docs/adr/ADR-0031-agent-onboarding-protocol.md`** — Decision record for the agent onboarding protocol. Closes #4.
+- **`specs/ai/long-running-session.md`** — Spec for durable agent sessions: checkpoint format, resume protocol, failure taxonomy, `task_type` field. Closes #5.
+- **`src/agents/harness/session_checkpoint.py`** — `SessionCheckpoint` class: Redis-backed (TTL=7d) with local JSON fallback; `save`, `resume`, `mark_step_complete`, `delete`. Closes #5.
+- **`docs/adr/ADR-0033-long-running-agent-session-durability.md`** — Decision record for session checkpoint/resume strategy. Closes #5.
+- **`docs/sre/runbooks/RB-005-agent-session-recovery.md`** — Runbook for inspecting, resuming, and force-deleting interrupted agent session checkpoints. Closes #5.
+- **`tests/unit/agents/harness/test_session_checkpoint.py`** — Unit tests for `SessionCheckpoint` lifecycle (≥ 80% coverage). Closes #5.
+
+#### Changed
+
+- **`CLAUDE.md §2`** — Added "Agentic Session Bootstrap" pre-step (Pre-0a–0e) before the SDD Cycle; references `skills/sdlc/agent-onboarding.md` and §14 escalation. Closes #4.
+
+### Wave 1 — Safety & Compliance (Agentic SDLC)
+
+#### Added
+
+- **`docs/adr/ADR-0034-agentic-escalation-protocol.md`** — Decision record for the mandatory in-session escalation protocol. Closes #3.
+- **`docs/ai-governance/dual-use-registry.md`** — Append-only registry for dual-use risk assessments per `action_type`. Closes #1.
+- **`specs/ethics/ethical-ai-principles.md §4`** — New "Dual-Use Risk Assessment" section with a six-question mandatory checklist (D-01–D-06) and mitigation registry format. Closes #1.
+- **`CLAUDE.md §14`** — New "Agentic Escalation Protocol" section defining six hard escalation triggers, `[HITL-ESCALATE]` block format, and `[HITL-NOTE]` for near-miss acknowledgement. Closes #3.
+
+#### Security
+
+- **`SECURITY.md`** — Added dual-use exploitation as a reportable AI-specific security class; linked to the dual-use registry and ethical-ai-principles checklist. Closes #1.
+- **`.github/workflows/ci.yml` (sbom job)** — Added SBOM component-count gate (fails on 0 components) and cosign attestation step for push events. Closes #2.
+
 ## [2.0.0] — 2026-06-05
 
 ### Added

@@ -118,3 +118,47 @@ would either under-block or excessively throttle.
 **External FinOps tool (e.g. Langfuse, Helicone)**
 Deferred: adds a third-party dependency and egress of LLM metadata. Revisit when
 multi-model support is needed.
+
+---
+
+## Appendix — Agentic ROI Model (added 2026-06-05, Issue #7)
+
+### Cost per Task Formula
+
+```
+cost_per_task = (tokens_input + tokens_output) × price_per_million_tokens / 1_000_000
+roi_ratio     = engineer_hourly_rate × avg_task_hours / cost_per_task
+```
+
+At current pricing (claude-sonnet-4-6: $3/$15 per M tokens) and a median task consuming
+~8,000 tokens, `cost_per_task ≈ $0.14`. An engineer-hour at $120 makes the ROI ratio ~857×
+for a 10-minute task that would otherwise take an hour.
+
+### Net-New Work Multiplier
+
+Per the _2026 Agentic Coding Trends Report_, ~27% of AI-assisted work is additive —
+tasks that would not have been undertaken without agent capacity. Budget allocation
+should account for this multiplier: the effective throughput gain exceeds the raw
+velocity improvement.
+
+### Metrics (added by Issue #7)
+
+The following Prometheus metrics now instrument this model:
+
+| Metric                                                     | Purpose                                     |
+| ---------------------------------------------------------- | ------------------------------------------- |
+| `agent_session_tasks_total{task_type, outcome}`            | Counts planned vs net_new vs papercut tasks |
+| `agent_session_duration_seconds`                           | Measures wall-clock time per session        |
+| `agent_cycle_time_seconds{stage}`                          | Tracks spec-to-green-CI lead time           |
+| `agent_subtask_duration_seconds{agent_role, harness_mode}` | Per-specialization latency                  |
+| `agent_subtask_error_total{agent_role, error_type}`        | Per-specialization error rate               |
+
+These feed the `agent-productivity` Grafana dashboard
+(`infrastructure/monitoring/grafana/dashboards/agent-productivity.json`).
+
+### Budget Allocation for Formerly Non-Viable Work
+
+Projects that were previously below the viability threshold (cost > expected value)
+may now be viable with agent augmentation. A quarterly FinOps review should include
+a "net-new work" category — budget earmarked for tasks that agents unlock rather than
+accelerate. Recommended starting allocation: 15% of the total LLM budget.

@@ -250,3 +250,76 @@ def record_llm_call(
     LLM_TOKEN_COUNTER.labels(service, model, "input").inc(input_tokens)
     LLM_TOKEN_COUNTER.labels(service, model, "output").inc(output_tokens)
     LLM_CALL_LATENCY.labels(service, model).observe(duration_seconds)
+
+
+# ── Sub-agent specialization metrics (Issue #6) ───────────────────────────────
+# Spec: specs/ai/sub-agent-specialization.md §5 | ADR: ADR-0032
+
+AGENT_SUBTASK_DURATION = Histogram(
+    "agent_subtask_duration_seconds",
+    "Execution latency per sub-agent specialization",
+    ["agent_role", "harness_mode"],
+    buckets=_LATENCY_BUCKETS,
+)
+
+AGENT_SUBTASK_ERROR_COUNTER = Counter(
+    "agent_subtask_error_total",
+    "Error count per sub-agent specialization and error class",
+    ["agent_role", "error_type"],
+)
+
+# ── Agent productivity metrics (Issue #7) ────────────────────────────────────
+# Spec: specs/ai/long-running-session.md §2.1 | ADR: ADR-0020 Appendix
+
+_CYCLE_TIME_BUCKETS = (60, 300, 600, 1800, 3600, 7200, 14400, 86400)
+_SESSION_DURATION_BUCKETS = (60, 300, 600, 1800, 3600, 7200, 14400)
+
+AGENT_SESSION_TASKS_COUNTER = Counter(
+    "agent_session_tasks_total",
+    "Tasks completed per session, broken down by type and outcome",
+    ["task_type", "outcome"],  # task_type: planned|net_new|papercut|tech_debt; outcome: completed|abandoned
+)
+
+AGENT_SESSION_DURATION = Histogram(
+    "agent_session_duration_seconds",
+    "Wall-clock duration of a Claude Code agentic session",
+    buckets=_SESSION_DURATION_BUCKETS,
+)
+
+AGENT_CYCLE_TIME = Histogram(
+    "agent_cycle_time_seconds",
+    "Lead time between pipeline stages (e.g. spec creation to first green CI)",
+    ["stage"],  # stage: spec_to_green_ci | commit_to_deploy | pr_open_to_merge
+    buckets=_CYCLE_TIME_BUCKETS,
+)
+
+SECURITY_FINDING_COUNTER = Counter(
+    "security_finding_total",
+    "Security findings from CI gates, by tool and severity",
+    ["tool", "severity", "status"],  # status: open|resolved
+)
+
+
+# ── Helper functions (new metrics) ───────────────────────────────────────────
+
+
+def record_subtask(
+    agent_role: str,
+    harness_mode: str,
+    duration_seconds: float,
+    error_type: str | None = None,
+) -> None:
+    AGENT_SUBTASK_DURATION.labels(agent_role, harness_mode).observe(duration_seconds)
+    if error_type:
+        AGENT_SUBTASK_ERROR_COUNTER.labels(agent_role, error_type).inc()
+
+
+def record_session_task(
+    task_type: str,
+    outcome: str,
+) -> None:
+    AGENT_SESSION_TASKS_COUNTER.labels(task_type, outcome).inc()
+
+
+def record_cycle_time(stage: str, duration_seconds: float) -> None:
+    AGENT_CYCLE_TIME.labels(stage).observe(duration_seconds)
