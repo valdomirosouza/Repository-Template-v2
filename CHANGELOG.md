@@ -13,6 +13,16 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 13 — Spring Actuator Health Groups + Domain Service Probe Tuning (K8s Probe Compliance)
+
+#### Changed
+
+- `services/domain-service/src/main/resources/application.yml` — enabled Spring Boot native K8s probe groups: `management.endpoint.health.probes.enabled: true`, `livenessState.enabled: true`, `readinessState.enabled: true`; activates `/actuator/health/liveness` and `/actuator/health/readiness` as distinct endpoints (Issue #22, JAVA-2)
+- `infrastructure/helm/domain-service/values.yaml` — added `probes.startup` section (failureThreshold=36, periodSeconds=5, 180s JVM warmup window); bumped `terminationGracePeriodSeconds` 60→90; removed `initialDelaySeconds` from liveness and readiness
+- `infrastructure/helm/domain-service/templates/deployment.yaml` — `startupProbe` now fully values-driven via `{{ .Values.probes.startup.* }}`; removed hardcoded `failureThreshold`/`periodSeconds`; removed `initialDelaySeconds` anti-pattern from liveness and readiness
+
+---
+
 ### Wave 12 — Python API Gateway Probe Tuning (K8s Probe Compliance)
 
 #### Added
