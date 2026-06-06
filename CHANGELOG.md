@@ -11,6 +11,28 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [Unreleased]
+
+### Wave 21 — Spec-Driven Guardrails (Secure by Design Pillar 1)
+
+#### Added
+
+- `src/agents/spec_contract_enforcer.py` — `SpecContractEnforcer` loads a `SpecContract` (from YAML or dict), injects a `[SPEC_CONTRACT]` block into LLM system prompts, and validates each proposed action before it reaches `HITLGateway`; raises `SpecViolationError` on out-of-scope actions (Issue #32, SD1, ADR-0047)
+- `src/agents/harness/context_seal.py` — `ContextSeal.sign()` computes SHA-256 over Planner output; `ContextSeal.verify()` validates seal before Generator consumes context; mismatch triggers `ContextTamperingError` and HITL escalation (Issue #32, SD2, ADR-0047)
+- `src/agents/code_pre_flight.py` — `CodePreFlight` uses Python AST walking to detect forbidden imports (`subprocess`, `socket`, `ctypes`, `importlib`, etc.) and forbidden calls (`eval`, `exec`, `__import__`, `compile`, `open`) in AI-generated code before sandbox execution; raises `CodePreFlightError` (Issue #32, SD3, ADR-0047)
+- `docs/adr/ADR-0047-spec-contract-enforcement.md` — documents the three Pillar 1 controls, their integration points, and alternatives considered
+- `tests/unit/agents/test_spec_contract_enforcer.py` — 17 unit tests for SpecContractEnforcer
+- `tests/unit/agents/test_context_seal.py` — 12 unit tests for ContextSeal sign/verify/tamper detection
+- `tests/unit/agents/test_code_pre_flight.py` — 22 unit tests for CodePreFlight static analysis
+
+#### Changed
+
+- `src/agents/orchestrator/orchestrator.py` — accepts optional `spec_contract_enforcer` parameter; injects contract into system prompt in `_reason`; validates proposed action in `_act_inner` before HITL routing (Issue #32, SD1)
+- `src/agents/harness/coordinator.py` — seals `ProductSpec` after `PlannerAgent.plan()` in `_run_full`; verifies seal before `_execute_sprints`; auto-escalates to HITL on `ContextTamperingError` (Issue #32, SD2)
+- `src/agents/sandbox_executor.py` — calls `CodePreFlight.check_or_raise()` on `python -c <code>` commands before Docker invocation; raises `SandboxPolicyError` on findings (Issue #32, SD3)
+
+---
+
 ## [2.4.0] - 2026-06-06
 
 ### Wave 20 — ADRs + Skill + CLAUDE.md Updates (OTel Agentic Observability)

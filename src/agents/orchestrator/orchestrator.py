@@ -25,6 +25,7 @@ from opentelemetry.trace import StatusCode
 from src.agents.feedback_learner import FeedbackLearner, default_feedback_learner
 from src.agents.hitl_gateway import HITLGateway, HITLRequest, HITLStatus
 from src.agents.risk_scorer import RiskScorer
+from src.agents.spec_contract_enforcer import SpecContractEnforcer, SpecViolationError
 from src.guardrails.action_limits import ActionLimiter
 from src.guardrails.audit_logger import AuditLogger, AuditWriteError
 from src.guardrails.pii_filter import mask_dict
@@ -87,6 +88,7 @@ class AgentOrchestrator:
         action_limiter: ActionLimiter | None = None,
         risk_scorer: RiskScorer | None = None,
         feedback_learner: FeedbackLearner | None = None,
+        spec_contract_enforcer: SpecContractEnforcer | None = None,
     ) -> None:
         self._agent_id = agent_id
         self._audit = audit_logger
@@ -96,6 +98,7 @@ class AgentOrchestrator:
         self._action_limiter = action_limiter
         self._risk_scorer = risk_scorer or RiskScorer()
         self._learner = feedback_learner or default_feedback_learner
+        self._spec_enforcer = spec_contract_enforcer
 
     async def run(self, raw_input: dict[str, Any], trace_id: str | None = None) -> dict[str, Any]:
         """Execute the full Perception → Reason → Act loop.
@@ -190,6 +193,9 @@ class AgentOrchestrator:
             )
             if precedents_block:
                 system_prompt = f"{system_prompt}\n\n{precedents_block}"
+            # Inject spec contract boundary so LLM is aware of its permission scope (SD1).
+            if self._spec_enforcer is not None:
+                system_prompt = self._spec_enforcer.inject_contract(system_prompt)
 
             response_text = await self._llm.complete(
                 system=system_prompt,
@@ -243,6 +249,20 @@ class AgentOrchestrator:
 
         if self._action_limiter is not None:
             await self._action_limiter.check(ctx.proposed_action or "", ctx.proposed_parameters)
+
+        # Validate proposed action against the spec contract boundary (SD1 — ADR-0047).
+        if self._spec_enforcer is not None:
+            try:
+                self._spec_enforcer.validate_action(ctx.proposed_action or "unknown")
+            except SpecViolationError as exc:
+                logger.warning(
+                    "spec_contract.violation",
+                    agent_id=ctx.agent_id,
+                    action=ctx.proposed_action,
+                    reason=str(exc),
+                )
+                span.set_attribute("act.spec_violation", True)
+                raise
 
         # Compute authoritative risk_score via the 5-factor scorer (spec: specs/ai/hitl-hotl.md).
         # This replaces the LLM-self-reported score — the LLM cannot reliably assess its own risk.

@@ -107,6 +107,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0044](ADR-0044-otel-agent-span-hierarchy.md)                  | OTel Agent Span Hierarchy                         | Accepted | 2026-06-06 |
 | [ADR-0045](ADR-0045-genai-semantic-conventions.md)                 | GenAI Semantic Conventions for LLM                | Accepted | 2026-06-06 |
 | [ADR-0046](ADR-0046-hitl-trace-linking-guardrail-events.md)        | HITL Trace Linking + Guardrail Events             | Accepted | 2026-06-06 |
+| [ADR-0047](ADR-0047-spec-contract-enforcement.md)                  | Spec Contract Enforcement at Runtime              | Accepted | 2026-06-06 |
 
 ### AI Agents Module _(opt-in)_
 

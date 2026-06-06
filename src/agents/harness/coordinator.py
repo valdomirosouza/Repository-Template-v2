@@ -23,6 +23,7 @@ from typing import Any
 from opentelemetry.trace import StatusCode
 
 from src.agents.harness.context_manager import ContextManager
+from src.agents.harness.context_seal import ContextSeal, ContextTamperingError
 from src.agents.harness.decision_tree_logger import DecisionTreeLogger
 from src.agents.harness.evaluator import EvaluatorAgent
 from src.agents.harness.models import (
@@ -166,7 +167,49 @@ class HarnessCoordinator:
                 }
             )
             spec = await self._planner.plan(brief)
+            # Seal the Planner output so Generator can verify it was not tampered with (SD2).
+            spec_data = {
+                "task_id": spec.task_id,
+                "detailed_description": spec.detailed_description,
+                "sprint_contracts": [
+                    {
+                        "sprint_id": c.sprint_id,
+                        "objectives": c.objectives,
+                        "success_criteria": c.success_criteria,
+                    }
+                    for c in spec.sprint_contracts
+                ],
+                "ai_feature_opportunities": spec.ai_feature_opportunities,
+            }
+            sealed_spec = ContextSeal.sign(spec_data)
             span.set_attribute("harness.passed", True)
+            span.set_attribute("harness.context_seal_sha256", sealed_spec.sha256[:16])
+
+        # Verify seal before handing off to sprint execution — tamper detection (SD2).
+        try:
+            ContextSeal.verify(sealed_spec)
+        except ContextTamperingError as exc:
+            logger.error(
+                "harness.context_seal.tampered",
+                task_id=brief.task_id,
+                reason=str(exc),
+            )
+            await self._escalate_to_hitl(
+                brief,
+                reason=f"Context seal verification failed after Planner: {exc}",
+                iteration=0,
+                score=None,
+                artifacts=[],
+            )
+            return HarnessResult(
+                task_id=brief.task_id,
+                mode="full",
+                total_iterations=0,
+                artifacts=[],
+                final_score=None,
+                escalated_to_hitl=True,
+                correlation_id=brief.correlation_id,
+            )
 
         # Optional HITL review of the ProductSpec before execution
         if settings.harness_planner_hitl_review:
