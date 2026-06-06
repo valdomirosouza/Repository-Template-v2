@@ -53,6 +53,24 @@ Jump to section:
 | **TaskBrief**             | The input document handed to the harness at the start of a sprint. Contains: goal, constraints, acceptance criteria, harness_mode, and max_retries. Maps to a GitHub Issue + linked spec.                                                                            |
 | **VectorDocument**        | The schema for a stored memory entry: `{id, content, embedding, source, tags, created_at}`. Content is always PII-masked before storage. Source is one of: `spec`, `adr`, `hitl_rejection`, `sprint_outcome`.                                                        |
 | **VectorStore**           | A semantic similarity search layer over indexed documents. `InMemoryVectorStore` (tests/dev), `PostgresVectorStore` (production via pgvector). Protocol-based — implementation is injected, not imported directly.                                                   |
+| **agent_action_v1** | The strict structured-output envelope the Reason stage requires from the LLM (`src/agents/schemas/agent_action_v1.py`): `schema_version, intent, action_type, tool_name, target_system, target_environment, operation, parameters, data_classification, external_effect, reversible, compensating_action, agent_confidence`. Validated fail-closed; invalid output routes to HITL (ADR-0054). |
+| **ActionSchemaValidator** | `src/agents/action_schema_validator.py`. Validates an action payload against its per-`action_type` schema before HITL/execution, rejecting hallucinated or malformed payloads (defense-in-depth, ADR-0050). |
+| **BehavioralMonitor** | `src/agents/behavioral_monitor.py`. Tracks an agent's historical action distribution and flags proposals outside its behavioural envelope (possible drift or prompt injection). Secure-by-Design Pillar 3 (ADR-0049). |
+| **CompensationRegistry** | `src/agents/compensation_registry.py`. Resolves an action's compensating (undo) action and answers `can_run_under_hotl()`; non-reversible or over-ceiling actions cannot execute autonomously under HOTL (ADR-0055). |
+| **Context Graph** | `src/agents/context_graph.py`. A runtime session goal-graph (goals, constraints, gathered context, decisions) persisted as JSONB for goal-state continuity across sessions (Gartner Autonomy L4, ADR-0041). Distinct from `.agent/context-graph.json`, the repo-structure bootstrap map (ADR-0057). |
+| **Context Seal** | `src/agents/harness/context_seal.py`. A tamper-evident seal over a handed-off spec/context; a failed verification (`ContextTamperingError`) blocks sprint execution and escalates to HITL (Secure-by-Design SD2, ADR-0047). |
+| **Gartner Autonomy Levels** | The Gartner maturity scale for agentic autonomy (Levels 1–5). This repo targets graduated autonomy, with Level 4 (durable goal-state via the Context Graph) gated behind governance approval. |
+| **HOTL Monitor** | `src/agents/hotl_monitor.py`. Drives the HOTL post-execution lifecycle: emits the reviewer notification within the SLO (default 60 s) and opens the override window (ADR-0055). |
+| **Mandatory HITL** | A deterministic policy layer (`src/agents/action_policy.py`) evaluated BEFORE the numeric risk score. Categories such as production writes, financial transactions, credential rotation, deploys, and bulk operations always require HITL — a low score cannot downgrade them (ADR-0053). |
+| **Model Behavioral Contract** | Real-LLM tests (`tests/model_contract/`) asserting the model honours its spec contract (allowed/prohibited actions, refusals, PII non-leakage). A model version cannot be promoted in the dependency manifest without passing them (ADR-0051). |
+| **Override Service** | `src/agents/override_service.py`. Enforces the HOTL override window and runs the compensation flow (override.requested → compensation.started → succeeded/failed → escalation/confirmed); a failed/absent compensation raises an escalation event (ADR-0055). |
+| **Reversibility / Compensating Action** | Per-tool metadata in `tools.yaml`: `reversible` marks whether an action can be undone; `compensating_action` names the tool that reverses it. Drives the HOTL reversibility gate (ADR-0055). |
+| **Risk Calibration** | A golden dataset (`tests/unit/agents/test_risk_calibration.py`) pinning scenario → expected risk score → routing tier. CI fails if a scoring change shifts routing without an explicit recalibration (ADR-0054). |
+| **RuntimePolicyGateway** | `src/agents/runtime_policy_gateway.py`. A declarative, hot-reloadable policy layer returning ALLOW / REQUIRE_HITL / BLOCK, evaluated at the act layer before the HITL gateway (ADR-0049). |
+| **SpecContractEnforcer** | `src/agents/spec_contract_enforcer.py`. Injects the agent's permission boundary (`[SPEC_CONTRACT]`) into the system prompt and validates proposed actions against `allowed_action_types`, raising `SpecViolationError` on breach (Secure-by-Design SD1, ADR-0047). |
+| **Sub-Agent Registry** | `src/agents/harness/sub_agent_registry.py`. Catalog of specialised sub-agent configurations the harness may delegate to (ADR-0032). |
+| **Tool Registry** | The governed catalog (`src/agents/tool_registry.py`; canonical source `infrastructure/agent-tools/tools.yaml`) of every tool an agent may invoke — with risk level, HITL requirement, execution mode, rate limits, owner team, and reversibility metadata. Unregistered tools are blocked at runtime (ADR-0039 / 0048 / 0053). |
+| **ToolExecutor** | `src/agents/tool_executor.py`. The single execution choke-point running the 10-step enforcement sequence (registry assertion → schema → requires-HITL → autonomy permission → rate limit → sandbox routing → execute → pre/post/failure audit) before any action runs (ADR-0053). |
 
 ---
 
@@ -94,6 +112,9 @@ Jump to section:
 | **RFC**              | Request for Change — a formal document proposing a Normal or Emergency change for review by the CAB. Template at `docs/change-management/RFC-TEMPLATE.md`. Normal changes require 5 business days; Emergency changes use an expedited path.                                                                                                                  |
 | **SDD**              | Spec-Driven Development — the practice in this repository where a spec in `specs/` is written and approved before any implementation begins. No PR may be merged without referencing a spec ID. See `skills/sdlc/spec-lifecycle.md`.                                                                                                                         |
 | **SLSA**             | Supply-chain Levels for Software Artifacts (slsa.dev) — a security framework for software supply chain integrity. Target for this project: SLSA Level 2+ (provenance generated and signed in CI using Cosign).                                                                                                                                               |
+| **EU AI Act** | The EU Artificial Intelligence Act (Regulation 2024/1689) — risk-tiered AI regulation. Drives the agent-disclosure transparency (Art. 13), human-oversight (Art. 14), and post-market monitoring (Art. 72) requirements in this repo. |
+| **ISO 27001** | The international standard for Information Security Management Systems (ISMS). Governs the three-tier change-management process (standard / normal / emergency) and append-only change-evidence records (ADR-0027). |
+| **SOX** | Sarbanes–Oxley Act — US law mandating financial-reporting integrity controls. When applicable: immutable audit records on financial-data write paths, ≥7-year retention, and segregation of duties (ADR-0026). |
 
 ---
 
@@ -113,6 +134,19 @@ Jump to section:
 | **SBOM**           | Software Bill of Materials — a formal inventory of all software components, their versions, and their licences. Generated by Syft in CI and signed with Cosign. Required for supply chain transparency and vulnerability tracking.                                                               |
 | **Syft**           | An open-source SBOM generation tool (Anchore). Produces CycloneDX or SPDX format SBOMs from container images or filesystems. Run in CI after every Docker image build.                                                                                                                           |
 | **TLS**            | Transport Layer Security — the cryptographic protocol that provides encrypted, authenticated communication over the network. All external-facing endpoints must use TLS 1.2 or higher.                                                                                                           |
+| **Abuse Case Testing** | Adversarial tests (`tests/abuse_cases/`) attempting jailbreaks, goal hijacking, context overflow, multi-agent trust abuse, and spec-boundary violations. The count must never decrease (ADR-0050). |
+| **Checkov** | An IaC static-analysis tool that scans Terraform / K8s / Helm for misconfigurations. Blocking gate on `infrastructure/` changes. |
+| **Checkstyle** | A Java source-style / lint tool run in the `CI — Java` gate for services under `services/`. |
+| **CodeQL** | GitHub's semantic code-analysis engine for security vulnerabilities; runs as the `CodeQL Analysis` workflow. |
+| **CycloneDX** | An OWASP SBOM format emitted by Syft and attested with Cosign. |
+| **DAST** | Dynamic Application Security Testing — runtime black-box scanning (OWASP ZAP) run in staging as a blocking gate before production promotion. |
+| **DevSecOps** | Integrating security controls (SAST, SCA, IaC scan, DAST, SBOM, signing) directly into the CI/CD pipeline. See `skills/devsecops/`. |
+| **gosec** | A Go security static-analysis tool, run in the Go CI lint gate. |
+| **MLSecOps** | Security operations for ML/LLM systems — model behavioural contracts, abuse-case testing, and behavioural monitoring layered onto DevSecOps (Secure-by-Design, ADR-0047–0051). |
+| **NVD** | National Vulnerability Database (NIST) — the CVE feed OWASP dependency-check queries. An `NVD_API_KEY` is recommended to avoid heavy throttling. |
+| **SpotBugs** | A Java static-analysis tool (successor to FindBugs) run in the `CI — Java` lint gate. |
+| **Trivy** | An open-source vulnerability and misconfiguration scanner (Aqua) for container images and filesystems; blocks on CRITICAL CVEs. |
+| **Zero-Trust Tooling** | The principle that an agent may invoke only registered tools, each gated by autonomy level, sandbox mode, and rate limits — default-deny at the execution choke-point (ADR-0048). |
 
 ---
 
@@ -134,6 +168,9 @@ Jump to section:
 | **SLO**               | Service Level Objective — a target value or range for an SLI over a defined window (e.g., 99.9% availability over 30 days). Defined in `docs/sre/slo/slo.yaml`. SLO breaches trigger error budget alerts and may freeze feature work.                                     |
 | **SRE**               | Site Reliability Engineering — the discipline of applying software engineering principles to operations, reliability, and scalability. Key practices in this project: Golden Signals, SLO-driven alerting, error budgets, PRR, CUJs, and toil elimination.                |
 | **TOIL**              | Operational work that is manual, repetitive, automatable, and scales with service growth without producing lasting value. SRE principle: keep toil below 50% of each engineer's time. Tracked and systematically automated over time.                                     |
+| **DORA** | DevOps Research and Assessment — the four delivery-performance metrics: Deployment Frequency, Lead Time for Changes, Change Failure Rate, and Time to Restore (MTTR). Targets and tracking in CLAUDE.md §12 / ADR-0028. |
+| **Liveness / Readiness / Startup Probe** | Kubernetes health checks: `startupProbe` gates slow-start containers, `readinessProbe` gates traffic, `livenessProbe` restarts hung pods. Required on every Deployment (ADR-0042, `skills/sre/probe-strategy.md`). |
+| **Pushgateway** | A Prometheus component that accepts pushed metrics from short-lived / batch jobs (e.g. the CI DORA deployment event) for later scraping. |
 
 ---
 
@@ -150,6 +187,7 @@ Jump to section:
 | **structlog**            | A Python structured logging library. Used throughout the codebase to emit machine-parseable JSON logs. Context variables (trace_id, agent_id, session_id) are bound once and propagated automatically.                                                    |
 | **Trace**                | A correlated record of a request's execution path across all services, collected via OpenTelemetry and stored in Jaeger. Every trace carries a `trace_id` propagated via the W3C TraceContext standard (`traceparent` header).                            |
 | **W3C TraceContext**     | The W3C standard for propagating distributed trace context across HTTP and message broker boundaries via `traceparent` and `tracestate` headers. Ensures trace continuity from API ingress through async Kafka consumers.                                 |
+| **Grafana** | The visualisation / dashboarding layer over Prometheus and the trace / log backends. Hosts the Golden Signals, DORA, and agent-feedback dashboards in `infrastructure/monitoring/grafana/`. |
 
 ---
 
@@ -168,6 +206,7 @@ Jump to section:
 | **PostgreSQL**  | The primary relational database. Accessed via asyncpg / SQLAlchemy async. All schema changes managed through Alembic migrations. The `audit_events` table is append-only (UPDATE and DELETE revoked at DB level).                                         |
 | **Redis**       | An in-memory data structure store used for session memory, rate limiting, and caching. Accessed via `redis[asyncio]`. `fakeredis` is used in unit tests to avoid requiring a running Redis instance.                                                      |
 | **SQLAlchemy**  | The Python SQL toolkit and ORM. Used in async mode (`sqlalchemy[asyncio]`). Domain services interact with the DB via SQLAlchemy sessions; direct DB access from the API layer is forbidden.                                                               |
+| **Testcontainers** | A library that spins up real dependencies (PostgreSQL, Kafka, Redis) in throwaway Docker containers for integration tests. |
 
 ---
 
@@ -197,6 +236,19 @@ Jump to section:
 | **Ruff**                 | A fast Python linter and formatter written in Rust. Replaces flake8, isort, and black. Configured in `pyproject.toml [tool.ruff]`. Enforces pycodestyle, pyflakes, isort, bugbear, comprehensions, pyupgrade, and security rules.             |
 | **SDD**                  | Spec-Driven Development — no code is written without a referenced spec. Steps: write spec → ADR review → DPIA check → GitHub Issue → implement → test → update ADR → update CHANGELOG. Described in `skills/sdlc/spec-lifecycle.md`.          |
 | **SDLC**                 | Software Development Lifecycle — the full process from requirements through design, implementation, testing, deployment, and maintenance. In this repo the SDLC is governed by the SDD cycle in `CLAUDE.md §2`.                               |
+| **Agentic SDLC** | The 13-phase lifecycle in which AI agents are first-class participants (Conception → … → Post-Deploy & Learn), governed by two-tier HITL: Spec-as-PR for pre-code artefacts, the runtime gateway for real-world effects. Reference: `docs/process/WORKFLOW.md`, ADR-0052. |
+| **DoD** | Definition of Done — the global checklist a change must satisfy before it is complete (tests, ≥80% coverage, docs, guardrails, security). `docs/process/DEFINITION_OF_DONE.md`. |
+| **DoR** | Definition of Ready — the criteria an issue must meet before entering a sprint (spec linked, NFRs, acceptance criteria, security review). `docs/process/DEFINITION_OF_READY.md`. |
+| **DoR-Release** | Definition of Release — the release-candidate readiness checklist before production promotion. `docs/process/DEFINITION_OF_RELEASE.md`. |
+| **Feature State Manifest** | `docs/product/FEAT-{id}/state.yaml` (schema `feature_state_v1`) — the compact, machine-readable record of a feature's current phase, approvals, gates passed, and allowed / prohibited agent actions (ADR-0054). |
+| **FinOps** | Cloud financial operations — managing and attributing spend. Here: the LLM CI token-budget circuit breaker and cost alerting. |
+| **Maturity Model** | The agentic maturity scale assessed by `make agentic-maturity-check`; gates advanced autonomy on demonstrated capability and governance (ADR-0040). |
+| **Persona** | A scoped behavioural profile in `.claude/personas/` (role, autonomy ceiling, skills, prohibited paths) that restricts — never expands — the default behavioural contract for non-engineering users. |
+| **Phase Gate** | A machine-readable gate contract (`docs/process/gates/phase-gates.yaml`, schema `phase_gates_v1`) defining, per lifecycle phase, the required artifacts / approvals, CI checks, and allowed / prohibited agent actions (ADR-0054). |
+| **Quality Gate** | A blocking CI check that must pass to progress (coverage ≥80%, zero CRITICAL SAST/SCA, PRR ≥90%, etc.); summarised per phase in `docs/process/WORKFLOW.md`. |
+| **RACI** | Responsible, Accountable, Consulted, Informed — the responsibility-assignment matrix for SDLC roles. `docs/process/RACI.md`. |
+| **RTK** | Rust Token Killer — a CLI + PreToolUse hook that compresses high-output command results (tests, git, docker, logs) to save context tokens. CLAUDE.md §13, ADR-0030. |
+| **Spec-as-PR** | The governance model where pre-code artefacts (discovery, NFR, spec, ADR) are reviewed via GitHub PR — the human-review equivalent of the runtime HITL gateway for the spec phase (ADR-0052, `docs/process/HITL-GOVERNANCE.md`). |
 
 ---
 
