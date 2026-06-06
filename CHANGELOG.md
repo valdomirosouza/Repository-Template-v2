@@ -11,7 +11,12 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
-## [Unreleased]
+## [2.7.0] - 2026-06-06
+
+> **Agentic SDLC runtime & governance hardening (Waves A–E).** Implements the
+> Agentic SDLC Repository Improvement Directive end to end: runtime HITL/HOTL
+> correctness, machine-readable governance contracts, HOTL operationalization,
+> release hardening, and repository hygiene. See ADR-0053 through ADR-0057.
 
 ### Wave E — Repository Hygiene (ADR-0057)
 
@@ -2314,7 +2319,9 @@ API or configuration keys were removed.
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.7...HEAD
+[Unreleased]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.0...HEAD
+[2.7.0]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.6.0...v2.7.0
+[2.6.0]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.5.0...v2.6.0
 [1.17.7]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.6...v1.17.7
 [1.17.6]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.5...v1.17.6
 [1.17.5]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.4...v1.17.5
