@@ -91,9 +91,7 @@ def _make_orchestrator(
 ) -> AgentOrchestrator:
     if llm_response is None:
         # read-db-record is a registered, low-risk, no-HITL starter-catalog tool.
-        llm_response = json.dumps(
-            {"action": "read-db-record", "parameters": {}, "risk_score": 0.1}
-        )
+        llm_response = json.dumps({"action": "read-db-record", "parameters": {}, "risk_score": 0.1})
     return AgentOrchestrator(
         agent_id="test-orchestrator",
         audit_logger=audit or _make_audit(),
@@ -131,8 +129,11 @@ class TestReason:
         # computed score. "read-db-record" → 0.1 irreversibility (read action)
         # → 0.35×0.1 + 0.25×0.2 + 0.20×0.1 = 0.105.
         llm_json = json.dumps(
-            {"action": "read-db-record", "parameters": {"record_id": "synthetic-123"},
-             "risk_score": 0.2}
+            {
+                "action": "read-db-record",
+                "parameters": {"record_id": "synthetic-123"},
+                "risk_score": 0.2,
+            }
         )
         orchestrator = _make_orchestrator(llm_response=llm_json)
 

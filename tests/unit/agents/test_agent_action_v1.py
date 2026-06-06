@@ -75,9 +75,7 @@ def test_explicit_parameter_not_overwritten_by_envelope():
 
 
 def test_legacy_short_form_is_valid():
-    action = parse_agent_action(
-        {"action": "read-db-record", "parameters": {}, "risk_score": 0.1}
-    )
+    action = parse_agent_action({"action": "read-db-record", "parameters": {}, "risk_score": 0.1})
     assert action.is_valid is True
     assert action.legacy is True
     assert action.action_type == "read-db-record"

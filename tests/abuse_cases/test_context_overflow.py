@@ -64,9 +64,7 @@ class TestContextOverflowViaSpecContract:
         """Simulates the LLM proposing an unexpected action after context overflow."""
         from src.agents.spec_contract_enforcer import SpecContractEnforcer, SpecViolationError
 
-        enforcer = SpecContractEnforcer.from_dict(
-            {"allowed_action_types": ["read_file"]}
-        )
+        enforcer = SpecContractEnforcer.from_dict({"allowed_action_types": ["read_file"]})
         # Action that a context-overflowed model might propose
         with pytest.raises(SpecViolationError):
             enforcer.validate_action("execute_shell_command")

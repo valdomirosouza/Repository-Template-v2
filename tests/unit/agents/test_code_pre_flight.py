@@ -83,9 +83,7 @@ class TestForbiddenCalls:
         assert not result.passed
 
     def test_safe_code_passes(self) -> None:
-        result = CodePreFlight.check(
-            "data = [1, 2, 3]\nresult = sum(data)\nprint(result)"
-        )
+        result = CodePreFlight.check("data = [1, 2, 3]\nresult = sum(data)\nprint(result)")
         assert result.passed
 
 

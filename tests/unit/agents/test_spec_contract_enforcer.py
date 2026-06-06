@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import textwrap
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -18,7 +17,6 @@ from src.agents.spec_contract_enforcer import (
     SpecContractEnforcer,
     SpecViolationError,
 )
-
 
 # ── SpecContract dataclass ────────────────────────────────────────────────────
 
@@ -51,9 +49,7 @@ class TestValidateAction:
         enforcer.validate_action("read_file")  # must not raise
 
     def test_raises_for_action_not_in_allowed_list(self) -> None:
-        enforcer = SpecContractEnforcer.from_dict(
-            {"allowed_action_types": ["read_file"]}
-        )
+        enforcer = SpecContractEnforcer.from_dict({"allowed_action_types": ["read_file"]})
         with pytest.raises(SpecViolationError, match="not in the spec contract"):
             enforcer.validate_action("write_file")
 
@@ -82,9 +78,7 @@ class TestValidateAction:
             enforcer.validate_action("write_file")
 
     def test_unknown_action_blocked_when_allowed_list_set(self) -> None:
-        enforcer = SpecContractEnforcer.from_dict(
-            {"allowed_action_types": ["read_file"]}
-        )
+        enforcer = SpecContractEnforcer.from_dict({"allowed_action_types": ["read_file"]})
         with pytest.raises(SpecViolationError):
             enforcer.validate_action("unknown_action")
 

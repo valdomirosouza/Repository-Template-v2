@@ -124,9 +124,7 @@ async def test_override_after_window_is_rejected():
     late = record.expires_at + datetime.timedelta(seconds=1)
 
     with pytest.raises(OverrideWindowExpiredError):
-        await svc.request_override(
-            action_id="act-1", actor="alice", reason="too late", now=late
-        )
+        await svc.request_override(action_id="act-1", actor="alice", reason="too late", now=late)
     # The override request itself is still audited (actor/reason/timestamp).
     assert EVENT_OVERRIDE_REQUESTED in _event_types(audit)
 
@@ -136,9 +134,10 @@ async def test_is_within_window():
     svc = OverrideService(audit_logger=_audit(), compensation_registry=_comp_registry())
     record = _register(svc)
     assert svc.is_within_window("act-1", now=record.executed_at) is True
-    assert svc.is_within_window(
-        "act-1", now=record.expires_at + datetime.timedelta(seconds=1)
-    ) is False
+    assert (
+        svc.is_within_window("act-1", now=record.expires_at + datetime.timedelta(seconds=1))
+        is False
+    )
 
 
 # ── Override request audit content ─────────────────────────────────────────────
@@ -156,7 +155,8 @@ async def test_override_request_audited_with_actor_and_reason():
     await svc.request_override(action_id="act-1", actor="bob", reason="duplicate write")
 
     requested = next(
-        c[0][0] for c in audit.log_event.call_args_list
+        c[0][0]
+        for c in audit.log_event.call_args_list
         if c[0][0].event_type == EVENT_OVERRIDE_REQUESTED
     )
     assert requested.metadata["actor"] == "bob"
@@ -228,9 +228,7 @@ async def test_confirm_emits_confirmed_event():
     svc = OverrideService(audit_logger=audit, compensation_registry=_comp_registry())
     record = _register(svc)
 
-    confirmed = await svc.confirm(
-        "act-1", now=record.expires_at + datetime.timedelta(seconds=1)
-    )
+    confirmed = await svc.confirm("act-1", now=record.expires_at + datetime.timedelta(seconds=1))
     assert confirmed.status == "CONFIRMED"
     assert EVENT_ACTION_CONFIRMED in _event_types(audit)
 

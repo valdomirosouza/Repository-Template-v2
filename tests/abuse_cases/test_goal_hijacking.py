@@ -43,9 +43,7 @@ class TestGoalHijackingViaToolResponse:
     def test_clean_tool_response_passes(self) -> None:
         """A legitimate tool response (e.g. database record) passes validation."""
         guard = PromptInjectionGuard()
-        legitimate_output = (
-            '{"id": "record-123", "name": "Report Q1", "status": "complete"}'
-        )
+        legitimate_output = '{"id": "record-123", "name": "Report Q1", "status": "complete"}'
         result = guard.validate(legitimate_output)
         assert result.is_valid
 

@@ -173,9 +173,7 @@ class OverrideService:
 
         if now > record.expires_at:
             record.status = "WINDOW_EXPIRED"
-            logger.warning(
-                "override_service.window_expired", action_id=action_id, actor=actor
-            )
+            logger.warning("override_service.window_expired", action_id=action_id, actor=actor)
             raise OverrideWindowExpiredError(
                 f"override window for action '{action_id}' closed at "
                 f"{record.expires_at.isoformat()}"
@@ -248,15 +246,11 @@ class OverrideService:
             escalated=False,
         )
 
-    async def confirm(
-        self, action_id: str, now: datetime.datetime | None = None
-    ) -> HOTLRecord:
+    async def confirm(self, action_id: str, now: datetime.datetime | None = None) -> HOTLRecord:
         """Confirm an action after its window elapsed with no override."""
         record = self.get(action_id)
         if (now or _utcnow()) <= record.expires_at:
-            logger.info(
-                "override_service.confirm_before_window_close", action_id=action_id
-            )
+            logger.info("override_service.confirm_before_window_close", action_id=action_id)
         record.status = "CONFIRMED"
         await self._emit(
             EVENT_ACTION_CONFIRMED,

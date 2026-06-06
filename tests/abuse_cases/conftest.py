@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.agents.hitl_gateway import HITLRequest, HITLStatus
+from src.agents.hitl_gateway import HITLStatus
 from src.guardrails.prompt_injection_guard import PromptInjectionGuard
 
 

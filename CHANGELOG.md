@@ -11,6 +11,23 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [2.7.1] - 2026-06-06
+
+> **CI-green cleanup.** Clears long-standing lint/type/contract debt so the full CI
+> pipeline (lint → format → mypy → secret-scan → contract-drift) passes for the
+> first time. No behavioural change to the Wave A–E features, plus one real bug fix.
+
+### Fixed
+
+- **Ruff** — resolved 67 repo-wide lint errors (unused imports, import sorting, line length, `raise ... from`, ambiguous unicode, redundant f-strings, `.strip()` misuse) across `src/agents/`, `src/observability/`, `scripts/`, and tests; applied `ruff format` to 38 previously-unformatted files
+- **mypy** — fixed 14 pre-existing type errors in `src/` (Redis generics, `TraceFlags`, `tuple` vs `list` policy field, missing/`Any` return types, unused ignore)
+- `src/agents/harness/coordinator.py` — **real bug**: the context-seal-tampering escalation called `_escalate_to_hitl()` with non-existent kwargs (`reason`/`iteration`/`artifacts`) and `score=None` that the method body dereferenced; made `_escalate_to_hitl` robust to early (reason-only) escalation and fixed the call (would have raised `TypeError`/`AttributeError` at runtime on that path)
+- `infrastructure/message-broker/schema-registry/avro/domain-request-dlq-v1.avsc` — added the missing Avro schema referenced by the `domain.request.dlq` topic in `services.yaml` (contract-drift gate)
+
+### Changed
+
+- `version.txt`, `pyproject.toml`, `README.md` — version → 2.7.1
+
 ## [2.7.0] - 2026-06-06
 
 > **Agentic SDLC runtime & governance hardening (Waves A–E).** Implements the
@@ -2319,7 +2336,8 @@ API or configuration keys were removed.
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.0...HEAD
+[Unreleased]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.1...HEAD
+[2.7.1]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.0...v2.7.1
 [2.7.0]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.5.0...v2.6.0
 [1.17.7]: https://github.com/valdomirosouza/Repository-Template/compare/v1.17.6...v1.17.7

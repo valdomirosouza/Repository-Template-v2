@@ -89,8 +89,7 @@ def test_risk_calibration(
         "CHANGELOG/ADR."
     )
     assert _tier(score) == expected_tier, (
-        f"[{scenario_id}] tier changed: {_tier(score)} != {expected_tier} "
-        f"(score={score:.3f})"
+        f"[{scenario_id}] tier changed: {_tier(score)} != {expected_tier} (score={score:.3f})"
     )
     assert _route(score) == expected_route, (
         f"[{scenario_id}] ROUTING CHANGED: {_route(score)} != {expected_route} "

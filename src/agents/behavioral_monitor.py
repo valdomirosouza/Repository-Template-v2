@@ -47,7 +47,7 @@ class ActionFrequency:
         self.total += 1
 
     def frequency(self, action_type: str) -> float:
-        """Return the fraction of proposals that were this action_type (0.0–1.0)."""
+        """Return the fraction of proposals that were this action_type (0.0-1.0)."""
         if self.total == 0:
             return 0.0
         return self.counts.get(action_type, 0) / self.total
@@ -106,9 +106,7 @@ class BehavioralMonitor:
         # regardless of historical frequency (spec amendment or new capability).
         # If no allowed list is provided, frequency alone determines anomaly status.
         in_allowed_list = (
-            proposed_action in allowed_action_types
-            if allowed_action_types is not None
-            else False
+            proposed_action in allowed_action_types if allowed_action_types is not None else False
         )
 
         is_drift = freq < _ANOMALY_FREQUENCY_THRESHOLD and not in_allowed_list

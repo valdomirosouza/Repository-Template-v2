@@ -73,7 +73,7 @@ class ActionSchemaValidator:
     # ── Factories ─────────────────────────────────────────────────────────────
 
     @classmethod
-    def from_directory(cls, directory: Path) -> "ActionSchemaValidator":
+    def from_directory(cls, directory: Path) -> ActionSchemaValidator:
         """Load all *.schema.yaml files from a directory."""
         schemas: dict[str, SchemaDefinition] = {}
         if not directory.exists():
@@ -104,7 +104,7 @@ class ActionSchemaValidator:
         return cls(schemas)
 
     @classmethod
-    def from_dict(cls, schemas_dict: dict[str, dict[str, Any]]) -> "ActionSchemaValidator":
+    def from_dict(cls, schemas_dict: dict[str, dict[str, Any]]) -> ActionSchemaValidator:
         """Build from inline dict (for tests and programmatic construction)."""
         schemas = {
             k: SchemaDefinition(

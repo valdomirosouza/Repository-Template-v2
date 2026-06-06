@@ -28,7 +28,7 @@ from opentelemetry.trace import StatusCode
 from src.observability.metrics import record_llm_call
 from src.observability.span_hierarchy import SPAN_LLM_INFERENCE, tracer
 from src.shared.config import settings
-from src.shared.llm_client import LLMClient
+from src.shared.llm_client import LLMCallMetadata, LLMClient
 
 
 class OtelLLMClientWrapper:
@@ -107,8 +107,8 @@ class OtelLLMClientWrapper:
         user: str,
         system: str,
         trace_id: str | None,
-    ):
-        from src.shared.llm_client import AnthropicLLMClient, LLMCallMetadata
+    ) -> tuple[str, LLMCallMetadata]:
+        from src.shared.llm_client import AnthropicLLMClient
 
         if isinstance(self._inner, AnthropicLLMClient):
             return await self._inner.complete_with_metadata(
@@ -117,9 +117,10 @@ class OtelLLMClientWrapper:
 
         # Fallback for any LLMClient that doesn't expose complete_with_metadata
         if hasattr(self._inner, "complete_with_metadata"):
-            return await self._inner.complete_with_metadata(
+            result: tuple[str, LLMCallMetadata] = await self._inner.complete_with_metadata(
                 user=user, system=system, trace_id=trace_id
             )
+            return result
 
         text = await self._inner.complete(user=user, system=system, trace_id=trace_id)
         return text, LLMCallMetadata()

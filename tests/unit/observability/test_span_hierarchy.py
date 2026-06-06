@@ -10,10 +10,9 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 from src.observability.span_hierarchy import (
     SPAN_AGENT_ACT,
@@ -187,8 +186,8 @@ def _make_orchestrator(agent_id: str = "test-agent") -> Any:
     hitl = AsyncMock()
     hitl.submit_for_approval = AsyncMock()
 
-    from src.agents.hitl_gateway import HITLRequest, HITLStatus
-    from unittest.mock import MagicMock
+    from src.agents.hitl_gateway import HITLStatus
+
     approved = MagicMock()
     approved.status = HITLStatus.APPROVED
     hitl.submit_for_approval.return_value = approved
@@ -203,7 +202,6 @@ def _make_orchestrator(agent_id: str = "test-agent") -> Any:
 
 def _make_coordinator() -> Any:
     from src.agents.harness.coordinator import HarnessCoordinator
-    from src.agents.harness.models import GeneratorArtifact, HarnessResult
 
     orchestrator = AsyncMock()
     orchestrator.run = AsyncMock(

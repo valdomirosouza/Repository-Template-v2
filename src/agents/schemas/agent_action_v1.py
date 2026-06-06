@@ -29,15 +29,11 @@ from typing import Any
 
 SCHEMA_VERSION = "agent_action_v1"
 
-VALID_ENVIRONMENTS: frozenset[str] = frozenset(
-    {"local", "dev", "staging", "production"}
-)
+VALID_ENVIRONMENTS: frozenset[str] = frozenset({"local", "dev", "staging", "production"})
 VALID_OPERATIONS: frozenset[str] = frozenset(
     {"read", "create", "update", "delete", "execute", "deploy", "notify"}
 )
-VALID_CLASSIFICATIONS: frozenset[str] = frozenset(
-    {"none", "L1", "L2", "L3", "L4"}
-)
+VALID_CLASSIFICATIONS: frozenset[str] = frozenset({"none", "L1", "L2", "L3", "L4"})
 
 # Fields that the risk scorer / action policy read out of `parameters`.
 _PARAM_MERGE_FIELDS: tuple[str, ...] = (
@@ -123,9 +119,7 @@ def _validate_enum(
 ) -> str:
     if isinstance(value, str) and value in allowed:
         return value
-    errors.append(
-        f"field '{field_name}' value {value!r} is not one of {sorted(allowed)}"
-    )
+    errors.append(f"field '{field_name}' value {value!r} is not one of {sorted(allowed)}")
     return default
 
 
@@ -182,21 +176,25 @@ def parse_agent_action(raw: str | dict[str, Any]) -> AgentAction:
     target_environment = "local"
     if "target_environment" in data:
         target_environment = _validate_enum(
-            data["target_environment"], VALID_ENVIRONMENTS, "local",
-            "target_environment", errors,
+            data["target_environment"],
+            VALID_ENVIRONMENTS,
+            "local",
+            "target_environment",
+            errors,
         )
 
     operation = "read"
     if "operation" in data:
-        operation = _validate_enum(
-            data["operation"], VALID_OPERATIONS, "read", "operation", errors
-        )
+        operation = _validate_enum(data["operation"], VALID_OPERATIONS, "read", "operation", errors)
 
     data_classification = "none"
     if "data_classification" in data:
         data_classification = _validate_enum(
-            data["data_classification"], VALID_CLASSIFICATIONS, "none",
-            "data_classification", errors,
+            data["data_classification"],
+            VALID_CLASSIFICATIONS,
+            "none",
+            "data_classification",
+            errors,
         )
 
     external_effect = (

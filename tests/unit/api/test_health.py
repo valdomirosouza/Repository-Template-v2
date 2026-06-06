@@ -42,14 +42,17 @@ class TestProbeCompliance:
 
     @pytest.mark.asyncio
     async def test_ready_returns_503_not_500_when_db_down(self) -> None:
-        from unittest.mock import MagicMock, AsyncMock
+        from unittest.mock import AsyncMock, MagicMock
+
         mock_db = MagicMock()
         mock_db.fetchval = AsyncMock(side_effect=OSError("db down"))
         mock_redis = AsyncMock()
         app = _make_app(db_pool=mock_db, redis=mock_redis)
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get("/ready")
-        assert response.status_code == 503, "/ready must signal 503 (not 500) for K8s readiness probe"
+        assert response.status_code == 503, (
+            "/ready must signal 503 (not 500) for K8s readiness probe"
+        )
 
 
 class TestHealthEndpoint:

@@ -95,9 +95,7 @@ class FeedbackLearner:
         """Return up to *n* precedents matching *action_type* within the feedback window."""
         cutoff = datetime.now(UTC) - timedelta(days=_FEEDBACK_WINDOW_DAYS)
         matches: list[OutcomeFeedback] = [
-            fb
-            for fb, ts in self._store
-            if ts >= cutoff and fb.action_type == action_type
+            fb for fb, ts in self._store if ts >= cutoff and fb.action_type == action_type
         ]
         # Prefer exact payload-hash matches first, then any matching action_type.
         exact = [m for m in matches if m.payload_hash == payload_hash]

@@ -8,19 +8,16 @@ from __future__ import annotations
 
 import json
 import uuid
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.agents.harness.models import ProductSpec, SprintContract
 from src.agents.harness.session_checkpoint import (
-    SessionCheckpoint,
-    _LOCAL_CHECKPOINT_DIR,
     _REDIS_KEY_PREFIX,
     _REDIS_TTL_SECONDS,
+    SessionCheckpoint,
 )
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -113,6 +110,7 @@ class TestSaveRedis:
         original_ts = cp.updated_at
 
         import asyncio
+
         await asyncio.sleep(0.01)
         await cp.save(redis=_make_redis())
 
@@ -125,9 +123,7 @@ class TestSaveRedis:
 class TestSaveLocal:
     @pytest.mark.asyncio
     async def test_writes_json_file(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "src.agents.harness.session_checkpoint._LOCAL_CHECKPOINT_DIR", tmp_path
-        )
+        monkeypatch.setattr("src.agents.harness.session_checkpoint._LOCAL_CHECKPOINT_DIR", tmp_path)
         cp = _make_checkpoint()
 
         await cp.save(redis=None)
@@ -140,9 +136,7 @@ class TestSaveLocal:
     @pytest.mark.asyncio
     async def test_creates_directory_if_missing(self, tmp_path, monkeypatch):
         target = tmp_path / "nested" / "checkpoints"
-        monkeypatch.setattr(
-            "src.agents.harness.session_checkpoint._LOCAL_CHECKPOINT_DIR", target
-        )
+        monkeypatch.setattr("src.agents.harness.session_checkpoint._LOCAL_CHECKPOINT_DIR", target)
         cp = _make_checkpoint()
 
         await cp.save(redis=None)
@@ -168,6 +162,7 @@ class TestResume:
         cp.completed_steps = [plan.sprint_contracts[0].sprint_id]
 
         from src.agents.harness.session_checkpoint import _serialize
+
         payload = _serialize(cp)
         redis = _make_redis(stored=payload)
 
@@ -196,9 +191,7 @@ class TestResume:
 
     @pytest.mark.asyncio
     async def test_local_fallback_round_trip(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "src.agents.harness.session_checkpoint._LOCAL_CHECKPOINT_DIR", tmp_path
-        )
+        monkeypatch.setattr("src.agents.harness.session_checkpoint._LOCAL_CHECKPOINT_DIR", tmp_path)
         plan = _make_plan()
         cp = SessionCheckpoint.new(task_id=plan.task_id, sprint_plan=plan)
         await cp.save(redis=None)
@@ -252,9 +245,7 @@ class TestDelete:
 
     @pytest.mark.asyncio
     async def test_deletes_local_file(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "src.agents.harness.session_checkpoint._LOCAL_CHECKPOINT_DIR", tmp_path
-        )
+        monkeypatch.setattr("src.agents.harness.session_checkpoint._LOCAL_CHECKPOINT_DIR", tmp_path)
         cp = _make_checkpoint()
         await cp.save(redis=None)
         assert (tmp_path / f"{cp.session_id}.json").exists()
@@ -265,8 +256,6 @@ class TestDelete:
 
     @pytest.mark.asyncio
     async def test_delete_local_no_error_when_file_missing(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "src.agents.harness.session_checkpoint._LOCAL_CHECKPOINT_DIR", tmp_path
-        )
+        monkeypatch.setattr("src.agents.harness.session_checkpoint._LOCAL_CHECKPOINT_DIR", tmp_path)
         cp = _make_checkpoint()
         await cp.delete(redis=None)  # file never created — must not raise

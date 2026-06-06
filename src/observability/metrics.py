@@ -278,7 +278,8 @@ _SESSION_DURATION_BUCKETS = (60, 300, 600, 1800, 3600, 7200, 14400)
 AGENT_SESSION_TASKS_COUNTER = Counter(
     "agent_session_tasks_total",
     "Tasks completed per session, broken down by type and outcome",
-    ["task_type", "outcome"],  # task_type: planned|net_new|papercut|tech_debt; outcome: completed|abandoned
+    # task_type: planned|net_new|papercut|tech_debt; outcome: completed|abandoned
+    ["task_type", "outcome"],
 )
 
 AGENT_SESSION_DURATION = Histogram(
@@ -350,7 +351,8 @@ AGENT_LEARN_PRECEDENTS_INJECTED = Counter(
 
 AGENT_BEHAVIORAL_ANOMALY_COUNTER = Counter(
     "agent_behavioral_anomaly_total",
-    "Agent proposed an action outside its historical behavioral envelope (possible drift or injection)",
+    "Agent proposed an action outside its historical behavioral envelope "
+    "(possible drift or injection)",
     ["task_type", "action_type"],
 )
 

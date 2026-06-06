@@ -154,9 +154,7 @@ def check_level_3() -> LevelResult:
 
 def check_level_4() -> LevelResult:
     """Autonomy — long-horizon goals, context graphs, full governance prerequisites."""
-    active = _yaml_has_variant(
-        "infrastructure/feature-flags/flags/learning-mode.yaml", '"active"'
-    )
+    active = _yaml_has_variant("infrastructure/feature-flags/flags/learning-mode.yaml", '"active"')
     tier_ready = _yaml_has_variant(
         "infrastructure/feature-flags/flags/autonomy-tier-ready.yaml", '"true"'
     )
@@ -205,7 +203,7 @@ def run() -> int:
     print("Agentic Maturity Assessment")
     print("=" * 50)
     print(f"Date:       {date.today()}")
-    print(f"Repository: Repository-Template-v2")
+    print("Repository: Repository-Template-v2")
     print()
     print(f"Current maturity level: {current_name} (Level {current_level})")
     print(f"Gartner compliance coverage: ~{coverage}%")

@@ -88,8 +88,6 @@ class TestOutputHandling:
     def test_unknown_action_blocked_by_spec_contract(self) -> None:
         from src.agents.spec_contract_enforcer import SpecContractEnforcer, SpecViolationError
 
-        enforcer = SpecContractEnforcer.from_dict(
-            {"allowed_action_types": ["read_file"]}
-        )
+        enforcer = SpecContractEnforcer.from_dict({"allowed_action_types": ["read_file"]})
         with pytest.raises(SpecViolationError):
             enforcer.validate_action("delete_database")

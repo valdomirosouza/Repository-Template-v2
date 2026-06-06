@@ -115,8 +115,7 @@ def requires_mandatory_hitl(action_type: str, parameters: dict[str, Any]) -> tup
     target_env = str(parameters.get("target_environment", "")).lower().strip()
     if target_env in _MANDATORY_HITL_ENVS:
         return True, (
-            f"action targets environment '{target_env}' — "
-            "production writes always require HITL"
+            f"action targets environment '{target_env}' — production writes always require HITL"
         )
 
     # 4. L1 data classification
@@ -140,8 +139,6 @@ def requires_mandatory_hitl(action_type: str, parameters: dict[str, Any]) -> tup
     external_effect = parameters.get("external_effect", False)
     operation = str(parameters.get("operation", "")).lower()
     if external_effect and operation in {"delete", "deploy", "notify"}:
-        return True, (
-            f"external effect + operation '{operation}' always requires HITL"
-        )
+        return True, (f"external effect + operation '{operation}' always requires HITL")
 
     return False, ""
