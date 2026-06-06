@@ -133,6 +133,53 @@ flowchart TD
 
 ---
 
+## Runtime Enforcement (ADR-0053)
+
+The decision model above is implemented on the orchestrator critical path
+(`src/agents/orchestrator/orchestrator.py`) as a fail-closed sequence. Three
+modules collaborate:
+
+### 1. Mandatory HITL policy — evaluated BEFORE the numeric risk score
+
+`src/agents/action_policy.py :: requires_mandatory_hitl(action_type, parameters)`
+returns `(is_mandatory, reason)`. A numeric risk score can **never** downgrade a
+mandatory category. Mandatory triggers: the always-HITL action categories above,
+plus production target environment, L1 data classification, bulk operations above
+threshold (`entity_count > 100`), feature-flag/autonomy changes, and sandbox-escape
+attempts. The triggering `reason` is persisted in audit metadata.
+
+### 2. Graduated autonomy — replaces boolean autonomous mode
+
+`src/shared/feature_flags.py :: get_autonomy_level(action_type, risk_score)`
+resolves the level (`NONE → READ_ONLY → TESTS_ONLY → LOW_RISK → MEDIUM_RISK →
+FULL`, ADR-0015). The orchestrator decision matrix:
+
+| Condition                                 | Route   | `oversight_mode`       |
+| ----------------------------------------- | ------- | ---------------------- |
+| `requires_mandatory_hitl` is true         | HITL    | `HITL_MANDATORY`       |
+| Tool is **not registered**                | blocked | `BLOCKED_UNREGISTERED` |
+| `risk_score ≥ hitl_risk_threshold` (0.4)  | HITL    | `HITL`                 |
+| Autonomy level permits the tool           | execute | `HOTL_<level>`         |
+| Otherwise (autonomy ceiling insufficient) | HITL    | `HITL`                 |
+
+A `PENDING` HITL response is a **suspension state**, not a failure: the orchestrator
+returns `{"status": "waiting_for_human_approval", "hitl_request_id": ...}` and
+resumes when `POST /v1/hitl/{id}/decide` delivers a decision. `REJECTED`/`EXPIRED`
+raise; only `APPROVED` falls through to execution.
+
+### 3. Tool-registry runtime enforcement (10-step)
+
+`src/agents/tool_executor.py :: ToolExecutor.execute()` is the single choke-point
+between routing and execution: normalize → assert registered → validate schema →
+`requires_hitl` short-circuit → autonomy permission → per-tool rate limits →
+sandbox routing → execute → pre/post/failure audit (execution mode + owner team in
+metadata). After HITL approval (`hitl_approved=True`) the `requires_hitl` and
+autonomy-permission steps are satisfied, but **registry and sandbox enforcement are
+never skipped** — registration and sandbox isolation are absolute (ADR-0048,
+ADR-0016).
+
+---
+
 ## Risk Scoring Inputs
 
 The risk scorer considers:

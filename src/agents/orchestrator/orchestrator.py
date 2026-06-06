@@ -22,10 +22,12 @@ from typing import Any
 from opentelemetry import trace
 from opentelemetry.trace import StatusCode
 
+from src.agents.action_policy import requires_mandatory_hitl
 from src.agents.feedback_learner import FeedbackLearner, default_feedback_learner
 from src.agents.hitl_gateway import HITLGateway, HITLRequest, HITLStatus
 from src.agents.risk_scorer import RiskScorer
 from src.agents.spec_contract_enforcer import SpecContractEnforcer, SpecViolationError
+from src.agents.tool_executor import ToolExecutor
 from src.guardrails.action_limits import ActionLimiter
 from src.guardrails.audit_logger import AuditLogger, AuditWriteError
 from src.guardrails.pii_filter import mask_dict
@@ -39,7 +41,7 @@ from src.observability.span_hierarchy import (
     tracer,
 )
 from src.shared.config import settings
-from src.shared.feature_flags import get_learning_mode, is_autonomous_mode_enabled
+from src.shared.feature_flags import get_autonomy_level, get_learning_mode
 from src.shared.llm_client import LLMClient
 from src.shared.models import AuditEvent
 
@@ -89,6 +91,7 @@ class AgentOrchestrator:
         risk_scorer: RiskScorer | None = None,
         feedback_learner: FeedbackLearner | None = None,
         spec_contract_enforcer: SpecContractEnforcer | None = None,
+        tool_executor: ToolExecutor | None = None,
     ) -> None:
         self._agent_id = agent_id
         self._audit = audit_logger
@@ -99,6 +102,7 @@ class AgentOrchestrator:
         self._risk_scorer = risk_scorer or RiskScorer()
         self._learner = feedback_learner or default_feedback_learner
         self._spec_enforcer = spec_contract_enforcer
+        self._tool_executor = tool_executor or ToolExecutor(audit_logger=audit_logger)
 
     async def run(self, raw_input: dict[str, Any], trace_id: str | None = None) -> dict[str, Any]:
         """Execute the full Perception → Reason → Act loop.
@@ -187,8 +191,17 @@ class AgentOrchestrator:
 
             system_prompt = (
                 "You are an AI agent. Analyse the provided context and respond with a JSON object "
-                'containing: {"action": "<action_name>", "parameters": {}, "risk_score": 0.0}. '
-                "risk_score must be between 0.0 (low) and 1.0 (high). "
+                "matching schema_version 'agent_action_v1'. Required fields:\n"
+                '{"schema_version": "agent_action_v1", "intent": "<why>", '
+                '"action_type": "<action>", '
+                '"tool_name": "<registered_tool_name>", "target_system": "<system>", '
+                '"target_environment": "local|dev|staging|production", '
+                '"operation": "read|create|update|delete|execute|deploy|notify", '
+                '"parameters": {}, "data_classification": "none|L1|L2|L3|L4", '
+                '"external_effect": false, "reversible": true, "compensating_action": null, '
+                '"agent_confidence": 0.0, "requires_human_reason": ""}\n'
+                "Do NOT include a risk_score — the system scorer owns the final score. "
+                "agent_confidence is advisory only. "
                 "The context has already been PII-masked — never request raw personal data."
             )
             if precedents_block:
@@ -206,11 +219,27 @@ class AgentOrchestrator:
             try:
                 parsed = json.loads(response_text)
             except (json.JSONDecodeError, ValueError):
-                parsed = {"action": "unknown", "parameters": {}, "risk_score": 1.0}
+                # Invalid JSON from LLM routes to HITL via high risk score — fail safe
+                parsed = {
+                    "schema_version": "agent_action_v1",
+                    "action_type": "unknown",
+                    "parameters": {},
+                    "data_classification": "none",
+                    "external_effect": False,
+                    "reversible": True,
+                }
 
-            ctx.proposed_action = str(parsed.get("action", "unknown"))
+            # Support both legacy {"action": ...} and new agent_action_v1 schema
+            action_key = "action_type" if "action_type" in parsed else "action"
+            ctx.proposed_action = str(parsed.get(action_key, "unknown"))
             ctx.proposed_parameters = dict(parsed.get("parameters", {}))
-            ctx.risk_score = float(parsed.get("risk_score", 1.0))
+            # Merge structured fields into parameters so risk_scorer and action_policy can read them
+            for field in ("data_classification", "external_effect", "reversible",
+                          "target_environment", "operation", "entity_count"):
+                if field in parsed:
+                    ctx.proposed_parameters.setdefault(field, parsed[field])
+            # LLM-self-reported risk_score is advisory only; system scorer owns the final score
+            ctx.risk_score = 1.0  # will be overwritten by RiskScorer in _act_inner
 
             span.set_attributes(
                 {
@@ -270,13 +299,54 @@ class AgentOrchestrator:
             ctx.proposed_action or "unknown", ctx.proposed_parameters
         )
         ctx.risk_score = scored
-        hitl_required = ctx.risk_score >= settings.hitl_risk_threshold and not is_autonomous_mode_enabled()
+
+        # P0-3: Mandatory HITL policy — evaluated BEFORE risk score.
+        # Numeric score cannot downgrade mandatory categories (ADR-0053).
+        mandatory_hitl, mandatory_reason = requires_mandatory_hitl(
+            ctx.proposed_action or "unknown", ctx.proposed_parameters
+        )
+
+        # P0-2: Graduated autonomy decision — replaces boolean is_autonomous_mode_enabled().
+        autonomy_level = get_autonomy_level(ctx.proposed_action or "unknown", ctx.risk_score)
+
+        # P0-4: Tool registry + autonomy gating informs the routing decision so the
+        # ToolExecutor never has to contradict the orchestrator post-approval.
+        action_name = ctx.proposed_action or "unknown"
+        is_registered = self._tool_executor.is_registered(action_name)
+        permits_autonomous = self._tool_executor.permits_autonomous(
+            action_name, autonomy_level.value
+        )
+
+        # Full decision matrix (ADR-0053, specs/ai/hitl-hotl.md):
+        #   mandatory policy → HITL (numeric score cannot downgrade)
+        #   unregistered     → blocked (no HITL bypass; ToolExecutor raises)
+        #   risk ≥ threshold → HITL
+        #   autonomy permits → execute autonomously (HOTL)
+        #   otherwise        → fall back to HITL (autonomy ceiling insufficient)
+        if mandatory_hitl:
+            route_to_hitl = True
+            oversight_mode = "HITL_MANDATORY"
+        elif not is_registered:
+            route_to_hitl = False  # ToolExecutor step 2 blocks unregistered tools
+            oversight_mode = "BLOCKED_UNREGISTERED"
+        elif ctx.risk_score >= settings.hitl_risk_threshold:
+            route_to_hitl = True
+            oversight_mode = "HITL"
+        elif permits_autonomous:
+            route_to_hitl = False
+            oversight_mode = f"HOTL_{autonomy_level.name}"
+        else:
+            route_to_hitl = True
+            oversight_mode = "HITL"
+
         span.set_attributes(
             {
                 "act.action_type": ctx.proposed_action or "unknown",
                 "act.risk_score": ctx.risk_score,
-                "act.hitl_required": hitl_required,
-                "act.autonomous": is_autonomous_mode_enabled(),
+                "act.hitl_required": route_to_hitl,
+                "act.autonomy_level": autonomy_level.value,
+                "act.oversight_mode": oversight_mode,
+                "act.mandatory_hitl": mandatory_hitl,
             }
         )
         logger.info(
@@ -284,6 +354,9 @@ class AgentOrchestrator:
             agent_id=ctx.agent_id,
             action=ctx.proposed_action,
             risk_score=ctx.risk_score,
+            autonomy_level=autonomy_level.value,
+            oversight_mode=oversight_mode,
+            mandatory_hitl=mandatory_hitl,
             components={
                 "irreversibility": components.irreversibility,
                 "external_effect": components.external_effect,
@@ -307,6 +380,10 @@ class AgentOrchestrator:
                             json.dumps(ctx.proposed_parameters, sort_keys=True).encode()
                         ).hexdigest(),
                         "guardrails_passed": ["pii_filter", "injection_guard"],
+                        "autonomy_level": autonomy_level.value,
+                        "oversight_mode": oversight_mode,
+                        "mandatory_hitl": mandatory_hitl,
+                        "mandatory_hitl_reason": mandatory_reason,
                     },
                     trace_id=ctx.trace_id,
                 )
@@ -315,15 +392,18 @@ class AgentOrchestrator:
             logger.error("Audit write failed — blocking action", agent_id=ctx.agent_id)
             raise
 
-        # Route through HITL for MEDIUM/HIGH risk unless autonomous mode is active.
-        # Autonomous mode (HOTL) bypasses HITL — only enable with explicit governance approval.
-        if ctx.risk_score >= settings.hitl_risk_threshold and not is_autonomous_mode_enabled():
+        # Route through HITL gateway when required (P0-1 fix: return PENDING instead of failing).
+        if route_to_hitl:
             logger.info(
                 "Routing to HITL",
                 agent_id=ctx.agent_id,
                 risk_score=ctx.risk_score,
-                threshold=settings.hitl_risk_threshold,
+                oversight_mode=oversight_mode,
+                mandatory=mandatory_hitl,
             )
+            import datetime
+
+            now = datetime.datetime.now(datetime.UTC)
             request = HITLRequest(
                 request_id=str(uuid.uuid4()),
                 agent_id=ctx.agent_id,
@@ -331,52 +411,95 @@ class AgentOrchestrator:
                 action_parameters=ctx.proposed_parameters,
                 risk_score=ctx.risk_score,
                 context_summary=json.dumps(ctx.masked_input)[:500],
-                created_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
-                expires_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
+                created_at=now,
+                expires_at=now,
             )
-            approved_request = await self._hitl.submit_for_approval(request)
+            hitl_response = await self._hitl.submit_for_approval(request)
 
-            if approved_request.status != HITLStatus.APPROVED:
+            # P0-1: Handle PENDING as a valid suspension state — not a failure.
+            # The action will resume when POST /v1/hitl/{id}/decide delivers approval.
+            if hitl_response.status == HITLStatus.PENDING:
+                logger.info(
+                    "HITL pending — suspending action",
+                    agent_id=ctx.agent_id,
+                    hitl_request_id=hitl_response.request_id,
+                )
+                return {
+                    "status": "waiting_for_human_approval",
+                    "hitl_request_id": hitl_response.request_id,
+                    "action_type": ctx.proposed_action,
+                    "risk_score": ctx.risk_score,
+                    "outcome": "PENDING",
+                    "agent_id": ctx.agent_id,
+                    "trace_id": ctx.trace_id,
+                    "oversight_mode": oversight_mode,
+                }
+
+            if hitl_response.status == HITLStatus.REJECTED:
+                self._learner.record(
+                    FeedbackLearner.feedback_from_hitl_decision(
+                        action_type=ctx.proposed_action or "unknown",
+                        action_parameters=ctx.proposed_parameters,
+                        decision="rejected",
+                        rationale="HITL reviewer rejected action",
+                        agent_id=ctx.agent_id,
+                    )
+                )
                 raise ValueError(
                     f"HITL rejected action '{ctx.proposed_action}' "
-                    f"(status={approved_request.status.value})"
+                    f"(hitl_request_id={hitl_response.request_id})"
                 )
 
-        # Action approved (HOTL or HITL-approved) — log executed outcome
-        await self._audit.log_event(
-            AuditEvent(
-                event_type="agent.action.executed",
-                agent_id=ctx.agent_id,
-                action=ctx.proposed_action or "unknown",
-                outcome="EXECUTED",
-                risk_score=ctx.risk_score,
-                trace_id=ctx.trace_id,
-            )
-        )
+            if hitl_response.status == HITLStatus.EXPIRED:
+                raise ValueError(
+                    f"HITL request expired before decision for action '{ctx.proposed_action}' "
+                    f"(hitl_request_id={hitl_response.request_id})"
+                )
 
-        logger.info(
-            "Agent action executed",
+            # APPROVED — fall through to execution below
+
+        # P0-4: Execute via ToolExecutor 10-step enforcement sequence.
+        # When we routed through HITL and reached here, approval was granted —
+        # pass hitl_approved so the executor does not re-block on requires_hitl /
+        # autonomy-permission (registry + sandbox checks still apply).
+        tool_result = await self._tool_executor.execute(
+            action_type=ctx.proposed_action or "unknown",
+            parameters=ctx.proposed_parameters,
+            autonomy_level=autonomy_level.value,
             agent_id=ctx.agent_id,
-            action=ctx.proposed_action,
-            risk_score=ctx.risk_score,
+            trace_id=ctx.trace_id,
+            hitl_approved=route_to_hitl,
         )
 
-        # Learn stage: record the approved outcome for future precedent retrieval.
-        self._learner.record(
-            FeedbackLearner.feedback_from_hitl_decision(
-                action_type=ctx.proposed_action or "unknown",
-                action_parameters=ctx.proposed_parameters,
-                decision="approved",
-                rationale="HOTL or HITL-approved execution",
+        # ToolExecutor handles its own audit records (steps 8-10).
+        # Log orchestrator-level executed outcome for span correlation.
+        if tool_result.outcome == "EXECUTED":
+            logger.info(
+                "Agent action executed",
                 agent_id=ctx.agent_id,
+                action=ctx.proposed_action,
+                risk_score=ctx.risk_score,
+                oversight_mode=oversight_mode,
+                sandbox_used=tool_result.sandbox_used,
             )
-        )
+            self._learner.record(
+                FeedbackLearner.feedback_from_hitl_decision(
+                    action_type=ctx.proposed_action or "unknown",
+                    action_parameters=ctx.proposed_parameters,
+                    decision="approved",
+                    rationale=f"Executed under oversight_mode={oversight_mode}",
+                    agent_id=ctx.agent_id,
+                )
+            )
 
         return {
             "agent_id": ctx.agent_id,
             "action": ctx.proposed_action,
             "parameters": ctx.proposed_parameters,
             "risk_score": ctx.risk_score,
-            "outcome": "EXECUTED",
+            "outcome": tool_result.outcome,
+            "oversight_mode": oversight_mode,
+            "autonomy_level": autonomy_level.value,
+            "sandbox_used": tool_result.sandbox_used,
             "trace_id": ctx.trace_id,
         }

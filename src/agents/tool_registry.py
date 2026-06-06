@@ -95,6 +95,10 @@ class ToolRegistry:
             raise KeyError(f"Tool '{name}' is not registered")
         return self._tools[name]
 
+    def is_registered(self, name: str) -> bool:
+        """Return True if the (normalized) tool name is in the registry."""
+        return self._normalize(name) in self._tools
+
     def check_permission(self, name: str, autonomy_level: str) -> bool:
         """Return True if the tool may be invoked at the given autonomy level.
 
@@ -110,11 +114,11 @@ class ToolRegistry:
             "medium": {"medium-risk", "full"},
             "high": {"full"},
         }
-        return autonomy_level in _permit_map.get(tool.risk_level.value, set())
+        return autonomy_level in _permit_map.get(str(tool.risk_level), set())
 
     def list_by_risk(self, risk_level: str) -> list[ToolDefinition]:
         """Return all tools matching the given risk level."""
-        return [t for t in self._tools.values() if t.risk_level.value == risk_level]
+        return [t for t in self._tools.values() if str(t.risk_level) == risk_level]
 
     def all(self) -> list[ToolDefinition]:
         """Return all registered tools."""
@@ -124,11 +128,11 @@ class ToolRegistry:
         """Return the tool or raise UnregisteredToolError (for use at orchestrator level)."""
         try:
             return self.get(name)
-        except KeyError:
+        except KeyError as exc:
             raise UnregisteredToolError(
                 f"Agent attempted to invoke unregistered tool '{name}'. "
                 "Register it in infrastructure/agent-tools/tools.yaml first."
-            )
+            ) from exc
 
     def is_sandbox_required(self, name: str) -> bool:
         """Return True if the tool's execution_mode is SANDBOX.

@@ -177,8 +177,10 @@ def _make_orchestrator(agent_id: str = "test-agent") -> Any:
     from src.agents.orchestrator.orchestrator import AgentOrchestrator
 
     llm = AsyncMock()
+    # Use a registered starter-catalog tool so the action survives ToolExecutor
+    # registry enforcement (ADR-0048/0053) and the full span hierarchy is emitted.
     llm.complete = AsyncMock(
-        return_value='{"action": "read_file", "parameters": {}, "risk_score": 0.1}'
+        return_value='{"action": "read-db-record", "parameters": {}, "risk_score": 0.1}'
     )
     audit = AsyncMock()
     audit.log_event = AsyncMock()
