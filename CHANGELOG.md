@@ -17,6 +17,8 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 - `.github/workflows/ci-ai-review.yml` — removed the invalid job-level `if: ${{ secrets.* }}` (the `secrets` context is not allowed in `if:`), replaced with a step-level guard output; the workflow no longer fails GitHub's workflow-file validation on every push
 - `.github/workflows/issue-lifecycle.yml` — quoted step `name:` values containing `status: …` (unquoted colon-space was an invalid YAML mapping), fixing a parse error that failed validation on every push
+- `alembic/versions/0006_add_context_graph_table.py` — removed redundant `index=True` on the `session_id` column that duplicated the explicit `ix_agent_context_graphs_session_id` index, causing `DuplicateTableError` on every `alembic upgrade head` (failed the **Index Docs into Agent Memory** workflow)
+- `services/domain-service` — fixed 8 Checkstyle violations failing the **CI — Java** gate: renamed `log` → `LOG` (ConstantName) in `DomainEventProducer`/`RequestCreatedConsumer`, and expanded single-line getters in `DomainEntity` (LeftCurly)
 
 ---
 

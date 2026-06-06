@@ -56,15 +56,27 @@ public class DomainEntity {
         this.updatedAt = Instant.now();
     }
 
-    public UUID getId() { return id; }
+    public UUID getId() {
+        return id;
+    }
 
-    public String getName() { return name; }
+    public String getName() {
+        return name;
+    }
 
-    public String getPayload() { return payload; }
+    public String getPayload() {
+        return payload;
+    }
 
-    public EntityStatus getStatus() { return status; }
+    public EntityStatus getStatus() {
+        return status;
+    }
 
-    public Instant getCreatedAt() { return createdAt; }
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 
-    public Instant getUpdatedAt() { return updatedAt; }
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
 }
