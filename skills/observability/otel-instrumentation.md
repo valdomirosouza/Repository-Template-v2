@@ -1,11 +1,11 @@
 # Skill — OpenTelemetry Instrumentation
 
-**Owner:** SRE Lead | **Reviewer:** Tech Lead | **Status:** Active | **Last updated:** 2026-05-24
+**Owner:** SRE Lead | **Reviewer:** Tech Lead | **Status:** Active | **Last updated:** 2026-06-06
 
 Activate this skill for any work involving metrics, traces, logs, or OTel SDK usage.
 
-Spec: specs/system/architecture.md
-ADR: ADR-0004 (Observability Stack)
+Spec: specs/system/architecture.md, specs/observability/otel-agentic-observability.md (OTEL-001)
+ADR: ADR-0004 (Observability Stack), ADR-0043–ADR-0046 (Agentic OTel)
 
 ---
 
@@ -44,6 +44,77 @@ Required attributes for agent spans:
 | `risk.score`        | float  | `0.75`                |
 | `hitl.required`     | bool   | `true`                |
 | `guardrail.outcome` | string | `"pass"` / `"reject"` |
+
+---
+
+## Agentic Span Hierarchy (OTEL-001, ADR-0044)
+
+All agent tasks MUST use the canonical span constants from `src/observability/span_hierarchy.py`.
+Never hardcode span name strings inline.
+
+```python
+from src.observability.span_hierarchy import (
+    SPAN_AGENT_TASK, SPAN_AGENT_PERCEIVE, SPAN_AGENT_REASON, SPAN_AGENT_ACT,
+    SPAN_LLM_INFERENCE, SPAN_TOOL_HITL_GATEWAY,
+    SPAN_HARNESS_COORDINATOR, SPAN_HARNESS_PLANNER, SPAN_HARNESS_EVALUATOR,
+    tracer,
+)
+
+with tracer.start_as_current_span(SPAN_AGENT_TASK) as span:
+    span.set_attributes({"agent.id": agent_id, "agent.harness_mode": "solo"})
+    # perceive / reason / act as child spans
+```
+
+**Test patching rule:** when patching `tracer` in unit tests, patch at the import site of the
+instrumented module, NOT at `src.observability.span_hierarchy.tracer`:
+
+```python
+# CORRECT — patches the local binding in orchestrator.py
+with patch("src.agents.orchestrator.orchestrator.tracer", test_tracer):
+    ...
+
+# WRONG — does not affect already-imported references
+with patch("src.observability.span_hierarchy.tracer", test_tracer):
+    ...
+```
+
+---
+
+## LLM Inference Spans (OTEL-001 §3.4, ADR-0045)
+
+Wrap production `AnthropicLLMClient` with `OtelLLMClientWrapper` at the injection point:
+
+```python
+from src.agents.llm_client_otel import OtelLLMClientWrapper
+from src.shared.llm_client import AnthropicLLMClient
+
+llm = OtelLLMClientWrapper(AnthropicLLMClient())
+```
+
+The wrapper emits an `llm.inference` child span with GenAI semantic convention attributes
+(`gen_ai.system`, `gen_ai.request.model`, `gen_ai.usage.*`, `gen_ai.response.finish_reason`)
+and records `llm_tokens_total` with `request_id` for Grafana Exemplar → Jaeger pivot.
+
+`OTEL_LLM_CAPTURE_PROMPTS=false` must remain `false` in production. The Collector strips
+`llm.prompt`/`llm.response` span events in production even if the flag is enabled.
+
+---
+
+## HITL Trace Linking (OTEL-001 §7, ADR-0046)
+
+`HITLGateway.submit_for_approval()` automatically captures the active span context.
+`record_decision()` emits a linked `tool.hitl_gateway` span — no additional code required.
+
+To ensure the link is populated, the HITL submission must occur within an active `agent.act`
+or `agent.task` span. If called outside any span, the decision span is emitted without a link.
+
+---
+
+## Guardrail Span Events (OTEL-001 §3.8, ADR-0046)
+
+`pii_filter.mask_dict()` and `prompt_injection_guard.validate()` automatically add span events
+(`guardrail.pii_detected`, `guardrail.injection_blocked`) to the active span. No caller changes
+are needed. Injection blocks also set `StatusCode.ERROR` on the span.
 
 ---
 

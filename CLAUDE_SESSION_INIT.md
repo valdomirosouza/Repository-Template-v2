@@ -42,20 +42,24 @@ Wave labels: `wave-1` (done) → `wave-2` → `wave-3` → `wave-4` → `wave-5`
 
 ## ADR Quick Index (most recent)
 
-| ADR      | Decision                              |
-| -------- | ------------------------------------- |
-| ADR-0030 | RTK token efficiency integration      |
-| ADR-0031 | Agent onboarding protocol             |
-| ADR-0032 | Sub-agent specialization registry     |
-| ADR-0033 | Long-running agent session durability |
-| ADR-0034 | Agentic escalation protocol           |
-| ADR-0035 | AI-assisted CI review                 |
-| ADR-0036 | Agentic cyber defense protocol        |
-| ADR-0037 | Governance gate enforcement           |
-| ADR-0038 | Learn stage feedback loop             |
-| ADR-0039 | Governed tool registry                |
-| ADR-0040 | Agentic maturity self-assessment      |
-| ADR-0041 | Context graph — autonomy tier         |
-| ADR-0042 | Kubernetes probe strategy             |
+| ADR      | Decision                                          |
+| -------- | ------------------------------------------------- |
+| ADR-0030 | RTK token efficiency integration                  |
+| ADR-0031 | Agent onboarding protocol                         |
+| ADR-0032 | Sub-agent specialization registry                 |
+| ADR-0033 | Long-running agent session durability             |
+| ADR-0034 | Agentic escalation protocol                       |
+| ADR-0035 | AI-assisted CI review                             |
+| ADR-0036 | Agentic cyber defense protocol                    |
+| ADR-0037 | Governance gate enforcement                       |
+| ADR-0038 | Learn stage feedback loop                         |
+| ADR-0039 | Governed tool registry                            |
+| ADR-0040 | Agentic maturity self-assessment                  |
+| ADR-0041 | Context graph — autonomy tier                     |
+| ADR-0042 | Kubernetes probe strategy                         |
+| ADR-0043 | OTel Collector OTTL PII redaction + tail sampling |
+| ADR-0044 | OTel agent span hierarchy                         |
+| ADR-0045 | GenAI semantic conventions for LLM                |
+| ADR-0046 | HITL trace linking + guardrail events             |
 
 Full index: `docs/adr/README.md`

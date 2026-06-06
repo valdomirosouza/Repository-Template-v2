@@ -13,6 +13,24 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 20 — ADRs + Skill + CLAUDE.md Updates (OTel Agentic Observability)
+
+#### Added
+
+- `docs/adr/ADR-0043-otel-collector-pii-redaction-tail-sampling.md` — documents value-based OTTL redaction rationale, tail-sampling policy design, pipeline order, collector image requirement (contrib, not slim), and trade-offs (Issue #30)
+- `docs/adr/ADR-0044-otel-agent-span-hierarchy.md` — documents span name constants, mandatory attributes per span, error propagation to root span, and test patching rules for Python `from ... import` binding semantics (Issue #30)
+- `docs/adr/ADR-0045-genai-semantic-conventions.md` — documents `complete_with_metadata()` decision, `OtelLLMClientWrapper` design, `request_id` exemplar label, `otel_capture_prompts` safety invariant, and deferred `LLMResponse` protocol refactor (Issue #30)
+- `docs/adr/ADR-0046-hitl-trace-linking-guardrail-events.md` — documents HITL span context storage on `HITLRequest`, linked decision span creation, guardrail span events contract, and `pii_field_count` double-detection trade-off (Issue #30)
+
+#### Changed
+
+- `docs/adr/README.md` — ADR-0043–0046 indexed
+- `CLAUDE_SESSION_INIT.md` — ADR-0043–0046 added to quick index
+- `CLAUDE.md` — Version bumped to 2.3.0; ADR row updated to 0001–0046; new skill row for OTel agent spans/GenAI/HITL trace (Issue #30)
+- `skills/observability/otel-instrumentation.md` — Added agentic span hierarchy section (OTEL-001, ADR-0044), LLM inference span section (ADR-0045), HITL trace linking section (ADR-0046), and guardrail span events section (ADR-0046); updated spec and ADR references
+
+---
+
 ### Wave 19 — HITL Trace Linking + Guardrail Span Events (OTel Agentic Observability)
 
 #### Changed
