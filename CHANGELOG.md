@@ -13,6 +13,21 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 3 — Multi-Agent Infrastructure (Agentic SDLC)
+
+#### Added
+
+- **`specs/ai/sub-agent-specialization.md`** — Spec for pluggable sub-agent registry: `AgentConfig` schema, risk-level semantics, built-in specializations, observability contract. Closes #6.
+- **`src/agents/harness/sub_agent_registry.py`** — `SubAgentRegistry` with `register`, `get`, `list_by_risk_level`, `all`, `unregister`; module-level `default_registry` pre-populated with `security-reviewer` (high) and `document-generator` (low). Closes #6.
+- **`docs/adr/ADR-0032-sub-agent-specialization-registry.md`** — Decision record for sub-agent registry. Closes #6.
+- **`tests/unit/agents/harness/test_sub_agent_registry.py`** — 19 unit tests for `SubAgentRegistry` (100% pass). Closes #6.
+- **`infrastructure/monitoring/grafana/dashboards/agent-productivity.json`** — Grafana dashboard: session velocity, net-new/planned ratio, cycle time p50/p95, token cost per task, sub-agent latency/errors, session duration. Closes #7.
+
+#### Changed
+
+- **`src/observability/metrics.py`** — Added 5 new metrics: `agent_subtask_duration_seconds`, `agent_subtask_error_total` (Issue #6); `agent_session_tasks_total`, `agent_session_duration_seconds`, `agent_cycle_time_seconds` (Issue #7); plus `security_finding_total` (pre-emptive for Issue #9). Added helpers `record_subtask`, `record_session_task`, `record_cycle_time`. Closes #6, #7.
+- **`docs/adr/ADR-0020-finops-cost-allocation.md`** — Added ROI model appendix: cost-per-task formula, net-new work multiplier, metrics table, budget allocation guidance for formerly non-viable work. Closes #7.
+
 ### Wave 2 — Agentic SDLC Core (Agentic SDLC)
 
 #### Added
