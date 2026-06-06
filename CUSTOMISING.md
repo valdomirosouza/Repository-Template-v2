@@ -203,3 +203,139 @@ git commit -m "chore: sync from template vX.Y.Z"
 
 Files you should almost always keep from **your** version (don't overwrite):
 `CLAUDE.md`, `.env.example`, `services.yaml`, `docs/adr/`, `specs/`, `CHANGELOG.md`, `CODEOWNERS`.
+
+---
+
+## 8. Agentic SDLC — Progressive Adoption Guide
+
+The 13-phase Agentic SDLC (ADR-0052) is designed for progressive adoption. Start with what provides value now and expand as your team grows. **Full reference:** `docs/process/WORKFLOW.md`.
+
+### Tier 0 — Solo / 1–5 Engineers
+
+**Activate:**
+
+| Item                                    | How                                                                  |
+| --------------------------------------- | -------------------------------------------------------------------- |
+| GitHub Issues with basic labels         | Enable via `.github/labels.yml`                                      |
+| `docs/process/DEFINITION_OF_DONE.md`    | Use as PR checklist reference                                        |
+| Sprint Board (Projects View 2 only)     | Create a single Projects board                                       |
+| Bi-weekly retrospective (async, 15 min) | Use sprint retro template from `docs/process/RETROSPECTIVE-GUIDE.md` |
+| CI gates: lint + unit tests             | `ci.yml` runs automatically                                          |
+
+**Skip for now:**
+
+- Grooming Ceremony → ad-hoc Issue triage
+- Formal DoR checklist → informal review in Issue comments
+- Release retrospective → sprint retro covers it
+- CAB / RFC process → Tech Lead solo approval
+- HITL runtime gateway → solo projects may use `LOW_RISK` autonomy level (still log all actions)
+
+**Process phases to activate:** 1 (Conception) → 6 (Development) → 7 (Code Review) → 8 (Testing) → 12 (Production deploy)
+
+---
+
+### Tier 1 — Small Team / 6–20 Engineers
+
+**Activate (in addition to Tier 0):**
+
+| Item                                       | How                                                |
+| ------------------------------------------ | -------------------------------------------------- |
+| Full 5-view Projects board                 | Import `.github/project-board-definition.json`     |
+| Weekly Grooming Ceremony                   | 60 min; DoR checklist enforced                     |
+| `docs/process/DEFINITION_OF_READY.md`      | DoR enforced at Grooming                           |
+| Spec-as-PR for `discovery.md` and `nfr.md` | Phase 2 discovery workflow                         |
+| Feature spec template                      | `specs/features/FEAT-{id}/feature-spec.md`         |
+| `docs/process/HITL-GOVERNANCE.md`          | Tier 1 (Spec-as-PR) governance                     |
+| Release retrospective                      | Per-release; 60–90 min                             |
+| `docs/process/DEFINITION_OF_RELEASE.md`    | DoR-Release checklist before every release         |
+| HITL runtime gateway (default `NONE`)      | Enabled by default in `src/agents/hitl_gateway.py` |
+
+**Skip for now:**
+
+- CAB for Standard Changes → Tech Lead approval sufficient
+- Formal PRR → SRE checklist in PR description
+- SOX controls → unless SEC-listed
+
+**Additional phases to activate:** 2 (Discovery) → 3 (Grooming) → 4 (Specification) → 11 (Release RC) → 13 (Post-Deploy)
+
+---
+
+### Tier 2 — Medium Team / 21–50 Engineers
+
+**Activate (in addition to Tier 1):**
+
+| Item                                                  | How                                                           |
+| ----------------------------------------------------- | ------------------------------------------------------------- |
+| Full CAB for Normal and Emergency changes             | `skills/compliance/iso27001-change-management.md`             |
+| Formal PRR (`skills/sre/prr.md`) for all new services | Required before Phase 12                                      |
+| Security Debt view (Projects View 3)                  | Security Lead reviews weekly                                  |
+| `docs/process/RACI.md`                                | Ownership clarity as team grows                               |
+| DORA Dashboard (Projects View 5 + Grafana)            | `infrastructure/monitoring/grafana/dora-metrics.json`         |
+| Monthly DORA report                                   | `docs/sre/dora-report-YYYY-MM.md` template                    |
+| Abuse case tests                                      | `make test-abuse-cases` blocking gate                         |
+| Model contract tests                                  | `pytest tests/model_contract/ -m model_contract` on model PRs |
+| `docs/process/SPRINT-TRACKING.md`                     | Full sprint governance                                        |
+
+**Skip for now:**
+
+- SOX controls → unless SEC-listed
+- Dedicated Release Manager role → Tech Lead covers it
+
+**Additional phases to activate:** 5 (Architecture) → 9 (DevSecOps) → 10 (Observability/PRR)
+
+---
+
+### Tier 3 — Large Team / 50+ Engineers
+
+**Activate (in addition to Tier 2):**
+
+| Item                                         | How                                                                           |
+| -------------------------------------------- | ----------------------------------------------------------------------------- |
+| SOX controls (if SEC-listed)                 | `skills/compliance/sox.md` + `specs/compliance/sox-controls.md`               |
+| Dedicated Release Manager role               | Assign ownership per `docs/process/RACI.md` Tier 5                            |
+| Governance Council formal review             | DoD/DoR changes require council sign-off                                      |
+| Full DORA Elite tracking with retrospectives | Monthly DORA report mandatory; miss triggers formal retrospective             |
+| Multi-team sprint synchronisation            | Align sprint boundaries across services; use release milestones               |
+| Adversarial testing                          | `tests/model_contract/` extended; red-team exercises per ADR-0050             |
+| Full Secure-by-Design stack active           | All Waves 21–25 components (`src/guardrails/`, harness, behavioral contracts) |
+
+**All 13 phases fully active.**
+
+---
+
+### Adoption Checklist (copy into your first setup Issue)
+
+```markdown
+## Agentic SDLC Adoption Checklist
+
+### Tier 0 (all teams)
+
+- [ ] GitHub labels configured (`.github/labels.yml`)
+- [ ] `docs/process/DEFINITION_OF_DONE.md` linked in PR template
+- [ ] Sprint Board created in GitHub Projects
+- [ ] CI gates running (lint + unit tests)
+- [ ] First sprint retrospective scheduled
+
+### Tier 1 (6–20 engineers)
+
+- [ ] All 5 Projects board views created
+- [ ] Grooming Ceremony recurring calendar invite sent
+- [ ] `docs/process/DEFINITION_OF_READY.md` shared with team
+- [ ] Feature spec template introduced
+- [ ] First release retrospective scheduled
+
+### Tier 2 (21–50 engineers)
+
+- [ ] CAB process documented in `docs/change-management/`
+- [ ] PRR checklist embedded in new-service runbook
+- [ ] Grafana DORA dashboard deployed
+- [ ] Abuse case tests added to CI blocking gates
+- [ ] RACI matrix reviewed and signed off by leads
+
+### Tier 3 (50+ engineers)
+
+- [ ] SOX applicability confirmed (or documented as N/A)
+- [ ] Release Manager role assigned and documented
+- [ ] Governance Council charter defined
+- [ ] Red-team exercise schedule established
+```
