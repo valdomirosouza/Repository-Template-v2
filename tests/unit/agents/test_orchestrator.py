@@ -1,10 +1,18 @@
 """Unit tests for src/agents/orchestrator/orchestrator.py.
 
 Spec: specs/ai/agent-design.md
-ADR:  ADR-0010 (Agent Framework Selection), ADR-0011 (HITL/HOTL Model)
+ADR:  ADR-0010 (Agent Framework Selection), ADR-0011 (HITL/HOTL Model),
+      ADR-0048 (zero-trust tool registry), ADR-0053 (runtime enforcement)
 
 All test inputs use clearly synthetic, obviously fake data.
 No real personal data appears in this file.
+
+P0-4 contract: every action the orchestrator executes must route through the
+governed ToolExecutor. Only *registered* tools execute; at the safest default
+autonomy level (NONE) every action falls back to HITL. Tests therefore use the
+registered starter-catalog tool names (read-db-record, write-db-record, …) and
+configure OpenFeature autonomy flags explicitly when autonomous execution is
+under test.
 """
 
 from __future__ import annotations
@@ -13,11 +21,49 @@ import json
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from openfeature import api
+from openfeature.provider.in_memory_provider import InMemoryFlag, InMemoryProvider
 
 from src.agents.hitl_gateway import HITLStatus
 from src.agents.orchestrator.orchestrator import AgentOrchestrator
+from src.agents.tool_executor import ToolNotRegisteredError
 from src.guardrails.audit_logger import AuditWriteError
 from src.shared.llm_client import StubLLMClient
+
+# ── OpenFeature provider helpers (autonomy levels are global flag state) ───────
+
+
+def _make_bool_flag(enabled: bool) -> InMemoryFlag:
+    variant = "on" if enabled else "off"
+    return InMemoryFlag(default_variant=variant, variants={"on": True, "off": False})
+
+
+def _set_provider(**flags: bool) -> None:
+    in_memory_flags = {name: _make_bool_flag(val) for name, val in flags.items()}
+    api.set_provider(InMemoryProvider(in_memory_flags))
+
+
+def _all_off() -> None:
+    """Safest-default autonomy: NONE — every action requires HITL."""
+    _set_provider(
+        **{
+            "autonomous-mode": False,
+            "autonomous-mode-full": False,
+            "autonomous-mode-medium-risk": False,
+            "autonomous-mode-low-risk": False,
+            "autonomous-mode-tests-only": False,
+            "autonomous-mode-read-only": False,
+        }
+    )
+
+
+@pytest.fixture(autouse=True)
+def _reset_autonomy_to_none() -> None:
+    """Reset OpenFeature to all-flags-off before every test (NONE autonomy).
+
+    Other test modules mutate the global provider; pin it here for determinism.
+    """
+    _all_off()
 
 
 def _make_audit(side_effect=None) -> MagicMock:
@@ -40,7 +86,10 @@ def _make_orchestrator(
     audit: MagicMock | None = None,
 ) -> AgentOrchestrator:
     if llm_response is None:
-        llm_response = json.dumps({"action": "summarise", "parameters": {}, "risk_score": 0.1})
+        # read-db-record is a registered, low-risk, no-HITL starter-catalog tool.
+        llm_response = json.dumps(
+            {"action": "read-db-record", "parameters": {}, "risk_score": 0.1}
+        )
     return AgentOrchestrator(
         agent_id="test-orchestrator",
         audit_logger=audit or _make_audit(),
@@ -75,49 +124,47 @@ class TestReason:
     @pytest.mark.asyncio
     async def test_valid_json_populates_action_and_risk(self) -> None:
         # RiskScorer overrides the LLM-provided risk_score (0.2) with its own
-        # computed score. "send_report" scores 0.7 irreversibility (write-like action)
-        # → 0.35×0.7 + 0.25×0.2 + 0.20×0.1 = 0.315.
+        # computed score. "read-db-record" → 0.1 irreversibility (read action)
+        # → 0.35×0.1 + 0.25×0.2 + 0.20×0.1 = 0.105.
         llm_json = json.dumps(
-            {"action": "send_report", "parameters": {"to": "team"}, "risk_score": 0.2}
+            {"action": "read-db-record", "parameters": {"record_id": "synthetic-123"},
+             "risk_score": 0.2}
         )
         orchestrator = _make_orchestrator(llm_response=llm_json)
 
-        result = await orchestrator.run(raw_input={"request_text": "Generate weekly report"})
+        result = await orchestrator.run(raw_input={"request_text": "Fetch a record"})
 
-        assert result["action"] == "send_report"
-        assert result["risk_score"] == pytest.approx(0.315)
+        assert result["action"] == "read-db-record"
+        assert result["risk_score"] == pytest.approx(0.105)
 
     @pytest.mark.asyncio
-    async def test_invalid_llm_json_defaults_to_safe_values(self) -> None:
-        # Unparseable LLM output → action="unknown". RiskScorer computes 0.245
-        # (unknown action scores 0.5 irreversibility, no external/scale/PII signals).
+    async def test_invalid_llm_json_blocks_unregistered_action(self) -> None:
+        # Unparseable LLM output → action="unknown" → NOT a registered tool.
+        # Zero-trust: unregistered actions are blocked at execution (fail-closed).
         orchestrator = _make_orchestrator(llm_response="not valid json {{{{")
 
-        result = await orchestrator.run(raw_input={"request_text": "Do something"})
-
-        assert result["action"] == "unknown"
-        assert result["risk_score"] == pytest.approx(0.245)
+        with pytest.raises(ToolNotRegisteredError):
+            await orchestrator.run(raw_input={"request_text": "Do something"})
 
     @pytest.mark.asyncio
     async def test_missing_risk_score_uses_risk_scorer(self) -> None:
         # LLM omits risk_score — RiskScorer computes based on action+parameters.
-        # "test_action" with empty params → 0.5 irreversibility, 0.2 external, 0.1 scale
-        # → 0.35×0.5 + 0.25×0.2 + 0.20×0.1 = 0.245.
-        llm_json = json.dumps({"action": "test_action", "parameters": {}})
+        # "read-db-record" with empty params → 0.105 (read action).
+        llm_json = json.dumps({"action": "read-db-record", "parameters": {}})
         orchestrator = _make_orchestrator(llm_response=llm_json)
 
-        result = await orchestrator.run(raw_input={"request_text": "Run test"})
+        result = await orchestrator.run(raw_input={"request_text": "Run read"})
 
-        assert result["risk_score"] == pytest.approx(0.245)
+        assert result["risk_score"] == pytest.approx(0.105)
 
     @pytest.mark.asyncio
     async def test_parameters_passed_through_to_result(self) -> None:
         llm_json = json.dumps(
-            {"action": "analyse", "parameters": {"depth": "full"}, "risk_score": 0.1}
+            {"action": "read-db-record", "parameters": {"depth": "full"}, "risk_score": 0.1}
         )
         orchestrator = _make_orchestrator(llm_response=llm_json)
 
-        result = await orchestrator.run(raw_input={"request_text": "Analyse data"})
+        result = await orchestrator.run(raw_input={"request_text": "Read data"})
 
         assert result["parameters"] == {"depth": "full"}
 
@@ -125,8 +172,9 @@ class TestReason:
 class TestAct:
     @pytest.mark.asyncio
     async def test_low_risk_executes_without_hitl(self) -> None:
-        # risk_score=0.1 is below the 0.4 hitl_risk_threshold
-        llm_json = json.dumps({"action": "read_summary", "parameters": {}, "risk_score": 0.1})
+        # LOW_RISK autonomy enabled → low-risk registered tool executes autonomously.
+        _set_provider(**{"autonomous-mode-low-risk": True})
+        llm_json = json.dumps({"action": "read-db-record", "parameters": {}, "risk_score": 0.1})
         gateway = _make_gateway()
         orchestrator = AgentOrchestrator(
             agent_id="test-agent",
@@ -135,15 +183,16 @@ class TestAct:
             llm_client=StubLLMClient(llm_json),
         )
 
-        result = await orchestrator.run(raw_input={"request_text": "Show me the summary"})
+        result = await orchestrator.run(raw_input={"request_text": "Show me the record"})
 
         assert result["outcome"] == "EXECUTED"
+        assert result["oversight_mode"] == "HOTL_LOW_RISK"
         gateway.submit_for_approval.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_high_risk_routes_to_hitl(self) -> None:
-        # risk_score=0.9 is above the 0.4 threshold
-        llm_json = json.dumps({"action": "delete_records", "parameters": {}, "risk_score": 0.9})
+        # write-db-record is a mandatory-HITL registered tool — always routes to HITL.
+        llm_json = json.dumps({"action": "write-db-record", "parameters": {}, "risk_score": 0.9})
         gateway = _make_gateway(HITLStatus.APPROVED)
         orchestrator = AgentOrchestrator(
             agent_id="test-agent",
@@ -152,60 +201,75 @@ class TestAct:
             llm_client=StubLLMClient(llm_json),
         )
 
-        result = await orchestrator.run(raw_input={"request_text": "Clean up old records"})
+        result = await orchestrator.run(raw_input={"request_text": "Persist this record"})
 
         gateway.submit_for_approval.assert_called_once()
         assert result["outcome"] == "EXECUTED"
 
     @pytest.mark.asyncio
     async def test_hitl_rejection_raises_value_error(self) -> None:
-        llm_json = json.dumps({"action": "delete_records", "parameters": {}, "risk_score": 0.9})
+        llm_json = json.dumps({"action": "write-db-record", "parameters": {}, "risk_score": 0.9})
         orchestrator = _make_orchestrator(
             llm_response=llm_json,
             gateway_status=HITLStatus.REJECTED,
         )
 
         with pytest.raises(ValueError, match="rejected"):
-            await orchestrator.run(raw_input={"request_text": "Delete all records"})
+            await orchestrator.run(raw_input={"request_text": "Persist this record"})
+
+    @pytest.mark.asyncio
+    async def test_pending_status_suspends_action(self) -> None:
+        # P0-1: a PENDING HITL response is a valid suspension state, not a failure.
+        llm_json = json.dumps({"action": "write-db-record", "parameters": {}, "risk_score": 0.9})
+        orchestrator = _make_orchestrator(
+            llm_response=llm_json,
+            gateway_status=HITLStatus.PENDING,
+        )
+
+        result = await orchestrator.run(raw_input={"request_text": "Persist this record"})
+
+        assert result["status"] == "waiting_for_human_approval"
+        assert result["outcome"] == "PENDING"
+        assert "hitl_request_id" in result
 
     @pytest.mark.asyncio
     async def test_audit_write_error_blocks_action(self) -> None:
-        llm_json = json.dumps({"action": "summarise", "parameters": {}, "risk_score": 0.1})
+        llm_json = json.dumps({"action": "read-db-record", "parameters": {}, "risk_score": 0.1})
         audit = _make_audit(side_effect=AuditWriteError("disk full"))
         orchestrator = _make_orchestrator(llm_response=llm_json, audit=audit)
 
         with pytest.raises(AuditWriteError):
-            await orchestrator.run(raw_input={"request_text": "Summarise logs"})
+            await orchestrator.run(raw_input={"request_text": "Read logs"})
 
     @pytest.mark.asyncio
     async def test_pending_audit_written_before_executed(self) -> None:
-        # Write-before-execute invariant: first call must be PENDING, second EXECUTED
-        llm_json = json.dumps({"action": "summarise", "parameters": {}, "risk_score": 0.1})
+        # Write-before-execute invariant: first audit is PENDING (proposed),
+        # last audit is EXECUTED (post-execution from ToolExecutor).
+        llm_json = json.dumps({"action": "read-db-record", "parameters": {}, "risk_score": 0.1})
         audit = _make_audit()
         orchestrator = _make_orchestrator(llm_response=llm_json, audit=audit)
 
-        await orchestrator.run(raw_input={"request_text": "Summarise logs"})
+        await orchestrator.run(raw_input={"request_text": "Read logs"})
 
-        assert audit.log_event.call_count == 2
-        first_event = audit.log_event.call_args_list[0][0][0]
-        second_event = audit.log_event.call_args_list[1][0][0]
-        assert first_event.outcome == "PENDING"
-        assert second_event.outcome == "EXECUTED"
+        outcomes = [c[0][0].outcome for c in audit.log_event.call_args_list]
+        assert outcomes[0] == "PENDING"
+        assert outcomes[-1] == "EXECUTED"
+        assert "EXECUTING" in outcomes
 
     @pytest.mark.asyncio
     async def test_result_contains_expected_fields(self) -> None:
         llm_json = json.dumps(
-            {"action": "analyse", "parameters": {"depth": "full"}, "risk_score": 0.2}
+            {"action": "read-db-record", "parameters": {"depth": "full"}, "risk_score": 0.2}
         )
         orchestrator = _make_orchestrator(llm_response=llm_json)
 
         result = await orchestrator.run(
-            raw_input={"request_text": "Analyse data"},
+            raw_input={"request_text": "Read data"},
             trace_id="trace-unit-xyz",
         )
 
         assert result["agent_id"] == "test-orchestrator"
-        assert result["action"] == "analyse"
+        assert result["action"] == "read-db-record"
         assert result["parameters"] == {"depth": "full"}
         assert result["outcome"] == "EXECUTED"
         assert result["trace_id"] == "trace-unit-xyz"

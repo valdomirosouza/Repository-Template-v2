@@ -11,6 +11,32 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [Unreleased]
+
+### Wave A — Runtime Correctness (ADR-0053)
+
+#### Fixed
+
+- `src/agents/orchestrator/orchestrator.py` — **P0-1**: HITL `PENDING` is now a valid suspension state. The orchestrator returns `{"status": "waiting_for_human_approval", ...}` instead of failing every HITL-required action; `REJECTED`/`EXPIRED` raise, only `APPROVED` executes (Issue #43, ADR-0053)
+
+#### Changed
+
+- `src/agents/orchestrator/orchestrator.py` — **P0-2**: replaced boolean `is_autonomous_mode_enabled()` on the critical path with graduated `get_autonomy_level(action_type, risk_score)`; full decision matrix records `autonomy_level` + `oversight_mode` in audit and OTel spans (Issue #43, ADR-0053, ADR-0015)
+- `src/agents/tool_registry.py` — `check_permission`/`list_by_risk` accept both `ToolRiskLevel` enum and string risk levels; added `is_registered()` (Issue #43, ADR-0053)
+
+#### Added
+
+- `src/agents/action_policy.py` — **P0-3**: `requires_mandatory_hitl(action_type, parameters)` mandatory-HITL policy layer evaluated **before** the numeric risk score; numeric score cannot downgrade a mandatory category (Issue #43, ADR-0053)
+- `src/agents/tool_executor.py` — **P0-4**: `ToolExecutor` 10-step runtime enforcement (registry assertion, schema validation, HITL short-circuit, autonomy permission, per-tool rate limits, sandbox routing, pre/post/failure audit). `hitl_approved` flag reconciles orchestrator routing with executor enforcement without weakening registry/sandbox gates (Issue #43, ADR-0048, ADR-0053)
+- `docs/adr/ADR-0053-runtime-correctness-hitl-autonomy-tool-enforcement.md` — records the four P0 runtime-correctness decisions (Issue #43)
+- `tests/unit/agents/test_action_policy.py`, `tests/unit/agents/test_tool_runtime_enforcement.py`, `tests/security/test_unregistered_tool_blocked.py` — unit + security coverage for the new policy and executor (Issue #43)
+
+#### Security
+
+- Zero-trust enforcement at the execution choke-point: unregistered tools are blocked and audited (`BLOCKED_UNREGISTERED`); sandbox-required tools cannot execute directly even after HITL approval; per-tool rate limits enforced before execution (Issue #43, ADR-0048, ADR-0053)
+
+---
+
 ## [2.6.0] - 2026-06-06
 
 ### Waves 26–29 — Agentic SDLC E2E Workflow (ADR-0052)
