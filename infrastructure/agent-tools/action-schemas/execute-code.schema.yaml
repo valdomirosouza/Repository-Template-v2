@@ -1,0 +1,26 @@
+# Schema for execute-code action payloads
+# Spec: secure-by-design-agentic-ai-compliance-v2.md §Pillar 4 (CV3)
+# ADR:  ADR-0050
+#
+# Note: payload size is intentionally small for code execution —
+# large code submissions are a hallucination or injection signal.
+
+max_payload_bytes: 4096
+
+required:
+  - code
+  - language
+
+properties:
+  code:
+    type: string
+    description: "Python code to execute (pre-flight checked by CodePreFlight before sandbox)"
+  language:
+    type: string
+    description: "Programming language (currently only 'python' is supported)"
+  timeout_seconds:
+    type: number
+    description: "Execution timeout override (subject to sandbox max)"
+  description:
+    type: string
+    description: "Human-readable description of what the code does (required for HITL review)"

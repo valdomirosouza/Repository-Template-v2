@@ -13,6 +13,28 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 24 — Continuous Verification (Secure by Design Pillar 4)
+
+#### Added
+
+- `tests/abuse_cases/` — structured abuse-case test library with 5 test files and `conftest.py`; all tests use mock LLMs (no API cost) and run on every PR via `@pytest.mark.abuse_case`:
+  - `test_jailbreak_attempts.py` — instruction override, role switch, excessive length (LLM01/02)
+  - `test_goal_hijacking.py` — poisoned tool responses, code-based goal hijacking
+  - `test_context_overflow.py` — context stuffing to push spec constraints out of scope
+  - `test_multiagent_trust_abuse.py` — Planner→Generator context tampering via ContextSeal
+  - `test_spec_boundary_violations.py` — actions outside spec's allowed_action_types
+- `src/agents/action_schema_validator.py` — `ActionSchemaValidator` validates action payloads against YAML schemas before HITL queuing; `validate_or_raise()` raises `ActionSchemaError` on missing fields, type mismatches, or oversized payloads; normalizes underscore→hyphen action_type names (Issue #35, CV3, ADR-0050)
+- `infrastructure/agent-tools/action-schemas/` — three starter schemas: `write-db-record.schema.yaml`, `send-email.schema.yaml`, `execute-code.schema.yaml` (Issue #35, CV3)
+- `docs/adr/ADR-0050-adversarial-abuse-testing.md` — documents abuse-case test taxonomy, mock-only strategy, ActionSchemaValidator design, and deferred jsonschema integration
+- `tests/unit/agents/test_action_schema_validator.py` — 24 unit tests for ActionSchemaValidator
+
+#### Changed
+
+- `.github/workflows/ci.yml` — `test-security` job gains `Abuse case tests (continuous, mock-LLM)` step running `pytest tests/abuse_cases/ -m abuse_case` on every PR (Issue #35, CV2)
+- `pyproject.toml` — `abuse_case` pytest marker registered in `[tool.pytest.ini_options]`
+
+---
+
 ### Wave 23 — Runtime Behavioral Monitoring (Secure by Design Pillar 3)
 
 #### Added

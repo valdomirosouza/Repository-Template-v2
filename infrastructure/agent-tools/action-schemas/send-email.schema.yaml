@@ -1,0 +1,27 @@
+# Schema for send-email action payloads
+# Spec: secure-by-design-agentic-ai-compliance-v2.md §Pillar 4 (CV3)
+# ADR:  ADR-0050
+
+max_payload_bytes: 10240
+
+required:
+  - to
+  - subject
+  - body
+
+properties:
+  to:
+    type: array
+    description: "List of recipient email addresses (validated by PII filter before sending)"
+  subject:
+    type: string
+    description: "Email subject line (max 200 chars enforced by downstream validator)"
+  body:
+    type: string
+    description: "Email body text (PII-masked before transmission)"
+  cc:
+    type: array
+    description: "CC recipients"
+  priority:
+    type: string
+    description: "normal | high | low"
