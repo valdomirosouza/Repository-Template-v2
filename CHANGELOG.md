@@ -13,6 +13,19 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 6 — Gartner Governance Gate & Business Value (Agentic SDLC)
+
+#### Added
+
+- **`.github/workflows/governance-gate.yml`** — Blocking CI gate: PRs targeting `main` that touch `autonomous-mode*.yaml`, `autonomy-tier-ready.yaml`, or `hitl_gateway.py` require both `governance-council-approved` and `legal-reviewed` labels before merge. Closes #14. ADR-0037.
+- **`harness/business-value-check.yml`** — Informational PR gate: checks that agent PRs answer all 6 mandatory Business Value questions; posts advisory comment if any are missing. Closes #14. ADR-0037.
+- **`docs/governance/governance-labels.md`** — Label definitions, approval workflow, council composition, and escalation path for governance labels. Closes #14.
+- **`docs/adr/ADR-0037-governance-gate-enforcement.md`** — Decision record for machine-enforced governance council approval gate.
+
+#### Changed
+
+- **`skills/sre/prr.md`** — Added "Business Value Gate" section with 6 mandatory ROI questions (baseline metric, measurable target, business sponsor, LLM cost budget, break-even timeline, 30/90/180-day success criteria). Addresses Gartner Gap G2.
+
 ---
 
 ## [2.1.0] — 2026-06-05
