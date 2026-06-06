@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "_comment": "GitHub Projects v2 board definition for the Agentic SDLC workflow. Import via gh CLI or manually. ADR: ADR-0052 | Spec: docs/process/SPRINT-TRACKING.md",
+  "title": "Agentic SDLC Sprint Board",
+  "description": "5-view board covering the full 13-phase Agentic SDLC lifecycle.",
+  "views": [
+    {
+      "id": "backlog",
+      "name": "Backlog",
+      "description": "Feature funnel — Discovery through Ready. Product Owner manages this view.",
+      "layout": "board",
+      "group_by": "label",
+      "columns": [
+        {
+          "name": "Discovery",
+          "filter": "label:\"status: discovery\""
+        },
+        {
+          "name": "Ready",
+          "filter": "label:\"status: ready\""
+        },
+        {
+          "name": "Blocked",
+          "filter": "label:\"status: blocked\""
+        }
+      ],
+      "sort": [{ "field": "priority", "direction": "desc" }]
+    },
+    {
+      "id": "sprint-board",
+      "name": "Sprint Board",
+      "description": "Active sprint work — used in daily standup. Filter by current milestone.",
+      "layout": "board",
+      "group_by": "label",
+      "columns": [
+        {
+          "name": "In Progress",
+          "filter": "label:\"status: in-progress\""
+        },
+        {
+          "name": "In Review",
+          "filter": "label:\"status: in-review\""
+        },
+        {
+          "name": "Done",
+          "filter": "label:\"status: done\""
+        }
+      ],
+      "filter": "milestone:@current",
+      "sort": [{ "field": "updated", "direction": "desc" }]
+    },
+    {
+      "id": "security-debt",
+      "name": "Security Debt",
+      "description": "Security issues by priority. Security Lead reviews weekly. CRITICAL items block release.",
+      "layout": "board",
+      "group_by": "label",
+      "columns": [
+        {
+          "name": "CRITICAL",
+          "filter": "label:\"type: security\" label:\"priority: P0\""
+        },
+        {
+          "name": "HIGH",
+          "filter": "label:\"type: security\" label:\"priority: P1\""
+        },
+        {
+          "name": "Backlog",
+          "filter": "label:\"type: security\" -label:\"priority: P0\" -label:\"priority: P1\""
+        }
+      ],
+      "sort": [{ "field": "created", "direction": "asc" }]
+    },
+    {
+      "id": "release-tracker",
+      "name": "Release Tracker",
+      "description": "Release readiness tracking. Release Manager view. Feeds DoR-Release checklist.",
+      "layout": "table",
+      "fields": ["title", "status", "labels", "milestone", "assignees"],
+      "group_by": "milestone",
+      "columns": [
+        {
+          "name": "This Release",
+          "filter": "milestone:@next is:open"
+        },
+        {
+          "name": "Pending RC",
+          "filter": "label:\"rc-pending\""
+        },
+        {
+          "name": "Approved",
+          "filter": "label:\"rc-approved\""
+        }
+      ]
+    },
+    {
+      "id": "dora-dashboard",
+      "name": "DORA Dashboard",
+      "description": "Read-only DORA proxy view. For precise metrics use Grafana: infrastructure/monitoring/grafana/dora-metrics.json",
+      "layout": "table",
+      "fields": ["title", "labels", "created_at", "closed_at", "milestone"],
+      "group_by": "week",
+      "filters": [
+        {
+          "name": "Deployment Frequency",
+          "description": "Issues closed per week (proxy for features shipped)",
+          "filter": "label:\"status: done\" is:closed"
+        },
+        {
+          "name": "Hotfixes (Change Failure)",
+          "description": "Hotfix issues as proportion of total closed",
+          "filter": "label:\"type: hotfix\" is:closed"
+        },
+        {
+          "name": "P0 Incidents (MTTR proxy)",
+          "description": "P0 issues — lead time from open to close approximates MTTR",
+          "filter": "label:\"priority: P0\" is:closed"
+        }
+      ],
+      "note": "Lead time and MTTR calculations require the Grafana DORA dashboard for accuracy. This view provides quick team visibility only."
+    }
+  ],
+  "labels_required": [
+    "type: feature",
+    "type: bug",
+    "type: chore",
+    "type: spike",
+    "type: security",
+    "type: hotfix",
+    "status: discovery",
+    "status: ready",
+    "status: in-progress",
+    "status: in-review",
+    "status: done",
+    "status: blocked",
+    "priority: P0",
+    "priority: P1",
+    "priority: P2",
+    "priority: P3",
+    "standard-change",
+    "normal-change",
+    "emergency-change",
+    "rc-pending",
+    "rc-approved",
+    "no-spec",
+    "skip-changelog"
+  ],
+  "setup_instructions": [
+    "1. Create a GitHub Projects v2 project in your organisation or repository.",
+    "2. Add the required labels from labels_required (use .github/labels.yml as reference).",
+    "3. Create the 5 views manually using the filters defined above, or use the gh CLI:",
+    "   gh project create --owner @me --title 'Agentic SDLC Sprint Board'",
+    "4. Enable the issue-lifecycle.yml workflow to automate label transitions.",
+    "5. See docs/process/SPRINT-TRACKING.md for full cadence and team-size guidance."
+  ]
+}

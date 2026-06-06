@@ -1,0 +1,86 @@
+name: LLM CI Budget Tracker
+
+# Runs hourly to keep LLM_CI_CURRENT_MONTH_SPEND_USD up to date.
+# The value is stored as a repository variable so the budget circuit
+# breaker in ci-model-contract.yml can read it without an API call.
+#
+# NOTE: This workflow requires a GitHub Actions secret LLM_BILLING_API_KEY
+# and, optionally, LLM_CI_MONTHLY_BUDGET_USD (default 50.0).
+# If the secret is absent the workflow exits cleanly (non-blocking).
+#
+# ADR: ADR-0051 | Spec: RTK-001 (Q5 — non-blocking budget gate)
+
+on:
+  schedule:
+    # Every hour at :05 past the hour
+    - cron: "5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update-spend:
+    name: Fetch current month LLM spend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check billing secret availability
+        id: check
+        run: |
+          if [ -z "${{ secrets.LLM_BILLING_API_KEY }}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "LLM_BILLING_API_KEY not set — skipping spend fetch"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fetch spend from Anthropic usage API
+        if: steps.check.outputs.skip == 'false'
+        id: fetch
+        env:
+          LLM_BILLING_API_KEY: ${{ secrets.LLM_BILLING_API_KEY }}
+        run: |
+          # Anthropic Usage API — replace with your provider's equivalent
+          # Returns JSON with usage.total_cost_usd for the current billing period
+          RESPONSE=$(curl -sf \
+            -H "x-api-key: ${LLM_BILLING_API_KEY}" \
+            -H "anthropic-version: 2023-06-01" \
+            "https://api.anthropic.com/v1/usage" \
+            2>/dev/null || echo '{}')
+
+          SPEND=$(echo "$RESPONSE" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          # Adjust key path to match actual API response shape
+          spend = data.get('usage', {}).get('total_cost_usd', 0.0)
+          print(f'{spend:.4f}')
+          " 2>/dev/null || echo "0.0000")
+
+          echo "spend=${SPEND}" >> "$GITHUB_OUTPUT"
+          echo "Current month LLM CI spend: \$${SPEND}"
+
+      - name: Update repository variable
+        if: steps.check.outputs.skip == 'false'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const spend = '${{ steps.fetch.outputs.spend }}' || '0.0000';
+            try {
+              await github.rest.actions.updateRepoVariable({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'LLM_CI_CURRENT_MONTH_SPEND_USD',
+                value: spend,
+              });
+              console.log(`Updated LLM_CI_CURRENT_MONTH_SPEND_USD = ${spend}`);
+            } catch (e) {
+              // Variable may not exist yet — create it
+              await github.rest.actions.createRepoVariable({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'LLM_CI_CURRENT_MONTH_SPEND_USD',
+                value: spend,
+              });
+              console.log(`Created LLM_CI_CURRENT_MONTH_SPEND_USD = ${spend}`);
+            }
