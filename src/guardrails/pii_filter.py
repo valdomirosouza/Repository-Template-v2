@@ -15,6 +15,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, ClassVar
 
+from opentelemetry import trace as otel_trace
+
 
 class PIILevel(Enum):
     L1_CRITICAL = 1  # CPF/SSN, health data, biometric — never in logs or LLM
@@ -144,7 +146,23 @@ class PIIFilter:
         min_level: PIILevel = PIILevel.L2_SENSITIVE,
     ) -> dict[str, Any]:
         """Recursively mask PII in all string values of a dictionary."""
-        return self._mask_value(data, min_level)  # type: ignore[no-any-return]
+        result = self._mask_value(data, min_level)  # type: ignore[no-any-return]
+        # Count how many values were actually changed (rough field-level count).
+        original_text = str(data)
+        matches = self.detect(original_text)
+        pii_field_count = len(matches)
+        if pii_field_count > 0:
+            max_level_val = min(m.level.value for m in matches)
+            span = otel_trace.get_current_span()
+            if span.is_recording():
+                span.add_event(
+                    "guardrail.pii_detected",
+                    {
+                        "pii_field_count": pii_field_count,
+                        "pii_max_level": max_level_val,
+                    },
+                )
+        return result
 
     def _mask_value(self, value: Any, min_level: PIILevel) -> Any:
         if isinstance(value, str):

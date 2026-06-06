@@ -13,6 +13,16 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 19 — HITL Trace Linking + Guardrail Span Events (OTel Agentic Observability)
+
+#### Changed
+
+- `src/agents/hitl_gateway.py` — `HITLRequest` gains `otel_trace_id` and `otel_span_id` fields; `submit_for_approval()` captures the active span context at submission time; `record_decision()` calls `_emit_decision_span()` which creates a `tool.hitl_gateway` span with `SpanContext.links` referencing the original `agent.task` trace and sets `hitl.decision`, `hitl.decided_by`, `hitl.wait_duration_seconds`, `hitl.action_type`, `hitl.risk_score` attributes (Issue #29, OTEL-001 §7, ADR-0046)
+- `src/guardrails/pii_filter.py` — `PIIFilter.mask_dict()` adds a `guardrail.pii_detected` span event with `pii_field_count` and `pii_max_level` attributes on the active span whenever PII is found (Issue #29, OTEL-001 §3.8)
+- `src/guardrails/prompt_injection_guard.py` — `PromptInjectionGuard.validate()` adds a `guardrail.injection_blocked` span event with `rejection_reason` and `risk_score` attributes and sets `StatusCode.ERROR` on the active span when injection is detected (Issue #29, OTEL-001 §3.8)
+
+---
+
 ### Wave 18 — GenAI Semantic Conventions + LLM OTel Wrapper (OTel Agentic Observability)
 
 #### Added

@@ -15,6 +15,9 @@ from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Any, Protocol
 
+from opentelemetry import trace
+from opentelemetry.trace import Link, NonRecordingSpan, SpanContext, TraceFlags
+
 from src.agents.feedback_learner import FeedbackLearner, default_feedback_learner
 from src.guardrails.audit_logger import AuditLogger
 from src.observability.logger import get_logger
@@ -22,6 +25,7 @@ from src.observability.metrics import (
     ACTIVE_HITL_REQUESTS,
     record_hitl_decision,
 )
+from src.observability.span_hierarchy import SPAN_TOOL_HITL_GATEWAY, tracer
 from src.shared.config import settings
 from src.shared.models import AuditEvent
 
@@ -46,6 +50,9 @@ class HITLRequest:
     created_at: datetime
     expires_at: datetime
     status: HITLStatus = HITLStatus.PENDING
+    # OTel trace context captured at submission time for linked hitl.decision span (OTEL-001 §7)
+    otel_trace_id: str = ""
+    otel_span_id: str = ""
 
 
 @dataclass
@@ -119,6 +126,12 @@ class HITLGateway:
         request.created_at = now
         request.expires_at = now + timedelta(seconds=self._timeout)
         request.status = HITLStatus.PENDING
+
+        # Capture the current OTel span context so record_decision() can create a linked span.
+        current_ctx = trace.get_current_span().get_span_context()
+        if current_ctx.is_valid:
+            request.otel_trace_id = format(current_ctx.trace_id, "032x")
+            request.otel_span_id = format(current_ctx.span_id, "016x")
 
         async with self._lock:
             count = await self._store.pending_count()
@@ -231,6 +244,9 @@ class HITLGateway:
             wait_seconds=wait_seconds,
         )
 
+        # Emit a linked hitl.decision span referencing the original agent.task trace (OTEL-001 §7).
+        self._emit_decision_span(request, decision, wait_seconds)
+
         topic = (
             "agent.action.approved"
             if decision.decision == HITLStatus.APPROVED
@@ -265,6 +281,37 @@ class HITLGateway:
         )
 
         return request
+
+    def _emit_decision_span(
+        self,
+        request: HITLRequest,
+        decision: HITLDecision,
+        wait_seconds: float,
+    ) -> None:
+        """Create a hitl.decision span linked to the original agent.task trace context."""
+        links: list[Link] = []
+        if request.otel_trace_id and request.otel_span_id:
+            try:
+                link_ctx = SpanContext(
+                    trace_id=int(request.otel_trace_id, 16),
+                    span_id=int(request.otel_span_id, 16),
+                    is_remote=True,
+                    trace_flags=TraceFlags.SAMPLED,
+                )
+                links.append(Link(context=link_ctx))
+            except (ValueError, OverflowError):
+                pass  # malformed context — emit span without link
+
+        with tracer.start_as_current_span(SPAN_TOOL_HITL_GATEWAY, links=links) as span:
+            span.set_attributes(
+                {
+                    "hitl.decision": decision.decision.value.lower(),
+                    "hitl.decided_by": decision.approver_id,
+                    "hitl.wait_duration_seconds": wait_seconds,
+                    "hitl.action_type": request.action_type,
+                    "hitl.risk_score": request.risk_score,
+                }
+            )
 
     async def get_request(self, request_id: str) -> HITLRequest | None:
         async with self._lock:
