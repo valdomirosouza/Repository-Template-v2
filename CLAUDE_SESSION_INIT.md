@@ -66,7 +66,8 @@ Wave labels: `wave-1` (done) → `wave-2` → `wave-3` → `wave-4` → `wave-5`
 | ADR-0049 | Runtime behavioral monitoring                     |
 | ADR-0050 | Adversarial abuse testing strategy                |
 | ADR-0051 | Model behavioral contracts (MLSecOps)             |
-| ADR-0052 | Agentic SDLC E2E workflow (13-phase lifecycle)    |
+| ADR-0052 | Agentic SDLC E2E workflow (origin)                |
+| ADR-0058 | Agentic Spec-Driven Delivery (15-phase, 0–14)     |
 
 Full index: `docs/adr/README.md`
 

@@ -1,13 +1,32 @@
 # Agentic SDLC End-to-End Workflow
 
-> **Version:** 1.0.0 | **Last updated:** 2026-06-06
+> **Version:** 2.0.0 | **Last updated:** 2026-06-06
 > **Status:** Active | **Owner:** Tech Lead
-> **Source:** `agentic-sdlc-e2e-workflow-v2.md` (committed to repo root for traceability)
-> **ADR:** ADR-0052
+> **Source:** `agentic-sdlc-e2e-workflow-v2.md` + `agentic-sdlc-documentation-recommendation.md`
+> **ADR:** ADR-0052, ADR-0058
 
-This is the living workflow reference for this repository. It maps the Agentic SDLC framework's four-stage agent pathway (Perceive → Reason → Act → Learn) across every phase of the product lifecycle.
+This is the living, operational workflow reference for this repository — the detailed
+per-phase companion to the canonical model in
+[`docs/sdlc/agentic-spec-driven-delivery.md`](../sdlc/agentic-spec-driven-delivery.md).
+It maps the agent pathway (Perceive → Reason → Act → Learn) across the **15-phase
+(0–14)** risk-based lifecycle. The lifecycle is adaptive: low-risk changes take a
+short path (see the Risk-Based Flow in the canonical reference); only high-impact
+changes pass every gate.
 
 **Notation:** ◈ = Human governance checkpoint | ⚡ = Agent-accelerated step
+
+---
+
+## Phase 0 — Intake & Prioritization
+
+| Step | Actor    | Action                                                                                                         | Output                      |
+| ---- | -------- | -------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| 1    | ◈ Human  | Capture problem statement and value/user hypothesis                                                            | Backlog candidate           |
+| 2    | ⚡ Agent | Draft a one-line risk class (small fix / normal / high / AI / security / infra) and surface related specs/ADRs | Risk-class suggestion       |
+| 3    | ◈ Human  | Assign risk class, owner, and priority; decide go / no-go                                                      | Prioritized item with owner |
+
+Phase 0 happens **before** an Issue exists. It sets the risk class that determines how
+many downstream gates apply. No code, no deploy.
 
 ---
 
@@ -126,7 +145,22 @@ SBOM generated and cosign-attested after every build. DAST (OWASP ZAP) required 
 
 ---
 
-## Phase 10 — Observability & Operational Readiness
+## Phase 10 — AI Safety & Agent Governance
+
+> **Conditional gate — required for AI, LLM, or agentic features** (changes under `src/agents/` or `src/guardrails/`). Skipped for non-AI changes (risk-based flow).
+
+| Step | Actor   | Action                                                                                            |
+| ---- | ------- | ------------------------------------------------------------------------------------------------- |
+| 1    | ⚡ CI   | Prompt-injection + jailbreak abuse-case tests (`tests/abuse_cases/`); OWASP-LLM checks            |
+| 2    | ⚡ CI   | Model behavioural contract tests (`tests/model_contract/`); data-leakage / PII non-leakage checks |
+| 3    | ◈ Human | Tool-permission review (`infrastructure/agent-tools/tools.yaml`) + autonomy-level sign-off        |
+| 4    | ◈ Human | Complete the AI Safety & Agent Governance checklist (`docs/ai-governance/ai-safety-checklist.md`) |
+
+**Gate:** Injection + leakage tests pass · tool permissions reviewed · evals + audit trail present · AI Safety checklist complete. AI Governance Lead approval (ADR-0015, ADR-0053).
+
+---
+
+## Phase 11 — Observability & Operational Readiness
 
 | Step | Actor    | Action                                                                                       |
 | ---- | -------- | -------------------------------------------------------------------------------------------- |
@@ -139,7 +173,7 @@ SBOM generated and cosign-attested after every build. DAST (OWASP ZAP) required 
 
 ---
 
-## Phase 11 — Release Candidate
+## Phase 12 — Release Candidate
 
 | Step | Actor    | Action                                                                                 |
 | ---- | -------- | -------------------------------------------------------------------------------------- |
@@ -152,7 +186,7 @@ SBOM generated and cosign-attested after every build. DAST (OWASP ZAP) required 
 
 ---
 
-## Phase 12 — Production Deployment
+## Phase 13 — Production Deployment
 
 5% canary → readiness gate → 25% → readiness gate → 100% → GitHub Release tag.
 
@@ -162,7 +196,7 @@ Rollback: `make rollback` — must complete within MTTR target (`dora_mttr_targe
 
 ---
 
-## Phase 13 — Post-Deployment & Learn
+## Phase 14 — Post-Deployment & Learn
 
 | Step | Actor    | Action                                                                             |
 | ---- | -------- | ---------------------------------------------------------------------------------- |
@@ -170,7 +204,7 @@ Rollback: `make rollback` — must complete within MTTR target (`dora_mttr_targe
 | 2    | ◈ Human  | 24h health check — SRE reviews dashboards at T+1h, T+8h, T+24h                     |
 | 3    | ⚡ Agent | Learn stage — `FeedbackLearner` weekly bias summary → Grafana Agent dashboard      |
 | 4    | ◈ Human  | Retrospective — DORA delta, security review, agent behaviour review                |
-| 5    | ◈ Human  | Backlog grooming — new Issues for bugs or improvements → cycle restarts at Phase 1 |
+| 5    | ◈ Human  | Backlog grooming — new Issues for bugs or improvements → cycle restarts at Phase 0 |
 
 **Gate:** DORA metrics within SLO targets · no P0 incidents in first 48h · retrospective document created.
 
@@ -178,21 +212,23 @@ Rollback: `make rollback` — must complete within MTTR target (`dora_mttr_targe
 
 ## Quality Gates Summary
 
-| Phase            | Gate                                                                 | Blocking?          |
-| ---------------- | -------------------------------------------------------------------- | ------------------ |
-| 1 Conception     | Discovery doc linked, size label, Tech Lead comment                  | No                 |
-| 2 Discovery      | NFR doc with PII classification, Security Lead approved              | Yes (for DoR)      |
-| 3 Grooming       | DoR checklist (8 criteria)                                           | Yes (sprint entry) |
-| 4 Specification  | Spec PR: governance CI + Tech/Security Lead approval                 | Yes                |
-| 5 Architecture   | ADR for any architectural decision                                   | Yes                |
-| 6 Development    | Unit tests green, lint green, pre-commit green                       | Yes                |
-| 7 Code Review    | ≥1 human approval, AI review posted, governance labels if applicable | Yes                |
-| 8 Testing        | ≥80% coverage, security + abuse case tests green                     | Yes                |
-| 9 Security       | Zero HIGH/CRITICAL SAST, zero secrets, SBOM attested                 | Yes                |
-| 10 Observability | PRR ≥90%, probe lint green                                           | Yes (for release)  |
-| 11 RC Prep       | Chaos + model contract tests green, RC label                         | Yes                |
-| 12 Deployment    | Canary readiness gate at each step, error budget check               | Yes                |
-| 13 Post-Deploy   | No P0 T+48h, DORA within SLO, retrospective created                  | Yes (sprint close) |
+| Phase            | Gate                                                                 | Blocking?              |
+| ---------------- | -------------------------------------------------------------------- | ---------------------- |
+| 0 Intake         | Risk class + owner assigned; problem/value stated                    | No                     |
+| 1 Conception     | Discovery doc linked, size label, Tech Lead comment                  | No                     |
+| 2 Discovery      | NFR doc with PII classification, Security Lead approved              | Yes (for DoR)          |
+| 3 Grooming       | DoR checklist                                                        | Yes (sprint entry)     |
+| 4 Specification  | Spec PR: governance CI + Tech/Security Lead approval                 | Yes                    |
+| 5 Architecture   | ADR for any architectural decision                                   | Yes                    |
+| 6 Development    | Unit tests green, lint green, pre-commit green                       | Yes                    |
+| 7 Code Review    | ≥1 human approval, AI review posted, governance labels if applicable | Yes                    |
+| 8 Testing        | ≥80% coverage, security + abuse case tests green                     | Yes                    |
+| 9 DevSecOps      | Zero HIGH/CRITICAL SAST, zero secrets, SBOM attested                 | Yes                    |
+| 10 AI Safety     | Injection/leakage tests, tool-permission review, AI safety checklist | Yes (AI/agent changes) |
+| 11 Observability | PRR ≥90%, probe lint green                                           | Yes (for release)      |
+| 12 RC Prep       | Chaos + model contract tests green, RC label                         | Yes                    |
+| 13 Deployment    | Canary readiness gate at each step, error budget check               | Yes                    |
+| 14 Post-Deploy   | No P0 T+48h, DORA within SLO, retrospective created                  | Yes (sprint close)     |
 
 ---
 

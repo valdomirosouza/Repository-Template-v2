@@ -17,10 +17,13 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 - `docs/sdlc/agentic-spec-driven-delivery.md` — canonical reference for the **Agentic Spec-Driven Delivery Workflow**: Gitflow-vs-Agile positioning, full lifecycle + Mermaid diagram, risk-based flow, agent-participation model, required human gates, and delivery metrics; cross-links the existing process docs (no duplication) (Issue #48)
 - `mkdocs.yml` — new **Delivery Workflow** nav section publishing the `docs/process/` suite (WORKFLOW, DoR/DoD/DoR-Release, HITL-GOVERNANCE, RACI, Sprint Tracking, Retrospective Guide) — previously absent from the docs site (Issue #48)
+- **Phase 0 — Intake & Prioritization** and a conditional **Phase 10 — AI Safety & Agent Governance** added to the lifecycle (now **15 phases, 0–14**): `docs/process/WORKFLOW.md`, `docs/process/gates/phase-gates.yaml` (`phase_gates_v1`, ids 0–14, AI-safety phase flagged `conditional: ai_or_agent_change`), and `tests/unit/process/test_governance_contracts.py` (Issue #49, ADR-0058)
+- `docs/adr/ADR-0058-agentic-spec-driven-delivery-workflow.md` — records the naming, Phase 0, and AI Safety phase; **extends ADR-0052** (Issue #49)
 
 ### Changed
 
 - `README.md` + `CLAUDE_SESSION_INIT.md` — adopt the canonical name "Agentic Spec-Driven Delivery Workflow" and point to the new reference page (Issue #48)
+- `docs/process/WORKFLOW.md` (v2.0.0), `CLAUDE.md`, `CLAUDE_SESSION_INIT.md`, `README.md`, `docs/product/state-template.yaml`, `docs/adr/ADR-0052` (extended-by note) — renumbered to the 15-phase (0–14) model (Issue #49, ADR-0058)
 - `docs/glossary.md` — added ~50 terms/acronyms in active use across the repo: process/SDLC (Agentic SDLC, DoD, DoR, DoR-Release, RACI, Spec-as-PR, Phase Gate, Quality Gate, Feature State Manifest, Maturity Model, Persona, FinOps, RTK), DevSecOps/security (DAST, Trivy, Checkov, CodeQL, gosec, SpotBugs, Checkstyle, CycloneDX, NVD, DevSecOps, MLSecOps, Abuse Case Testing, Zero-Trust Tooling), compliance (ISO 27001, SOX, EU AI Act), SRE/observability (DORA, K8s probes, Pushgateway, Grafana, Testcontainers), and agent-runtime (agent_action_v1, Tool Registry, ToolExecutor, Mandatory HITL, Reversibility/Compensating Action, CompensationRegistry, HOTL Monitor, Override Service, BehavioralMonitor, RuntimePolicyGateway, SpecContractEnforcer, ActionSchemaValidator, Context Graph, Context Seal, Sub-Agent Registry, Risk Calibration, Model Behavioral Contract, Gartner Autonomy Levels)
 
 ### Fixed

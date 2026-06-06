@@ -16,7 +16,7 @@ feature_id: FEAT-000 # GitHub Issue number for the parent feature request
 title: "<feature title>"
 github_issue: 0
 
-# Current lifecycle phase (1–13). Must match an id in phase-gates.yaml.
+# Current lifecycle phase (0–14, ADR-0058). Must match an id in phase-gates.yaml.
 current_phase: 1
 current_phase_name: Conception
 
