@@ -13,6 +13,87 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 10 — Context Graph & Autonomy Tier (Agentic SDLC)
+
+#### Added
+
+- **`specs/ai/context-graph.md`** — Spec for the context graph: `GoalState` schema, `ContextGraph` API, `[CONTEXT_GRAPH]` prompt block format, Autonomy-tier prerequisites guard. Closes #18. ADR-0041.
+- **`src/agents/context_graph.py`** — `ContextGraph` implementation: `add_sub_goal()`, `mark_complete()`, `mark_blocked()`, `add_constraint()`, `add_gathered_context()`, `add_decision()`, `to_prompt_block()`, `to_dict()` / `from_dict()` for PostgreSQL JSONB persistence. Closes #18.
+- **`alembic/versions/0006_add_context_graph_table.py`** — Migration adding `agent_context_graphs` table with JSONB `graph_data` column and indexes on `session_id` and `status`. Closes #18.
+- **`infrastructure/feature-flags/flags/autonomy-tier-ready.yaml`** — Guard flag (default: false); comments document all 3 prerequisites required before enabling. Closes #18.
+- **`docs/adr/ADR-0041-context-graph-autonomy-tier.md`** — Decision record for the context graph and autonomy-tier prerequisites guard.
+- **`tests/unit/agents/test_context_graph.py`** — 25 unit tests covering init, sub-goals, status transitions, constraints, gathered context, decisions, prompt block rendering, serialisation roundtrip, and `AutonomyPrerequisiteError`. All passing.
+
+#### Changed
+
+- **`src/shared/feature_flags.py`** — Add `AutonomyPrerequisiteError` (RuntimeError subclass) and `is_autonomy_tier_ready()`: checks `autonomy-tier-ready` flag then validates learning-mode=active and context_graph.py present; raises `AutonomyPrerequisiteError` if any prerequisite is unmet. Closes #18.
+
+---
+
+### Wave 9 — Agentic Maturity Self-Assessment (Agentic SDLC)
+
+#### Added
+
+- **`specs/ai/agentic-maturity-assessment.md`** — Machine-checkable criteria for the four Gartner maturity levels (Assistance/Automation/Augmentation/Autonomy) with per-level criterion tables and structured output format. Closes #17. ADR-0040.
+- **`scripts/agentic_maturity_check.py`** — Self-contained stdlib-only script: evaluates file-system and flag configuration against the four maturity levels; emits a structured report with missing criteria and remediation hints. Current result: AUGMENTATION (Level 3, ~80% Gartner coverage). Closes #17.
+- **`docs/adr/ADR-0040-agentic-maturity-model.md`** — Decision record for the anti-agent-washing maturity model.
+
+#### Changed
+
+- **`Makefile`** — Add `agentic-maturity-check` target: `python3 scripts/agentic_maturity_check.py`. Closes #17.
+- **`.github/workflows/ci.yml`** — Add informational `agentic-maturity` job: runs on every PR, posts maturity report as a PR comment (non-blocking). Closes #17.
+
+---
+
+### Wave 8 — Governed Tool Registry (Agentic SDLC)
+
+#### Added
+
+- **`specs/ai/tool-registry.md`** — Spec for the governed tool registry: `ToolDefinition` schema, registry interface, permission check matrix, aggregate risk window (Gap T3). Closes #16. ADR-0039.
+- **`src/agents/tool_registry.py`** — `ToolRegistry` singleton: `register()`, `get()`, `check_permission()`, `list_by_risk()`, `assert_registered()` (raises `UnregisteredToolError` for unregistered calls); module-level `default_tool_registry` with 3 starter tools. Closes #16.
+- **`infrastructure/agent-tools/tools.yaml`** — Canonical tool catalog: `send-email` (high, HITL), `read-db-record` (low), `write-db-record` (medium, HITL), `post-webhook` (high, HITL), `generate-report` (low). Closes #16.
+- **`docs/adr/ADR-0039-governed-tool-registry.md`** — Decision record for the governed tool registry.
+- **`tests/unit/agents/test_tool_registry.py`** — 21 unit tests covering register, get, unregister, permission checks, list-by-risk, assert_registered, and default registry. All passing.
+
+#### Changed
+
+- **`src/guardrails/audit_logger.py`** — Add `log_tool_invocation(tool_name, session_id, payload_hash, risk_level, outcome)`: records metric, maintains 5-minute rolling risk-weight deque, returns `False` when aggregate exceeds threshold (Gap T3). `__init__` accepts `aggregate_risk_threshold` (default 3.0). Closes #16.
+- **`src/observability/metrics.py`** — Add `AGENT_TOOL_INVOCATIONS` Counter (`agent_tool_invocations_total`, labels: `tool_name`, `risk_level`, `outcome`). Closes #16.
+
+---
+
+### Wave 7 — Learn Stage Feedback Loop (Agentic SDLC)
+
+#### Added
+
+- **`specs/ai/learn-stage.md`** — Spec for the Learn stage of the Perceive→Reason→Act→Learn cycle: `OutcomeFeedback` schema, `BiasReport`, learning modes (passive/active), governance guard, metrics. Closes #15. ADR-0038.
+- **`src/agents/feedback_learner.py`** — `FeedbackLearner` implementation: `record()` stores HITL outcomes, `get_similar_precedents()` retrieves precedents by action type and payload hash, `build_precedents_block()` renders a `[PRECEDENTS]` prompt block in active mode, `get_bias_summary()` feeds `make agent-feedback-check`. Closes #15.
+- **`infrastructure/feature-flags/flags/learning-mode.yaml`** — `learning-mode` feature flag (default: `passive`; `active` requires ADR-0038 sign-off). Closes #15.
+- **`docs/adr/ADR-0038-learn-stage-feedback-loop.md`** — Decision record for the Learn stage.
+- **`tests/unit/agents/test_feedback_learner.py`** — 21 unit tests covering record, precedent retrieval, block rendering, bias summary, and factory method.
+
+#### Changed
+
+- **`src/agents/orchestrator/orchestrator.py`** — Accept optional `FeedbackLearner`; inject precedents into Reason-stage LLM system prompt when `learning-mode=active`; call `record()` after successful action execution (approved outcome). Closes #15.
+- **`src/agents/hitl_gateway.py`** — Accept optional `FeedbackLearner`; call `record()` after every `record_decision()` with the HITL outcome (approved or rejected). Closes #15.
+- **`src/shared/feature_flags.py`** — Add `get_learning_mode()` function: reads `learning-mode` flag via OpenFeature SDK, falls back to `"passive"`. Closes #15.
+- **`src/observability/metrics.py`** — Add `AGENT_LEARN_PRECEDENTS_INJECTED` Counter (`agent_learn_precedents_injected_total`, labels: `action_type`, `outcome_influenced`). Closes #15.
+
+---
+
+### Wave 6 — Gartner Governance Gate & Business Value (Agentic SDLC)
+
+#### Added
+
+- **`.github/workflows/governance-gate.yml`** — Blocking CI gate: PRs targeting `main` that touch `autonomous-mode*.yaml`, `autonomy-tier-ready.yaml`, or `hitl_gateway.py` require both `governance-council-approved` and `legal-reviewed` labels before merge. Closes #14. ADR-0037.
+- **`harness/business-value-check.yml`** — Informational PR gate: checks that agent PRs answer all 6 mandatory Business Value questions; posts advisory comment if any are missing. Closes #14. ADR-0037.
+- **`docs/governance/governance-labels.md`** — Label definitions, approval workflow, council composition, and escalation path for governance labels. Closes #14.
+- **`docs/adr/ADR-0037-governance-gate-enforcement.md`** — Decision record for machine-enforced governance council approval gate.
+
+#### Changed
+
+- **`skills/sre/prr.md`** — Added "Business Value Gate" section with 6 mandatory ROI questions (baseline metric, measurable target, business sponsor, LLM cost budget, break-even timeline, 30/90/180-day success criteria). Addresses Gartner Gap G2.
+
 ---
 
 ## [2.1.0] — 2026-06-05

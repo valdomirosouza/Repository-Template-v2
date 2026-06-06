@@ -1,0 +1,48 @@
+name: Business Value Check
+version: "1.0"
+description: >
+  Informational gate: verifies that PRs adding or modifying agent code include
+  a "Business Value" section answering Gartner's mandatory ROI questions.
+  Non-blocking — emits a warning comment if the section is absent.
+  Refs: Gap G2 (Gartner Agentic AI Framework), ADR-0037.
+
+trigger:
+  event: pull_request
+  paths:
+    - "src/agents/**"
+    - "specs/ai/**"
+
+steps:
+  - name: Check for Business Value section
+    type: claude_code
+    prompt: |
+      Read the PR description and any linked GitHub Issue body.
+      Check whether a "Business Value" section is present that answers ALL six
+      questions from skills/sre/prr.md §Business Value Gate:
+        1. Baseline metric this agent improves
+        2. Measurable target
+        3. Business sponsor and approval reference
+        4. Monthly LLM cost budget (ADR-0020 reference)
+        5. Break-even timeline vs. engineer-hours displaced
+        6. Success measurement at 30 / 90 / 180 days
+
+      If ALL six questions are answered → output: PASS
+      If ANY question is missing → output: WARN with a list of missing questions
+
+  - name: Post result comment
+    type: github_comment
+    condition: result == "WARN"
+    body: |
+      **Business Value Check — Advisory Warning**
+
+      This PR modifies agent code but the PR description or linked Issue does not
+      answer all six mandatory Business Value questions from `skills/sre/prr.md`.
+
+      Missing answers:
+      {{ missing_questions }}
+
+      This gate is **informational only** and does not block merge. However, Gartner
+      identifies "unclear business value" as a leading cause of agentic AI project
+      cancellation. Please add the Business Value section before the PRR sign-off.
+
+      Reference: `skills/sre/prr.md §Business Value Gate` | ADR-0037

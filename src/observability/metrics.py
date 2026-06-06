@@ -323,3 +323,23 @@ def record_session_task(
 
 def record_cycle_time(stage: str, duration_seconds: float) -> None:
     AGENT_CYCLE_TIME.labels(stage).observe(duration_seconds)
+
+
+# ── Tool registry metrics (Issue #16) ────────────────────────────────────────
+# Spec: specs/ai/tool-registry.md §6 | ADR: ADR-0039
+
+AGENT_TOOL_INVOCATIONS = Counter(
+    "agent_tool_invocations_total",
+    "Tool invocations by the agent, by tool name, risk level, and outcome",
+    ["tool_name", "risk_level", "outcome"],
+)
+
+
+# ── Learn-stage metrics (Issue #15) ──────────────────────────────────────────
+# Spec: specs/ai/learn-stage.md | ADR: ADR-0038
+
+AGENT_LEARN_PRECEDENTS_INJECTED = Counter(
+    "agent_learn_precedents_injected_total",
+    "Precedents injected into the Reason-stage LLM context from the Learn stage",
+    ["action_type", "outcome_influenced"],
+)

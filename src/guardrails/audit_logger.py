@@ -12,10 +12,12 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime
+from collections import deque
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Protocol
 
 from src.observability.logger import get_logger
+from src.observability.metrics import AGENT_TOOL_INVOCATIONS
 from src.shared.models import AuditEvent
 
 if TYPE_CHECKING:
@@ -180,8 +182,15 @@ class AuditLogger:
     components that execute agent actions (hitl_gateway, agent_loop).
     """
 
-    def __init__(self, storage_backend: AuditStorage) -> None:
+    def __init__(
+        self,
+        storage_backend: AuditStorage,
+        aggregate_risk_threshold: float = 3.0,
+    ) -> None:
         self._storage = storage_backend
+        self._aggregate_risk_threshold = aggregate_risk_threshold
+        # (timestamp, risk_weight) deque for the 5-minute rolling window (Gap T3)
+        self._risk_window: deque[tuple[datetime, float]] = deque()
 
     async def log_event(self, event: AuditEvent) -> str:
         """Append an audit event. Returns the event ID on success.
@@ -231,3 +240,49 @@ class AuditLogger:
             to_time=to_time,
             limit=limit,
         )
+
+    def log_tool_invocation(
+        self,
+        tool_name: str,
+        session_id: str,
+        payload_hash: str,
+        risk_level: str,
+        outcome: str = "invoked",
+    ) -> bool:
+        """Record a tool invocation and check the aggregate risk window.
+
+        Returns True if cumulative risk in the last 5 minutes is within threshold.
+        Returns False when the aggregate exceeds the threshold — the caller should
+        route the next action through HITL regardless of individual tool risk.
+
+        Spec: specs/ai/tool-registry.md §5 | ADR: ADR-0039
+        """
+        AGENT_TOOL_INVOCATIONS.labels(
+            tool_name=tool_name,
+            risk_level=risk_level,
+            outcome=outcome,
+        ).inc()
+
+        now = datetime.now(UTC)
+        window = timedelta(minutes=5)
+        risk_weight = {"low": 0.5, "medium": 1.0, "high": 2.0}.get(risk_level, 1.0)
+
+        # Expire old entries and append current
+        self._risk_window.append((now, risk_weight))
+        cutoff = now - window
+        while self._risk_window and self._risk_window[0][0] < cutoff:
+            self._risk_window.popleft()
+
+        aggregate = sum(w for _, w in self._risk_window)
+        within_threshold = aggregate <= self._aggregate_risk_threshold
+
+        logger.info(
+            "tool.invocation.recorded",
+            tool_name=tool_name,
+            session_id=session_id,
+            risk_level=risk_level,
+            aggregate_risk=aggregate,
+            threshold=self._aggregate_risk_threshold,
+            within_threshold=within_threshold,
+        )
+        return within_threshold

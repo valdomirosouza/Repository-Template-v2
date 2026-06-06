@@ -15,6 +15,7 @@ from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Any, Protocol
 
+from src.agents.feedback_learner import FeedbackLearner, default_feedback_learner
 from src.guardrails.audit_logger import AuditLogger
 from src.observability.logger import get_logger
 from src.observability.metrics import (
@@ -95,6 +96,7 @@ class HITLGateway:
         broker: Any | None = None,
         timeout_seconds: int | None = None,
         store: HITLStore | None = None,
+        feedback_learner: FeedbackLearner | None = None,
     ) -> None:
         self._audit = audit_logger
         self._broker = broker
@@ -106,6 +108,7 @@ class HITLGateway:
             store = InMemoryHITLStore()
         self._store: HITLStore = store
         self._lock = asyncio.Lock()
+        self._learner = feedback_learner or default_feedback_learner
 
     async def submit_for_approval(self, request: HITLRequest) -> HITLRequest:
         """Persist the request and publish agent.action.proposed to the broker.
@@ -247,6 +250,18 @@ class HITLGateway:
             "HITL decision recorded",
             request_id=request.request_id,
             decision=decision.decision.value,
+        )
+
+        # Learn stage: record HITL decision outcome for future precedent retrieval.
+        self._learner.record(
+            FeedbackLearner.feedback_from_hitl_decision(
+                action_type=request.action_type,
+                action_parameters=request.action_parameters,
+                decision=decision.decision.value.lower(),
+                rationale=decision.rationale or "",
+                agent_id=request.agent_id,
+                request_id=request.request_id,
+            )
         )
 
         return request

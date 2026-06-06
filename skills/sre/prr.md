@@ -83,6 +83,28 @@ The `harness/release-check.yml` gate will verify all blocking PRR items are mark
 
 ---
 
+## Business Value Gate (mandatory for agent deployments)
+
+Any PR that adds or modifies files under `src/agents/` **must** answer all six questions
+below in the PR description or linked GitHub Issue before the PRR sign-off. This gate
+exists because Gartner identifies "unclear business value" as a top cause of the 40%
+agentic AI project cancellation rate.
+
+| #   | Question                                                                   | Example answer                                    |
+| --- | -------------------------------------------------------------------------- | ------------------------------------------------- |
+| 1   | What is the **baseline metric** this agent improves?                       | MTTD currently 45 min                             |
+| 2   | What is the **measurable target**?                                         | Reduce MTTD to 15 min (−67%)                      |
+| 3   | Who is the **business sponsor** and what is their approval reference?      | Jane Smith (COO), Issue #42                       |
+| 4   | What is the **monthly LLM cost budget**? (reference ADR-0020 FinOps model) | $120/month (40k tokens/day × $0.003/1k)           |
+| 5   | What is the **break-even timeline** vs. engineer-hours displaced?          | 3 months (saves 8h/week × $100/h)                 |
+| 6   | How is **success measured** at 30 / 90 / 180 days?                         | 30d: MTTD ≤ 30 min; 90d: ≤ 20 min; 180d: ≤ 15 min |
+
+The `harness/business-value-check.yml` gate checks for these answers on every agent PR
+and posts an advisory comment if any are missing. The gate is **informational** (non-blocking)
+but all six answers are **required** for PRR sign-off.
+
+---
+
 ## Emergency PRR (Hotfix)
 
 For P1 hotfixes where time is critical:
