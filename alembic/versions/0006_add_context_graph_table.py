@@ -26,7 +26,10 @@ def upgrade() -> None:
     op.create_table(
         "agent_context_graphs",
         sa.Column("graph_id", sa.Text, primary_key=True),
-        sa.Column("session_id", sa.Text, nullable=False, index=True),
+        # NB: no index=True here — the session_id index is created explicitly below
+        # (and dropped by downgrade). Declaring both produced a duplicate
+        # ix_agent_context_graphs_session_id and failed the migration on any fresh DB.
+        sa.Column("session_id", sa.Text, nullable=False),
         sa.Column("root_goal_description", sa.Text, nullable=False),
         sa.Column("status", sa.Text, nullable=False, server_default="active"),
         sa.Column(

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class DomainEventProducer {
 
-    private static final Logger log = LoggerFactory.getLogger(DomainEventProducer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DomainEventProducer.class);
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final String createdTopic;
@@ -30,9 +30,9 @@ public class DomainEventProducer {
         kafkaTemplate.send(createdTopic, entityId, payload)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
-                        log.error("Failed to publish entity.created event for {}: {}", entityId, ex.getMessage());
+                        LOG.error("Failed to publish entity.created event for {}: {}", entityId, ex.getMessage());
                     } else {
-                        log.debug("Published entity.created for {}", entityId);
+                        LOG.debug("Published entity.created for {}", entityId);
                     }
                 });
     }
@@ -43,9 +43,9 @@ public class DomainEventProducer {
         kafkaTemplate.send(updatedTopic, entityId, payload)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
-                        log.error("Failed to publish entity.updated event for {}: {}", entityId, ex.getMessage());
+                        LOG.error("Failed to publish entity.updated event for {}: {}", entityId, ex.getMessage());
                     } else {
-                        log.debug("Published entity.updated for {}", entityId);
+                        LOG.debug("Published entity.updated for {}", entityId);
                     }
                 });
     }
