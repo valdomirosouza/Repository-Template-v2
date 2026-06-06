@@ -447,3 +447,50 @@ jobs:
           name: sbom-${{ github.sha }}
           path: sbom.json
           retention-days: 90
+
+  agentic-maturity:
+    name: Agentic Maturity Assessment (informational)
+    runs-on: ubuntu-latest
+    needs: [governance]
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run maturity check
+        id: maturity
+        run: |
+          output=$(python3 scripts/agentic_maturity_check.py)
+          echo "$output"
+          # Capture for PR comment (delimiter-safe)
+          {
+            echo "report<<MATURITY_EOF"
+            echo "$output"
+            echo "MATURITY_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post maturity report as PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const report = `${{ steps.maturity.outputs.report }}`;
+            const body = [
+              '## Agentic Maturity Assessment',
+              '',
+              '> Informational only — does not block merge.',
+              '> Spec: `specs/ai/agentic-maturity-assessment.md` | ADR-0040',
+              '',
+              '```',
+              report,
+              '```',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });

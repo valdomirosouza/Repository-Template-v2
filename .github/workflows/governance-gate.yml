@@ -1,0 +1,47 @@
+name: Governance Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "infrastructure/feature-flags/flags/autonomous-mode*.yaml"
+      - "infrastructure/feature-flags/flags/autonomy-tier-ready.yaml"
+      - "src/agents/hitl_gateway.py"
+
+jobs:
+  governance-labels:
+    name: Require governance council approval
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Check required governance labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+
+            const labels = pr.labels.map(l => l.name);
+            const hasCouncil = labels.includes('governance-council-approved');
+            const hasLegal   = labels.includes('legal-reviewed');
+
+            const missing = [];
+            if (!hasCouncil) missing.push('`governance-council-approved`');
+            if (!hasLegal)   missing.push('`legal-reviewed`');
+
+            if (missing.length > 0) {
+              core.setFailed(
+                `This PR modifies agent autonomy controls and requires cross-functional sign-off.\n\n` +
+                `Missing labels: ${missing.join(', ')}\n\n` +
+                `Required approvals:\n` +
+                `  [ ] governance-council-approved — set by COO/CISO after governance council review\n` +
+                `  [ ] legal-reviewed — set by General Counsel after compliance review\n\n` +
+                `See docs/governance/governance-labels.md for the approval process.`
+              );
+            } else {
+              core.info('Both governance labels present — gate passed.');
+            }
