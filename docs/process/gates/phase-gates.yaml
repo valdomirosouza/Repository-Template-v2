@@ -1,0 +1,199 @@
+# Machine-readable phase gate contracts for the 13-phase Agentic SDLC lifecycle.
+#
+# Purpose: let agents enforce phase gates programmatically instead of parsing
+# Markdown. The human-readable source of truth is docs/process/WORKFLOW.md; this
+# file is its machine-readable projection and MUST be kept in sync.
+#
+# Spec:  Agentic-SDLC-Repository-Improvement-Directive.md §9
+# ADR:   ADR-0052 (13-phase lifecycle), ADR-0054 (machine-readable contracts)
+#
+# Consumed by: agents (allowed/prohibited action lookup per phase), CI gates.
+# See docs/process/gates/README.md for the schema and consumption contract.
+
+schema_version: phase_gates_v1
+source_of_truth: docs/process/WORKFLOW.md
+
+# Roles referenced by required_approvals (see docs/process/RACI.md).
+roles:
+  - product_lead
+  - tech_lead
+  - security_lead
+  - release_manager
+  - sre_lead
+
+# Agent action vocabulary (aligns with agent_action_v1.operation + governance verbs).
+action_vocabulary:
+  - read
+  - draft_doc # create/update a pre-code artefact (discovery, nfr, spec, ADR)
+  - write_code
+  - write_tests
+  - open_pr
+  - run_ci
+  - deploy
+  - rollback
+  - change_feature_flag
+
+phases:
+  - id: 1
+    name: Conception
+    primary_actor: product_lead
+    required_artifacts:
+      - docs/product/FEAT-{id}/discovery.md
+    required_approvals: [product_lead, tech_lead]
+    ci_checks: []
+    blocking: false
+    allowed_agent_actions: [read, draft_doc]
+    prohibited_agent_actions:
+      [write_code, deploy, rollback, change_feature_flag]
+    exit_criteria: "Discovery doc linked; size label applied; Tech Lead comment present"
+
+  - id: 2
+    name: Discovery
+    primary_actor: tech_lead
+    required_artifacts:
+      - docs/product/FEAT-{id}/nfr.md
+    required_approvals: [security_lead, tech_lead]
+    ci_checks: []
+    blocking: true # blocking for Definition of Ready
+    allowed_agent_actions: [read, draft_doc]
+    prohibited_agent_actions:
+      [write_code, deploy, rollback, change_feature_flag]
+    exit_criteria: "NFR doc with PII classification; Security Lead approved"
+
+  - id: 3
+    name: Grooming
+    primary_actor: tech_lead
+    required_artifacts:
+      - specs/features/FEAT-{id}/feature-spec.md # spec shell
+    required_approvals: [tech_lead]
+    ci_checks: []
+    blocking: true # blocking for sprint entry
+    gate_checklist: docs/process/DEFINITION_OF_READY.md
+    allowed_agent_actions: [read, draft_doc]
+    prohibited_agent_actions:
+      [write_code, deploy, rollback, change_feature_flag]
+    exit_criteria: "Definition of Ready checklist (8 criteria) passed; issue status: ready"
+
+  - id: 4
+    name: Specification
+    primary_actor: tech_lead
+    required_artifacts:
+      - specs/features/FEAT-{id}/feature-spec.md
+    required_approvals: [tech_lead, security_lead]
+    ci_checks: [governance.yml]
+    blocking: true
+    allowed_agent_actions: [read, draft_doc, open_pr]
+    prohibited_agent_actions:
+      [write_code, deploy, rollback, change_feature_flag]
+    exit_criteria: "Spec PR merged; governance spec-lint gate green; Tech + Security Lead approved"
+
+  - id: 5
+    name: Architecture
+    primary_actor: tech_lead
+    required_artifacts:
+      - docs/adr/ADR-{next}-{slug}.md # only when an architectural decision is made
+    required_approvals: [tech_lead]
+    ci_checks: []
+    blocking: true
+    allowed_agent_actions: [read, draft_doc, open_pr]
+    prohibited_agent_actions:
+      [write_code, deploy, rollback, change_feature_flag]
+    exit_criteria: "ADR(s) accepted and merged for any architectural decision"
+
+  - id: 6
+    name: Development
+    primary_actor: agent
+    required_artifacts:
+      - CHANGELOG.md # [Unreleased] updated
+    required_approvals: [tech_lead] # checkpoint reviews at spec section boundaries
+    ci_checks: [code-check.yml]
+    blocking: true
+    allowed_agent_actions: [read, draft_doc, write_code, write_tests, run_ci]
+    prohibited_agent_actions: [deploy, rollback, change_feature_flag]
+    exit_criteria: "Unit tests green; lint green; pre-commit green; spec implemented (no scope creep)"
+
+  - id: 7
+    name: Code Review
+    primary_actor: tech_lead
+    required_artifacts: []
+    required_approvals: [tech_lead] # >= 1 human approval
+    ci_checks: [ci-ai-review.yml, governance-gate.yml, pr-governance.yml]
+    blocking: true
+    allowed_agent_actions: [read, write_code, write_tests, open_pr, run_ci]
+    prohibited_agent_actions: [deploy, rollback, change_feature_flag]
+    exit_criteria: ">=1 human approval; AI review posted; governance labels applied if autonomy-affecting"
+
+  - id: 8
+    name: Testing
+    primary_actor: agent
+    required_artifacts: []
+    required_approvals: []
+    ci_checks: [test-unit, test-integration, test-security]
+    blocking: true
+    coverage_min_percent: 80
+    allowed_agent_actions: [read, write_code, write_tests, run_ci]
+    prohibited_agent_actions: [deploy, rollback, change_feature_flag]
+    exit_criteria: ">=80% unit coverage; security + abuse-case tests green"
+
+  - id: 9
+    name: Security & DevSecOps
+    primary_actor: security_lead
+    required_artifacts: []
+    required_approvals: [security_lead]
+    ci_checks: [test-security, sbom, trivy, checkov]
+    blocking: true
+    allowed_agent_actions: [read, run_ci]
+    prohibited_agent_actions: [deploy, rollback, change_feature_flag]
+    exit_criteria: "Zero HIGH/CRITICAL SAST/SCA; zero secrets; SBOM generated + cosign-attested"
+
+  - id: 10
+    name: Observability & Operational Readiness
+    primary_actor: sre_lead
+    required_artifacts:
+      - docs/sre/runbooks/RB-{next}-{slug}.md # if a new failure mode is introduced
+    required_approvals: [sre_lead] # PRR sign-off
+    ci_checks: [ci-k8s-probe-lint.yml]
+    blocking: true # blocking for release
+    prr_min_percent: 90
+    allowed_agent_actions: [read, draft_doc, run_ci]
+    prohibited_agent_actions: [deploy, rollback, change_feature_flag]
+    exit_criteria: "PRR >= 90%; probe lint green; OTel spans + metrics verified for new paths"
+
+  - id: 11
+    name: Release Candidate
+    primary_actor: release_manager
+    required_artifacts:
+      - version.txt
+      - CHANGELOG.md # [Unreleased] moved to [{version}]
+    required_approvals: [release_manager, security_lead] # rc-approved label
+    ci_checks: [test-chaos, ci-model-contract.yml, sbom]
+    blocking: true
+    allowed_agent_actions: [read, draft_doc, run_ci]
+    prohibited_agent_actions: [deploy, rollback, change_feature_flag]
+    exit_criteria: "Chaos + model-contract tests green; SBOM; rc-approved label applied"
+
+  - id: 12
+    name: Production Deployment
+    primary_actor: release_manager
+    required_artifacts:
+      - docs/change-log/ # append-only deployment record
+    required_approvals: [release_manager] # + CAB for normal/emergency changes
+    ci_checks: [cd-production.yml]
+    blocking: true
+    requires_cab_approval: true
+    allowed_agent_actions: [read]
+    prohibited_agent_actions: [write_code, change_feature_flag] # deploy/rollback are human-gated
+    exit_criteria: "Canary readiness gate passed at each step; error-budget check green; CAB approved"
+
+  - id: 13
+    name: Post-Deployment & Learn
+    primary_actor: sre_lead
+    required_artifacts:
+      - docs/process/retrospectives/ # sprint or release retrospective
+    required_approvals: [sre_lead]
+    ci_checks: [smoke-test.yml]
+    blocking: true # blocking for sprint close
+    allowed_agent_actions: [read, draft_doc]
+    prohibited_agent_actions:
+      [write_code, deploy, rollback, change_feature_flag]
+    exit_criteria: "No P0 at T+48h; DORA within SLO; retrospective created"

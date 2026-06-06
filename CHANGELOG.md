@@ -13,6 +13,22 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave B — Machine-Readable Governance Contracts (ADR-0054)
+
+#### Added
+
+- `src/agents/schemas/agent_action_v1.py` — **P1-10**: strict `agent_action_v1` output envelope + `parse_agent_action()` fail-closed validator (enums, types, schema_version); invalid output is flagged so it never silently proceeds. Backward-compatible with legacy `{"action": ...}` payloads (Issue #44, ADR-0054)
+- `docs/process/gates/phase-gates.yaml` + `README.md` — **P1-9**: machine-readable gate contracts (`phase_gates_v1`) for all 13 phases — required artifacts/approvals, CI checks, allowed/prohibited agent actions, exit criteria (Issue #44, ADR-0052, ADR-0054)
+- `docs/product/state-template.yaml` — **P1-7**: per-feature state manifest template (`feature_state_v1`) — current_phase, approvals, gates_passed, allowed/prohibited actions (Issue #44, ADR-0054)
+- `tests/unit/agents/test_risk_calibration.py` — **P1-4**: golden calibration matrix (12 scenarios × score ±0.005 × tier × route); CI fails on unexpected routing drift (Issue #44, ADR-0054, ADR-0011)
+- `tests/unit/agents/test_agent_action_v1.py`, `tests/unit/process/test_governance_contracts.py` — schema + governance-contract validation coverage (Issue #44)
+- `docs/adr/ADR-0054-machine-readable-governance-contracts.md` — records the four governance-contract decisions (Issue #44)
+
+#### Changed
+
+- `src/agents/orchestrator/orchestrator.py` — Reason stage validates LLM output via `parse_agent_action()`; schema-invalid output routes to HITL (`oversight_mode="HITL_SCHEMA_INVALID"`); reason span carries `schema_valid`/`schema_legacy` (Issue #44, ADR-0054)
+- `docs/product/README.md` — documents `state.yaml` governance and feature-package bootstrap with the state manifest (Issue #44)
+
 ### Wave A — Runtime Correctness (ADR-0053)
 
 #### Fixed

@@ -114,6 +114,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0051](ADR-0051-model-behavioral-contracts.md)                         | Model Behavioral Contracts                          | Accepted | 2026-06-06 |
 | [ADR-0052](ADR-0052-agentic-sdlc-e2e-workflow.md)                          | Agentic SDLC E2E Workflow                           | Accepted | 2026-06-06 |
 | [ADR-0053](ADR-0053-runtime-correctness-hitl-autonomy-tool-enforcement.md) | Runtime Correctness: HITL/Autonomy/Tool Enforcement | Accepted | 2026-06-06 |
+| [ADR-0054](ADR-0054-machine-readable-governance-contracts.md)              | Machine-Readable Governance Contracts               | Accepted | 2026-06-06 |
 
 ### AI Agents Module _(opt-in)_
 

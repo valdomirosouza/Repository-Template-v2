@@ -11,7 +11,9 @@ This directory contains agent-generated and human-approved discovery artefacts f
 
 ```
 docs/product/
+├── state-template.yaml  ← Template for per-feature state manifests (copy into FEAT-{id}/)
 └── FEAT-{id}/
+    ├── state.yaml       ← Machine-readable feature state (phase, approvals, gates, allowed actions)
     ├── discovery.md      ← Phase 1: Agent-generated Discovery Primer; reviewed by Product + Tech Lead
     ├── nfr.md            ← Phase 2: NFR doc; Security Lead approval mandatory
     ├── decisions.log     ← Chronological log of key decisions made during discovery
@@ -45,7 +47,9 @@ This satisfies EU AI Act transparency requirements (Article 13) and provides the
 
 3. **The `decisions.log` is append-only.** Each entry records: decision, rationale, who made it, and date. Do not edit past entries.
 
-4. **Minimum reviewers per artefact:**
+4. **The `state.yaml` is the machine-readable source of feature state.** Copy `state-template.yaml` into `FEAT-{id}/state.yaml` when the feature package is created, and keep `current_phase`, `approvals`, and `gates_passed` current as the feature advances. Agents read `state.yaml` to determine the current phase and then consult `docs/process/gates/phase-gates.yaml` to learn which actions are allowed — without parsing any Markdown. The `next_allowed_agent_actions` / `prohibited_agent_actions` fields are a convenience projection of `phase-gates.yaml` for the current phase and MUST stay consistent with it (ADR-0054).
+
+5. **Minimum reviewers per artefact:**
 
    | Artefact          | Minimum Reviewers                                       | Blocking Gate                       |
    | ----------------- | ------------------------------------------------------- | ----------------------------------- |
@@ -63,10 +67,13 @@ When a new feature Issue is created:
 # Manually, or via agent session bootstrap (Phase 1, Step 2):
 FEAT_ID=<github-issue-number>
 mkdir -p docs/product/FEAT-${FEAT_ID}
+cp docs/product/state-template.yaml docs/product/FEAT-${FEAT_ID}/state.yaml
 touch docs/product/FEAT-${FEAT_ID}/discovery.md
 touch docs/product/FEAT-${FEAT_ID}/nfr.md
 touch docs/product/FEAT-${FEAT_ID}/decisions.log
 ```
+
+Then set `feature_id`, `title`, and `github_issue` in the new `state.yaml`.
 
 Link `docs/product/FEAT-{id}/discovery.md` in the GitHub Issue body under "Discovery Link".
 

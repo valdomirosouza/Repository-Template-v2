@@ -1,0 +1,59 @@
+# Feature state manifest — TEMPLATE.
+#
+# Copy to docs/product/FEAT-{id}/state.yaml and keep it current as the feature
+# moves through the 13-phase lifecycle. This is the single compact, machine-readable
+# source an agent reads to determine where a feature stands and what it may do next
+# — instead of parsing discovery.md, nfr.md, the spec, and the Issue.
+#
+# Cross-references docs/process/gates/phase-gates.yaml (phase → allowed actions).
+#
+# Spec:  Agentic-SDLC-Repository-Improvement-Directive.md §8
+# ADR:   ADR-0054 (machine-readable governance contracts), ADR-0052
+
+schema_version: feature_state_v1
+
+feature_id: FEAT-000 # GitHub Issue number for the parent feature request
+title: "<feature title>"
+github_issue: 0
+
+# Current lifecycle phase (1–13). Must match an id in phase-gates.yaml.
+current_phase: 1
+current_phase_name: Conception
+
+# Approvals recorded so far. Each: role, status (pending|approved|rejected), date.
+approvals:
+  - role: product_lead
+    status: pending
+    date: null
+  - role: tech_lead
+    status: pending
+    date: null
+  - role: security_lead
+    status: pending
+    date: null
+
+# Phase gates passed so far (by phase id). Append as each gate clears.
+gates_passed: []
+# Example once Phase 1 + 2 clear:
+#   gates_passed:
+#     - phase: 1
+#       passed_at: 2026-06-06
+#     - phase: 2
+#       passed_at: 2026-06-07
+
+# Artefacts produced, keyed by type. Null until created.
+artifacts:
+  discovery: null # docs/product/FEAT-000/discovery.md
+  nfr: null # docs/product/FEAT-000/nfr.md
+  feature_spec: null # specs/features/FEAT-000/feature-spec.md
+  adrs: [] # docs/adr/ADR-NNNN-*.md
+  runbooks: [] # docs/sre/runbooks/RB-NNN-*.md
+
+# Convenience projection of phase-gates.yaml for the CURRENT phase. Agents may read
+# these directly; they MUST stay consistent with phase-gates.yaml for current_phase.
+next_allowed_agent_actions: [read, draft_doc]
+prohibited_agent_actions: [write_code, deploy, rollback, change_feature_flag]
+
+# Free-form notes / blockers (optional).
+blockers: []
+notes: ""

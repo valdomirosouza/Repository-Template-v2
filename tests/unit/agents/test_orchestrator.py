@@ -147,6 +147,32 @@ class TestReason:
             await orchestrator.run(raw_input={"request_text": "Do something"})
 
     @pytest.mark.asyncio
+    async def test_schema_invalid_output_routes_to_hitl(self) -> None:
+        # A registered tool with a malformed agent_action_v1 envelope (bad enum)
+        # must route to HITL — never silently proceed (ADR-0054).
+        llm_json = json.dumps(
+            {
+                "schema_version": "agent_action_v1",
+                "action_type": "read-db-record",
+                "parameters": {},
+                "operation": "obliterate",  # invalid enum
+            }
+        )
+        gateway = _make_gateway(HITLStatus.APPROVED)
+        orchestrator = AgentOrchestrator(
+            agent_id="test-agent",
+            audit_logger=_make_audit(),
+            hitl_gateway=gateway,
+            llm_client=StubLLMClient(llm_json),
+        )
+
+        result = await orchestrator.run(raw_input={"request_text": "Read a record"})
+
+        gateway.submit_for_approval.assert_called_once()
+        assert result["oversight_mode"] == "HITL_SCHEMA_INVALID"
+        assert result["outcome"] == "EXECUTED"
+
+    @pytest.mark.asyncio
     async def test_missing_risk_score_uses_risk_scorer(self) -> None:
         # LLM omits risk_score — RiskScorer computes based on action+parameters.
         # "read-db-record" with empty params → 0.105 (read action).

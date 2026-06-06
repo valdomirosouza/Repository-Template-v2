@@ -26,6 +26,7 @@ from src.agents.action_policy import requires_mandatory_hitl
 from src.agents.feedback_learner import FeedbackLearner, default_feedback_learner
 from src.agents.hitl_gateway import HITLGateway, HITLRequest, HITLStatus
 from src.agents.risk_scorer import RiskScorer
+from src.agents.schemas import parse_agent_action
 from src.agents.spec_contract_enforcer import SpecContractEnforcer, SpecViolationError
 from src.agents.tool_executor import ToolExecutor
 from src.guardrails.action_limits import ActionLimiter
@@ -65,6 +66,9 @@ class AgentContext:
     proposed_parameters: dict[str, Any] = field(default_factory=dict)
     risk_score: float = 0.0
     trace_id: str | None = None
+    # agent_action_v1 schema validity (ADR-0054); invalid output must not silently proceed
+    schema_valid: bool = True
+    schema_errors: list[str] = field(default_factory=list)
 
 
 class AgentOrchestrator:
@@ -216,35 +220,32 @@ class AgentOrchestrator:
                 trace_id=ctx.trace_id,
             )
 
-            try:
-                parsed = json.loads(response_text)
-            except (json.JSONDecodeError, ValueError):
-                # Invalid JSON from LLM routes to HITL via high risk score — fail safe
-                parsed = {
-                    "schema_version": "agent_action_v1",
-                    "action_type": "unknown",
-                    "parameters": {},
-                    "data_classification": "none",
-                    "external_effect": False,
-                    "reversible": True,
-                }
+            # Validate against the agent_action_v1 envelope (ADR-0054). Invalid output
+            # never silently proceeds — it is routed to HITL or blocked in _act_inner.
+            action = parse_agent_action(response_text)
+            ctx.proposed_action = action.action_type
+            # Merge structured envelope fields so risk_scorer + action_policy can read them.
+            ctx.proposed_parameters = action.merged_parameters()
+            ctx.schema_valid = action.is_valid
+            ctx.schema_errors = action.validation_errors
+            # LLM-self-reported confidence is advisory only; the system scorer owns the
+            # final risk score (set in _act_inner).
+            ctx.risk_score = 1.0
 
-            # Support both legacy {"action": ...} and new agent_action_v1 schema
-            action_key = "action_type" if "action_type" in parsed else "action"
-            ctx.proposed_action = str(parsed.get(action_key, "unknown"))
-            ctx.proposed_parameters = dict(parsed.get("parameters", {}))
-            # Merge structured fields into parameters so risk_scorer and action_policy can read them
-            for field in ("data_classification", "external_effect", "reversible",
-                          "target_environment", "operation", "entity_count"):
-                if field in parsed:
-                    ctx.proposed_parameters.setdefault(field, parsed[field])
-            # LLM-self-reported risk_score is advisory only; system scorer owns the final score
-            ctx.risk_score = 1.0  # will be overwritten by RiskScorer in _act_inner
+            if not action.is_valid:
+                logger.warning(
+                    "Agent output failed agent_action_v1 validation",
+                    agent_id=ctx.agent_id,
+                    action_type=ctx.proposed_action,
+                    errors=action.validation_errors,
+                )
 
             span.set_attributes(
                 {
                     "reason.model": settings.llm_model,
                     "reason.precedents_injected": precedents_injected,
+                    "reason.schema_valid": action.is_valid,
+                    "reason.schema_legacy": action.legacy,
                 }
             )
 
@@ -317,9 +318,10 @@ class AgentOrchestrator:
             action_name, autonomy_level.value
         )
 
-        # Full decision matrix (ADR-0053, specs/ai/hitl-hotl.md):
+        # Full decision matrix (ADR-0053/0054, specs/ai/hitl-hotl.md):
         #   mandatory policy → HITL (numeric score cannot downgrade)
         #   unregistered     → blocked (no HITL bypass; ToolExecutor raises)
+        #   schema invalid   → HITL (malformed agent output never proceeds silently)
         #   risk ≥ threshold → HITL
         #   autonomy permits → execute autonomously (HOTL)
         #   otherwise        → fall back to HITL (autonomy ceiling insufficient)
@@ -329,6 +331,9 @@ class AgentOrchestrator:
         elif not is_registered:
             route_to_hitl = False  # ToolExecutor step 2 blocks unregistered tools
             oversight_mode = "BLOCKED_UNREGISTERED"
+        elif not ctx.schema_valid:
+            route_to_hitl = True  # malformed agent_action_v1 output → human review
+            oversight_mode = "HITL_SCHEMA_INVALID"
         elif ctx.risk_score >= settings.hitl_risk_threshold:
             route_to_hitl = True
             oversight_mode = "HITL"
