@@ -13,6 +13,7 @@ import asyncio
 import time
 from dataclasses import dataclass
 
+from src.agents.code_pre_flight import CodePreFlight, CodePreFlightError
 from src.observability.logger import get_logger
 from src.shared.config import settings
 
@@ -114,6 +115,18 @@ class SandboxExecutor:
         """
         self._validate_command(command)
         self._enforce_policy(risk_score)
+
+        # SD3: pre-flight static check on any inline Python code snippet (ADR-0047).
+        # The "-c" argv form is the primary path for agent-generated Python.
+        if len(command) >= 3 and command[0] == "python" and command[1] == "-c":
+            try:
+                CodePreFlight.check_or_raise(command[2])
+            except CodePreFlightError as exc:
+                logger.warning(
+                    "sandbox.pre_flight_failed",
+                    reason=str(exc),
+                )
+                raise SandboxPolicyError(f"Code pre-flight check failed: {exc}") from exc
 
         docker_cmd = self._build_docker_command(command)
         logger.info(

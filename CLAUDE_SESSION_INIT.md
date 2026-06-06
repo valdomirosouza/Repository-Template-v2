@@ -61,5 +61,10 @@ Wave labels: `wave-1` (done) → `wave-2` → `wave-3` → `wave-4` → `wave-5`
 | ADR-0044 | OTel agent span hierarchy                         |
 | ADR-0045 | GenAI semantic conventions for LLM                |
 | ADR-0046 | HITL trace linking + guardrail events             |
+| ADR-0047 | Spec contract enforcement at runtime              |
+| ADR-0048 | Zero-trust tool registry + operator auth          |
+| ADR-0049 | Runtime behavioral monitoring                     |
+| ADR-0050 | Adversarial abuse testing strategy                |
+| ADR-0051 | Model behavioral contracts (MLSecOps)             |
 
 Full index: `docs/adr/README.md`

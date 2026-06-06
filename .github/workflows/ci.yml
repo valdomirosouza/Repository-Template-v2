@@ -234,6 +234,8 @@ jobs:
         run: uv run pytest tests/security/ -v
       - name: OWASP LLM Top 10 tests
         run: uv run pytest tests/security/test_owasp_llm_top10.py -v
+      - name: Abuse case tests (continuous, mock-LLM — CV1/CV2, ADR-0050)
+        run: PYTHONPATH=. uv run pytest tests/abuse_cases/ -m abuse_case -q
 
   contract-drift:
     name: Contract Drift Check

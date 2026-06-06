@@ -1,7 +1,7 @@
 # Enterprise Monorepo Template
 
 > Production-ready monorepo template for enterprise software systems. AI/agent capabilities are optional opt-in extensions.
-> **Version:** 2.2.0 | **Status:** Active | **License:** MIT
+> **Version:** 2.4.0 | **Status:** Active | **License:** MIT
 
 [![CI](https://github.com/valdomirosouza/Repository-Template/actions/workflows/ci.yml/badge.svg)](https://github.com/valdomirosouza/Repository-Template/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/valdomirosouza/Repository-Template)](https://github.com/valdomirosouza/Repository-Template/releases/latest)
@@ -352,6 +352,38 @@ Full AI governance: [`docs/ai-governance/`](docs/ai-governance/)
 
 ---
 
+## Secure by Design — Agentic AI Compliance (v2.4.0)
+
+This template implements a five-wave **Secure by Design** framework for agentic AI systems, aligned with the `secure-by-design-agentic-ai-compliance-v2.md` standard. Each wave is tracked as a GitHub Issue and delivered as a standalone, reviewable commit.
+
+| Wave        | Issue | Pillar                                   | ADR      | Key Components                                                                          | Main Betterments                                                                                                                                                                                                                                                  |
+| ----------- | ----- | ---------------------------------------- | -------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Wave 21** | #32   | Pillar 1 — Spec-Driven Guardrails        | ADR-0047 | `SpecContractEnforcer`, `ContextSeal`, `CodePreFlight`                                  | Runtime enforcement of spec boundaries — agents can only propose `allowed_action_types`; Planner→Generator context integrity sealed with SHA-256; AI-generated code blocked from forbidden imports (`subprocess`, `socket`, `eval`, `exec`) before sandbox entry  |
+| **Wave 22** | #33   | Pillar 2 — Zero-Trust Tooling            | ADR-0048 | `ExecutionMode` enum, `ToolRegistry.is_sandbox_required()`, JWT operator auth           | Execution mode (`DIRECT \| SANDBOX`) declared at tool-registry time — sandbox routing becomes an architectural invariant, not a runtime guess; `execute-code` can never bypass the sandbox; HITL operator impersonation residual reduced Medium→Low               |
+| **Wave 23** | #34   | Pillar 3 — Runtime Behavioral Monitoring | ADR-0049 | `BehavioralMonitor`, `RuntimePolicyGateway`, `policies.yaml`                            | Per-task-type frequency baseline detects action drift automatically (OTel span + Prometheus counter); declarative YAML policy engine enforces ALLOW / REQUIRE_HITL / BLOCK rules with hot-reload and PII-level awareness                                          |
+| **Wave 24** | #35   | Pillar 4 — Continuous Verification       | ADR-0050 | `tests/abuse_cases/` (34 tests), `ActionSchemaValidator`, action schemas                | Structured abuse-case library (jailbreak, goal hijacking, context overflow, multi-agent trust, spec violations) runs on every PR with zero API cost; action payload schema validation blocks malformed or oversized payloads before HITL queuing                  |
+| **Wave 25** | #36   | MLSecOps — Cross-Cutting                 | ADR-0051 | `tests/model_contract/` (11 tests), `ci-model-contract.yml`, `dependency-manifest.yaml` | Versioned behavioral contracts per model (`behavioral_contract_version`, `last_contract_tested`); real-LLM tests verify refusal behavior, spec adherence, and PII non-leakage; path-triggered CI fires only on model-version PRs — zero extra cost on normal runs |
+
+### Cumulative Security Posture after All Waves
+
+| Gap (pre-Wave 21)                                          | Closed by | Mechanism                                                                            |
+| ---------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------ |
+| Agent could propose any action regardless of spec          | Wave 21   | `SpecContractEnforcer.validate_action()` raises `SpecViolationError`                 |
+| Planner output could be silently tampered between stages   | Wave 21   | `ContextSeal.verify()` raises `ContextTamperingError` on hash mismatch               |
+| AI-generated code entered the sandbox unchecked            | Wave 21   | `CodePreFlight` AST gate rejects forbidden imports/calls                             |
+| Tool→sandbox routing was implicit convention, not enforced | Wave 22   | `ExecutionMode.SANDBOX` declared in registry; `is_sandbox_required()` enforced       |
+| HITL operator identity unverified in threat model          | Wave 22   | JWT operator auth already in place (REM-001 ✅); residual downgraded                 |
+| No behavioral baseline — rogue action types undetected     | Wave 23   | `BehavioralMonitor` frequency baseline + drift counter                               |
+| Policy enforcement was ad-hoc code, not declarative        | Wave 23   | `RuntimePolicyGateway` YAML policy engine with hot-reload                            |
+| No structured adversarial test coverage on every PR        | Wave 24   | 34 mock-LLM abuse cases, `@pytest.mark.abuse_case`, added to `ci.yml`                |
+| HITL received arbitrary-schema payloads unchecked          | Wave 24   | `ActionSchemaValidator` schema gate before `HITLGateway.submit_for_approval()`       |
+| Model upgrades had no behavioral regression gate           | Wave 25   | `tests/model_contract/` + `ci-model-contract.yml` (path-triggered)                   |
+| No versioned record of what behavior each model promises   | Wave 25   | `behavioral_contract_version` + `last_contract_tested` in `dependency-manifest.yaml` |
+
+> **All five waves are committed to `main` and covered by ADR-0047–ADR-0051.** See [`docs/adr/README.md`](docs/adr/README.md) for the full index.
+
+---
+
 ## Feature Flags
 
 Flags use the [OpenFeature](https://openfeature.dev/) SDK (CNCF standard) backed by [flagd](https://flagd.dev/). No external SaaS dependency — flags are YAML files mounted via ConfigMap.
@@ -388,7 +420,7 @@ CD workflows:
 
 ## Architecture Decisions
 
-All 30 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
+All 51 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
 
 | ADR                                                                | Decision                                               |
 | ------------------------------------------------------------------ | ------------------------------------------------------ |

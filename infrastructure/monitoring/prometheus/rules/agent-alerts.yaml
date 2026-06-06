@@ -232,3 +232,29 @@ spec:
             summary: "Dead Letter Queue receiving messages — {{ $labels.consumer_group }}/{{ $labels.topic }}"
             description: "{{ $value }} messages routed to DLQ for {{ $labels.consumer_group }}/{{ $labels.topic }} in the last 15 minutes. Investigate consumer errors."
             runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/disaster-recovery.md"
+
+    # ── Behavioral monitoring (BM1/BM2 — ADR-0049) ──────────────────────────
+    - name: agent.behavioral
+      interval: 60s
+      rules:
+        - alert: AgentBehavioralDrift
+          expr: |
+            rate(agent_behavioral_anomaly_total[5m]) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Agent proposing action outside historical behavioral envelope — {{ $labels.task_type }}/{{ $labels.action_type }}"
+            description: "BehavioralMonitor detected drift: action '{{ $labels.action_type }}' has never or rarely been proposed for task_type '{{ $labels.task_type }}'. Possible prompt injection or model drift. Escalating to HITL."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"
+
+        - alert: RuntimePolicyBlocked
+          expr: |
+            rate(agent_policy_decision_total{decision="BLOCK"}[5m]) > 0.1
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Runtime policy gateway blocking agent actions — {{ $labels.policy_name }}"
+            description: "More than 0.1 BLOCK decisions per second for policy '{{ $labels.policy_name }}'. Agent may be repeatedly proposing disallowed actions."
+            runbook_url: "https://github.com/org/repo/blob/main/docs/runbooks/README.md"

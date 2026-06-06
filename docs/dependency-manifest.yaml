@@ -80,6 +80,9 @@ ai_dependencies:
         pii_masking_enforced_by: "src/guardrails/pii_filter.py"
         prompt_injection_guard: "src/guardrails/prompt_injection_guard.py"
         hitl_gateway: "src/agents/hitl_gateway.py"
+        behavioral_contract_version: "1.0"
+        last_contract_tested: "2026-06-06"
+        contract_test_suite: "tests/model_contract/"
 
       - model_id: "claude-haiku-4-5-20251001"
         role: "low_latency_classification"
@@ -88,6 +91,9 @@ ai_dependencies:
         data_classification_max: "L2_INTERNAL"
         pii_allowed: false
         pii_masking_enforced_by: "src/guardrails/pii_filter.py"
+        behavioral_contract_version: "1.0"
+        last_contract_tested: "2026-06-06"
+        contract_test_suite: "tests/model_contract/"
 
     rate_limits:
       monthly_token_budget_input: 10_000_000

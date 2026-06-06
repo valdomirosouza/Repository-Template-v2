@@ -8,6 +8,7 @@ from __future__ import annotations
 import pytest
 
 from src.agents.tool_registry import (
+    ExecutionMode,
     PIILevel,
     ToolDefinition,
     ToolRegistry,
@@ -192,3 +193,91 @@ class TestDefaultRegistry:
         from src.agents.tool_registry import default_tool_registry
 
         assert default_tool_registry.get("read-db-record").risk_level == ToolRiskLevel.LOW
+
+    def test_execute_code_is_registered_as_sandbox(self) -> None:
+        from src.agents.tool_registry import default_tool_registry
+
+        tool = default_tool_registry.get("execute-code")
+        assert tool.execution_mode == ExecutionMode.SANDBOX
+        assert tool.requires_hitl is True
+
+    def test_send_external_request_is_registered(self) -> None:
+        from src.agents.tool_registry import default_tool_registry
+
+        tool = default_tool_registry.get("send-external-request")
+        assert tool.risk_level == ToolRiskLevel.HIGH
+        assert tool.requires_hitl is True
+
+
+# ── TestExecutionMode ─────────────────────────────────────────────────────────
+
+
+class TestExecutionMode:
+    def test_default_execution_mode_is_direct(self) -> None:
+        tool = _tool("direct-tool")
+        assert tool.execution_mode == ExecutionMode.DIRECT
+
+    def test_sandbox_execution_mode_can_be_set(self) -> None:
+        tool = ToolDefinition(
+            name="code-runner",
+            description="Runs code",
+            version="1.0",
+            risk_level=ToolRiskLevel.HIGH,
+            pii_access=[],
+            requires_hitl=True,
+            execution_mode=ExecutionMode.SANDBOX,
+            rate_limit_per_minute=1,
+            rate_limit_per_hour=5,
+            owner_team="platform",
+        )
+        assert tool.execution_mode == ExecutionMode.SANDBOX
+
+
+# ── TestIsSandboxRequired ─────────────────────────────────────────────────────
+
+
+class TestIsSandboxRequired:
+    def test_sandbox_tool_returns_true(self) -> None:
+        reg = ToolRegistry()
+        reg.register(
+            ToolDefinition(
+                name="execute-code",
+                description="Code runner",
+                version="1.0",
+                risk_level=ToolRiskLevel.HIGH,
+                pii_access=[],
+                requires_hitl=True,
+                execution_mode=ExecutionMode.SANDBOX,
+                rate_limit_per_minute=2,
+                rate_limit_per_hour=10,
+                owner_team="platform",
+            )
+        )
+        assert reg.is_sandbox_required("execute-code") is True
+
+    def test_direct_tool_returns_false(self) -> None:
+        reg = ToolRegistry()
+        reg.register(_tool("read-db-record"))
+        assert reg.is_sandbox_required("read-db-record") is False
+
+    def test_underscore_name_normalized_to_hyphen(self) -> None:
+        reg = ToolRegistry()
+        reg.register(
+            ToolDefinition(
+                name="execute-code",
+                description="Code runner",
+                version="1.0",
+                risk_level=ToolRiskLevel.HIGH,
+                pii_access=[],
+                requires_hitl=True,
+                execution_mode=ExecutionMode.SANDBOX,
+                rate_limit_per_minute=2,
+                rate_limit_per_hour=10,
+                owner_team="platform",
+            )
+        )
+        assert reg.is_sandbox_required("execute_code") is True
+
+    def test_unregistered_tool_returns_false(self) -> None:
+        reg = ToolRegistry()
+        assert reg.is_sandbox_required("ghost-tool") is False

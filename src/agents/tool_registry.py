@@ -32,6 +32,11 @@ class PIILevel(StrEnum):
     L4 = "L4"
 
 
+class ExecutionMode(StrEnum):
+    DIRECT = "direct"    # executed in-process via a Python function call
+    SANDBOX = "sandbox"  # MUST be routed through SandboxExecutor (ADR-0016, ZT2)
+
+
 @dataclass(frozen=True)
 class ToolDefinition:
     name: str
@@ -43,6 +48,9 @@ class ToolDefinition:
     rate_limit_per_minute: int
     rate_limit_per_hour: int
     owner_team: str
+    # execution_mode=SANDBOX means the orchestrator MUST route via SandboxExecutor.
+    # Unregistered or DIRECT tools may execute in-process (subject to HITL gating).
+    execution_mode: ExecutionMode = ExecutionMode.DIRECT
     adr_reference: str = ""
     endpoint_schema: dict[str, Any] = field(default_factory=dict)
 
@@ -122,6 +130,24 @@ class ToolRegistry:
                 "Register it in infrastructure/agent-tools/tools.yaml first."
             )
 
+    def is_sandbox_required(self, name: str) -> bool:
+        """Return True if the tool's execution_mode is SANDBOX.
+
+        Accepts both hyphenated ('execute-code') and underscored ('execute_code') forms.
+        Returns False for unregistered tools (the caller should also check registration).
+        """
+        normalized = self._normalize(name)
+        try:
+            tool = self.get(normalized)
+            return tool.execution_mode == ExecutionMode.SANDBOX
+        except KeyError:
+            return False
+
+    @staticmethod
+    def _normalize(name: str) -> str:
+        """Normalize action_type names: underscores → hyphens for registry lookup."""
+        return name.replace("_", "-")
+
 
 def _load_default_registry() -> ToolRegistry:
     """Build the default registry from the built-in starter catalog."""
@@ -166,6 +192,37 @@ def _load_default_registry() -> ToolRegistry:
             rate_limit_per_hour=100,
             owner_team="platform",
             adr_reference="ADR-0039",
+        )
+    )
+    # ZT2: Code execution MUST always be routed through SandboxExecutor (ADR-0047, ADR-0016).
+    registry.register(
+        ToolDefinition(
+            name="execute-code",
+            description="Execute AI-generated Python code in an isolated Docker sandbox",
+            version="1.0",
+            risk_level=ToolRiskLevel.HIGH,
+            pii_access=[],
+            requires_hitl=True,
+            execution_mode=ExecutionMode.SANDBOX,
+            rate_limit_per_minute=2,
+            rate_limit_per_hour=10,
+            owner_team="platform",
+            adr_reference="ADR-0047",
+        )
+    )
+    registry.register(
+        ToolDefinition(
+            name="send-external-request",
+            description="Send an HTTP request to a registered external endpoint",
+            version="1.0",
+            risk_level=ToolRiskLevel.HIGH,
+            pii_access=[PIILevel.L1, PIILevel.L2],
+            requires_hitl=True,
+            execution_mode=ExecutionMode.DIRECT,
+            rate_limit_per_minute=5,
+            rate_limit_per_hour=50,
+            owner_team="integrations",
+            adr_reference="ADR-0048",
         )
     )
     return registry

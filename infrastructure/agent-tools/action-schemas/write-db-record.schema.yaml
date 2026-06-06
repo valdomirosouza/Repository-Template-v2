@@ -1,0 +1,23 @@
+# Schema for write-db-record action payloads
+# Spec: secure-by-design-agentic-ai-compliance-v2.md §Pillar 4 (CV3)
+# ADR:  ADR-0050
+
+max_payload_bytes: 10240
+
+required:
+  - table
+  - data
+
+properties:
+  table:
+    type: string
+    description: "Target database table name (no SQL metacharacters)"
+  data:
+    type: object
+    description: "Key-value pairs to write (parameterized — never raw SQL)"
+  operation:
+    type: string
+    description: "INSERT or UPDATE"
+  record_id:
+    type: string
+    description: "Record ID for UPDATE operations"

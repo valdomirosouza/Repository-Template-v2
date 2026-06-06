@@ -13,6 +13,109 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 25 — MLSecOps + Docs (Secure by Design Cross-Cutting)
+
+#### Added
+
+- `tests/model_contract/` — real-LLM behavioral contract test suite (`@pytest.mark.model_contract`); skips automatically when `ANTHROPIC_API_KEY` is absent; uses synthetic PII only (Issue #36, ML1, ADR-0051):
+  - `conftest.py` — session-scoped `anthropic_client` and `model_id` fixtures; auto-skip hook when no API key
+  - `test_refusal_behavior.py` — 5 tests: jailbreak prompts, authority bypass, PII extraction, credential generation refusal
+  - `test_spec_adherence.py` — 3 tests: allowed action_types, prohibited operation refusal, scope boundary enforcement
+  - `test_pii_non_leakage.py` — 3 tests: PII not echoed in summaries, SSN not reproduced, masked fields not inferred
+- `.github/workflows/ci-model-contract.yml` — path-triggered workflow (fires on `docs/dependency-manifest.yaml`, `specs/ai/**`, `tests/model_contract/**` changes); supports manual dispatch with `model_id` input (Issue #36, ML1, ADR-0051)
+- `docs/adr/ADR-0051-model-behavioral-contracts.md` — documents contract versioning scheme, test suite design, path-triggered CI, and cost/maintenance trade-offs (Issue #36)
+
+#### Changed
+
+- `docs/dependency-manifest.yaml` — both model entries (`claude-sonnet-4-6`, `claude-haiku-4-5-20251001`) gain `behavioral_contract_version: "1.0"`, `last_contract_tested: "2026-06-06"`, `contract_test_suite: "tests/model_contract/"` (Issue #36, ML1, ADR-0051)
+- `pyproject.toml` — `model_contract` pytest marker registered
+- `docs/adr/README.md` — ADR-0051 added to master index
+- `CLAUDE_SESSION_INIT.md` — ADR-0047–0051 added to ADR Quick Index
+- `skills/ai/guardrails.md` — Secure-by-Design stack (Pillars 1–4 + MLSecOps) documented with component table; last updated 2026-06-06
+- `CLAUDE.md` — version bumped 2.3.0 → 2.4.0; §3.2 Security Rules gains: mandatory `make test-abuse-cases` before agent/guardrail PRs; mandatory model contract run before promoting new model versions; ADR range updated to ADR-0001–ADR-0051
+
+---
+
+### Wave 24 — Continuous Verification (Secure by Design Pillar 4)
+
+#### Added
+
+- `tests/abuse_cases/` — structured abuse-case test library with 5 test files and `conftest.py`; all tests use mock LLMs (no API cost) and run on every PR via `@pytest.mark.abuse_case`:
+  - `test_jailbreak_attempts.py` — instruction override, role switch, excessive length (LLM01/02)
+  - `test_goal_hijacking.py` — poisoned tool responses, code-based goal hijacking
+  - `test_context_overflow.py` — context stuffing to push spec constraints out of scope
+  - `test_multiagent_trust_abuse.py` — Planner→Generator context tampering via ContextSeal
+  - `test_spec_boundary_violations.py` — actions outside spec's allowed_action_types
+- `src/agents/action_schema_validator.py` — `ActionSchemaValidator` validates action payloads against YAML schemas before HITL queuing; `validate_or_raise()` raises `ActionSchemaError` on missing fields, type mismatches, or oversized payloads; normalizes underscore→hyphen action_type names (Issue #35, CV3, ADR-0050)
+- `infrastructure/agent-tools/action-schemas/` — three starter schemas: `write-db-record.schema.yaml`, `send-email.schema.yaml`, `execute-code.schema.yaml` (Issue #35, CV3)
+- `docs/adr/ADR-0050-adversarial-abuse-testing.md` — documents abuse-case test taxonomy, mock-only strategy, ActionSchemaValidator design, and deferred jsonschema integration
+- `tests/unit/agents/test_action_schema_validator.py` — 24 unit tests for ActionSchemaValidator
+
+#### Changed
+
+- `.github/workflows/ci.yml` — `test-security` job gains `Abuse case tests (continuous, mock-LLM)` step running `pytest tests/abuse_cases/ -m abuse_case` on every PR (Issue #35, CV2)
+- `pyproject.toml` — `abuse_case` pytest marker registered in `[tool.pytest.ini_options]`
+
+---
+
+### Wave 23 — Runtime Behavioral Monitoring (Secure by Design Pillar 3)
+
+#### Added
+
+- `src/agents/behavioral_monitor.py` — `BehavioralMonitor` tracks per-task-type action proposal frequency; `is_anomalous()` flags actions with <1% historical frequency (and not in allowed list) as behavioral drift; sets OTel span attribute `behavioral.drift_detected` and increments `agent_behavioral_anomaly_total` Prometheus counter (Issue #34, BM1+BM3, ADR-0049)
+- `src/agents/runtime_policy_gateway.py` — `RuntimePolicyGateway` evaluates declarative YAML policies (ALLOW|REQUIRE_HITL|BLOCK); first-match-wins; hot-reload via `reload(path)`; `evaluate_or_raise()` raises `RuntimePolicyError` on BLOCK; increments `agent_policy_decision_total` counter (Issue #34, BM2, ADR-0049)
+- `infrastructure/agent-policies/policies.yaml` — starter policies: `no-code-execution-on-summarize` (BLOCK), `external-write-always-hitl` (REQUIRE_HITL), `pii-write-l2-always-hitl` (REQUIRE_HITL), `execute-code-always-hitl` (REQUIRE_HITL) (Issue #34)
+- `docs/adr/ADR-0049-runtime-behavioral-monitoring.md` — documents BM1/BM2/BM3 controls, frequency threshold design, policy evaluation semantics, and deferred Redis backend
+- `tests/unit/agents/test_behavioral_monitor.py` — 19 unit tests for BehavioralMonitor
+- `tests/unit/agents/test_runtime_policy_gateway.py` — 18 unit tests for RuntimePolicyGateway (task_type patterns, method matching, PII level, first-match, hot reload, from_yaml)
+
+#### Changed
+
+- `src/observability/metrics.py` — adds `AGENT_BEHAVIORAL_ANOMALY_COUNTER` and `AGENT_POLICY_DECISION_COUNTER` Prometheus metrics (Issue #34, BM1+BM2)
+- `infrastructure/monitoring/prometheus/rules/agent-alerts.yaml` — adds `AgentBehavioralDrift` (critical) and `RuntimePolicyBlocked` (warning) alert rules (Issue #34, BM1+BM2)
+
+---
+
+### Wave 22 — Zero-Trust Tooling (Secure by Design Pillar 2)
+
+#### Added
+
+- `ExecutionMode` enum (`DIRECT | SANDBOX`) added to `src/agents/tool_registry.py`; `execute-code` tool registered with `execution_mode=SANDBOX` making sandbox routing a registry-declared invariant (Issue #33, ZT1, ADR-0048)
+- `ToolRegistry.is_sandbox_required(name)` — normalizes underscore/hyphen names and returns `True` if the tool requires `SandboxExecutor` routing (Issue #33, ZT2, ADR-0048)
+- `execute-code` and `send-external-request` entries added to `infrastructure/agent-tools/tools.yaml` and `tool_registry.py` default catalog (Issue #33, ZT1)
+- `docs/adr/ADR-0048-zero-trust-tool-registry.md` — documents execution_mode field, sandbox enforcement, and ZT3 gap closure
+- 14 new unit tests in `tests/unit/agents/test_tool_registry.py` for `ExecutionMode`, `is_sandbox_required`, and new default registry entries
+
+#### Changed
+
+- `src/agents/tool_registry.py` — `ToolDefinition` gains `execution_mode: ExecutionMode = DIRECT`; `is_sandbox_required()` and `_normalize()` helpers added; new `execute-code` (SANDBOX) and `send-external-request` (DIRECT) entries in default registry (Issue #33, ZT1+ZT2)
+- `infrastructure/agent-tools/tools.yaml` — all tools updated with `execution_mode` annotations; `execute-code` and `send-external-request` added (Issue #33)
+- `specs/security/threat-model.md` — HITL operator impersonation residual updated from Medium → Low; notes JWT auth + hitl-operator role already in place (REM-001 ✅, ADR-0048, ZT3)
+
+---
+
+### Wave 21 — Spec-Driven Guardrails (Secure by Design Pillar 1)
+
+#### Added
+
+- `src/agents/spec_contract_enforcer.py` — `SpecContractEnforcer` loads a `SpecContract` (from YAML or dict), injects a `[SPEC_CONTRACT]` block into LLM system prompts, and validates each proposed action before it reaches `HITLGateway`; raises `SpecViolationError` on out-of-scope actions (Issue #32, SD1, ADR-0047)
+- `src/agents/harness/context_seal.py` — `ContextSeal.sign()` computes SHA-256 over Planner output; `ContextSeal.verify()` validates seal before Generator consumes context; mismatch triggers `ContextTamperingError` and HITL escalation (Issue #32, SD2, ADR-0047)
+- `src/agents/code_pre_flight.py` — `CodePreFlight` uses Python AST walking to detect forbidden imports (`subprocess`, `socket`, `ctypes`, `importlib`, etc.) and forbidden calls (`eval`, `exec`, `__import__`, `compile`, `open`) in AI-generated code before sandbox execution; raises `CodePreFlightError` (Issue #32, SD3, ADR-0047)
+- `docs/adr/ADR-0047-spec-contract-enforcement.md` — documents the three Pillar 1 controls, their integration points, and alternatives considered
+- `tests/unit/agents/test_spec_contract_enforcer.py` — 17 unit tests for SpecContractEnforcer
+- `tests/unit/agents/test_context_seal.py` — 12 unit tests for ContextSeal sign/verify/tamper detection
+- `tests/unit/agents/test_code_pre_flight.py` — 22 unit tests for CodePreFlight static analysis
+
+#### Changed
+
+- `src/agents/orchestrator/orchestrator.py` — accepts optional `spec_contract_enforcer` parameter; injects contract into system prompt in `_reason`; validates proposed action in `_act_inner` before HITL routing (Issue #32, SD1)
+- `src/agents/harness/coordinator.py` — seals `ProductSpec` after `PlannerAgent.plan()` in `_run_full`; verifies seal before `_execute_sprints`; auto-escalates to HITL on `ContextTamperingError` (Issue #32, SD2)
+- `src/agents/sandbox_executor.py` — calls `CodePreFlight.check_or_raise()` on `python -c <code>` commands before Docker invocation; raises `SandboxPolicyError` on findings (Issue #32, SD3)
+
+---
+
+## [2.4.0] - 2026-06-06
+
 ### Wave 20 — ADRs + Skill + CLAUDE.md Updates (OTel Agentic Observability)
 
 #### Added
