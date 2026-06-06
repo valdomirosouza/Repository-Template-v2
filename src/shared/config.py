@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     hitl_approval_timeout_seconds: int = 3600
     hitl_risk_threshold: float = 0.4  # MEDIUM/HIGH boundary per specs/ai/hitl-hotl.md
     hotl_override_window_seconds: int = 300  # 5-min override window per specs/ai/hitl-hotl.md
+    hotl_notification_slo_seconds: int = 60  # notify reviewer within 60s of HOTL execution
     hitl_max_pending_requests: int = 500  # hard cap on in-memory HITL request store
     hitl_redis_key_prefix: str = "hitl"
     hitl_redis_ttl_grace_hours: int = 24  # TTL extension beyond expires_at for active keys

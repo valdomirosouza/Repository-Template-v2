@@ -180,6 +180,48 @@ ADR-0016).
 
 ---
 
+## HOTL Runtime Lifecycle (ADR-0055)
+
+Once an action is routed to HOTL and executed, three components operationalize the
+"execute → notify → override window → compensate" model. They are backed by
+reversibility metadata declared per tool in `infrastructure/agent-tools/tools.yaml`
+(`reversible`, `compensating_action`, `max_hotl_risk_score`, `allowed_autonomy_levels`,
+`requires_dual_approval`), loaded and validated at startup (missing fields fail in
+production).
+
+### Reversibility gate (before execution)
+
+`src/agents/compensation_registry.py :: can_run_under_hotl(action, risk)` is consulted
+by the orchestrator: a **non-reversible** action — or one whose risk exceeds the
+tool's `max_hotl_risk_score` — cannot run autonomously under HOTL. It falls back to
+HITL (`oversight_mode = "HITL_NON_REVERSIBLE"`) for explicit human approval.
+
+### Notification + override window (after execution)
+
+`src/agents/hotl_monitor.py :: on_hotl_executed()` opens the override window and emits
+`agent.action.hotl.notification.sent`, recording latency against the SLO
+(`hotl_notification_slo_seconds`, default 60s; breaches are flagged).
+
+### Override + compensation
+
+`src/agents/override_service.py` enforces the window (default 300s) and runs
+compensation. Event chain (immutable audit records):
+
+```
+agent.action.override.requested        (records actor, reason, timestamp)
+  → agent.action.compensation.started
+    → agent.action.compensation.succeeded   (compensating action ran)
+    | agent.action.compensation.failed       (raised → escalation)
+agent.action.confirmed                        (window elapsed, no override)
+agent.action.escalation.raised                (failed/absent compensation)
+```
+
+- An override after the window closes is rejected (`OverrideWindowExpiredError`).
+- A failed or impossible compensation raises `agent.action.escalation.raised` for
+  manual remediation.
+
+---
+
 ## Risk Scoring Inputs
 
 The risk scorer considers:

@@ -24,9 +24,13 @@ import pytest
 from openfeature import api
 from openfeature.provider.in_memory_provider import InMemoryFlag, InMemoryProvider
 
+from src.agents.compensation_registry import CompensationRegistry
 from src.agents.hitl_gateway import HITLStatus
+from src.agents.hotl_monitor import HOTLMonitor
 from src.agents.orchestrator.orchestrator import AgentOrchestrator
-from src.agents.tool_executor import ToolNotRegisteredError
+from src.agents.override_service import OverrideService
+from src.agents.tool_executor import ToolExecutor, ToolNotRegisteredError
+from src.agents.tool_registry import ToolDefinition, ToolRegistry, ToolRiskLevel
 from src.guardrails.audit_logger import AuditWriteError
 from src.shared.llm_client import StubLLMClient
 
@@ -310,3 +314,77 @@ class TestAct:
         )
 
         assert result["trace_id"] == "trace-propagation-test"
+
+
+class TestHOTLLifecycle:
+    """ADR-0055 — reversibility gate + HOTL monitor integration."""
+
+    @pytest.mark.asyncio
+    async def test_non_reversible_action_routes_to_hitl_under_autonomy(self) -> None:
+        # A registered, no-HITL, low-risk but NON-reversible tool must not execute
+        # autonomously under HOTL — it falls back to HITL (HITL_NON_REVERSIBLE).
+        _set_provider(**{"autonomous-mode-low-risk": True})
+        reg = ToolRegistry()
+        reg.register(
+            ToolDefinition(
+                name="auto-task",
+                description="a non-reversible automated task",
+                version="1.0",
+                risk_level=ToolRiskLevel.LOW,
+                pii_access=[],
+                requires_hitl=False,
+                rate_limit_per_minute=60,
+                rate_limit_per_hour=1000,
+                owner_team="platform",
+                reversible=False,  # ← key: non-reversible
+                max_hotl_risk_score=0.0,
+                allowed_autonomy_levels=("low-risk", "medium-risk", "full"),
+            )
+        )
+        audit = _make_audit()
+        gateway = _make_gateway(HITLStatus.APPROVED)
+        orchestrator = AgentOrchestrator(
+            agent_id="test-agent",
+            audit_logger=audit,
+            hitl_gateway=gateway,
+            llm_client=StubLLMClient(
+                json.dumps({"action": "auto-task", "parameters": {}, "risk_score": 0.1})
+            ),
+            tool_executor=ToolExecutor(audit_logger=audit, registry=reg),
+            compensation_registry=CompensationRegistry(registry=reg),
+        )
+
+        result = await orchestrator.run(raw_input={"request_text": "Run the task"})
+
+        gateway.submit_for_approval.assert_called_once()
+        assert result["oversight_mode"] == "HITL_NON_REVERSIBLE"
+
+    @pytest.mark.asyncio
+    async def test_hotl_execution_notifies_and_opens_override_window(self) -> None:
+        # A reversible low-risk action under HOTL triggers the monitor: reviewer
+        # notification + override window. read-db-record is reversible in the catalog.
+        _set_provider(**{"autonomous-mode-low-risk": True})
+        audit = _make_audit()
+        override = OverrideService(audit_logger=audit)
+        monitor = HOTLMonitor(audit_logger=audit, override_service=override)
+        gateway = _make_gateway()
+        orchestrator = AgentOrchestrator(
+            agent_id="test-agent",
+            audit_logger=audit,
+            hitl_gateway=gateway,
+            llm_client=StubLLMClient(
+                json.dumps({"action": "read-db-record", "parameters": {}, "risk_score": 0.1})
+            ),
+            hotl_monitor=monitor,
+        )
+
+        result = await orchestrator.run(raw_input={"request_text": "Read the record"})
+
+        assert result["outcome"] == "EXECUTED"
+        assert result["oversight_mode"] == "HOTL_LOW_RISK"
+        gateway.submit_for_approval.assert_not_called()
+        assert "hotl_action_id" in result
+        # The override window was opened for the executed action.
+        record = override.get(result["hotl_action_id"])
+        assert record.status == "ACTIVE"
+        assert record.action_type == "read-db-record"
