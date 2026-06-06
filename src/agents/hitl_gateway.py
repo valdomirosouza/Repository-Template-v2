@@ -16,7 +16,7 @@ from enum import StrEnum
 from typing import Any, Protocol
 
 from opentelemetry import trace
-from opentelemetry.trace import Link, NonRecordingSpan, SpanContext, TraceFlags
+from opentelemetry.trace import Link, SpanContext, TraceFlags
 
 from src.agents.feedback_learner import FeedbackLearner, default_feedback_learner
 from src.guardrails.audit_logger import AuditLogger
@@ -296,7 +296,7 @@ class HITLGateway:
                     trace_id=int(request.otel_trace_id, 16),
                     span_id=int(request.otel_span_id, 16),
                     is_remote=True,
-                    trace_flags=TraceFlags.SAMPLED,
+                    trace_flags=TraceFlags(TraceFlags.SAMPLED),
                 )
                 links.append(Link(context=link_ctx))
             except (ValueError, OverflowError):

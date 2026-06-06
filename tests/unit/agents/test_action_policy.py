@@ -71,17 +71,13 @@ def test_prefix_match_actions_are_mandatory_hitl(action_type):
 
 @pytest.mark.parametrize("env", ["production", "prod"])
 def test_production_target_environment_is_mandatory_hitl(env):
-    required, reason = requires_mandatory_hitl(
-        "custom-db-write", {"target_environment": env}
-    )
+    required, reason = requires_mandatory_hitl("custom-db-write", {"target_environment": env})
     assert required is True
     assert "production" in reason.lower() or env in reason.lower()
 
 
 def test_staging_environment_is_not_mandatory_hitl():
-    required, _ = requires_mandatory_hitl(
-        "read-db-record", {"target_environment": "staging"}
-    )
+    required, _ = requires_mandatory_hitl("read-db-record", {"target_environment": "staging"})
     # read-db-record is not in exact list — staging is not mandatory
     assert required is False
 
@@ -92,18 +88,14 @@ def test_staging_environment_is_not_mandatory_hitl():
 
 
 def test_l1_data_classification_is_mandatory_hitl():
-    required, reason = requires_mandatory_hitl(
-        "generate-report", {"data_classification": "L1"}
-    )
+    required, reason = requires_mandatory_hitl("generate-report", {"data_classification": "L1"})
     assert required is True
     assert "L1" in reason
 
 
 @pytest.mark.parametrize("cls", ["L2", "L3", "L4", "none", ""])
 def test_non_l1_classification_not_mandatory_by_classification_alone(cls):
-    required, _ = requires_mandatory_hitl(
-        "generate-report", {"data_classification": cls}
-    )
+    required, _ = requires_mandatory_hitl("generate-report", {"data_classification": cls})
     # generate-report is not in any mandatory list
     assert required is False
 
@@ -114,24 +106,18 @@ def test_non_l1_classification_not_mandatory_by_classification_alone(cls):
 
 
 def test_bulk_operation_above_threshold_is_mandatory_hitl():
-    required, reason = requires_mandatory_hitl(
-        "update-records", {"entity_count": 101}
-    )
+    required, reason = requires_mandatory_hitl("update-records", {"entity_count": 101})
     assert required is True
     assert "101" in reason or "bulk" in reason.lower()
 
 
 def test_bulk_operation_at_threshold_is_not_mandatory():
-    required, _ = requires_mandatory_hitl(
-        "update-records", {"entity_count": 100}
-    )
+    required, _ = requires_mandatory_hitl("update-records", {"entity_count": 100})
     assert required is False
 
 
 def test_bulk_operation_below_threshold_is_not_mandatory():
-    required, _ = requires_mandatory_hitl(
-        "update-records", {"entity_count": 5}
-    )
+    required, _ = requires_mandatory_hitl("update-records", {"entity_count": 5})
     assert required is False
 
 
@@ -176,8 +162,7 @@ def test_external_effect_plus_read_is_not_mandatory():
 def test_safe_actions_do_not_require_mandatory_hitl(action_type, params):
     required, reason = requires_mandatory_hitl(action_type, params)
     assert required is False, (
-        f"Action '{action_type}' should not require mandatory HITL, "
-        f"but got reason: {reason}"
+        f"Action '{action_type}' should not require mandatory HITL, but got reason: {reason}"
     )
 
 

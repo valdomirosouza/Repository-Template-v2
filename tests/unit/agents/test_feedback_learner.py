@@ -6,17 +6,13 @@ Issue: #15
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from unittest.mock import patch
 
 import pytest
 
 from src.agents.feedback_learner import (
-    BiasReport,
     FeedbackLearner,
     OutcomeFeedback,
-    Precedent,
 )
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

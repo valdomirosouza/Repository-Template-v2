@@ -321,6 +321,4 @@ class ToolExecutor:
         required = schema.get("required", [])
         missing = [f for f in required if f not in parameters]
         if missing:
-            raise ValueError(
-                f"Tool '{action_type}' missing required parameters: {missing}"
-            )
+            raise ValueError(f"Tool '{action_type}' missing required parameters: {missing}")

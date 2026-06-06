@@ -197,9 +197,6 @@ class HarnessCoordinator:
             await self._escalate_to_hitl(
                 brief,
                 reason=f"Context seal verification failed after Planner: {exc}",
-                iteration=0,
-                score=None,
-                artifacts=[],
             )
             return HarnessResult(
                 task_id=brief.task_id,
@@ -524,12 +521,19 @@ class HarnessCoordinator:
     async def _escalate_to_hitl(
         self,
         brief: TaskBrief,
-        contract: SprintContract,
-        artifact: GeneratorArtifact,
-        score: EvaluatorScore,
+        contract: SprintContract | None = None,
+        artifact: GeneratorArtifact | None = None,
+        score: EvaluatorScore | None = None,
         summary: ExecutionSummary | None = None,
+        *,
+        reason: str = "",
     ) -> None:
-        """Escalate to HITL gateway after max iterations without passing."""
+        """Escalate to the HITL gateway.
+
+        Two call patterns are supported:
+          - after max iterations without passing (contract/artifact/score provided); or
+          - an early failure such as context-seal tampering (only ``reason`` provided).
+        """
         await self._audit.log_event(
             AuditEvent(
                 event_type="agent.action.proposed",
@@ -538,24 +542,32 @@ class HarnessCoordinator:
                 outcome="PENDING",
                 metadata={
                     "task_id": brief.task_id,
-                    "sprint_id": contract.sprint_id,
-                    "final_iteration": score.iteration,
-                    "final_score": score.average,
-                    "evaluator_feedback": score.feedback,
+                    "sprint_id": contract.sprint_id if contract else None,
+                    "final_iteration": score.iteration if score else None,
+                    "final_score": score.average if score else None,
+                    "evaluator_feedback": score.feedback if score else reason,
+                    "reason": reason,
                 },
                 trace_id=brief.trace_id,
             )
         )
 
-        # Build HITL request payload for human reviewer
-        hitl_payload: dict[str, Any] = {
-            "sprint_contract": {
+        # Build HITL request payload for human reviewer (sections present only when available)
+        hitl_payload: dict[str, Any] = {}
+        if reason:
+            hitl_payload["reason"] = reason
+        if contract is not None:
+            hitl_payload["sprint_contract"] = {
                 "sprint_id": contract.sprint_id,
                 "objectives": contract.objectives,
                 "success_criteria": contract.success_criteria,
-            },
-            "last_artifact_summary": {k: v[:500] for k, v in artifact.outputs.items()},
-            "evaluator_score": {
+            }
+        if artifact is not None:
+            hitl_payload["last_artifact_summary"] = {
+                k: v[:500] for k, v in artifact.outputs.items()
+            }
+        if score is not None:
+            hitl_payload["evaluator_score"] = {
                 "quality": score.quality,
                 "originality": score.originality,
                 "craft": score.craft,
@@ -563,8 +575,7 @@ class HarnessCoordinator:
                 "average": score.average,
                 "feedback": score.feedback,
                 "iteration": score.iteration,
-            },
-        }
+            }
 
         # Attach ExecutionSummary so the human reviewer has full iteration history
         if summary is not None:
@@ -581,7 +592,8 @@ class HarnessCoordinator:
         logger.warning(
             "Harness escalating to HITL",
             task_id=brief.task_id,
-            sprint_id=contract.sprint_id,
+            sprint_id=contract.sprint_id if contract else None,
+            reason=reason,
             payload_summary=json.dumps(hitl_payload)[:200],
         )
 

@@ -6,7 +6,7 @@ ADR:  ADR-0032 (Sub-Agent Specialization Registry)
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
 
 from src.observability.logger import get_logger
@@ -52,9 +52,7 @@ class SubAgentRegistry:
                 "Unregister it first or use a different name."
             )
         if name != config.name:
-            raise ValueError(
-                f"Registry key '{name}' must match config.name '{config.name}'."
-            )
+            raise ValueError(f"Registry key '{name}' must match config.name '{config.name}'.")
         self._agents[name] = config
         logger.info("sub_agent_registered", name=name, risk_level=config.risk_level)
 
@@ -62,11 +60,10 @@ class SubAgentRegistry:
         """Return config for a registered specialization. Raises KeyError if not found."""
         try:
             return self._agents[name]
-        except KeyError:
+        except KeyError as exc:
             raise KeyError(
-                f"Sub-agent '{name}' is not registered. "
-                f"Available: {sorted(self._agents)}"
-            )
+                f"Sub-agent '{name}' is not registered. Available: {sorted(self._agents)}"
+            ) from exc
 
     def list_by_risk_level(self, level: RiskLevel) -> list[AgentConfig]:
         """Return all specializations with the given risk level."""

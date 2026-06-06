@@ -12,6 +12,7 @@ import os
 
 import pytest
 
+
 # Skip the entire suite when no API key is present (e.g. normal CI runs).
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     if os.environ.get("ANTHROPIC_API_KEY"):
@@ -34,5 +35,6 @@ def anthropic_client():  # type: ignore[return]
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key:
         pytest.skip("ANTHROPIC_API_KEY not set")
-    import anthropic  # noqa: PLC0415
+    import anthropic
+
     return anthropic.Anthropic(api_key=api_key)

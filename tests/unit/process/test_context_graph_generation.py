@@ -53,9 +53,7 @@ def test_adrs_have_id_title_and_affects(graph):
 
 def test_specs_map_to_implementation(graph):
     # hitl-hotl spec is referenced by orchestrator/hotl modules via `Spec:` lines.
-    hitl = next(
-        (s for s in graph["specs"] if s["path"].endswith("hitl-hotl.md")), None
-    )
+    hitl = next((s for s in graph["specs"] if s["path"].endswith("hitl-hotl.md")), None)
     assert hitl is not None
     assert any("orchestrator" in f or "hotl" in f for f in hitl["implemented_by"])
 

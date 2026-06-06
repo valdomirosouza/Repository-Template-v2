@@ -90,9 +90,7 @@ class HOTLMonitor:
                 await self._notifier(record)
             except Exception as exc:  # notification delivery failure must not crash the flow
                 notification_error = str(exc)
-                logger.error(
-                    "hotl_monitor.notify_failed", action_id=action_id, error=str(exc)
-                )
+                logger.error("hotl_monitor.notify_failed", action_id=action_id, error=str(exc))
 
         sent_at = _utcnow()
         latency = (sent_at - executed_at).total_seconds()

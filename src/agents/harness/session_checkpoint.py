@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -46,7 +46,7 @@ class SessionCheckpoint:
 
     async def save(
         self,
-        redis: "aredis.Redis | None" = None,
+        redis: aredis.Redis[bytes] | None = None,
     ) -> None:
         """Persist checkpoint to Redis (TTL=7d) or local JSON fallback.
 
@@ -77,7 +77,7 @@ class SessionCheckpoint:
     async def mark_step_complete(
         self,
         sprint_id: str,
-        redis: "aredis.Redis | None" = None,
+        redis: aredis.Redis[bytes] | None = None,
     ) -> None:
         """Mark a sprint as complete and advance current_step.
 
@@ -88,7 +88,7 @@ class SessionCheckpoint:
         self.current_step = len(self.completed_steps)
         await self.save(redis=redis)
 
-    async def delete(self, redis: "aredis.Redis | None" = None) -> None:
+    async def delete(self, redis: aredis.Redis[bytes] | None = None) -> None:
         """Remove checkpoint on successful completion.
 
         Spec: specs/ai/long-running-session.md §6
@@ -107,8 +107,8 @@ class SessionCheckpoint:
     async def resume(
         cls,
         session_id: str,
-        redis: "aredis.Redis | None" = None,
-    ) -> "SessionCheckpoint | None":
+        redis: aredis.Redis[bytes] | None = None,
+    ) -> SessionCheckpoint | None:
         """Load an existing checkpoint, or return None if not found.
 
         Spec: specs/ai/long-running-session.md §4
@@ -132,9 +132,7 @@ class SessionCheckpoint:
             checkpoint = _deserialize(payload)
         except (json.JSONDecodeError, KeyError, TypeError) as exc:
             # plan-corrupted — caller must emit [HITL-ESCALATE], never silently recover
-            raise ValueError(
-                f"Checkpoint for session {session_id} is corrupted: {exc}"
-            ) from exc
+            raise ValueError(f"Checkpoint for session {session_id} is corrupted: {exc}") from exc
 
         logger.info(
             "checkpoint_resumed",
@@ -150,7 +148,7 @@ class SessionCheckpoint:
         task_id: str,
         sprint_plan: ProductSpec,
         correlation_id: str | None = None,
-    ) -> "SessionCheckpoint":
+    ) -> SessionCheckpoint:
         """Create a fresh checkpoint for a new sprint plan."""
         return cls(
             session_id=str(uuid.uuid4()),
@@ -164,7 +162,7 @@ class SessionCheckpoint:
 
 
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _local_path(session_id: str) -> Path:
@@ -177,7 +175,6 @@ def _save_local(session_id: str, payload: dict[str, Any]) -> None:
 
 
 def _serialize(cp: SessionCheckpoint) -> dict[str, Any]:
-    from dataclasses import asdict
 
     plan = cp.sprint_plan
     return {

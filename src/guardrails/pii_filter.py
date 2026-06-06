@@ -146,7 +146,7 @@ class PIIFilter:
         min_level: PIILevel = PIILevel.L2_SENSITIVE,
     ) -> dict[str, Any]:
         """Recursively mask PII in all string values of a dictionary."""
-        result = self._mask_value(data, min_level)  # type: ignore[no-any-return]
+        result: dict[str, Any] = self._mask_value(data, min_level)
         # Count how many values were actually changed (rough field-level count).
         original_text = str(data)
         matches = self.detect(original_text)

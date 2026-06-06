@@ -153,6 +153,6 @@ class CodePreFlight:
         if not result.passed:
             summary = "; ".join(f"[{f.check}:{f.line}] {f.detail}" for f in result.findings)
             raise CodePreFlightError(
-                f"Agent-generated code failed pre-flight checks ({len(result.findings)} finding(s)): "
-                f"{summary}"
+                f"Agent-generated code failed pre-flight checks "
+                f"({len(result.findings)} finding(s)): {summary}"
             )

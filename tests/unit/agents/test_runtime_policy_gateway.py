@@ -21,7 +21,6 @@ from src.agents.runtime_policy_gateway import (
     RuntimePolicyGateway,
 )
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
@@ -135,9 +134,7 @@ class TestMethodMatching:
             ]
         )
         assert (
-            gateway.evaluate(
-                "send-external-request", _ctx(method="POST")
-            )
+            gateway.evaluate("send-external-request", _ctx(method="POST"))
             == PolicyDecision.REQUIRE_HITL
         )
 
@@ -152,9 +149,7 @@ class TestMethodMatching:
                 )
             ]
         )
-        assert (
-            gateway.evaluate("send-external-request", _ctx(method="GET")) == PolicyDecision.ALLOW
-        )
+        assert gateway.evaluate("send-external-request", _ctx(method="GET")) == PolicyDecision.ALLOW
 
 
 # ── PII level matching ────────────────────────────────────────────────────────
@@ -174,8 +169,7 @@ class TestPIILevelMatching:
         )
         # L1 is more sensitive than L2 → matches
         assert (
-            gateway.evaluate("write-db-record", _ctx(pii_level="L1"))
-            == PolicyDecision.REQUIRE_HITL
+            gateway.evaluate("write-db-record", _ctx(pii_level="L1")) == PolicyDecision.REQUIRE_HITL
         )
 
     def test_l3_pii_does_not_match_l2_gte_threshold(self) -> None:
@@ -190,9 +184,7 @@ class TestPIILevelMatching:
             ]
         )
         # L3 is less sensitive than L2 → does not match
-        assert (
-            gateway.evaluate("write-db-record", _ctx(pii_level="L3")) == PolicyDecision.ALLOW
-        )
+        assert gateway.evaluate("write-db-record", _ctx(pii_level="L3")) == PolicyDecision.ALLOW
 
 
 # ── First-match wins ──────────────────────────────────────────────────────────

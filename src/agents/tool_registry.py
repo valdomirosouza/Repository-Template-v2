@@ -35,7 +35,7 @@ class PIILevel(StrEnum):
 
 
 class ExecutionMode(StrEnum):
-    DIRECT = "direct"    # executed in-process via a Python function call
+    DIRECT = "direct"  # executed in-process via a Python function call
     SANDBOX = "sandbox"  # MUST be routed through SandboxExecutor (ADR-0016, ZT2)
 
 
@@ -307,10 +307,7 @@ def _load_default_registry() -> ToolRegistry:
 # ── tools.yaml loading + startup validation (ADR-0055) ────────────────────────
 
 _TOOLS_YAML_PATH = (
-    Path(__file__).resolve().parents[2]
-    / "infrastructure"
-    / "agent-tools"
-    / "tools.yaml"
+    Path(__file__).resolve().parents[2] / "infrastructure" / "agent-tools" / "tools.yaml"
 )
 
 

@@ -114,9 +114,7 @@ class ContextGraph:
         self._constraints.append(Constraint(type=type, value=value))
         self._touch()
 
-    def add_gathered_context(
-        self, source: str, content_hash: str, relevance_score: float
-    ) -> None:
+    def add_gathered_context(self, source: str, content_hash: str, relevance_score: float) -> None:
         self._gathered_context.append(
             GatheredContext(
                 source=source,
@@ -144,9 +142,7 @@ class ContextGraph:
             "abandoned": "❌",
         }
         lines = ["[CONTEXT_GRAPH]"]
-        lines.append(
-            f"goal: {self.root_goal.description} ({self.root_goal.status})"
-        )
+        lines.append(f"goal: {self.root_goal.description} ({self.root_goal.status})")
 
         if self._sub_goals:
             lines.append("sub_goals:")

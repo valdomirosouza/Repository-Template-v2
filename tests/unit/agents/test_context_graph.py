@@ -7,8 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.agents.context_graph import ContextGraph, GoalState
-
+from src.agents.context_graph import ContextGraph
 
 # ── TestInit ──────────────────────────────────────────────────────────────────
 
@@ -201,7 +200,7 @@ class TestSerialisation:
         assert g2.session_id == g.session_id
         assert g2.root_goal.description == "Migrate API"
         assert len(g2._sub_goals) == 1
-        assert list(g2._sub_goals.values())[0].status == "completed"
+        assert next(iter(g2._sub_goals.values())).status == "completed"
         assert len(g2._constraints) == 1
         assert len(g2._gathered_context) == 1
         assert len(g2._decisions) == 1
@@ -209,9 +208,17 @@ class TestSerialisation:
     def test_to_dict_contains_required_keys(self) -> None:
         g = ContextGraph("s1", "root")
         d = g.to_dict()
-        for key in ("graph_id", "session_id", "root_goal", "sub_goals",
-                    "constraints", "gathered_context", "decisions_made",
-                    "created_at", "updated_at"):
+        for key in (
+            "graph_id",
+            "session_id",
+            "root_goal",
+            "sub_goals",
+            "constraints",
+            "gathered_context",
+            "decisions_made",
+            "created_at",
+            "updated_at",
+        ):
             assert key in d
 
 
@@ -221,4 +228,5 @@ class TestSerialisation:
 class TestAutonomyPrerequisiteError:
     def test_is_runtime_error(self) -> None:
         from src.shared.feature_flags import AutonomyPrerequisiteError
+
         assert issubclass(AutonomyPrerequisiteError, RuntimeError)

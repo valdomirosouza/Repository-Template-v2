@@ -45,10 +45,10 @@ class RuntimePolicyError(Exception):
 class PolicyCondition:
     """Matches a subset of action contexts."""
 
-    task_type_pattern: str = ""       # glob-style prefix match (* = wildcard)
-    proposed_action_type: str = ""    # exact match on action_type
-    method: list[str] = ()            # type: ignore[assignment]  # HTTP methods (for external requests)
-    pii_level_gte: str = ""           # match if action touches PII at this level or higher
+    task_type_pattern: str = ""  # glob-style prefix match (* = wildcard)
+    proposed_action_type: str = ""  # exact match on action_type
+    method: tuple[str, ...] = ()  # HTTP methods (for external requests)
+    pii_level_gte: str = ""  # match if action touches PII at this level or higher
 
 
 @dataclass(frozen=True)
@@ -66,7 +66,7 @@ class RequestContext:
     task_type: str = ""
     proposed_action_type: str = ""
     method: str = ""
-    pii_level: str = ""    # e.g. "L1", "L2", "L3", "L4"
+    pii_level: str = ""  # e.g. "L1", "L2", "L3", "L4"
 
 
 _PII_ORDER = {"L1": 1, "L2": 2, "L3": 3, "L4": 4}
@@ -80,7 +80,8 @@ class RuntimePolicyGateway:
 
     Usage::
 
-        gateway = RuntimePolicyGateway.from_yaml(Path("infrastructure/agent-policies/policies.yaml"))
+        policy_path = Path("infrastructure/agent-policies/policies.yaml")
+        gateway = RuntimePolicyGateway.from_yaml(policy_path)
         decision = gateway.evaluate("execute-code", context)
         if decision == PolicyDecision.BLOCK:
             raise RuntimePolicyError(...)
@@ -90,7 +91,7 @@ class RuntimePolicyGateway:
         self._policies = policies
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "RuntimePolicyGateway":
+    def from_yaml(cls, path: Path) -> RuntimePolicyGateway:
         """Load policies from a YAML file."""
         raw: dict[str, Any] = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         policies = [cls._parse_policy(p) for p in raw.get("policies", [])]
@@ -98,7 +99,7 @@ class RuntimePolicyGateway:
         return cls(policies)
 
     @classmethod
-    def from_list(cls, policies: list[Policy]) -> "RuntimePolicyGateway":
+    def from_list(cls, policies: list[Policy]) -> RuntimePolicyGateway:
         """Build a gateway from a pre-constructed policy list (useful for tests)."""
         return cls(policies)
 
@@ -191,9 +192,7 @@ class RuntimePolicyGateway:
 
         return True
 
-    def _find_matching_policy(
-        self, action_type: str, ctx: RequestContext
-    ) -> Policy | None:
+    def _find_matching_policy(self, action_type: str, ctx: RequestContext) -> Policy | None:
         for p in self._policies:
             if self._matches(p.condition, action_type, ctx):
                 return p

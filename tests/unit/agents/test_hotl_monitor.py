@@ -73,7 +73,8 @@ async def test_notification_emitted_and_window_opened():
 
     # Notification audit event emitted within SLO.
     notif = next(
-        c[0][0] for c in audit.log_event.call_args_list
+        c[0][0]
+        for c in audit.log_event.call_args_list
         if c[0][0].event_type == EVENT_NOTIFICATION_SENT
     )
     assert notif.outcome == "NOTIFIED"
@@ -113,7 +114,8 @@ async def test_notifier_failure_marks_slo_breach_but_does_not_raise():
         oversight_mode="HOTL_LOW_RISK",
     )
     notif = next(
-        c[0][0] for c in audit.log_event.call_args_list
+        c[0][0]
+        for c in audit.log_event.call_args_list
         if c[0][0].event_type == EVENT_NOTIFICATION_SENT
     )
     assert notif.outcome == "NOTIFICATION_SLO_BREACH"

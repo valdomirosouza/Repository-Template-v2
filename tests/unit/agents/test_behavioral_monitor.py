@@ -12,9 +12,9 @@ from unittest.mock import patch
 import pytest
 
 from src.agents.behavioral_monitor import (
+    _MIN_OBSERVATIONS,
     ActionFrequency,
     BehavioralMonitor,
-    _MIN_OBSERVATIONS,
 )
 
 
@@ -151,6 +151,4 @@ class TestBehavioralMonitorIsAnomalous:
         for _ in range(_MIN_OBSERVATIONS):
             monitor.record_proposal("analyse", "read_file")
         # "delete_all" has 0% frequency and is not in allowed list
-        assert monitor.is_anomalous(
-            "analyse", "delete_all", allowed_action_types=["read_file"]
-        )
+        assert monitor.is_anomalous("analyse", "delete_all", allowed_action_types=["read_file"])

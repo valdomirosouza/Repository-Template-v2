@@ -16,7 +16,6 @@ from src.agents.tool_registry import (
     UnregisteredToolError,
 )
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

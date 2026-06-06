@@ -68,7 +68,7 @@ class SpecContractEnforcer:
     # ── Factory methods ───────────────────────────────────────────────────────
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "SpecContractEnforcer":
+    def from_yaml(cls, path: Path) -> SpecContractEnforcer:
         """Load a spec contract from a YAML sidecar file.
 
         Expected YAML structure::
@@ -96,7 +96,7 @@ class SpecContractEnforcer:
         return cls(contract)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "SpecContractEnforcer":
+    def from_dict(cls, data: dict[str, Any]) -> SpecContractEnforcer:
         """Build an enforcer from an inline dict (useful for testing and harness injection)."""
         contract = SpecContract(
             allowed_action_types=data.get("allowed_action_types", []),
@@ -163,10 +163,7 @@ class SpecContractEnforcer:
         )
         if contract.scope_boundary:
             block += f"Scope boundary: {contract.scope_boundary}\n"
-        block += (
-            "Any action outside this scope MUST trigger a HITL escalation.\n"
-            "[/SPEC_CONTRACT]"
-        )
+        block += "Any action outside this scope MUST trigger a HITL escalation.\n[/SPEC_CONTRACT]"
         return system_prompt + block
 
     @property

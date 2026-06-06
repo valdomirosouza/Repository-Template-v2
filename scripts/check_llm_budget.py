@@ -28,7 +28,10 @@ def _float_env(name: str, default: float) -> float:
     try:
         return float(raw)
     except ValueError:
-        print(f"[budget-check] WARNING: {name}={raw!r} is not a valid float; using default {default}", file=sys.stderr)
+        print(
+            f"[budget-check] WARNING: {name}={raw!r} is not a valid float; using default {default}",
+            file=sys.stderr,
+        )
         return default
 
 

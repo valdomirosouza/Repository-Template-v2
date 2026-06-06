@@ -15,10 +15,8 @@ import pytest
 from src.agents.action_schema_validator import (
     ActionSchemaError,
     ActionSchemaValidator,
-    ValidationResult,
     _matches_type,
 )
-
 
 # ── _matches_type helper ──────────────────────────────────────────────────────
 
@@ -124,7 +122,8 @@ class TestValidate:
     def test_optional_field_absent_is_fine(self) -> None:
         v = self._make_validator()
         result = v.validate(
-            "write-db-record", {"table": "users", "data": {}}  # no operation — that's fine
+            "write-db-record",
+            {"table": "users", "data": {}},  # no operation — that's fine
         )
         assert result.valid is True
 
