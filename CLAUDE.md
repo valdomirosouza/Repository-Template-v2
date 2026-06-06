@@ -319,6 +319,7 @@ When the user's request matches a skill domain, **Read the skill file listed in 
 
 | Trigger / Domain                                | Skill Path                                        | Activation Condition                                                   |
 | ----------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------- |
+| K8s probes, startupProbe, liveness, readiness   | `skills/sre/probe-strategy.md`                    | Any Helm chart, Deployment manifest, or health endpoint change         |
 | Golden Signals, SLO breach, alert               | `skills/sre/golden-signals.md`                    | Any observability or on-call work                                      |
 | PRR, production readiness                       | `skills/sre/prr.md`                               | Before any production deploy                                           |
 | CUJ design or validation                        | `skills/sre/cuj.md`                               | Defining or testing critical user journeys                             |

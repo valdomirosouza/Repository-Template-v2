@@ -56,5 +56,6 @@ Wave labels: `wave-1` (done) → `wave-2` → `wave-3` → `wave-4` → `wave-5`
 | ADR-0039 | Governed tool registry                |
 | ADR-0040 | Agentic maturity self-assessment      |
 | ADR-0041 | Context graph — autonomy tier         |
+| ADR-0042 | Kubernetes probe strategy             |
 
 Full index: `docs/adr/README.md`

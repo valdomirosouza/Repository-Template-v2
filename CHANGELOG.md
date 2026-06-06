@@ -13,6 +13,22 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 15 — Probe CI Lint Gate + probe-strategy Skill + ADR-0042 (K8s Probe Compliance)
+
+#### Added
+
+- `skills/sre/probe-strategy.md` — decision tree (which probe for which check), endpoint contract table for all 3 workloads, parameter tuning guide (startup window sizing, terminationGracePeriodSeconds rationale), local testing commands, escalation rules (Issue #24, ADR-0042)
+- `.github/workflows/ci-k8s-probe-lint.yml` — kubeconform schema validation of `infrastructure/k8s/` and rendered Helm templates; custom probe-completeness check for missing startupProbe/livenessProbe/readinessProbe/terminationGracePeriodSeconds and `initialDelaySeconds` anti-pattern; posts PR comment on findings (informational, HELM-1)
+- `docs/adr/ADR-0042-kubernetes-probe-strategy.md` — documents probe role separation, Go health server rationale, Spring Boot probe groups requirement, values-driven configuration rule, terminationGracePeriodSeconds alignment, canary gates
+- `docs/adr/README.md` — ADR-0042 added to index
+
+#### Changed
+
+- `CLAUDE.md` §4 — added `skills/sre/probe-strategy.md` row to Skill Activation Table; trigger: any Helm chart, Deployment manifest, or health endpoint change
+- `CLAUDE_SESSION_INIT.md` — ADR-0042 added to quick index
+
+---
+
 ### Wave 14 — Canary CD Readiness Gate (K8s Probe Compliance)
 
 #### Added
