@@ -1971,7 +1971,7 @@ wheels = [
 
 [[package]]
 name = "template-service"
-version = "1.26.17"
+version = "2.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiokafka" },

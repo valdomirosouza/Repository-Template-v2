@@ -11,7 +11,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
-## [Unreleased]
+## [2.4.0] - 2026-06-06
 
 ### Wave 20 — ADRs + Skill + CLAUDE.md Updates (OTel Agentic Observability)
 
