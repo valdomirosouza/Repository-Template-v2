@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Changed
+
+- `docs/glossary.md` — added ~50 terms/acronyms in active use across the repo: process/SDLC (Agentic SDLC, DoD, DoR, DoR-Release, RACI, Spec-as-PR, Phase Gate, Quality Gate, Feature State Manifest, Maturity Model, Persona, FinOps, RTK), DevSecOps/security (DAST, Trivy, Checkov, CodeQL, gosec, SpotBugs, Checkstyle, CycloneDX, NVD, DevSecOps, MLSecOps, Abuse Case Testing, Zero-Trust Tooling), compliance (ISO 27001, SOX, EU AI Act), SRE/observability (DORA, K8s probes, Pushgateway, Grafana, Testcontainers), and agent-runtime (agent_action_v1, Tool Registry, ToolExecutor, Mandatory HITL, Reversibility/Compensating Action, CompensationRegistry, HOTL Monitor, Override Service, BehavioralMonitor, RuntimePolicyGateway, SpecContractEnforcer, ActionSchemaValidator, Context Graph, Context Seal, Sub-Agent Registry, Risk Calibration, Model Behavioral Contract, Gartner Autonomy Levels)
+
 ### Fixed
 
 - `.github/workflows/ci-ai-review.yml` — removed the invalid job-level `if: ${{ secrets.* }}` (the `secrets` context is not allowed in `if:`), replaced with a step-level guard output; the workflow no longer fails GitHub's workflow-file validation on every push
