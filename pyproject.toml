@@ -87,6 +87,7 @@ ignore = [
 "tests/**" = ["S", "T20", "E501", "B017", "RUF002", "RUF003"]
 "alembic/**" = ["S608"]  # Dynamic SQL is standard in Alembic migrations
 "scaffold/scaffold.py" = ["T201"]  # CLI tool — print() is its user-facing output
+"scripts/**" = ["T201"]  # CLI scripts — print() is their user-facing output
 
 [tool.ruff.lint.isort]
 known-first-party = ["src"]

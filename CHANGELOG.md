@@ -13,6 +13,25 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave E — Repository Hygiene (ADR-0057)
+
+#### Added
+
+- `scripts/generate_context_graph.py` + `make gen-context-graph` + `.github/workflows/ci-context-graph.yml` — **P1-8**: generates `.agent/context-graph.json` (gitignored), a compact (~21 KB, < 50 KB budget) repo map for agent bootstrap — specs→impl, ADRs→affected paths, skills, services, tools (risk policy), features, and key-file checksums (Issue #47, ADR-0057)
+- `scripts/check_version_consistency.py` + `make check-version` + `.github/workflows/ci-version-check.yml` — **P2-1**: CI fails if `version.txt` ≠ `pyproject.toml` or if `README.md` references a stale version (version.txt is the single source of truth) (Issue #47, ADR-0057)
+- `tests/unit/process/test_context_graph_generation.py`, `tests/unit/process/test_version_consistency.py` — coverage for both scripts (Issue #47)
+- `docs/adr/ADR-0057-repository-hygiene.md` — records the hygiene decisions (Issue #47)
+
+#### Fixed
+
+- **P2-2**: corrected stale `Repository-Template` → `Repository-Template-v2` references in `README.md` (CI/Release badges, "Use this template" command) and `CUSTOMISING.md` (upstream remote). Historical CHANGELOG run-URLs and compare links left untouched (Issue #47, ADR-0057)
+- `README.md` — version header corrected from `2.4.0` to `2.6.0` (Issue #47)
+
+#### Changed
+
+- `pyproject.toml` — `scripts/**` exempted from the `T201` print lint rule (CLI tools; matches the `scaffold/scaffold.py` exemption) (Issue #47)
+- `.gitignore` — ignore the generated `.agent/context-graph.json` (Issue #47)
+
 ### Wave D — Release Hardening (ADR-0056)
 
 #### Fixed

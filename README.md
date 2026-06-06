@@ -1,10 +1,10 @@
 # Enterprise Monorepo Template
 
 > Production-ready monorepo template for enterprise software systems. AI/agent capabilities are optional opt-in extensions.
-> **Version:** 2.4.0 | **Status:** Active | **License:** MIT
+> **Version:** 2.6.0 | **Status:** Active | **License:** MIT
 
-[![CI](https://github.com/valdomirosouza/Repository-Template/actions/workflows/ci.yml/badge.svg)](https://github.com/valdomirosouza/Repository-Template/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/valdomirosouza/Repository-Template)](https://github.com/valdomirosouza/Repository-Template/releases/latest)
+[![CI](https://github.com/valdomirosouza/Repository-Template-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/valdomirosouza/Repository-Template-v2/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/valdomirosouza/Repository-Template-v2)](https://github.com/valdomirosouza/Repository-Template-v2/releases/latest)
 
 ---
 
@@ -15,7 +15,7 @@
 Click **"Use this template"** on the GitHub repository page, or run:
 
 ```bash
-gh repo create my-project --template valdomirosouza/Repository-Template --clone
+gh repo create my-project --template valdomirosouza/Repository-Template-v2 --clone
 cd my-project
 ```
 
