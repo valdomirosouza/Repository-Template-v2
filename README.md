@@ -333,6 +333,7 @@ SLO definitions: [`docs/sre/slo/slo.yaml`](docs/sre/slo/slo.yaml)
 Features travel through a risk-based lifecycle from idea to post-deploy learning. AI agents participate as first-class contributors at each phase — with human review required at every phase boundary.
 
 ```
+Phase  0: Intake          → Problem statement, value hypothesis, risk class, owner
 Phase  1: Conception      → GitHub Issue (feature_request template)
 Phase  2: Discovery       → Agent drafts discovery.md + nfr.md → Spec-as-PR review
 Phase  3: Grooming        → DoR checklist; Issue reaches status: ready
@@ -342,22 +343,26 @@ Phase  6: Development     → Branch + implementation against approved spec
 Phase  7: Code Review     → PR + DoD checklist + CI gates
 Phase  8: Testing         → Unit ≥ 80%, integration, security, abuse cases
 Phase  9: DevSecOps       → SAST, SCA, Trivy, SBOM, DAST in staging
-Phase 10: Observability   → OTel spans, Prometheus metrics, PRR sign-off
-Phase 11: Release RC      → DoR-Release checklist; rc-approved label
-Phase 12: Production      → Canary 5% → 25% → 100%; GitHub Release tag
-Phase 13: Post-Deploy     → DORA metrics, sprint + release retrospectives
+Phase 10: AI Safety       → Injection/leakage tests, tool-permission review (AI/agent features)
+Phase 11: Observability   → OTel spans, Prometheus metrics, PRR sign-off
+Phase 12: Release RC      → DoR-Release checklist; rc-approved label
+Phase 13: Production      → Canary 5% → 25% → 100%; GitHub Release tag
+Phase 14: Post-Deploy     → DORA metrics, sprint + release retrospectives
 ```
 
-| Process Document                | Path                                                                             |
-| ------------------------------- | -------------------------------------------------------------------------------- |
-| 13-phase workflow               | [`docs/process/WORKFLOW.md`](docs/process/WORKFLOW.md)                           |
-| HITL two-tier governance        | [`docs/process/HITL-GOVERNANCE.md`](docs/process/HITL-GOVERNANCE.md)             |
-| RACI matrix                     | [`docs/process/RACI.md`](docs/process/RACI.md)                                   |
-| Definition of Ready             | [`docs/process/DEFINITION_OF_READY.md`](docs/process/DEFINITION_OF_READY.md)     |
-| Definition of Done              | [`docs/process/DEFINITION_OF_DONE.md`](docs/process/DEFINITION_OF_DONE.md)       |
-| Definition of Release           | [`docs/process/DEFINITION_OF_RELEASE.md`](docs/process/DEFINITION_OF_RELEASE.md) |
-| Retrospective guide             | [`docs/process/RETROSPECTIVE-GUIDE.md`](docs/process/RETROSPECTIVE-GUIDE.md)     |
-| Progressive adoption (Tier 0–4) | [`CUSTOMISING.md §8`](CUSTOMISING.md)                                            |
+> Risk-based: low-risk changes take a short path; only high-impact / AI / security / infra changes pass every gate. See the canonical reference for the full risk-based flow.
+
+| Process Document                 | Path                                                                                     |
+| -------------------------------- | ---------------------------------------------------------------------------------------- |
+| Canonical delivery model         | [`docs/sdlc/agentic-spec-driven-delivery.md`](docs/sdlc/agentic-spec-driven-delivery.md) |
+| Phase lifecycle (15-phase, 0–14) | [`docs/process/WORKFLOW.md`](docs/process/WORKFLOW.md)                                   |
+| HITL two-tier governance         | [`docs/process/HITL-GOVERNANCE.md`](docs/process/HITL-GOVERNANCE.md)                     |
+| RACI matrix                      | [`docs/process/RACI.md`](docs/process/RACI.md)                                           |
+| Definition of Ready              | [`docs/process/DEFINITION_OF_READY.md`](docs/process/DEFINITION_OF_READY.md)             |
+| Definition of Done               | [`docs/process/DEFINITION_OF_DONE.md`](docs/process/DEFINITION_OF_DONE.md)               |
+| Definition of Release            | [`docs/process/DEFINITION_OF_RELEASE.md`](docs/process/DEFINITION_OF_RELEASE.md)         |
+| Retrospective guide              | [`docs/process/RETROSPECTIVE-GUIDE.md`](docs/process/RETROSPECTIVE-GUIDE.md)             |
+| Progressive adoption (Tier 0–4)  | [`CUSTOMISING.md §8`](CUSTOMISING.md)                                                    |
 
 **HITL Governance:** Pre-code artefacts (discovery.md, nfr.md, feature-spec.md) use **Spec-as-PR** review — not the runtime HITL gateway. The gateway is reserved for agent actions with real-world effects. See [`docs/process/HITL-GOVERNANCE.md`](docs/process/HITL-GOVERNANCE.md).
 

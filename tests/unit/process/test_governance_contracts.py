@@ -37,9 +37,21 @@ def test_schema_version(gates):
     assert gates["schema_version"] == "phase_gates_v1"
 
 
-def test_covers_all_thirteen_phases(gates):
+def test_covers_all_fifteen_phases(gates):
     ids = sorted(p["id"] for p in gates["phases"])
-    assert ids == list(range(1, 14)), "phase-gates.yaml must define phases 1-13"
+    assert ids == list(range(0, 15)), "phase-gates.yaml must define phases 0-14 (ADR-0058)"
+
+
+def test_phase_zero_is_intake(gates):
+    p0 = next(p for p in gates["phases"] if p["id"] == 0)
+    assert "Intake" in p0["name"]
+
+
+def test_ai_safety_phase_present_and_conditional(gates):
+    ai = next((p for p in gates["phases"] if p["name"] == "AI Safety & Agent Governance"), None)
+    assert ai is not None, "AI Safety & Agent Governance phase must exist (ADR-0058)"
+    assert ai["id"] == 10
+    assert ai.get("conditional") == "ai_or_agent_change"
 
 
 def test_each_phase_has_required_fields(gates):
@@ -87,7 +99,7 @@ def test_deploy_and_rollback_prohibited_in_development(gates):
 
 
 def test_production_phase_requires_cab(gates):
-    prod = next(p for p in gates["phases"] if p["id"] == 12)
+    prod = next(p for p in gates["phases"] if p["name"] == "Production Deployment")
     assert prod.get("requires_cab_approval") is True
 
 

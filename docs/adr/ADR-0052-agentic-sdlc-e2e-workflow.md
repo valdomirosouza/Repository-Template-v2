@@ -1,8 +1,14 @@
 # ADR-0052 — Agentic SDLC E2E Workflow
 
-**Status:** Accepted
+**Status:** Accepted (extended by ADR-0058)
 **Date:** 2026-06-06
 **Authors:** Valdomiro Souza
+
+> **Extended by [ADR-0058](ADR-0058-agentic-spec-driven-delivery-workflow.md):** the
+> model is now named the **Agentic Spec-Driven Delivery Workflow**, and the lifecycle
+> evolved from 13 to 15 phases (0–14) — adding **Phase 0 Intake & Prioritization** and a
+> conditional **Phase 10 AI Safety & Agent Governance**. The decisions in this ADR remain
+> in force.
 
 ---
 

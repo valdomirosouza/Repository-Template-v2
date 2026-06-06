@@ -1,11 +1,13 @@
-# Machine-readable phase gate contracts for the 13-phase Agentic SDLC lifecycle.
+# Machine-readable phase gate contracts for the 15-phase (0–14) Agentic
+# Spec-Driven Delivery lifecycle.
 #
 # Purpose: let agents enforce phase gates programmatically instead of parsing
 # Markdown. The human-readable source of truth is docs/process/WORKFLOW.md; this
 # file is its machine-readable projection and MUST be kept in sync.
 #
 # Spec:  Agentic-SDLC-Repository-Improvement-Directive.md §9
-# ADR:   ADR-0052 (13-phase lifecycle), ADR-0054 (machine-readable contracts)
+# ADR:   ADR-0052 (E2E workflow), ADR-0058 (Phase 0 Intake + AI Safety phase),
+#        ADR-0054 (machine-readable contracts)
 #
 # Consumed by: agents (allowed/prohibited action lookup per phase), CI gates.
 # See docs/process/gates/README.md for the schema and consumption contract.
@@ -34,6 +36,18 @@ action_vocabulary:
   - change_feature_flag
 
 phases:
+  - id: 0
+    name: Intake & Prioritization
+    primary_actor: product_lead
+    required_artifacts: []
+    required_approvals: [product_lead]
+    ci_checks: []
+    blocking: false
+    allowed_agent_actions: [read, draft_doc]
+    prohibited_agent_actions:
+      [write_code, deploy, rollback, change_feature_flag]
+    exit_criteria: "Problem statement, value hypothesis, risk class, and owner recorded; prioritized into the backlog"
+
   - id: 1
     name: Conception
     primary_actor: product_lead
@@ -147,6 +161,19 @@ phases:
     exit_criteria: "Zero HIGH/CRITICAL SAST/SCA; zero secrets; SBOM generated + cosign-attested"
 
   - id: 10
+    name: AI Safety & Agent Governance
+    primary_actor: security_lead
+    required_artifacts:
+      - docs/ai-governance/ai-safety-checklist.md # completed for AI/LLM/agentic features
+    required_approvals: [security_lead]
+    ci_checks: [test-security, test-abuse-cases, ci-model-contract.yml]
+    blocking: true # blocking for AI/LLM/agentic features only
+    conditional: ai_or_agent_change # required only when src/agents/ or src/guardrails/ change
+    allowed_agent_actions: [read, run_ci]
+    prohibited_agent_actions: [deploy, rollback, change_feature_flag]
+    exit_criteria: "Prompt-injection + data-leakage tests pass; tool-permission review done; evals + audit trail present; AI Safety checklist complete"
+
+  - id: 11
     name: Observability & Operational Readiness
     primary_actor: sre_lead
     required_artifacts:
@@ -159,7 +186,7 @@ phases:
     prohibited_agent_actions: [deploy, rollback, change_feature_flag]
     exit_criteria: "PRR >= 90%; probe lint green; OTel spans + metrics verified for new paths"
 
-  - id: 11
+  - id: 12
     name: Release Candidate
     primary_actor: release_manager
     required_artifacts:
@@ -172,7 +199,7 @@ phases:
     prohibited_agent_actions: [deploy, rollback, change_feature_flag]
     exit_criteria: "Chaos + model-contract tests green; SBOM; rc-approved label applied"
 
-  - id: 12
+  - id: 13
     name: Production Deployment
     primary_actor: release_manager
     required_artifacts:
@@ -185,7 +212,7 @@ phases:
     prohibited_agent_actions: [write_code, change_feature_flag] # deploy/rollback are human-gated
     exit_criteria: "Canary readiness gate passed at each step; error-budget check green; CAB approved"
 
-  - id: 13
+  - id: 14
     name: Post-Deployment & Learn
     primary_actor: sre_lead
     required_artifacts:
