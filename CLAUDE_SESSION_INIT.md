@@ -66,5 +66,19 @@ Wave labels: `wave-1` (done) → `wave-2` → `wave-3` → `wave-4` → `wave-5`
 | ADR-0049 | Runtime behavioral monitoring                     |
 | ADR-0050 | Adversarial abuse testing strategy                |
 | ADR-0051 | Model behavioral contracts (MLSecOps)             |
+| ADR-0052 | Agentic SDLC E2E workflow (13-phase lifecycle)    |
 
 Full index: `docs/adr/README.md`
+
+## Process Quick Reference (ADR-0052)
+
+| Document              | Path                                    | Use when                               |
+| --------------------- | --------------------------------------- | -------------------------------------- |
+| 13-phase workflow     | `docs/process/WORKFLOW.md`              | Any feature task — check current phase |
+| HITL governance       | `docs/process/HITL-GOVERNANCE.md`       | Creating discovery/spec artefacts      |
+| Definition of Ready   | `docs/process/DEFINITION_OF_READY.md`   | Grooming ceremony / sprint entry       |
+| Definition of Done    | `docs/process/DEFINITION_OF_DONE.md`    | PR checklist                           |
+| Definition of Release | `docs/process/DEFINITION_OF_RELEASE.md` | Release candidate review               |
+| RACI matrix           | `docs/process/RACI.md`                  | Unclear ownership question             |
+| Sprint tracking       | `docs/process/SPRINT-TRACKING.md`       | Projects board, label taxonomy         |
+| Retrospective guide   | `docs/process/RETROSPECTIVE-GUIDE.md`   | Sprint or release retrospective        |
