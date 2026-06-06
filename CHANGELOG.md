@@ -13,6 +13,24 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave D — Release Hardening (ADR-0056)
+
+#### Fixed
+
+- `.github/workflows/cd-production.yml` — **P0-5**: `deploy-canary` now `needs: [cab-check, check-error-budget, verify-artifact]` — a failed CAB check (or error-budget / artifact check) hard-blocks the rollout (was advisory only) (Issue #46, ADR-0056)
+- `.github/workflows/cd-production.yml` — **P1-5**: DORA `emit-dora-event` no longer reads the (always-empty) `pull_request.number` on `workflow_dispatch`; it resolves lead time from the version tag commit and records `source=workflow_dispatch` with **no** lead-time metric when unresolved — never a fabricated zero (Issue #46, ADR-0056)
+
+#### Added
+
+- `.github/workflows/cd-production.yml` — **P1-6**: new blocking `verify-artifact` job resolves the immutable image digest (`crane digest`), verifies the Cosign signature, SBOM (CycloneDX) attestation, and SLSA provenance before canary; deploy uses the verified digest, not the mutable tag (Issue #46, ADR-0056)
+- `cab-check` now distinguishes change types: normal-change requires RFC + CAB approval; emergency-change requires emergency evidence (incident reference + `Emergency-Approval:`) (Issue #46, ADR-0056)
+- `tests/unit/process/test_cd_production_workflow.py` — locks the Wave D governance properties (CAB gate, DORA provenance, artifact verification, change-evidence completeness) (Issue #46)
+- `docs/adr/ADR-0056-release-hardening.md` — records the release-hardening decisions (Issue #46)
+
+#### Changed
+
+- `.github/workflows/cd-production.yml` `record-change-evidence` + `docs/change-log/SCHEMA.md` — change evidence now captures the full provenance chain: version, `commit_sha`, verified `image_digest`, `sbom_hash`, `lead_time_source`, timestamp, deployer (Issue #46, ADR-0056)
+
 ### Wave C — HOTL Operationalization (ADR-0055)
 
 #### Added

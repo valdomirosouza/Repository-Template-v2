@@ -60,19 +60,30 @@ jobs:
           change_type = next(iter(found))
           print(f"Change type: {change_type}")
 
-          if change_type in ("normal-change", "emergency-change"):
+          if change_type == "normal-change":
+              # Normal change: CAB-approved RFC required (ISO 27001 §change mgmt).
               if not re.search(r"Refs:\s*RFC-\d+", body, re.IGNORECASE):
-                  print(f"ERROR: {change_type} requires 'Refs: RFC-NNNN' in PR body.")
+                  print("ERROR: normal-change requires 'Refs: RFC-NNNN' in PR body.")
                   sys.exit(1)
               print("RFC reference found.")
-
-          if change_type == "normal-change":
-              confirmed = os.environ.get("MANUAL_APPROVAL", "")
-              if confirmed != "confirmed":
+              if os.environ.get("MANUAL_APPROVAL", "") != "confirmed":
                   print("ERROR: normal-change requires MANUAL_APPROVAL=confirmed "
-                        "(set after CAB approves RFC).")
+                        "(set after CAB approves the RFC).")
                   sys.exit(1)
               print("CAB approval confirmed.")
+
+          elif change_type == "emergency-change":
+              # Emergency change: TL + SecOps async approval evidence; retroactive RFC
+              # within 24h (CLAUDE.md §11). Require an incident reference AND an
+              # emergency-approval line in the PR body.
+              has_incident = re.search(r"(Incident|INC)[-:\s]*\d+", body, re.IGNORECASE)
+              has_approval = re.search(r"Emergency-Approval:\s*\S+", body, re.IGNORECASE)
+              if not (has_incident and has_approval):
+                  print("ERROR: emergency-change requires emergency evidence in PR body: "
+                        "an incident reference ('Incident: INC-NNNN') AND "
+                        "'Emergency-Approval: <approver>'.")
+                  sys.exit(1)
+              print("Emergency evidence found (incident reference + emergency approval).")
 
           print("cab-check passed.")
           EOF
@@ -94,10 +105,83 @@ jobs:
             exit 1
           }
 
+  verify-artifact:
+    name: Verify Artifact Integrity
+    runs-on: ubuntu-latest
+    # Integrity is verified only after change governance (CAB) passes.
+    needs: cab-check
+    permissions:
+      contents: read
+      id-token: write # keyless cosign verification
+      packages: read
+    outputs:
+      image_digest: ${{ steps.resolve.outputs.digest }}
+      image_ref: ${{ steps.resolve.outputs.image }}
+      sbom_hash: ${{ steps.sbom.outputs.sbom_hash }}
+    env:
+      # Override with repo/org variables if the image lives elsewhere.
+      IMAGE_REPOSITORY: ${{ vars.IMAGE_REPOSITORY || format('ghcr.io/{0}', github.repository) }}
+      COSIGN_OIDC_ISSUER: ${{ vars.COSIGN_OIDC_ISSUER || 'https://token.actions.githubusercontent.com' }}
+      COSIGN_IDENTITY_REGEXP: ${{ vars.COSIGN_CERT_IDENTITY_REGEXP || format('https://github.com/{0}/', github.repository) }}
+    steps:
+      - name: Install cosign + crane (pinned)
+        run: |
+          set -euo pipefail
+          COSIGN_VERSION="v2.4.1"
+          CRANE_VERSION="v0.20.2"
+          curl -sSfL "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64" \
+            -o /usr/local/bin/cosign
+          chmod +x /usr/local/bin/cosign
+          curl -sSfL "https://github.com/google/go-containerregistry/releases/download/${CRANE_VERSION}/go-containerregistry_Linux_x86_64.tar.gz" \
+            | tar -xz -C /usr/local/bin crane
+          cosign version
+          crane version
+
+      - name: Resolve immutable image digest
+        id: resolve
+        # P1-6: pin the deploy to an immutable digest, never a mutable tag.
+        run: |
+          set -euo pipefail
+          DIGEST=$(crane digest "${IMAGE_REPOSITORY}:${{ inputs.version }}")
+          echo "Resolved ${IMAGE_REPOSITORY}:${{ inputs.version }} -> ${DIGEST}"
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "image=${IMAGE_REPOSITORY}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify Cosign signature (blocking)
+        # P1-6: a missing/invalid signature fails the deploy before any traffic shift.
+        run: |
+          set -euo pipefail
+          cosign verify \
+            --certificate-oidc-issuer "${COSIGN_OIDC_ISSUER}" \
+            --certificate-identity-regexp "${COSIGN_IDENTITY_REGEXP}" \
+            "${IMAGE_REPOSITORY}@${{ steps.resolve.outputs.digest }}"
+
+      - name: Verify SBOM attestation + record hash
+        id: sbom
+        run: |
+          set -euo pipefail
+          cosign verify-attestation --type cyclonedx \
+            --certificate-oidc-issuer "${COSIGN_OIDC_ISSUER}" \
+            --certificate-identity-regexp "${COSIGN_IDENTITY_REGEXP}" \
+            "${IMAGE_REPOSITORY}@${{ steps.resolve.outputs.digest }}" > sbom-attestation.json
+          SBOM_HASH=$(sha256sum sbom-attestation.json | cut -d' ' -f1)
+          echo "sbom_hash=sha256:${SBOM_HASH}" >> "$GITHUB_OUTPUT"
+          echo "SBOM attestation verified; hash sha256:${SBOM_HASH}"
+
+      - name: Verify SLSA provenance
+        run: |
+          set -euo pipefail
+          cosign verify-attestation --type slsaprovenance \
+            --certificate-oidc-issuer "${COSIGN_OIDC_ISSUER}" \
+            --certificate-identity-regexp "${COSIGN_IDENTITY_REGEXP}" \
+            "${IMAGE_REPOSITORY}@${{ steps.resolve.outputs.digest }}"
+
   deploy-canary:
     name: Canary — 5%
     runs-on: ubuntu-latest
-    needs: check-error-budget
+    # P0-5: CAB approval AND error budget AND artifact integrity must all pass
+    # before any production traffic is shifted.
+    needs: [cab-check, check-error-budget, verify-artifact]
     environment: production
     if: ${{ inputs.strategy == 'canary' }}
     steps:
@@ -109,10 +193,12 @@ jobs:
           version: "3.14.0"
 
       - name: Deploy 5% canary
+        # P1-6: deploy the verified immutable digest, not the mutable tag.
         run: |
           helm upgrade --install \
             --namespace production \
             --set image.tag=${{ inputs.version }} \
+            --set image.digest=${{ needs.verify-artifact.outputs.image_digest }} \
             --set canary.enabled=true \
             --set canary.weight=5 \
             --wait --timeout 5m \
@@ -259,56 +345,84 @@ jobs:
     runs-on: ubuntu-latest
     needs: [promote-canary-100]
     if: always()
+    outputs:
+      lead_time_source: ${{ steps.lead-time.outputs.source }}
     steps:
-      - name: Resolve first commit timestamp for this PR
-        id: first-commit
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0 # full history so the version tag's commit date is resolvable
+          fetch-tags: true
+
+      - name: Resolve lead-time reference timestamp
+        id: lead-time
+        # P1-5: this workflow is triggered by workflow_dispatch, so there is NO
+        # github.event.pull_request context. Resolve the reference from the version
+        # tag's commit date; if it cannot be resolved, record source=workflow_dispatch
+        # and DO NOT emit a misleading zero lead time.
         run: |
-          TIMESTAMP=$(gh pr view --json commits \
-            --jq '.commits | sort_by(.committedDate) | first | .committedDate' \
-            "${{ github.event.pull_request.number }}" 2>/dev/null \
-            || date -u +%s)
-          echo "timestamp=${TIMESTAMP}" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          set -uo pipefail
+          VERSION="${{ inputs.version }}"
+          REF_TS=""
+          SOURCE="workflow_dispatch"
+          for TAG in "v${VERSION}" "${VERSION}"; do
+            if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null 2>&1; then
+              REF_TS=$(git log -1 --format=%cI "${TAG}")
+              SOURCE="version_tag"
+              echo "Resolved lead-time reference from tag ${TAG}: ${REF_TS}"
+              break
+            fi
+          done
+          if [ -z "${REF_TS}" ]; then
+            echo "No version tag for '${VERSION}' — lead time unresolved (source=workflow_dispatch)."
+          fi
+          echo "reference_timestamp=${REF_TS}" >> "$GITHUB_OUTPUT"
+          echo "source=${SOURCE}" >> "$GITHUB_OUTPUT"
 
       - name: Push DORA deployment event to Pushgateway
         run: |
           python3 - << 'EOF'
           import os, time
-          from datetime import datetime, timezone
+          from datetime import datetime
           import urllib.request
 
           outcome  = "success" if os.environ["DEPLOY_STATUS"] == "success" else "failure"
           service  = "api-gateway"
           env_name = "production"
+          source   = os.environ.get("LEAD_TIME_SOURCE", "workflow_dispatch")
+          ref_raw  = os.environ.get("REFERENCE_TIMESTAMP", "").strip()
 
-          try:
-              first_ts_raw = os.environ["FIRST_COMMIT_TIMESTAMP"]
-              if first_ts_raw.endswith("Z"):
-                  first_ts = datetime.fromisoformat(first_ts_raw.replace("Z", "+00:00")).timestamp()
-              else:
-                  first_ts = float(first_ts_raw)
-          except (ValueError, KeyError):
-              first_ts = time.time()
+          # P1-5: only compute a lead time when we have a real reference timestamp.
+          # An unresolved reference is reported as source=workflow_dispatch, NOT as zero.
+          lead_time = None
+          if ref_raw:
+              try:
+                  lead_time = max(0.0, time.time() - datetime.fromisoformat(ref_raw).timestamp())
+              except ValueError:
+                  lead_time = None
+          known = lead_time is not None
 
-          lead_time = max(0.0, time.time() - first_ts)
+          metrics = [
+              "# HELP dora_deployments_total Total deployments by outcome",
+              "# TYPE dora_deployments_total counter",
+              f'dora_deployments_total{{service="{service}",environment="{env_name}",outcome="{outcome}"}} 1',
+              "# HELP dora_lead_time_source Lead-time provenance (1 = active source)",
+              "# TYPE dora_lead_time_source gauge",
+              f'dora_lead_time_source{{service="{service}",source="{source}"}} 1',
+          ]
+          if known:
+              metrics += [
+                  "# HELP dora_lead_time_seconds Lead time from version tag commit to production deploy",
+                  "# TYPE dora_lead_time_seconds histogram",
+                  f'dora_lead_time_seconds_sum{{service="{service}"}} {lead_time:.2f}',
+                  f'dora_lead_time_seconds_count{{service="{service}"}} 1',
+              ]
+          payload = "\n".join(metrics) + "\n"
+
           pushgateway = os.environ.get("PROMETHEUS_PUSHGATEWAY_URL", "")
-
-          metrics = (
-              "# HELP dora_deployments_total Total deployments by outcome\n"
-              "# TYPE dora_deployments_total counter\n"
-              f'dora_deployments_total{{service="{service}",environment="{env_name}",outcome="{outcome}"}} 1\n'
-              "# HELP dora_lead_time_seconds Lead time from first commit to production deploy\n"
-              "# TYPE dora_lead_time_seconds histogram\n"
-              f'dora_lead_time_seconds_sum{{service="{service}"}} {lead_time:.2f}\n'
-              f'dora_lead_time_seconds_count{{service="{service}"}} 1\n'
-          )
-
           if pushgateway:
-              data = metrics.encode()
               req = urllib.request.Request(
                   f"{pushgateway}/metrics/job/dora/instance/{service}",
-                  data=data, method="POST",
+                  data=payload.encode(), method="POST",
                   headers={"Content-Type": "text/plain"},
               )
               with urllib.request.urlopen(req) as r:
@@ -316,17 +430,19 @@ jobs:
           else:
               print("PROMETHEUS_PUSHGATEWAY_URL not set — metrics logged only.")
 
-          print(f"DORA event: outcome={outcome}, lead_time={lead_time:.0f}s")
+          lt = f"{lead_time:.0f}s" if known else "unknown"
+          print(f"DORA event: outcome={outcome}, lead_time={lt}, source={source}")
           EOF
         env:
           DEPLOY_STATUS: ${{ needs.promote-canary-100.result }}
-          FIRST_COMMIT_TIMESTAMP: ${{ steps.first-commit.outputs.timestamp }}
+          REFERENCE_TIMESTAMP: ${{ steps.lead-time.outputs.reference_timestamp }}
+          LEAD_TIME_SOURCE: ${{ steps.lead-time.outputs.source }}
           PROMETHEUS_PUSHGATEWAY_URL: ${{ vars.PROMETHEUS_PUSHGATEWAY_URL }}
 
   record-change-evidence:
     name: Record Change Evidence
     runs-on: ubuntu-latest
-    needs: [promote-canary-100, emit-dora-event]
+    needs: [verify-artifact, promote-canary-100, emit-dora-event]
     if: always()
     permissions:
       contents: write
@@ -336,6 +452,8 @@ jobs:
           persist-credentials: true
 
       - name: Append deploy record to docs/change-log/
+        # Evidence captures the full provenance chain (ISO 27001 / SOX change record):
+        # version, commit SHA, verified image digest, SBOM hash, timestamp, deployer.
         run: |
           DATE=$(date -u +%Y-%m-%d)
           TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -351,10 +469,12 @@ jobs:
             deployer: "${{ github.actor }}"
             service: "api-gateway"
             version: "${{ inputs.version }}"
+            commit_sha: "${{ github.sha }}"
             environment: "production"
             outcome: "${OUTCOME}"
-            image_digest: "${{ vars.IMAGE_DIGEST || 'unknown' }}"
-            sbom_hash: "${{ vars.SBOM_HASH || 'unknown' }}"
+            image_digest: "${{ needs.verify-artifact.outputs.image_digest || 'unknown' }}"
+            sbom_hash: "${{ needs.verify-artifact.outputs.sbom_hash || 'unknown' }}"
+            lead_time_source: "${{ needs.emit-dora-event.outputs.lead_time_source || 'workflow_dispatch' }}"
             change_type: "${{ vars.CHANGE_TYPE || 'standard-change' }}"
           YAML
 
