@@ -25,16 +25,30 @@ jobs:
   ai-review:
     name: Claude Code Review (Informational)
     runs-on: ubuntu-latest
-    # Skip entirely if the API key is not configured — no noise for forks or template users
-    if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    # `secrets` cannot be referenced in a job-level `if:` — gate each step on a guard
+    # output instead so the job no-ops cleanly for forks/template users without the key.
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
     steps:
+      - name: Check for ANTHROPIC_API_KEY
+        id: guard
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "ANTHROPIC_API_KEY not configured — AI review skipped (informational gate)."
+          fi
+
       - name: Checkout
+        if: steps.guard.outputs.enabled == 'true'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
       - name: Fetch PR diff (capped at 200 lines)
+        if: steps.guard.outputs.enabled == 'true'
         id: diff
         env:
           GH_TOKEN: ${{ github.token }}
@@ -46,6 +60,7 @@ jobs:
           echo "Captured $(wc -l < /tmp/pr_diff.txt) lines of diff"
 
       - name: Fetch PR metadata
+        if: steps.guard.outputs.enabled == 'true'
         id: meta
         env:
           GH_TOKEN: ${{ github.token }}
@@ -57,6 +72,7 @@ jobs:
           echo "PR metadata saved"
 
       - name: Run Claude code review
+        if: steps.guard.outputs.enabled == 'true'
         id: review
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -147,6 +163,7 @@ jobs:
           PYEOF
 
       - name: Post review comment
+        if: steps.guard.outputs.enabled == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
