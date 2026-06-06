@@ -38,7 +38,7 @@ HITL_REJECTIONS_COUNTER = Counter(
 LLM_TOKEN_COUNTER = Counter(
     "llm_tokens_total",
     "Total LLM tokens consumed",
-    ["service", "model", "token_type"],
+    ["service", "model", "token_type", "request_id"],
 )
 
 # ── Histograms ────────────────────────────────────────────────────────────────
@@ -246,9 +246,10 @@ def record_llm_call(
     input_tokens: int,
     output_tokens: int,
     duration_seconds: float,
+    request_id: str = "",
 ) -> None:
-    LLM_TOKEN_COUNTER.labels(service, model, "input").inc(input_tokens)
-    LLM_TOKEN_COUNTER.labels(service, model, "output").inc(output_tokens)
+    LLM_TOKEN_COUNTER.labels(service, model, "input", request_id).inc(input_tokens)
+    LLM_TOKEN_COUNTER.labels(service, model, "output", request_id).inc(output_tokens)
     LLM_CALL_LATENCY.labels(service, model).observe(duration_seconds)
 
 

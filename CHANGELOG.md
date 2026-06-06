@@ -13,6 +13,20 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 18 — GenAI Semantic Conventions + LLM OTel Wrapper (OTel Agentic Observability)
+
+#### Added
+
+- `src/agents/llm_client_otel.py` — `OtelLLMClientWrapper` wraps any LLMClient and emits an `llm.inference` child span with GenAI semantic conventions: `gen_ai.system`, `gen_ai.request.model`, `gen_ai.request.max_tokens`, `gen_ai.request.temperature`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.response.finish_reason`; optional `llm.prompt` / `llm.response` span events gated by `otel_capture_prompts`; records Prometheus token usage with `request_id` exemplar label (Issue #28, OTEL-001 §3.4, ADR-0045)
+- `LLMCallMetadata` dataclass in `src/shared/llm_client.py` — carries `input_tokens`, `output_tokens`, `finish_reason`, `model` from Anthropic API response
+
+#### Changed
+
+- `src/shared/llm_client.py` — `AnthropicLLMClient.complete()` now delegates to new `complete_with_metadata()` which returns `(str, LLMCallMetadata)`; token counts are no longer discarded (Issue #28)
+- `src/observability/metrics.py` — `LLM_TOKEN_COUNTER` gains `request_id` label for Grafana Exemplar pivot to Jaeger traces; `record_llm_call()` accepts optional `request_id` parameter (Issue #28, OTEL-001 §6)
+
+---
+
 ### Wave 17 — Hierarchical Spans in Orchestrator + Harness (OTel Agentic Observability)
 
 #### Added
