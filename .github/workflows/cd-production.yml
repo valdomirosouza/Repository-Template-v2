@@ -151,6 +151,33 @@ jobs:
         with:
           version: "3.14.0"
 
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Verify canary readiness stability before 5%→25% promotion
+        # Spec: specs/k8s/probe-strategy.md §6 — readiness gate required before traffic shift
+        run: |
+          kubectl rollout status deployment/app-api-gateway \
+            --namespace=production \
+            --timeout=120s
+          NOT_READY=$(kubectl get pods \
+            --namespace=production \
+            --selector=app.kubernetes.io/name=api-gateway \
+            --field-selector='status.phase=Running' \
+            -o jsonpath='{range .items[*]}{range .status.conditions[?(@.type=="Ready")]}{.status}{"\n"}{end}{end}' \
+            | grep -c "False" || true)
+          if [ "$NOT_READY" -gt "0" ]; then
+            echo "::error::Canary has $NOT_READY unready pod(s) — aborting 5%→25% promotion"
+            kubectl describe pods \
+              --namespace=production \
+              --selector=app.kubernetes.io/name=api-gateway | tail -60
+            exit 1
+          fi
+          echo "All canary pods are Ready — proceeding to 25% promotion"
+
       - name: Promote to 25%
         run: |
           helm upgrade app ./infrastructure/helm/api-gateway \
@@ -190,6 +217,33 @@ jobs:
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           version: "3.14.0"
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Verify canary readiness stability before 25%→100% promotion
+        # Spec: specs/k8s/probe-strategy.md §6 — readiness gate required before traffic shift
+        run: |
+          kubectl rollout status deployment/app-api-gateway \
+            --namespace=production \
+            --timeout=120s
+          NOT_READY=$(kubectl get pods \
+            --namespace=production \
+            --selector=app.kubernetes.io/name=api-gateway \
+            --field-selector='status.phase=Running' \
+            -o jsonpath='{range .items[*]}{range .status.conditions[?(@.type=="Ready")]}{.status}{"\n"}{end}{end}' \
+            | grep -c "False" || true)
+          if [ "$NOT_READY" -gt "0" ]; then
+            echo "::error::Deployment has $NOT_READY unready pod(s) — aborting 25%→100% promotion"
+            kubectl describe pods \
+              --namespace=production \
+              --selector=app.kubernetes.io/name=api-gateway | tail -60
+            exit 1
+          fi
+          echo "All pods are Ready — proceeding to 100% promotion"
 
       - name: Promote to 100%
         run: |

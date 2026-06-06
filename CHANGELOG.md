@@ -13,6 +13,18 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Wave 14 — Canary CD Readiness Gate (K8s Probe Compliance)
+
+#### Added
+
+- `docs/sre/runbooks/RB-004-canary-probe-validation.md` — runbook covering probe failure diagnosis (`kubectl describe`, port-forward curl), rollback steps, parameter tuning, and re-trigger procedure (Issue #23)
+
+#### Changed
+
+- `.github/workflows/cd-production.yml` — added "Verify canary readiness stability" step before 5%→25% promotion and before 25%→100% promotion; gates abort with `::error::` annotation and `kubectl describe` dump if any canary pod has `Ready=False` (specs/k8s/probe-strategy.md §6, CD-1)
+
+---
+
 ### Wave 13 — Spring Actuator Health Groups + Domain Service Probe Tuning (K8s Probe Compliance)
 
 #### Changed
