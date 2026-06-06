@@ -16,6 +16,16 @@ theme:
 nav:
   - Home: repo-structure.md
   - Glossary: glossary.md
+  - Delivery Workflow:
+      - Agentic Spec-Driven Delivery: sdlc/agentic-spec-driven-delivery.md
+      - Lifecycle (13/15-phase): process/WORKFLOW.md
+      - Definition of Ready: process/DEFINITION_OF_READY.md
+      - Definition of Done: process/DEFINITION_OF_DONE.md
+      - Definition of Release: process/DEFINITION_OF_RELEASE.md
+      - HITL Governance: process/HITL-GOVERNANCE.md
+      - RACI Matrix: process/RACI.md
+      - Sprint Tracking: process/SPRINT-TRACKING.md
+      - Retrospective Guide: process/RETROSPECTIVE-GUIDE.md
   - Quickstart:
       - Overview: quickstart/README.md
       - Python Backend: quickstart/python-backend.md

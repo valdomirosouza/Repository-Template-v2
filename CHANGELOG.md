@@ -13,8 +13,14 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- `docs/sdlc/agentic-spec-driven-delivery.md` — canonical reference for the **Agentic Spec-Driven Delivery Workflow**: Gitflow-vs-Agile positioning, full lifecycle + Mermaid diagram, risk-based flow, agent-participation model, required human gates, and delivery metrics; cross-links the existing process docs (no duplication) (Issue #48)
+- `mkdocs.yml` — new **Delivery Workflow** nav section publishing the `docs/process/` suite (WORKFLOW, DoR/DoD/DoR-Release, HITL-GOVERNANCE, RACI, Sprint Tracking, Retrospective Guide) — previously absent from the docs site (Issue #48)
+
 ### Changed
 
+- `README.md` + `CLAUDE_SESSION_INIT.md` — adopt the canonical name "Agentic Spec-Driven Delivery Workflow" and point to the new reference page (Issue #48)
 - `docs/glossary.md` — added ~50 terms/acronyms in active use across the repo: process/SDLC (Agentic SDLC, DoD, DoR, DoR-Release, RACI, Spec-as-PR, Phase Gate, Quality Gate, Feature State Manifest, Maturity Model, Persona, FinOps, RTK), DevSecOps/security (DAST, Trivy, Checkov, CodeQL, gosec, SpotBugs, Checkstyle, CycloneDX, NVD, DevSecOps, MLSecOps, Abuse Case Testing, Zero-Trust Tooling), compliance (ISO 27001, SOX, EU AI Act), SRE/observability (DORA, K8s probes, Pushgateway, Grafana, Testcontainers), and agent-runtime (agent_action_v1, Tool Registry, ToolExecutor, Mandatory HITL, Reversibility/Compensating Action, CompensationRegistry, HOTL Monitor, Override Service, BehavioralMonitor, RuntimePolicyGateway, SpecContractEnforcer, ActionSchemaValidator, Context Graph, Context Seal, Sub-Agent Registry, Risk Calibration, Model Behavioral Contract, Gartner Autonomy Levels)
 
 ### Fixed

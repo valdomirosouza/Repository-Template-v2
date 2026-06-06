@@ -324,9 +324,13 @@ SLO definitions: [`docs/sre/slo/slo.yaml`](docs/sre/slo/slo.yaml)
 
 ---
 
-## Agentic SDLC Workflow (v2.6.0)
+## Agentic Spec-Driven Delivery Workflow
 
-Features travel through a **13-phase lifecycle** from idea to post-deploy learning (ADR-0052). AI agents participate as first-class actors in Phases 2, 4, and 6 — with human review required at each phase boundary.
+> A modern Agentic SDLC operating model that **replaces Gitflow-style release governance** while **preserving Agile principles** (fast feedback, collaboration, iterative delivery, continuous learning). **Agents draft, analyze, test, explain, recommend; humans approve, own, operate.**
+>
+> **Canonical reference:** [`docs/sdlc/agentic-spec-driven-delivery.md`](docs/sdlc/agentic-spec-driven-delivery.md) (ADR-0052, ADR-0058)
+
+Features travel through a risk-based lifecycle from idea to post-deploy learning. AI agents participate as first-class contributors at each phase — with human review required at every phase boundary.
 
 ```
 Phase  1: Conception      → GitHub Issue (feature_request template)
