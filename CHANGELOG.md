@@ -11,30 +11,36 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
-## [2.11.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.10.2...v2.11.0) (2026-06-07)
+## [Unreleased]
 
+### Changed
+
+- `.github/workflows/release.yml`, `cd-staging.yml`, `sbom.yml` — bump `google-github-actions/release-please-action@v4.1.1` → `googleapis/release-please-action@v5.0.0` (rename + Node 24) and `docker/login-action@v3.7.0` → `v4.2.0` (Node 24), resolving the deprecation/Node-20-sunset warnings; v5 keeps the RFC-0006 manifest config (Issue #97, RFC-0007)
+
+---
+
+## [2.11.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.10.2...v2.11.0) (2026-06-07)
 
 ### Features
 
-* **governance:** control-binding CI gate (checker + config + tests + wiring) ([#88](https://github.com/valdomirosouza/Repository-Template-v2/issues/88)) ([c2f9a88](https://github.com/valdomirosouza/Repository-Template-v2/commit/c2f9a88ec701b92bb87848fef18aadfb0c3c371f))
-
+- **governance:** control-binding CI gate (checker + config + tests + wiring) ([#88](https://github.com/valdomirosouza/Repository-Template-v2/issues/88)) ([c2f9a88](https://github.com/valdomirosouza/Repository-Template-v2/commit/c2f9a88ec701b92bb87848fef18aadfb0c3c371f))
 
 ### Documentation
 
-* **adr:** ADR-0060 — Task Atomicity & the 2-Skill Budget ([#75](https://github.com/valdomirosouza/Repository-Template-v2/issues/75)) ([b6499e1](https://github.com/valdomirosouza/Repository-Template-v2/commit/b6499e1725566bac40f83ab6c7264f6d682986e9))
-* **adr:** ADR-0061 — control-binding obligations as a CI governance gate ([#87](https://github.com/valdomirosouza/Repository-Template-v2/issues/87)) ([aa56609](https://github.com/valdomirosouza/Repository-Template-v2/commit/aa56609931ca8783ed4ecaf124913cb26e9e44b1))
-* **adr:** note source directive fully absorbed (no dangling reference) ([#82](https://github.com/valdomirosouza/Repository-Template-v2/issues/82)) ([74fe495](https://github.com/valdomirosouza/Repository-Template-v2/commit/74fe495c2577d3ab47e7a6637527f61ac16d4686))
-* **asdd:** wire per-phase skill bindings into ASDD agents ([#63](https://github.com/valdomirosouza/Repository-Template-v2/issues/63)) ([62b8206](https://github.com/valdomirosouza/Repository-Template-v2/commit/62b820678471e44ea1721097c9287f43d9cb0634))
-* **governance:** add 2-skill budget note to AGENTS.md ([#79](https://github.com/valdomirosouza/Repository-Template-v2/issues/79)) ([9fecb32](https://github.com/valdomirosouza/Repository-Template-v2/commit/9fecb3295180c11c97f98148ff09405dd20c49b0))
-* **governance:** add control-applicability matrix + trigger table ([#80](https://github.com/valdomirosouza/Repository-Template-v2/issues/80)) ([558dc88](https://github.com/valdomirosouza/Repository-Template-v2/commit/558dc8843ce971844648c3d0076932391515226a))
-* **governance:** embed Task Atomicity & 2-Skill Budget in CLAUDE.md §4 ([#76](https://github.com/valdomirosouza/Repository-Template-v2/issues/76)) ([6f3bcf0](https://github.com/valdomirosouza/Repository-Template-v2/commit/6f3bcf0344ac95977bcaefbbd3c7771f565bc311))
-* **governance:** trim CLAUDE.md under 40k and reconcile with AGENTS.md ([#62](https://github.com/valdomirosouza/Repository-Template-v2/issues/62)) ([e6377cb](https://github.com/valdomirosouza/Repository-Template-v2/commit/e6377cbdca30b0a1b2d03f7687cab7263eb80569))
-* **governance:** wire atomicity kickoff + phase-coverage into onboarding ([#81](https://github.com/valdomirosouza/Repository-Template-v2/issues/81)) ([010e520](https://github.com/valdomirosouza/Repository-Template-v2/commit/010e520b1f4cf6dddaaa98cff63011d478a939b9))
-* **rfc:** mark RFC-0001 approved and implemented ([1895c16](https://github.com/valdomirosouza/Repository-Template-v2/commit/1895c16d32fbf4cea90de44b2a008eb068d6ae10))
-* **rfc:** mark RFC-0001 approved and implemented ([#67](https://github.com/valdomirosouza/Repository-Template-v2/issues/67)) ([52dd6ff](https://github.com/valdomirosouza/Repository-Template-v2/commit/52dd6ffb398154ddfc1230fd6edae38a435b05ba))
-* **rfc:** mark RFC-0002 approved and implemented ([0e18cb1](https://github.com/valdomirosouza/Repository-Template-v2/commit/0e18cb17715073b8925eeba3407b82dafa5fbb07))
-* **rfc:** RFC-0004 — enforce control-binding declarations as a CI gate ([#86](https://github.com/valdomirosouza/Repository-Template-v2/issues/86)) ([742e339](https://github.com/valdomirosouza/Repository-Template-v2/commit/742e339a28606008e6585be8dac73d2d568f71d7))
-* **validation:** add ASDD 15-phase delivery simulation record ([#89](https://github.com/valdomirosouza/Repository-Template-v2/issues/89)) ([fdb93f9](https://github.com/valdomirosouza/Repository-Template-v2/commit/fdb93f9e2cfe83cb0ad12b341a906facbe76b58d))
+- **adr:** ADR-0060 — Task Atomicity & the 2-Skill Budget ([#75](https://github.com/valdomirosouza/Repository-Template-v2/issues/75)) ([b6499e1](https://github.com/valdomirosouza/Repository-Template-v2/commit/b6499e1725566bac40f83ab6c7264f6d682986e9))
+- **adr:** ADR-0061 — control-binding obligations as a CI governance gate ([#87](https://github.com/valdomirosouza/Repository-Template-v2/issues/87)) ([aa56609](https://github.com/valdomirosouza/Repository-Template-v2/commit/aa56609931ca8783ed4ecaf124913cb26e9e44b1))
+- **adr:** note source directive fully absorbed (no dangling reference) ([#82](https://github.com/valdomirosouza/Repository-Template-v2/issues/82)) ([74fe495](https://github.com/valdomirosouza/Repository-Template-v2/commit/74fe495c2577d3ab47e7a6637527f61ac16d4686))
+- **asdd:** wire per-phase skill bindings into ASDD agents ([#63](https://github.com/valdomirosouza/Repository-Template-v2/issues/63)) ([62b8206](https://github.com/valdomirosouza/Repository-Template-v2/commit/62b820678471e44ea1721097c9287f43d9cb0634))
+- **governance:** add 2-skill budget note to AGENTS.md ([#79](https://github.com/valdomirosouza/Repository-Template-v2/issues/79)) ([9fecb32](https://github.com/valdomirosouza/Repository-Template-v2/commit/9fecb3295180c11c97f98148ff09405dd20c49b0))
+- **governance:** add control-applicability matrix + trigger table ([#80](https://github.com/valdomirosouza/Repository-Template-v2/issues/80)) ([558dc88](https://github.com/valdomirosouza/Repository-Template-v2/commit/558dc8843ce971844648c3d0076932391515226a))
+- **governance:** embed Task Atomicity & 2-Skill Budget in CLAUDE.md §4 ([#76](https://github.com/valdomirosouza/Repository-Template-v2/issues/76)) ([6f3bcf0](https://github.com/valdomirosouza/Repository-Template-v2/commit/6f3bcf0344ac95977bcaefbbd3c7771f565bc311))
+- **governance:** trim CLAUDE.md under 40k and reconcile with AGENTS.md ([#62](https://github.com/valdomirosouza/Repository-Template-v2/issues/62)) ([e6377cb](https://github.com/valdomirosouza/Repository-Template-v2/commit/e6377cbdca30b0a1b2d03f7687cab7263eb80569))
+- **governance:** wire atomicity kickoff + phase-coverage into onboarding ([#81](https://github.com/valdomirosouza/Repository-Template-v2/issues/81)) ([010e520](https://github.com/valdomirosouza/Repository-Template-v2/commit/010e520b1f4cf6dddaaa98cff63011d478a939b9))
+- **rfc:** mark RFC-0001 approved and implemented ([1895c16](https://github.com/valdomirosouza/Repository-Template-v2/commit/1895c16d32fbf4cea90de44b2a008eb068d6ae10))
+- **rfc:** mark RFC-0001 approved and implemented ([#67](https://github.com/valdomirosouza/Repository-Template-v2/issues/67)) ([52dd6ff](https://github.com/valdomirosouza/Repository-Template-v2/commit/52dd6ffb398154ddfc1230fd6edae38a435b05ba))
+- **rfc:** mark RFC-0002 approved and implemented ([0e18cb1](https://github.com/valdomirosouza/Repository-Template-v2/commit/0e18cb17715073b8925eeba3407b82dafa5fbb07))
+- **rfc:** RFC-0004 — enforce control-binding declarations as a CI gate ([#86](https://github.com/valdomirosouza/Repository-Template-v2/issues/86)) ([742e339](https://github.com/valdomirosouza/Repository-Template-v2/commit/742e339a28606008e6585be8dac73d2d568f71d7))
+- **validation:** add ASDD 15-phase delivery simulation record ([#89](https://github.com/valdomirosouza/Repository-Template-v2/issues/89)) ([fdb93f9](https://github.com/valdomirosouza/Repository-Template-v2/commit/fdb93f9e2cfe83cb0ad12b341a906facbe76b58d))
 
 ## [Unreleased]
 
