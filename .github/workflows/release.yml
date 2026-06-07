@@ -32,12 +32,15 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      - name: Sync version.txt on the release PR (ADR-0057 SoT, RFC-0005)
-        # release-please bumps pyproject.toml on its PR branch, but `version.txt` is the
-        # single source of truth (ADR-0057). Mirror the bumped version into version.txt on
-        # the same branch so the release PR never drifts and the version-consistency gate
-        # (pr-governance) stays green. version.txt is consumed raw, so it cannot carry
-        # release-please annotation markers — hence this sync rather than `extra-files`.
+      - name: Sync version files on the release PR (ADR-0057 SoT, RFC-0005/RFC-0008)
+        # release-please bumps pyproject.toml on its PR branch, but two other files carry the
+        # framework version and are checked by version-consistency (pr-governance):
+        #   - version.txt — the single source of truth (ADR-0057)
+        #   - README.md `**Version:**` badge
+        # Neither is touched by release-please (both are consumed/checked raw and cannot carry
+        # release-please annotation markers), so mirror the bumped version into both on the
+        # release branch. (CLAUDE.md's own **Version:** is the behavioral-contract version and
+        # is deliberately excluded by check_version_consistency.py — do NOT touch it.)
         # Runs after the action on every push to main, so it survives release-please's
         # force-push; pushing to the release branch does not re-trigger this workflow
         # (it triggers on push to `main` only).
@@ -52,15 +55,21 @@ jobs:
           git checkout "$BRANCH"
           VER="$(grep -m1 -E '^version *= *"' pyproject.toml | sed -E 's/^version *= *"([^"]+)".*/\1/')"
           if [ -z "$VER" ]; then echo "Could not read pyproject version"; exit 0; fi
-          if [ "$(cat version.txt 2>/dev/null)" = "$VER" ]; then
-            echo "version.txt already consistent ($VER)"; exit 0
+          changed=0
+          if [ "$(cat version.txt 2>/dev/null)" != "$VER" ]; then
+            printf '%s\n' "$VER" > version.txt; changed=1; echo "version.txt -> $VER"
           fi
-          printf '%s\n' "$VER" > version.txt
+          README_VER="$(grep -m1 -oE '^> \*\*Version:\*\* [0-9]+\.[0-9]+\.[0-9]+' README.md | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)"
+          if [ -n "$README_VER" ] && [ "$README_VER" != "$VER" ]; then
+            sed -i -E "s|^> \*\*Version:\*\* [0-9]+\.[0-9]+\.[0-9]+|> **Version:** ${VER}|" README.md
+            changed=1; echo "README **Version:** $README_VER -> $VER"
+          fi
+          if [ "$changed" -eq 0 ]; then echo "version files already consistent ($VER)"; exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "chore: sync version.txt to $VER (ADR-0057, RFC-0005)"
+          git commit -am "chore: sync version files to $VER (ADR-0057, RFC-0005/0008)"
           git push origin "$BRANCH"
-          echo "Synced version.txt -> $VER on $BRANCH"
+          echo "Synced version files -> $VER on $BRANCH"
 
   build-release-image:
     name: Build and Push Release Image

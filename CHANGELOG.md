@@ -16,6 +16,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 ### Changed
 
 - `.github/workflows/release.yml`, `cd-staging.yml`, `sbom.yml` — bump `google-github-actions/release-please-action@v4.1.1` → `googleapis/release-please-action@v5.0.0` (rename + Node 24) and `docker/login-action@v3.7.0` → `v4.2.0` (Node 24), resolving the deprecation/Node-20-sunset warnings; v5 keeps the RFC-0006 manifest config (Issue #97, RFC-0007)
+- `.github/workflows/release.yml` — extend the release-PR version sync to also update the README `**Version:**` badge (not just `version.txt`), so the badge no longer drifts after a release and `test_version_consistency` stays green (Issue #99, RFC-0008)
 
 ### Fixed
 
