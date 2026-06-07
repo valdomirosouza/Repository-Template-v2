@@ -106,7 +106,7 @@ RequestConsumer (asyncio task in lifespan) polls store for QUEUED requests
 | Memory        | `src/memory/`                             | Session memory, vector store, doc indexer, bug history (opt-in, ADR-0017)                                                                                                          |
 | Frontend      | `frontend/`                               | Next.js app; HITL operator approval UI                                                                                                                                             |
 | PR Gates      | `harness/`                                | Claude Code harness specs (code/doc/release/staging-check)                                                                                                                         |
-| ADRs          | `docs/adr/`                               | ADR-0001–ADR-0059, all binding. See `docs/adr/README.md` for the index                                                                                                             |
+| ADRs          | `docs/adr/`                               | ADR-0001–ADR-0061, all binding. See `docs/adr/README.md` for the index                                                                                                             |
 | Process       | `docs/process/`                           | WORKFLOW (15-phase 0–14; ADR-0058), RACI, HITL-GOVERNANCE, SPRINT-TRACKING, RETROSPECTIVE-GUIDE, DoR/DoD/DoR-Release. Canonical model: `docs/sdlc/agentic-spec-driven-delivery.md` |
 
 ### Infrastructure Fallback Pattern
