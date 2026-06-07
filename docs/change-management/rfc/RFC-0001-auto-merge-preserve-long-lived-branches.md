@@ -1,6 +1,6 @@
 # RFC-0001 — Auto-merge must preserve long-lived integration branches
 
-> **Status:** Under Review
+> **Status:** Approved — implemented in PR #65 (merged to `main` as `03cea96`, 2026-06-07)
 > **Date:** 2026-06-07
 > **Author(s):** @valdomirosouza
 > **Reviewers:** DevOps Lead (owner of `.github/workflows/`), Tech Lead
