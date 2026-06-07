@@ -137,6 +137,10 @@ jobs:
 
       - name: Control-binding governance gate (ADR-0061)
         if: github.event_name == 'pull_request'
+        # REPORT MODE for the initial rollout cycle (RFC-0004 §5): the checker reports
+        # violations but does not block, so existing PRs can adopt the declaration
+        # convention. Flip to blocking by REMOVING the `continue-on-error` line below.
+        continue-on-error: true
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
           BASE_REF: ${{ github.base_ref }}

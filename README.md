@@ -536,10 +536,12 @@ Path-filtered CI workflows — each language's pipeline only runs when its code 
 **Control-binding gate (ADR-0061).** The `Governance Checks` job runs
 `scripts/governance/check_control_bindings.py`: if a PR touches a controlled surface
 (per `.github/control-triggers.yml`) but its `## Skills — load before executing` block
-omits the matching control, the PR fails. It also enforces the 2-skill budget and flags
-the 3-domain atomicity smell, and respects conditional controls via
+omits the matching control, the gate reports a violation. It also enforces the 2-skill
+budget and flags the 3-domain atomicity smell, and respects conditional controls via
 `docs/governance/applicability-matrix.yml`. It enforces _declaration discipline_, not
-compliance correctness. Run it locally with `make check-control-bindings`.
+compliance correctness. It ships in **report mode** for the initial rollout cycle
+(RFC-0004 §5) — remove `continue-on-error` from the CI step to make it blocking. Run it
+locally with `make check-control-bindings`.
 
 CD workflows:
 
