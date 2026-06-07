@@ -12,6 +12,18 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.12.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.11.1...v2.12.0) (2026-06-07)
+
+
+### Features
+
+* **skill:** add /deliver 15-phase dry-run delivery skill + phase-executor ([#105](https://github.com/valdomirosouza/Repository-Template-v2/issues/105)) ([4ab41ac](https://github.com/valdomirosouza/Repository-Template-v2/commit/4ab41acb24a82c3f073557163a2201764d1115d1))
+
+
+### CI/CD
+
+* remove misplaced SBOM image-attestation from ci.yml & sbom.yml ([#109](https://github.com/valdomirosouza/Repository-Template-v2/issues/109)) ([59ec766](https://github.com/valdomirosouza/Repository-Template-v2/commit/59ec7661b355787562b7d88fd34b0d28226182ad))
+
 ## [2.11.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.11.0...v2.11.1) (2026-06-07)
 
 ### Bug Fixes
