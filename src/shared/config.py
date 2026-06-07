@@ -51,9 +51,15 @@ class Settings(BaseSettings):
     kafka_consumer_retry_backoff_seconds: float = 1.0  # base delay; doubles each attempt
 
     # ── LLM / AI ──────────────────────────────────────────────────────────────
+    # AI agents are OPT-IN. When disabled (default), no LLM key is required and the
+    # app runs the full non-AI platform cleanly (Reusability Uplift, ADR-0059).
+    ai_agents_enabled: bool = False
     llm_provider: str = "anthropic"
     llm_model: str = "claude-sonnet-4-6"
+    # Canonical LLM key. ANTHROPIC_API_KEY is a backward-compat alias used when this
+    # is unset/placeholder (resolved in resolve_llm_api_key below).
     llm_api_key: str = "placeholder-set-in-env"
+    anthropic_api_key: str = ""
     llm_max_tokens: int = 4096
     llm_token_budget_per_request: int = 2000
     hitl_approval_timeout_seconds: int = 3600
@@ -165,14 +171,39 @@ class Settings(BaseSettings):
     cost_alert_threshold_usd: float = 100.0
 
     @model_validator(mode="after")
+    def resolve_llm_api_key(self) -> "Settings":
+        """Canonicalise the LLM key and gate it on AI_AGENTS_ENABLED.
+
+        ANTHROPIC_API_KEY is a backward-compat alias: when LLM_API_KEY is
+        unset/placeholder but ANTHROPIC_API_KEY is set, adopt the latter. The LLM
+        key is only *required* when AI agents are enabled — non-AI adopters run
+        cleanly with no key (Reusability Uplift, ADR-0059).
+        """
+        if self.anthropic_api_key and (
+            not self.llm_api_key or "placeholder" in self.llm_api_key.lower()
+        ):
+            self.llm_api_key = self.anthropic_api_key
+        if self.ai_agents_enabled and (
+            not self.llm_api_key or "placeholder" in self.llm_api_key.lower()
+        ):
+            raise ValueError(
+                "AI_AGENTS_ENABLED=true but no LLM API key is configured. "
+                "Set LLM_API_KEY (or the ANTHROPIC_API_KEY alias) in the environment, "
+                "or set AI_AGENTS_ENABLED=false to run without AI agents."
+            )
+        return self
+
+    @model_validator(mode="after")
     def reject_placeholder_secrets(self) -> "Settings":
         if self.app_env == "production":
             checks = {
-                "LLM_API_KEY": self.llm_api_key,
                 "SECRET_KEY": self.secret_key,
                 "DATABASE_URL": self.database_url,
                 "REDIS_URL": self.redis_url,
             }
+            # The LLM key is only mandatory in production when AI agents are enabled.
+            if self.ai_agents_enabled:
+                checks["LLM_API_KEY"] = self.llm_api_key
             for name, value in checks.items():
                 if "placeholder" in value.lower():
                     raise ValueError(f"{name} must be set via environment variable in production")

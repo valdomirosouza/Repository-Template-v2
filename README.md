@@ -31,7 +31,7 @@ cd my-project
 cp .env.example .env
 # Edit .env — set SECRET_KEY (the only always-required value).
 # Generate one with: openssl rand -hex 32
-# ANTHROPIC_API_KEY is only needed if you use the AI Agents extension.
+# LLM_API_KEY is only needed when AI_AGENTS_ENABLED=true (AI Agents extension).
 
 # Install Python deps, start all infrastructure containers, run DB migrations
 make setup

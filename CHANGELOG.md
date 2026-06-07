@@ -11,6 +11,17 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **Reusability Uplift Wave 1** (Issue #54, ADR-0059): `scripts/check-versions.sh` + `make check-versions` — verify installed runtimes (Python 3.13 / Java 21 / Go 1.24 / Node 22 / uv 0.4) meet minimums; optional runtimes report SKIP not FAIL (shellcheck clean)
+
+### Changed
+
+- **Reusability Uplift Wave 1 — toolchain alignment** (Issue #54): `.devcontainer/devcontainer.json` (Python 3.12→3.13, Go 1.23→1.24, Node 20→22) and quickstart docs (jobs-worker, local-dev-setup, go-backend, frontend) aligned to the target runtimes; ADR-0002 gets a dated baseline-update note (preserving the historical decision)
+- **Reusability Uplift Wave 1 — LLM env canonicalisation** (Issue #54): `LLM_API_KEY` is the canonical key with `ANTHROPIC_API_KEY` as a backward-compat alias; new `AI_AGENTS_ENABLED` flag gates the requirement — the app starts cleanly with `AI_AGENTS_ENABLED=false` and no key, and raises a clear error when enabled without a key. `.env.example`, `src/shared/config.py`, README/SETUP/python-backend quickstart updated
+
 ## [2.9.0] - 2026-06-06
 
 > **Claude Code delivery-agent system.** A multi-agent system (`.claude/agents/`) that

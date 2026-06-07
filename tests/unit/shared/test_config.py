@@ -12,12 +12,33 @@ from src.shared.config import Settings
 
 class TestProductionSecretValidation:
     def test_placeholder_llm_api_key_rejected_in_production(self):
+        # The LLM key is only mandatory in production when AI agents are enabled (ADR-0059).
         with pytest.raises(ValidationError, match="LLM_API_KEY"):
             Settings(
                 app_env="production",
+                ai_agents_enabled=True,
                 llm_api_key="placeholder-set-in-env",
-                secret_key="real-secret-value-xyz",
+                anthropic_api_key="",
+                secret_key="super-secret-value-abc123-long-enough",
+                database_url="postgresql+asyncpg://appuser:real-db-pass@prod-db:5432/appdb",
+                redis_url="rediss://:real-redis-pass@prod-redis:6379/0",
+                db_encryption_key="a" * 64,
+                redis_tls_enabled=True,
             )
+
+    def test_placeholder_llm_api_key_allowed_when_ai_disabled(self):
+        # With AI agents disabled, a placeholder LLM key must NOT block production startup.
+        s = Settings(
+            app_env="production",
+            ai_agents_enabled=False,
+            llm_api_key="placeholder-set-in-env",
+            secret_key="super-secret-value-abc123-long-enough",
+            database_url="postgresql+asyncpg://appuser:real-db-pass@prod-db:5432/appdb",
+            redis_url="rediss://:real-redis-pass@prod-redis:6379/0",
+            db_encryption_key="a" * 64,
+            redis_tls_enabled=True,
+        )
+        assert s.ai_agents_enabled is False
 
     def test_placeholder_secret_key_rejected_in_production(self):
         with pytest.raises(ValidationError, match="SECRET_KEY"):
@@ -67,8 +88,14 @@ class TestProductionSecretValidation:
         with pytest.raises(ValidationError, match="LLM_API_KEY"):
             Settings(
                 app_env="production",
+                ai_agents_enabled=True,
                 llm_api_key="PLACEHOLDER-SET-IN-ENV",
-                secret_key="real-secret",
+                anthropic_api_key="",
+                secret_key="super-secret-value-abc123-long-enough",
+                database_url="postgresql+asyncpg://appuser:real-db-pass@prod-db:5432/appdb",
+                redis_url="rediss://:real-redis-pass@prod-redis:6379/0",
+                db_encryption_key="a" * 64,
+                redis_tls_enabled=True,
             )
 
     def test_placeholder_database_url_rejected_in_production(self):

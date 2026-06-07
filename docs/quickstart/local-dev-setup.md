@@ -17,7 +17,7 @@ The repository ships with a fully configured devcontainer at `.devcontainer/`. I
 
 The `post-create.sh` script runs automatically and:
 
-- Installs Python 3.12 (uv), Node 20 (pnpm), Go 1.23, Java 21 (Maven 3.9)
+- Installs Python 3.13 (uv), Node 22 (pnpm), Go 1.24, Java 21 (Maven 3.9)
 - Installs all Go dev tools (`air`, `golangci-lint`, `protoc-gen-go`)
 - Installs pre-commit hooks
 - Copies `.env.example` → `.env`
@@ -53,7 +53,7 @@ You only need Java/Maven if working on Java services, Go if working on Go servic
 python --version      # 3.13.x
 uv --version          # 0.4.x or later
 docker compose version  # v2.x.x
-go version            # go1.23.x
+go version            # go1.24.x
 java --version        # 21.x.x
 node --version        # v20.x.x
 ```
