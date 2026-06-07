@@ -228,8 +228,19 @@ guard against the workflow becoming bureaucracy.
 
 ---
 
+## Automating the workflow with Claude Code agents
+
+This workflow can be **driven** by a Claude Code multi-agent system: an orchestrator
+(`asdd-orchestrator`) sequences 15 phase subagents (`asdd-phase-0-intake` …
+`asdd-phase-14-post-deploy`) in [`.claude/agents/`](../../.claude/agents/README.md).
+Each subagent owns one phase, validates its inputs, produces a persisted artifact, and
+emits a structured handoff ([schema](agent-handoff-schema.md)); the orchestrator handles
+retries, applies the risk-based flow, and **stops at the mandatory human gates**. These
+are dev-time delivery agents — distinct from the runtime product agents in `src/agents/`.
+
 ## See also
 
+- [`.claude/agents/README.md`](../../.claude/agents/README.md) + [agent handoff schema](agent-handoff-schema.md) — the Claude Code delivery-agent system
 - [`docs/process/WORKFLOW.md`](../process/WORKFLOW.md) — detailed per-phase operational reference
 - [`docs/process/HITL-GOVERNANCE.md`](../process/HITL-GOVERNANCE.md) — two-tier HITL governance
 - [`docs/process/RACI.md`](../process/RACI.md) — role accountability
