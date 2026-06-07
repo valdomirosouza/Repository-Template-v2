@@ -87,10 +87,13 @@ split signal. The trigger table and matrix live in `docs/governance/` (see follo
 
 Tracked as five atomic tasks (this ADR is task 1): #70 ADR (this), #71 CLAUDE.md §4,
 #72 AGENTS.md, #73 control-applicability matrix + trigger table, #74 session kickoff +
-phase-coverage wiring. Source directive: `task-atomicity-skill-budget-directive.md`.
+phase-coverage wiring. The source directive (`task-atomicity-skill-budget-directive.md`,
+provided as a working-tree note, never committed) has been **fully absorbed** into the
+contract; its content now lives canonically in `CLAUDE.md` §4 and
+`docs/governance/control-applicability-matrix.md`.
 
 ## References
 
-- `task-atomicity-skill-budget-directive.md` (source directive)
+- Source directive (`task-atomicity-skill-budget-directive.md`, working-tree note, not retained) — fully absorbed; canonical content now in `CLAUDE.md` §4
 - `CLAUDE.md` §4 (Skills), §13.2 (token efficiency), §14 (escalation)
 - ADR-0058 (Agentic Spec-Driven Delivery), ADR-0026 (SOX), ADR-0027 (ISO 27001), ADR-0029 (DevSecOps pipeline)
