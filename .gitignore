@@ -74,3 +74,6 @@ frontend/frontend/pnpm-lock.yaml
 
 # Deprecated/consumed prompt & recommendation inputs (local archive, not part of the repo)
 deprecated/
+
+# Per-run /deliver dry-run outputs (plans, backlog, logs, FINAL-REPORT) — not source
+reports/

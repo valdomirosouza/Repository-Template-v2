@@ -13,26 +13,35 @@ and emits a structured **handoff** (see
 
 ## Roster
 
-| Agent                         | Phase | Owns                                                                     |
-| ----------------------------- | ----- | ------------------------------------------------------------------------ |
-| `asdd-orchestrator`           | —     | Sequences 0→14, retries on `blocked`, stops at human gates, final report |
-| `asdd-phase-0-intake`         | 0     | Intake & Prioritization (problem, value, risk class, owner)              |
-| `asdd-phase-1-conception`     | 1     | GitHub Issue (feature_request)                                           |
-| `asdd-phase-2-discovery`      | 2     | discovery.md + nfr.md (Spec-as-PR)                                       |
-| `asdd-phase-3-grooming`       | 3     | DoR checklist; Issue → ready                                             |
-| `asdd-phase-4-specification`  | 4     | feature-spec.md (Spec-as-PR)                                             |
-| `asdd-phase-5-architecture`   | 5     | ADR (if needed) + threat model                                           |
-| `asdd-phase-6-development`    | 6     | Implementation branch, lint + unit tests                                 |
-| `asdd-phase-7-code-review`    | 7     | PR, DoD, CI gates (human approval)                                       |
-| `asdd-phase-8-testing`        | 8     | Unit ≥80% + integration + security + abuse cases                         |
-| `asdd-phase-9-devsecops`      | 9     | SAST/SCA/Trivy/SBOM/DAST                                                 |
-| `asdd-phase-10-ai-safety`     | 10    | Injection/leakage tests, tool-permission review (AI/agent only)          |
-| `asdd-phase-11-observability` | 11    | OTel/metrics verified; PRR sign-off                                      |
-| `asdd-phase-12-release-rc`    | 12    | DoR-Release; rc-approved (human-gated)                                   |
-| `asdd-phase-13-production`    | 13    | Canary plan + GitHub Release (human-executed)                            |
-| `asdd-phase-14-post-deploy`   | 14    | DORA metrics + retrospectives                                            |
+| Agent                         | Phase | Owns                                                                                                                                    |
+| ----------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `asdd-orchestrator`           | —     | Sequences 0→14, retries on `blocked`, stops at human gates, final report                                                                |
+| `asdd-phase-0-intake`         | 0     | Intake & Prioritization (problem, value, risk class, owner)                                                                             |
+| `asdd-phase-1-conception`     | 1     | GitHub Issue (feature_request)                                                                                                          |
+| `asdd-phase-2-discovery`      | 2     | discovery.md + nfr.md (Spec-as-PR)                                                                                                      |
+| `asdd-phase-3-grooming`       | 3     | DoR checklist; Issue → ready                                                                                                            |
+| `asdd-phase-4-specification`  | 4     | feature-spec.md (Spec-as-PR)                                                                                                            |
+| `asdd-phase-5-architecture`   | 5     | ADR (if needed) + threat model                                                                                                          |
+| `asdd-phase-6-development`    | 6     | Implementation branch, lint + unit tests                                                                                                |
+| `asdd-phase-7-code-review`    | 7     | PR, DoD, CI gates (human approval)                                                                                                      |
+| `asdd-phase-8-testing`        | 8     | Unit ≥80% + integration + security + abuse cases                                                                                        |
+| `asdd-phase-9-devsecops`      | 9     | SAST/SCA/Trivy/SBOM/DAST                                                                                                                |
+| `asdd-phase-10-ai-safety`     | 10    | Injection/leakage tests, tool-permission review (AI/agent only)                                                                         |
+| `asdd-phase-11-observability` | 11    | OTel/metrics verified; PRR sign-off                                                                                                     |
+| `asdd-phase-12-release-rc`    | 12    | DoR-Release; rc-approved (human-gated)                                                                                                  |
+| `asdd-phase-13-production`    | 13    | Canary plan + GitHub Release (human-executed)                                                                                           |
+| `asdd-phase-14-post-deploy`   | 14    | DORA metrics + retrospectives                                                                                                           |
+| `phase-executor`              | any   | Generic single-phase dry-run executor used by the `/deliver` skill (reads only its phase's ADRs/specs/guardrails; no real side-effects) |
 
 ## Running it
+
+Two entrypoints share these phase contracts:
+
+- **`asdd-orchestrator`** — the full production-grade workflow (real Issues/PRs, stops at the
+  nine human gates). Use for actual delivery.
+- **`/deliver <spec>`** skill (`.claude/skills/deliver/`) — a **dry-run** orchestrator that
+  drives one spec through all 15 phases via the `phase-executor` subagent and emits a
+  `reports/<slug>/FINAL-REPORT.md` (traceability + timing + speedup). No real side-effects.
 
 ```text
 1. Invoke `asdd-orchestrator` with the feature request.
