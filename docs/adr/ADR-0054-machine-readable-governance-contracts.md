@@ -4,6 +4,12 @@
 **Date:** 2026-06-06
 **Authors:** Valdomiro Souza
 
+> **Phase-model note ([ADR-0058](ADR-0058-agentic-spec-driven-delivery-workflow.md)):**
+> the Context below references the **13-phase** lifecycle that was current when this ADR
+> was written. The lifecycle has since evolved to **15 phases (0–14)** and the
+> `phase-gates.yaml` machinery defined here was updated accordingly (ids 0–14, with a
+> conditional Phase 10 AI Safety gate). The decisions in this ADR remain in force.
+
 ---
 
 ## Context

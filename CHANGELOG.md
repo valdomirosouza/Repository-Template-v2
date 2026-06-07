@@ -11,6 +11,18 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- `docs/repository-maintenance/adr-alignment-review.md` — read-only assessment validating all 59 ADRs against the Agentic Spec-Driven Delivery Workflow; verdict: 0 stale/deprecated (≈40 aligned, ≈19 still-critical), nothing moved. Added to mkdocs nav
+
+### Changed
+
+- `docs/adr/ADR-0054-machine-readable-governance-contracts.md` — added a phase-model cross-reference note (its Context describes the historical 13-phase model; the `phase-gates.yaml` machinery is on the current 15-phase 0–14 model per ADR-0058; decisions remain in force)
+
+---
+
 ## [2.10.1] - 2026-06-06
 
 > **Repository governance cleanup (ADR-0059 follow-up, Issue #61).** A report-only orphan-file
