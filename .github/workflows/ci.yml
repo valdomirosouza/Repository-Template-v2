@@ -470,18 +470,9 @@ jobs:
             exit 1
           fi
 
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3.9.2
-
-      - name: Attest SBOM to container image
-        if: github.event_name == 'push' && vars.CONTAINER_REGISTRY != ''
-        env:
-          COSIGN_EXPERIMENTAL: "1"
-        run: |
-          cosign attest \
-            --predicate sbom.json \
-            --type cyclonedx \
-            ${{ vars.CONTAINER_REGISTRY }}/${{ github.repository }}:${{ github.sha }}
+      # Image SBOM attestation lives in release.yml (the only workflow that builds + pushes
+      # an image). CI builds with push:false (load-only for Trivy), so there is no image here
+      # to attest — the SBOM is generated, validated, and uploaded as an artifact (RFC-0011).
 
       - name: Upload SBOM as workflow artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
