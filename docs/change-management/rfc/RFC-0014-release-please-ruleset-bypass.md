@@ -1,6 +1,6 @@
 # RFC-0014 — Ruleset migration + bypass actor for the release flow
 
-> **Status:** Under Review
+> **Status:** Accepted (applied 2026-06-07 — ruleset `main-protection` created, legacy protection removed)
 > **Date:** 2026-06-07
 > **Author(s):** @valdomirosouza
 > **Reviewers:** DevOps Lead, Release Manager, Tech Lead
