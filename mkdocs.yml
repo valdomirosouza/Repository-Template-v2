@@ -70,6 +70,7 @@ nav:
       - Team Topology: governance/team-topology.md
       - RACI Matrix: governance/raci-matrix.md
       - Owner Onboarding: governance/owner-onboarding.md
+      - Control Applicability Matrix: governance/control-applicability-matrix.md
   - Change Management:
       - Overview: change-management/README.md
       - RFC Template: change-management/RFC-TEMPLATE.md
