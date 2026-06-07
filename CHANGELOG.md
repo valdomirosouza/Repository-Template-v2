@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.12.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.12.0...v2.12.1) (2026-06-07)
+
+
+### Documentation
+
+* **rfc:** RFC-0013 — branch protection for main (Balanced policy) ([#113](https://github.com/valdomirosouza/Repository-Template-v2/issues/113)) ([8c766ff](https://github.com/valdomirosouza/Repository-Template-v2/commit/8c766ff8e38c78ff920ccdd56f4aadb343872e45))
+
 ## [2.12.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.11.1...v2.12.0) (2026-06-07)
 
 
