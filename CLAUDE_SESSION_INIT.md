@@ -32,11 +32,24 @@ gh issue list --repo valdomirosouza/Repository-Template-v2 --state open --label 
 
 Wave labels: `wave-1` (done) → `wave-2` → `wave-3` → `wave-4` → `wave-5`
 
+## Task Atomicity Kickoff (ADR-0060, CLAUDE.md §4)
+
+> Decompose this work so that **no task needs more than 2 repo skills** to finish.
+> Treat the 2-skill budget as the _test_ for whether a task is atomic: if a task would
+> need a 3rd skill, **split it at that boundary** instead of loading the skill. Each task
+> produces **exactly one reviewable artifact** and declares its ≤ 2 bindings under
+> `## Skills — load before executing`. `CLAUDE.md` and repo context do **not** count toward
+> the budget. Before closing each Agentic SDLC phase, list the artifacts the phase owes and
+> create a dedicated atomic task for any that is missing. Run the cross-cutting control
+> triggers (`docs/governance/control-applicability-matrix.md`) before every task.
+
 ## Session Bootstrap Checklist
 
 - [ ] CLAUDE.md read and §14 escalation triggers noted
 - [ ] `services.yaml` scanned for affected service
+- [ ] Work decomposed so each task needs ≤ 2 skills and yields one artifact (ADR-0060)
 - [ ] Relevant skill(s) loaded (max 2)
+- [ ] Cross-cutting control triggers checked (control-applicability-matrix)
 - [ ] GitHub Issue identified with spec reference
 - [ ] Spec status confirmed as `Approved`
 

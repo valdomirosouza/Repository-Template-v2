@@ -34,7 +34,11 @@ Read services.yaml (repo root).
 
 ### Step 3 — Load Relevant Skills
 
-Based on the task domain, load **at most two** skill files (CLAUDE.md §13.2):
+The **2-skill budget is the decomposition oracle** (CLAUDE.md §4, ADR-0060), not just a
+token limit. Before loading, list the skills the task needs to _finish_: **≤ 2** → atomic,
+load them and execute; **≥ 3** → the task is too big — **split it at the skill boundary**
+into child tasks that each need ≤ 2 skills (never load a 3rd). One task = one reviewable
+artifact. Then load **at most two** skill files for the leaf task:
 
 | Task involves…          | Load this skill                                |
 | ----------------------- | ---------------------------------------------- |
@@ -49,6 +53,15 @@ Based on the task domain, load **at most two** skill files (CLAUDE.md §13.2):
 | Security / OWASP        | `skills/devsecops/owasp-top10.md`              |
 | CI/CD pipeline          | `skills/devsecops/pipeline-security.md`        |
 | Spec writing            | `skills/sdlc/spec-lifecycle.md`                |
+
+**Cross-cutting controls.** Before executing any task, run the compliance/privacy/security
+control triggers in `docs/governance/control-applicability-matrix.md` — they bind by _what
+the task touches_, not its phase. Firing 3+ control triggers is itself a split signal.
+
+**Phase-coverage check (close the loop).** An Agentic SDLC phase is done only when every
+artifact it owes exists. After the last task in a phase, enumerate the phase's required
+artifacts (rules, guardrails, ADR, RFC, harness wiring, tests, observability) and create a
+**dedicated atomic task** for any not yet produced — never bolt it onto an existing task.
 
 ### Step 4 — Identify Open GitHub Issues
 
@@ -80,7 +93,7 @@ It contains repo-specific context that supplements this skill.
 
 ## Context Budget Rules (from CLAUDE.md §13)
 
-- Load at most **one skill file per domain** — never bulk-load all skills.
+- Load **at most 2 skills per task** (the decomposition oracle — split, don't exceed; §4, ADR-0060); one per domain, never bulk-load.
 - Use `grep -n` before `Read` on any file > 100 lines.
 - Prefer `rtk git status` / `rtk git diff` over plain git commands.
 
