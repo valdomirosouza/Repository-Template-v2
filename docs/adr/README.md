@@ -121,6 +121,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0058](ADR-0058-agentic-spec-driven-delivery-workflow.md)              | Agentic Spec-Driven Delivery (Phase 0 Intake + AI Safety phase) | Accepted | 2026-06-06 |
 | [ADR-0059](ADR-0059-reusability-uplift.md)                                 | Reusability Uplift (progressive adoption UX)                    | Accepted | 2026-06-06 |
 | [ADR-0060](ADR-0060-task-atomicity-skill-budget.md)                        | Task Atomicity & the 2-Skill Budget (decomposition oracle)      | Accepted | 2026-06-07 |
+| [ADR-0061](ADR-0061-control-binding-ci-gate.md)                            | Control-binding obligations enforced as a CI governance gate    | Accepted | 2026-06-07 |
 
 ### AI Agents Module _(opt-in)_
 
