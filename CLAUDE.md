@@ -323,6 +323,8 @@ Step 10: UPDATE CHANGELOG.md with the change under the correct category.
 
 When the user's request matches a skill domain, **Read the skill file listed in the table and follow its guidance before writing any code**. These are plain Markdown files in the `skills/` directory — load them with the Read tool, not via the Claude Code Skill tool. The `.claude/skills/` directory is a parallel copy for the Claude Code Skill tool (used by `/`-commands) and does not replace this mechanism.
 
+> **Delivery subagents vs. runtime agents.** `.claude/agents/` holds the **dev-time** Agentic Spec-Driven Delivery subagents (`asdd-orchestrator` + 15 phase agents) that _operate_ the SDLC via the Claude Code CLI (ADR-0058; see `.claude/agents/README.md`). These are distinct from the **runtime** product agents in `src/agents/` (the deployed app's HITL/HOTL orchestrator, guardrails, tool registry). The delivery subagents recommend and prepare; they stop at human gates and never autonomously merge, deploy, release, or change autonomy flags.
+
 ### Core Skills
 
 | Trigger / Domain                                | Skill Path                                        | Activation Condition                                                                               |
