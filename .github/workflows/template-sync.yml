@@ -1,0 +1,75 @@
+name: Template Sync
+
+# Opens a draft PR with upstream template changes that adopters can review and merge
+# selectively — replaces the fragile `git merge --allow-unrelated-histories` flow.
+# Never runs on the source template itself. Reusability Uplift, ADR-0059.
+
+on:
+  schedule:
+    - cron: "0 8 * * 1" # Mondays 08:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  TEMPLATE_REPO: "https://github.com/valdomirosouza/Repository-Template-v2.git"
+  # Project-specific files that must NEVER be overwritten by a sync.
+  # Keep this list identical to the one shown in the PR body below.
+  EXCLUDES: "CLAUDE.md CLAUDE_SESSION_INIT.md services.yaml .env.example docs/adr specs CHANGELOG.md .github/CODEOWNERS AGENTS.md"
+
+jobs:
+  sync:
+    name: Sync from template
+    runs-on: ubuntu-latest
+    # Skip on the source template — adopters only.
+    if: github.repository != 'valdomirosouza/Repository-Template-v2'
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Build sync PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git remote add template "$TEMPLATE_REPO" 2>/dev/null || true
+          git fetch --depth=1 template main
+
+          DATE="$(date +%Y%m%d)"
+          BRANCH="chore/template-sync-$DATE"
+          git checkout -b "$BRANCH"
+
+          read -ra EXCLUDE_ARR <<< "$EXCLUDES"
+
+          # Bring in all template files, then restore project-specific exclusions.
+          git checkout template/main -- .
+          for path in "${EXCLUDE_ARR[@]}"; do
+            git checkout HEAD -- "$path" 2>/dev/null || true
+          done
+
+          if git diff --cached --quiet; then
+            echo "No template changes to sync."
+            exit 0
+          fi
+
+          git commit -m "chore: sync from template ($DATE)"
+          git push -u origin "$BRANCH"
+
+          EXCLUDE_LIST=""
+          for path in "${EXCLUDE_ARR[@]}"; do
+            EXCLUDE_LIST="${EXCLUDE_LIST}- \`${path}\`"$'\n'
+          done
+          gh pr create --draft \
+            --base main --head "$BRANCH" \
+            --title "chore: template sync $DATE" \
+            --body "Automated draft PR with upstream template changes for review.
+
+          **Excluded (never overwritten):**
+          $EXCLUDE_LIST
+
+          Review the diff and merge selectively. Close without merging if not needed."

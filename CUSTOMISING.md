@@ -205,18 +205,17 @@ Do **not** remove existing rules without a governance decision — they exist be
 
 ## 7. Keeping Your Fork in Sync
 
-This template evolves. To pull upstream improvements without overwriting your changes:
+This template evolves. The recommended way to pull upstream improvements is the
+**`template-sync` workflow** (`.github/workflows/template-sync.yml`) — it runs weekly
+(and on demand via **Actions → Template Sync → Run workflow**), fetches the template,
+and opens a **draft PR** with the changed files so you can review and merge selectively.
+It never overwrites your project-specific files:
 
-```bash
-git remote add template https://github.com/valdomirosouza/Repository-Template-v2.git
-git fetch template
-git merge template/main --allow-unrelated-histories --no-commit
-# Resolve conflicts — keep your project-specific files, take template improvements
-git commit -m "chore: sync from template vX.Y.Z"
-```
+`CLAUDE.md`, `CLAUDE_SESSION_INIT.md`, `services.yaml`, `.env.example`, `docs/adr/`,
+`specs/`, `CHANGELOG.md`, `.github/CODEOWNERS`, `AGENTS.md`.
 
-Files you should almost always keep from **your** version (don't overwrite):
-`CLAUDE.md`, `.env.example`, `services.yaml`, `docs/adr/`, `specs/`, `CHANGELOG.md`, `CODEOWNERS`.
+The workflow expects a `template` remote pointing at the upstream template; the workflow
+adds it automatically. No manual `git merge --allow-unrelated-histories` is needed.
 
 ---
 
