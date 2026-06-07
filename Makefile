@@ -259,22 +259,11 @@ asyncapi-ui: ## Open AsyncAPI Studio for the event contract
 
 # ── Service Scaffold ───────────────────────────────────────────────────────
 
-new-service: ## Scaffold a new service: make new-service NAME=foo LANG=python|java|go
-ifndef NAME
-	$(error NAME is required. Usage: make new-service NAME=my-service LANG=python)
-endif
-ifndef LANG
-	$(error LANG is required. Usage: make new-service NAME=my-service LANG=python)
-endif
-	@echo "Scaffolding service '$(NAME)' ($(LANG))..."
-	@$(MAKE) _scaffold-$(LANG)-$(NAME)
-	@$(MAKE) _scaffold-k8s-$(NAME)
-	@echo ""
-	@echo "Done. Next steps:"
-	@echo "  1. Register in services.yaml            (Step 2 in add-new-service.md)"
-	@echo "  2. Add to .github/CODEOWNERS            (Step 3)"
-	@echo "  3. Add scrape job to prometheus.yml     (Step 4)"
-	@echo "  4. Edit services/$(NAME)/README.md      (purpose, schedule, owner)"
+new-service: ## Scaffold a new service. NAME= LANG=python|java|go [OWNER=team] [PORT=8010] [REGISTER=true]
+	@[ -n "$(NAME)" ] || (echo "ERROR: NAME is required" && exit 1)
+	@[ -n "$(LANG)" ] || (echo "ERROR: LANG is required" && exit 1)
+	@bash scripts/new-service.sh \
+	  "$(NAME)" "$(LANG)" "$(or $(OWNER),platform-team)" "$(or $(PORT),8010)" "$(or $(REGISTER),false)"
 
 _scaffold-python-$(NAME):
 	mkdir -p services/$(NAME)/src/$(NAME)
