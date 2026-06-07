@@ -3,6 +3,11 @@
 > **Step 0 — fastest path:** run `make template-init PROJECT_NAME=<name> ORG=<org> REGISTRY=<registry> [PROFILE=python-api]`
 > to perform Steps 1–4 below in one idempotent command, then `make doctor` to validate.
 > The steps below remain as the manual/verification reference.
+>
+> If you created this repo with GitHub's **"Use this template"** button, the
+> `template-init` workflow (`.github/workflows/template-init.yml`) fires automatically on
+> the first push to `main` and opens a `chore: initial project customisation` PR for you —
+> review it, complete the 3 manual steps in its body, then merge.
 
 Complete these steps **before opening your first PR**. Steps 1–3 are enforced by CI gates and will block every merge until done. Steps 4–6 are strongly recommended before inviting collaborators.
 

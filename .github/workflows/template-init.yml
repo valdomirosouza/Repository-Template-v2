@@ -1,0 +1,72 @@
+name: Template Init
+
+# Automates first-push customisation for repos created via "Use this template".
+# Opens a PR that replaces all template placeholders. Never runs on the source
+# template itself (guarded by the repository check). Reusability Uplift, ADR-0059.
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  init:
+    name: Initialise project
+    runs-on: ubuntu-latest
+    # Skip on the source template — only adopter clones should self-initialise.
+    if: github.repository != 'valdomirosouza/Repository-Template-v2'
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Detect un-initialised template
+        id: check
+        run: |
+          if grep -q 'your-org' .github/CODEOWNERS 2>/dev/null \
+             || grep -q 'yourorg/' services.yaml 2>/dev/null; then
+            echo "needs_init=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "needs_init=false" >> "$GITHUB_OUTPUT"
+            echo "Already initialised — nothing to do."
+          fi
+
+      - name: Initialise and open customisation PR
+        if: steps.check.outputs.needs_init == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ORG="${{ github.repository_owner }}"
+          PROJECT="${{ github.event.repository.name }}"
+          BRANCH="chore/template-init"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+
+          bash scripts/template-init.sh "$PROJECT" "$ORG" "ghcr.io/$ORG" "full"
+
+          # .env is gitignored and never committed.
+          git add -A
+          git commit -m "chore: initial project customisation"
+          git push -u origin "$BRANCH"
+
+          gh pr create \
+            --base main --head "$BRANCH" \
+            --title "chore: initial project customisation" \
+            --body "$(cat <<'PRBODY'
+          ⚠️ **Do not merge until the manual steps below are complete.**
+
+          This PR was generated automatically on first push to customise the template for
+          **${{ github.repository }}**. It replaced the template placeholders, reset the
+          version to `0.1.0`, and reset the changelog.
+
+          ### Remaining manual steps (3)
+          1. Add GitHub Actions secrets: `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`
+          2. Add GitHub Actions variables: `CONTAINER_REGISTRY`, `STAGING_BASE_URL`
+          3. Review `.github/CODEOWNERS` — verify team handles are correct
+
+          See [SETUP.md](SETUP.md) for the full checklist, then run `make doctor`.
+          PRBODY
+          )"
