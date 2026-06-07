@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Added
+
+- `docs/adr/ADR-0060-task-atomicity-skill-budget.md` — adopt Task Atomicity & the 2-Skill Budget as the decomposition oracle (≤ 2 skills per task as the atomicity test; one task = one reviewable artifact). Rollout tracked in #70–#74 (Issue #70, ADR-0060)
+
 ### Changed
 
 - `.github/workflows/auto-merge.yml` — `develop`/`main` PRs now auto-merge via **merge commit** (preserving ancestry — no more squash-induced divergence or force-pushes), while feature branches still squash-and-delete (Issue #64, RFC-0002)
