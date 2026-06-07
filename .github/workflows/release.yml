@@ -75,7 +75,10 @@ jobs:
     name: Build and Push Release Image
     runs-on: ubuntu-latest
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    # Only publish when a release was created AND a container registry is configured.
+    # Without registry config the job is skipped (not failed) — see image-publish-skipped
+    # below for the explanatory notice (RFC-0009, #96).
+    if: needs.release-please.outputs.release_created == 'true' && vars.CONTAINER_REGISTRY != ''
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -135,3 +138,16 @@ jobs:
         with:
           tag_name: ${{ needs.release-please.outputs.tag_name }}
           files: sbom.cyclonedx.json
+
+  image-publish-skipped:
+    # Graceful, non-failing notice when a release is cut without a container registry
+    # configured (RFC-0009, #96). The GitHub Release + tag still succeed; only the
+    # image build/push/sign/SBOM-attest is skipped.
+    name: Image Publish (skipped — no registry configured)
+    runs-on: ubuntu-latest
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true' && vars.CONTAINER_REGISTRY == ''
+    steps:
+      - name: Explain skip
+        run: |
+          echo "::notice title=Image publish skipped::Release ${{ needs.release-please.outputs.tag_name }} created, but no CONTAINER_REGISTRY is configured — image build/push/sign/SBOM-attest were skipped. To enable: set the CONTAINER_REGISTRY repo/org variable and the REGISTRY_USERNAME / REGISTRY_PASSWORD secrets (Settings → Secrets and variables → Actions). See issue #96 and SETUP.md."
