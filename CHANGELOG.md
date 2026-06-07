@@ -24,6 +24,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ### Changed
 
+- `.github/workflows/release.yml` — sync `version.txt` (single source of truth, ADR-0057) into the release-please PR branch after the action, so release PRs no longer drift from `pyproject.toml` and the version-consistency gate stays green (Issue #90, RFC-0005)
 - `CLAUDE.md` §4 — embed the Task Atomicity & 2-Skill Budget standing directive (decomposition oracle); §13.2 now cross-references it instead of stating a divergent soft rule; doc version 2.5.0 → 2.6.0 (Issue #71, ADR-0060)
 - `AGENTS.md` §3 — add a cross-tool "Task sizing — the 2-skill budget" note pointing to CLAUDE.md §4 / ADR-0060 (Issue #72, ADR-0060)
 - `CLAUDE_SESSION_INIT.md` + `skills/sdlc/agent-onboarding.md` — add the one-shot atomicity session kickoff, frame the 2-skill budget as the decomposition oracle, and add the per-phase coverage check + cross-cutting control triggers (Issue #74, ADR-0060)
