@@ -127,7 +127,16 @@ See [`CUSTOMISING.md`](CUSTOMISING.md) for the full adoption guide:
 
 ## Verification
 
-After completing steps 1–3, open a test PR to confirm:
+**Recommended: validate your environment first.** After the steps above (and after
+`make template-init` once available), run the doctor — it checks your toolchain, `.env`,
+ports, and unresolved placeholders, and tells you exactly what to fix:
+
+```bash
+make doctor        # validate tools, .env, ports, placeholders
+make check-versions  # confirm runtime versions meet the minimums
+```
+
+Then open a test PR to confirm:
 
 ```bash
 # Step 1 — governance check should pass
