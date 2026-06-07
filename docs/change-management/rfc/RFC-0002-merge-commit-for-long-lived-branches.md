@@ -1,6 +1,6 @@
 # RFC-0002 — Merge commits (not squash) for long-lived integration branches
 
-> **Status:** Under Review
+> **Status:** Approved — implemented in PR #68 (merged to `main`, 2026-06-07)
 > **Date:** 2026-06-07
 > **Author(s):** @valdomirosouza
 > **Reviewers:** DevOps Lead (owner of `.github/workflows/`), Tech Lead
