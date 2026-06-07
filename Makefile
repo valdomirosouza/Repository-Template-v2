@@ -4,7 +4,9 @@ REGISTRY    ?= ghcr.io/org
 SERVICE     ?= api-gateway
 APP         ?= frontend
 
-.PHONY: setup infra-up infra-down infra-reset test-infra-up test-infra-down \
+.PHONY: setup setup-minimal setup-core setup-observability setup-full \
+        infra-up infra-down infra-down-core infra-down-full infra-reset smoke \
+        test-infra-up test-infra-down \
         test test-unit test-security lint format build \
         test-python test-unit-python test-security-python lint-python format-python build-python run run-python \
         test-java test-unit-java lint-java format-java build-java run-java \
@@ -23,20 +25,47 @@ help: ## Show available targets
 
 # ── Setup & Infrastructure ─────────────────────────────────────────────────
 
-setup: ## Install all deps, copy .env, start infra stack, run migrations
-	uv sync
-	@[ -f .env ] || cp .env.example .env
-	docker compose up -d
-	uv run alembic upgrade head
+setup: ## [Deprecated alias → setup-core] Install deps, start core stack, run migrations
+	@echo "Note: 'make setup' now maps to 'make setup-core'. Use setup-minimal / setup-core / setup-full to pick a profile."
+	@$(MAKE) setup-core
 
-infra-up: ## Start shared infrastructure (PostgreSQL, Redis, Kafka, OTel, Grafana, flagd)
-	docker compose up -d
+setup-minimal: ## Solo/PoC — install deps, copy .env, run unit tests (NO Docker)
+	@[ -f .env ] || cp .env.example .env
+	uv sync --all-extras
+	@$(MAKE) test-unit-python
+	@echo "Minimal setup complete. Run 'make run' to start the API, or 'make smoke'."
+
+setup-core: ## Product team — PostgreSQL + Redis + OTel + Prometheus + Grafana + Jaeger
+	@$(MAKE) setup-minimal
+	docker compose --profile core --profile observability up -d
+	uv run alembic upgrade head
+	@echo "Core setup complete. Run 'make smoke' to validate."
+
+setup-observability: setup-core ## Alias for setup-core (observability is always included)
+
+setup-full: ## Enterprise — full stack incl. Kafka, Schema Registry, flagd, Alertmanager
+	@$(MAKE) setup-minimal
+	docker compose --profile full up -d
+	uv run alembic upgrade head
+	@echo "Full setup complete. Run 'make smoke' to validate."
+
+infra-up: ## Start the full shared infrastructure (all profiles — backwards-compatible)
+	docker compose --profile full up -d
 
 infra-down: ## Stop shared infrastructure (preserves volumes)
-	docker compose down
+	docker compose --profile full down
+
+infra-down-core: ## Stop the core + observability stack (preserves volumes)
+	docker compose --profile core --profile observability down
+
+infra-down-full: ## Stop the full stack (preserves volumes)
+	docker compose --profile full down
 
 infra-reset: ## Full infrastructure reset — stops containers AND wipes all volumes
-	docker compose down -v
+	docker compose --profile full down -v
+
+smoke: ## Post-setup validation for the active profile (health, deps, unit, lint)
+	@bash scripts/smoke.sh
 
 test-infra-up: ## Start lightweight integration-test infrastructure (offset ports)
 	docker compose -f docker-compose.test.yml up -d

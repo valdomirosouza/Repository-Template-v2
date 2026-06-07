@@ -43,20 +43,34 @@ curl http://localhost:8000/ready    # → {"status": "ready"}
 
 > If `/ready` returns `503`, run `docker compose ps` — PostgreSQL or Redis may still be initialising.
 
-**What `make setup` starts:**
+**Choose your setup profile** (progressive adoption — pick the smallest that fits):
 
-| Container       | Port(s)     | Role                                               |
-| --------------- | ----------- | -------------------------------------------------- |
-| PostgreSQL      | 5432        | Audit log, pgvector agent memory                   |
-| Redis           | 6379        | HITL store, request store, session cache           |
-| Kafka (KRaft)   | 9092        | Async event broker                                 |
-| Schema Registry | 8081        | Avro schema validation                             |
-| OTel Collector  | 4317 (gRPC) | Traces, metrics, logs aggregator                   |
-| Prometheus      | 9090        | Metrics scrape + alerting                          |
-| Grafana         | 3001        | Dashboards — http://localhost:3001 (admin / admin) |
-| Jaeger          | 16686       | Distributed trace UI                               |
-| flagd           | 8013        | OpenFeature flag server                            |
-| Alertmanager    | 9093        | Alert routing (PagerDuty / Slack integration)      |
+| Command              | Profile                  | Brings up                                                              |
+| -------------------- | ------------------------ | ---------------------------------------------------------------------- |
+| `make setup-minimal` | _none (no Docker)_       | Python deps + unit tests only — solo dev / PoC                         |
+| `make setup-core`    | `core` + `observability` | PostgreSQL · Redis · OTel · Prometheus · Grafana · Jaeger              |
+| `make setup-full`    | `full`                   | Everything below (adds Kafka · Schema Registry · flagd · Alertmanager) |
+
+`make setup` is a backwards-compatible alias for `make setup-core`. After any setup,
+run **`make smoke`** to validate the active profile.
+
+**Containers by profile:**
+
+| Container       | Port(s)     | Profile(s)                  | Role                                               |
+| --------------- | ----------- | --------------------------- | -------------------------------------------------- |
+| PostgreSQL      | 5432        | core · observability · full | Audit log, pgvector agent memory                   |
+| Redis           | 6379        | core · observability · full | HITL store, request store, session cache           |
+| OTel Collector  | 4317 (gRPC) | observability · full        | Traces, metrics, logs aggregator                   |
+| Prometheus      | 9090        | observability · full        | Metrics scrape + alerting                          |
+| Grafana         | 3001        | observability · full        | Dashboards — http://localhost:3001 (admin / admin) |
+| Jaeger          | 16686       | observability · full        | Distributed trace UI                               |
+| Kafka (KRaft)   | 9092        | events · full               | Async event broker                                 |
+| Schema Registry | 8081        | events · full               | Avro schema validation                             |
+| flagd           | 8013        | full                        | OpenFeature flag server                            |
+| Alertmanager    | 9093        | full                        | Alert routing (PagerDuty / Slack integration)      |
+
+> Ports are overridable via `.env` (`POSTGRES_PORT`, `GRAFANA_PORT`, …) and the stack is
+> namespaced by `COMPOSE_PROJECT_NAME` so multiple clones can run side by side.
 
 ---
 
