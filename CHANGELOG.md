@@ -20,6 +20,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 - `docs/change-management/rfc/RFC-0004-control-binding-ci-gate.md` — propose enforcing control-binding declarations as a CI governance gate (declaration discipline, not compliance correctness); corrects the source prompt's stale ADR/skill references (Issue #83, RFC-0004)
 - `docs/adr/ADR-0061-control-binding-ci-gate.md` — decision record: enforce control-binding declaration discipline as a CI governance gate (not compliance correctness); builds on ADR-0060, implements RFC-0004 (Issue #84, ADR-0061)
 - **Control-binding governance gate** (ADR-0061, RFC-0004): `scripts/governance/check_control_bindings.py` (pure, offline, 94% covered), `.github/control-triggers.yml`, `docs/governance/applicability-matrix.yml`, a `Governance Checks` CI step, and `make check-control-bindings`. Reports a PR that fires a control trigger without declaring the matching control; enforces the 2-skill budget + 3-domain atomicity smell; conditional controls (SOX) exempt when out of scope. Ships in report mode for the initial cycle (RFC-0004 §5); remove `continue-on-error` to make it blocking (Issue #85, ADR-0061)
+- `docs/repository-maintenance/asdd-15-phase-simulation-record.md` — validation record: a reversible, sandboxed dry-run of the full 15-phase Agentic Spec-Driven Delivery lifecycle (ADR-0058) with per-phase evidence; all phases 0–14 passed, human gates honored, Phase 10 correctly N/A (ADR-0058)
 
 ### Changed
 

@@ -21,6 +21,7 @@ nav:
   - Repository Maintenance:
       - Orphan Files Analysis: repository-maintenance/orphan-files-analysis.md
       - ADR Alignment Review: repository-maintenance/adr-alignment-review.md
+      - ASDD 15-Phase Simulation Record: repository-maintenance/asdd-15-phase-simulation-record.md
   - Delivery Workflow:
       - Agentic Spec-Driven Delivery: sdlc/agentic-spec-driven-delivery.md
       - Delivery Agents (handoff schema): sdlc/agent-handoff-schema.md
