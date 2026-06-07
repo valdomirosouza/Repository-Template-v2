@@ -8,7 +8,41 @@
 
 ---
 
-## Quick Start: Clone → Initial Setup → Code
+## Who is this for?
+
+| You are…                  | Start with                         | Stack                                                         |
+| ------------------------- | ---------------------------------- | ------------------------------------------------------------- |
+| Solo dev / research / PoC | **Minimal** — `make setup-minimal` | Python + unit tests, no Docker                                |
+| Product team              | **Core** — `make setup-core`       | + PostgreSQL · Redis · OTel · Prometheus · Grafana · Jaeger   |
+| Regulated team / AI SDLC  | **Enterprise** — `make setup-full` | + Kafka · Schema Registry · flagd · full HITL/HOTL governance |
+
+## Choose your adoption profile
+
+| Command              | Audience        | Brings up                                         |
+| -------------------- | --------------- | ------------------------------------------------- |
+| `make setup-minimal` | Solo / PoC      | Python deps + unit tests (no Docker)              |
+| `make setup-core`    | Product team    | PostgreSQL · Redis · observability stack          |
+| `make setup-full`    | Enterprise / AI | Everything (adds Kafka · Schema Registry · flagd) |
+
+## 10-minute quick start (Minimal profile)
+
+```bash
+gh repo create my-project --template valdomirosouza/Repository-Template-v2 --clone
+cd my-project
+make template-init PROJECT_NAME=my-project ORG=my-org REGISTRY=ghcr.io/my-org PROFILE=python-api
+make doctor
+make setup-minimal
+make run
+curl http://localhost:8000/health
+```
+
+For the Standard and Full paths, see **Standard setup** below and [`SETUP.md`](SETUP.md).
+New here? Jump to [For AI coding agents](#for-ai-coding-agents) ·
+[Troubleshooting](docs/troubleshooting.md).
+
+---
+
+## Standard setup: Clone → Initial Setup → Code
 
 ### 1. Clone
 
@@ -161,7 +195,7 @@ A production-ready scaffold for enterprise teams. Everything is wired together f
 | **Alerting**             | Golden Signals rules + 14 agent-specific alert rules (HITL, feedback loop, MTTD/MTTR, LLM cost)                                                                                                                                                                              |
 | **Governance**           | 21 ADRs · SDD cycle · STRIDE threat model · privacy-by-design (LGPD + GDPR) · PRR checklist                                                                                                                                                                                  |
 | **Specs**                | System · AI/agents · Privacy · Security (STRIDE) · Ethics (EU AI Act) · SDLC lifecycle                                                                                                                                                                                       |
-| **CI/CD**                | GitHub Actions for Python · Java · Go · Frontend — all path-filtered · canary CD with SLO gates                                                                                                                                                                              |
+| **CI/CD**                | GitHub Actions for Python · Java · Go · Frontend · AI-Safety — all path-filtered · canary CD with SLO gates                                                                                                                                                                  |
 | **Testing**              | Unit · Integration · Security · Chaos · Contract tests (harness message schema invariants)                                                                                                                                                                                   |
 | **Dev experience**       | Devcontainer · `docker compose up -d` · per-language `make` targets · skills catalog                                                                                                                                                                                         |
 | **AI/Agents** _(opt-in)_ | Anthropic Claude · HITL/HOTL gateway · multi-agent harness (Planner/Generator/Evaluator) · guardrails · ethical AI · feedback learner (Learn stage) · governed tool registry · context graph (autonomy tier) · agentic maturity self-assessment · governance gate · personas |
@@ -287,7 +321,7 @@ make new-service NAME=my-service LANG=python OWNER=platform PORT=8020 REGISTER=t
 │   ├── security/                ← OWASP LLM Top 10 + PII leakage
 │   └── chaos/experiments/       ← 8 fault-injection scenarios
 │
-├── .github/workflows/           ← CI: Python · Java · Go · Frontend (path-filtered)
+├── .github/workflows/           ← CI: Python · Java · Go · Frontend · AI-Safety (path-filtered)
 │                                   CD: staging (auto) · production (canary, manual)
 └── skills/                      ← Claude Code enterprise skills catalog
     ├── sre/                     ← golden-signals · prr · cuj · incident-response · capacity-planning
@@ -490,7 +524,7 @@ To verify the current state: `cat infrastructure/feature-flags/flags/autonomous-
 
 ## CI / CD
 
-Four path-filtered CI workflows — each language's pipeline only runs when its code changes:
+Path-filtered CI workflows — each language's pipeline only runs when its code changes:
 
 | Workflow          | Triggered by                         | Key gates                                                                                   |
 | ----------------- | ------------------------------------ | ------------------------------------------------------------------------------------------- |
@@ -558,11 +592,27 @@ To report a vulnerability: [`SECURITY.md`](SECURITY.md).
 
 ---
 
+## For AI coding agents
+
+Using Claude Code, Copilot, or Cursor in this repo? Read [`AGENTS.md`](AGENTS.md) — the
+contract that keeps agents from weakening governance, leaking secrets, or bypassing CI
+gates (files not to edit casually, required workflow, hard prohibitions, validation
+commands). Claude Code users should also read [`CLAUDE.md`](CLAUDE.md).
+
+---
+
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the SDD cycle, branch naming, commit conventions, and PR process.
 
 See [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) for community standards.
+
+---
+
+## Troubleshooting
+
+First-run problems? See [`docs/troubleshooting.md`](docs/troubleshooting.md) (the 15 most
+common failures) — or run `make doctor`, which detects most of them automatically.
 
 ---
 

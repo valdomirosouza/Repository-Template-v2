@@ -16,6 +16,7 @@ theme:
 nav:
   - Home: repo-structure.md
   - Glossary: glossary.md
+  - Troubleshooting: troubleshooting.md
   - Delivery Workflow:
       - Agentic Spec-Driven Delivery: sdlc/agentic-spec-driven-delivery.md
       - Delivery Agents (handoff schema): sdlc/agent-handoff-schema.md

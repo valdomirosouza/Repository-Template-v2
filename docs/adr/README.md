@@ -119,6 +119,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0056](ADR-0056-release-hardening.md)                                  | Release Hardening (CAB gate / DORA / artifact integrity)        | Accepted | 2026-06-06 |
 | [ADR-0057](ADR-0057-repository-hygiene.md)                                 | Repository Hygiene (version SoT / refs / context graph)         | Accepted | 2026-06-06 |
 | [ADR-0058](ADR-0058-agentic-spec-driven-delivery-workflow.md)              | Agentic Spec-Driven Delivery (Phase 0 Intake + AI Safety phase) | Accepted | 2026-06-06 |
+| [ADR-0059](ADR-0059-reusability-uplift.md)                                 | Reusability Uplift (progressive adoption UX)                    | Accepted | 2026-06-06 |
 
 ### AI Agents Module _(opt-in)_
 
