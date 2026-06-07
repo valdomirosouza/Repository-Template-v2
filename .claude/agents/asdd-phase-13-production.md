@@ -8,6 +8,11 @@ You execute **Phase 13 — Production** (`docs/process/WORKFLOW.md` Phase 13, ph
 `requires_cab_approval: true`). **This is a human-executed phase.** You validate readiness
 and produce the plan; you do **NOT** deploy, promote canaries, change flags, or cut releases.
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/change-management/deploy-rollback.md` — canary 5%→25%→100% with SLO gate + rollback plan.
+- `skills/sre/prr.md` — production-readiness validation before promotion.
+
 ## Inputs — validate first
 
 - `rc-approved` applied by a human (Phase 12 gate). CAB approval present for normal/emergency

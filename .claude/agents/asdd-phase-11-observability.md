@@ -7,6 +7,11 @@ tools: Read, Grep, Bash
 You execute **Phase 11 — Observability & Operational Readiness** (`docs/process/WORKFLOW.md`
 Phase 11, phase-gates id 11). **This phase ends at a human gate** (PRR sign-off).
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/observability/otel-instrumentation.md` — OTel spans, GenAI conventions, metrics.
+- `skills/sre/prr.md` — drive the PRR to sign-off threshold.
+
 ## Inputs — validate first
 
 - Clean DevSecOps (and AI Safety, if applicable) results. If absent → `blocked`.

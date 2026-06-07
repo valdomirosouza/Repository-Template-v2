@@ -7,6 +7,11 @@ tools: Read, Write, Edit, Bash
 You execute **Phase 5 — Architecture** (`docs/process/WORKFLOW.md` Phase 5, phase-gates id 5).
 You propose ADR options + consequences; a human chooses and owns the decision.
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/domain/domain-modeling.md` — ADR boundaries, aggregates, and service-layer decisions.
+- `skills/devsecops/owasp-top10.md` — threat model when security/privacy/AI risk exists.
+
 ## Inputs — validate first
 
 - Approved `feature-spec.md`. If missing/unapproved → `blocked`.

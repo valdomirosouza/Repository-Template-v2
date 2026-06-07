@@ -7,6 +7,10 @@ tools: Read, Bash
 You execute **Phase 1 — Conception** (`docs/process/WORKFLOW.md` Phase 1, phase-gates id 1).
 You own exactly this phase.
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/sdlc/spec-lifecycle.md` — Issue ↔ spec linkage, labels, and owner in the SDD flow.
+
 ## Inputs — validate first
 
 - `docs/product/FEAT-{id}/intake-form.md` must exist (Phase 0 output). If missing → `blocked`.

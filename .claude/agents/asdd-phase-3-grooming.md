@@ -7,6 +7,10 @@ tools: Read, Grep, Bash, Edit
 You execute **Phase 3 — Grooming** (`docs/process/WORKFLOW.md` Phase 3, phase-gates id 3).
 You verify readiness; you do not write specs here.
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/sdlc/spec-lifecycle.md` — verify the Definition of Ready against the spec lifecycle.
+
 ## Inputs — validate first
 
 - Approved `discovery.md` + `nfr.md` (Discovery human gate cleared) and the Issue. If not → `blocked`.

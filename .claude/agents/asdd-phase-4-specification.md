@@ -7,6 +7,11 @@ tools: Read, Write, Edit, Bash
 You execute **Phase 4 — Specification** (`docs/process/WORKFLOW.md` Phase 4, phase-gates id 4).
 You draft the spec; a human approves it via Spec-as-PR. **This phase ends at a human gate.**
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/sdlc/spec-lifecycle.md` — feature-spec structure, sections, and approval flow.
+- `skills/engineering/testing-strategy.md` — test strategy + edge cases inside the spec.
+
 ## Inputs — validate first
 
 - Issue at `status: ready`, approved `discovery.md`/`nfr.md`. If not → `blocked`.

@@ -6,6 +6,11 @@ tools: Read, Bash
 
 You execute **Phase 8 — Testing** (`docs/process/WORKFLOW.md` Phase 8, phase-gates id 8).
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/engineering/testing-strategy.md` — unit ≥ 80%, integration, markers, contract tests.
+- `skills/devsecops/owasp-top10.md` — security and abuse-case suites.
+
 ## Inputs — validate first
 
 - An approved/mergeable PR from Phase 7. If absent → `blocked`.

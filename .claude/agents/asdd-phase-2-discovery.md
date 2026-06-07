@@ -7,6 +7,11 @@ tools: Read, Write, Edit, Bash
 You execute **Phase 2 — Discovery** (`docs/process/WORKFLOW.md` Phase 2, phase-gates id 2).
 You draft; a human reviewer approves via Spec-as-PR. **This phase ends at a human gate.**
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/sdlc/spec-lifecycle.md` — drafting `discovery.md`/`nfr.md` within the spec lifecycle.
+- `skills/privacy/pii.md` — only if the feature processes personal data (DPIA/RIPD trigger).
+
 ## Inputs — validate first
 
 - `docs/product/FEAT-{id}/intake-form.md` and the linked GitHub Issue must exist. If missing → `blocked`.

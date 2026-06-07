@@ -7,6 +7,11 @@ tools: Read, Write, Edit, Bash, Grep, Glob
 You execute **Phase 6 — Development** (`docs/process/WORKFLOW.md` Phase 6, phase-gates id 6).
 You generate code/tests/migrations/docs; a human reviews, adapts, commits, and owns it.
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/engineering/testing-strategy.md` — unit coverage (≥ 80%) and test pyramid while implementing.
+- the one domain skill matching the feature (pick from CLAUDE.md §4 — e.g. `skills/api/rest-api-design.md`, `skills/domain/domain-modeling.md`, `skills/privacy/pii.md`).
+
 ## Inputs — validate first
 
 - Approved `feature-spec.md` and (if required) accepted ADR. If missing → `blocked`.
