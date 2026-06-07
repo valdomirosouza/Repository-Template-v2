@@ -33,6 +33,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ### Fixed
 
+- `.github/workflows/release.yml` — add `actions/checkout` to the release-please job so the version.txt sync step (RFC-0005) has a git repository to operate on (the step previously no-op'd with "not a git repository") (Issue #90, RFC-0005)
 - `.github/workflows/auto-merge.yml` — guard `--delete-branch` on the PR head ref so auto-merge no longer deletes long-lived integration branches (`develop`/`main`) while still cleaning up disposable feature branches (Issue #64, RFC-0001)
 
 ---

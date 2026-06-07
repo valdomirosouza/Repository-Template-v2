@@ -20,6 +20,9 @@ jobs:
       tag_name: ${{ steps.release.outputs.tag_name }}
       version: ${{ steps.release.outputs.version }}
     steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0 # full history so the version.txt sync step (RFC-0005) can operate on the release branch
       - uses: google-github-actions/release-please-action@e4dc86ba9405554aeba3c6bb2d169500e7d3b4ee # v4.1.1
         id: release
         continue-on-error: true # manual releases are used; release-please requires "Allow Actions to create PRs" repo setting
