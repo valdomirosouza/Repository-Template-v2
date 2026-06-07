@@ -16,6 +16,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 ### Added
 
 - **Claude Code delivery-agent foundation** (Issue #51, ADR-0058): `docs/sdlc/agent-handoff-schema.md` (handoff message + shared-state JSON schema, governance rules), `scripts/asdd_state.py` (runnable shared-state helper persisting `.agent/delivery/<feature>/state.json`), `.claude/agents/README.md` (agent roster + run model), and `tests/unit/process/test_asdd_state.py`. `.agent/delivery/` gitignored; both new docs added to mkdocs nav
+- **15 phase subagents** `.claude/agents/asdd-phase-0-intake.md` … `asdd-phase-14-post-deploy.md` (Issue #52, ADR-0058) — one Claude Code subagent per SDLC phase (0–14); the prompt's tool list mapped to real Claude Code tools, fail-closed input validation, handoff via `scripts/asdd_state.py`, and human-gate stops at the mandatory approval boundaries (no autonomous merge/deploy/release/autonomy changes)
 
 ---
 
