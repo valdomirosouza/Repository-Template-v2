@@ -1,6 +1,6 @@
-# RFC-0014 — Ruleset migration + bypass actor for the release flow
+# RFC-0014 — Ruleset migration + PAT for the release flow
 
-> **Status:** Accepted (applied 2026-06-07 — ruleset `main-protection` created, legacy protection removed)
+> **Status:** Accepted (applied 2026-06-07 — ruleset `main-protection` created, legacy protection removed; release-please switched to a PAT — see §2 / §2a)
 > **Date:** 2026-06-07
 > **Author(s):** @valdomirosouza
 > **Reviewers:** DevOps Lead, Release Manager, Tech Lead
@@ -30,19 +30,37 @@ bypass actor for the release flow.
 
 ## 2. Decision
 
-Replace the legacy `main` branch protection with a repository **ruleset** (`main-protection`)
-that preserves RFC-0013's guarantees and adds a bypass actor:
+Two parts: (a) modernize `main` protection to a **ruleset**, and (b) make release-please author
+its PR with a **PAT** so the required checks actually run on it.
 
-- **Same rules:** require a PR (0 approvals) with conversation-thread resolution; require the same
-  **9 status checks** (non-strict); block **force-push** (`non_fast_forward`) and **deletion**.
-- **Bypass actor:** **Repository admin** role, `bypass_mode: always`. An admin (the owner) can
-  merge the release PR via a normal merge — no `--admin` flag, works in the UI — while **every
-  non-admin contributor PR remains fully gated** by the 9 checks.
-- **Then delete the legacy branch protection** so the ruleset is the single governing mechanism
-  (legacy + ruleset both applying would re-block normal admin merges).
+1. **Ruleset `main-protection`** (replaces legacy branch protection): require a PR (0 approvals)
+   with conversation-thread resolution; require the same **9 status checks** (non-strict); block
+   **force-push** (`non_fast_forward`) and **deletion**. Legacy protection deleted so the ruleset
+   is the single governing mechanism. **No bypass actor** (see §2a — none can target the owner).
+2. **PAT for release-please:** `release.yml` passes
+   `token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}` to the release-please
+   action. With `RELEASE_PLEASE_TOKEN` set, the release PR is authored by a real user → it
+   **triggers the 9 required checks** → goes green → the owner merges it with a **normal merge,
+   no `--admin`**, and the human "cut a release" gate is preserved. Until the secret is set, it
+   falls back to `GITHUB_TOKEN` (today's behaviour: release PR needs `--admin`).
 
-This keeps the security posture equivalent to RFC-0013 (admins could already bypass via
-`enforce_admins: false`) while removing the per-release `--admin` friction.
+### 2a. Finding — why not a bypass actor
+
+The originally-proposed Repository-admin **bypass actor did not work**: on a **personal
+(user-owned) repo, no `bypass_actors` type targets the owner** — `RepositoryRole` matches only
+_collaborators_ granted the role (not the owner), `OrganizationAdmin` is org-only, and there are
+no Teams. Verified empirically: a normal merge of a PR with pending required checks was rejected
+(_"base branch policy prohibits the merge"_) even as owner; only `--admin` (administrator
+override) worked. The only viable bypass actor is the **github-actions app (id 15368)**, but
+bypass applies to the _merger_, so it would only help if the bot **auto-merged** the release PR —
+which removes the manual release gate. The PAT approach (2) keeps the gate and needs no bypass.
+
+### Token setup (one-time, manual — the owner must do this)
+
+1. Create a **fine-grained PAT** scoped to this repo with **Contents: read/write** and
+   **Pull requests: read/write** (a classic PAT with `repo` also works).
+2. Add it as the repo secret **`RELEASE_PLEASE_TOKEN`** (Settings → Secrets and variables →
+   Actions). Rotate per policy (≤ 90 days recommended).
 
 ## 3. Alternatives Considered
 
