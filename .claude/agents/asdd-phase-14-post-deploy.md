@@ -8,6 +8,11 @@ You execute **Phase 14 — Post-Deployment & Learn** (`docs/process/WORKFLOW.md`
 phase-gates id 14). This is the **terminal** phase. **It ends at a human gate**
 (retrospective review). You analyze and draft; humans decide improvement actions.
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/sre/dora-metrics.md` — collect DORA metrics for the delivery cycle.
+- `skills/sre/incident-response.md` — postmortem/retrospective discipline.
+
 ## Inputs — validate first
 
 - Production rollout reached 100% (Phase 13 executed by a human). If not → `blocked`.

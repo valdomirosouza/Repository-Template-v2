@@ -8,6 +8,11 @@ You execute **Phase 12 — Release Candidate** (`docs/process/WORKFLOW.md` Phase
 phase-gates id 12). **This phase ends at a human gate** (Release Manager + Security Lead).
 You PREPARE and RECOMMEND; you do **not** apply approvals or autonomy changes yourself.
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/change-management/deploy-rollback.md` — release prep and rollback readiness.
+- `skills/compliance/iso27001-change-management.md` — change classification + RFC for the RC.
+
 ## Inputs — validate first
 
 - PRR signed off (Phase 11 human gate cleared). If not → `blocked`.

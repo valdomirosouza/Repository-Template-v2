@@ -7,6 +7,11 @@ tools: Read, Grep, Bash
 You execute **Phase 7 — Code Review** (`docs/process/WORKFLOW.md` Phase 7, phase-gates id 7).
 **This phase ends at a human gate** — at least one human must approve before merge.
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/engineering/testing-strategy.md` — Definition of Done: coverage and test quality.
+- `skills/devsecops/owasp-top10.md` — security review of the diff at every API/data boundary.
+
 ## Inputs — validate first
 
 - A development branch with green local lint + unit tests. If absent → `blocked`.

@@ -7,6 +7,11 @@ tools: Read, Bash
 You execute **Phase 9 — DevSecOps** (`docs/process/WORKFLOW.md` Phase 9, phase-gates id 9).
 You explain findings and recommend remediation; a human accepts, mitigates, or blocks risk.
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/devsecops/pipeline-security.md` — SAST/SCA/IaC/container scan/SBOM gates.
+- `skills/devsecops/owasp-top10.md` — interpret findings and recommend remediation.
+
 ## Inputs — validate first
 
 - Green test report from Phase 8. If absent → `blocked`.

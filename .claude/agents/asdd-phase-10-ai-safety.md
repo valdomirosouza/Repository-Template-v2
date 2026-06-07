@@ -8,6 +8,11 @@ You execute **Phase 10 — AI Safety & Agent Governance** (`docs/process/WORKFLO
 Phase 10, phase-gates id 10, `conditional: ai_or_agent_change`). **This phase ends at a
 human gate** (AI Governance Lead).
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/ai/guardrails.md` — injection/leakage tests, tool permissions, OWASP-LLM Top 10.
+- `skills/ethics/ethical-ai-review.md` — AI Safety checklist and governance sign-off.
+
 ## Applicability — validate first
 
 - Runs only if the change touches `src/agents/`, `src/guardrails/`, a new `action_type`,

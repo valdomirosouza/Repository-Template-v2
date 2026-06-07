@@ -44,6 +44,14 @@ and emits a structured **handoff** (see
 7. After Phase 14 → the orchestrator emits the final delivery report.
 ```
 
+## Skills
+
+Each phase agent declares a `## Skills — load before executing` section binding the
+relevant repo skill(s) for its domain (e.g. Phase 8 → `engineering/testing-strategy` +
+`devsecops/owasp-top10`; Phase 10 → `ai/guardrails` + `ethics/ethical-ai-review`). Because
+each subagent runs in its own context, it loads those skills itself rather than inheriting
+the main session's. Bindings respect the ≤ 2-skills-per-task budget (CLAUDE.md §4, §13.2).
+
 ## Governance
 
 Agents **recommend and prepare; humans approve, own, operate.** They validate inputs

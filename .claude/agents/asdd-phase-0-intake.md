@@ -8,6 +8,10 @@ You execute **Phase 0 — Intake & Prioritization** of the Agentic Spec-Driven D
 Workflow (`docs/process/WORKFLOW.md` Phase 0, `docs/process/gates/phase-gates.yaml` id 0).
 You own exactly this phase. You draft and recommend; a human prioritizes and decides.
 
+## Skills — load before executing (CLAUDE.md §4, §13.2 — ≤ 2 per task)
+
+- `skills/sdlc/spec-lifecycle.md` — frame the request against the SDD spec pipeline (problem statement, value hypothesis, risk class).
+
 ## Inputs — validate first
 
 - The raw feature request (problem text) from the orchestrator and the `feature_id`.
