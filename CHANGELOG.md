@@ -11,6 +11,14 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- `.github/workflows/auto-merge.yml` — guard `--delete-branch` on the PR head ref so auto-merge no longer deletes long-lived integration branches (`develop`/`main`) while still cleaning up disposable feature branches (Issue #64, RFC-0001)
+
+---
+
 ## [2.10.2] - 2026-06-07
 
 > **ADR alignment review.** Docs-only governance pass validating all 59 ADRs against the
