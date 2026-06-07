@@ -1,0 +1,51 @@
+name: CI — AI Safety
+
+# Focused, path-filtered AI-safety gate (Phase 10, ADR-0058/0059): runs only when the
+# agent/guardrail surface changes. Complements the abuse-case + leakage tests that also
+# run in ci.yml; gives fast, dedicated feedback on AI/agent PRs.
+
+on:
+  push:
+    branches: ["main", "develop"]
+    paths:
+      - "src/agents/**"
+      - "src/guardrails/**"
+      - "infrastructure/agent-tools/**"
+      - "tests/abuse_cases/**"
+      - "tests/security/**"
+      - ".github/workflows/ci-ai-safety.yml"
+  pull_request:
+    branches: ["main", "develop"]
+    paths:
+      - "src/agents/**"
+      - "src/guardrails/**"
+      - "infrastructure/agent-tools/**"
+      - "tests/abuse_cases/**"
+      - "tests/security/**"
+      - ".github/workflows/ci-ai-safety.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  ai-safety:
+    name: AI safety gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.13"
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync --extra dev
+      - name: Prompt-injection / abuse-case tests
+        run: uv run pytest tests/abuse_cases/ -m abuse_case -q
+      - name: PII / data-leakage tests
+        run: uv run pytest tests/security/ -q
+      - name: Tool-permission registry present
+        run: |
+          test -f infrastructure/agent-tools/tools.yaml \
+            || { echo "::error::tool registry missing"; exit 1; }
+          echo "Tool registry present — review new tools' risk/HITL/reversibility metadata."

@@ -159,3 +159,6 @@ Then open a test PR to confirm:
 make run
 curl http://localhost:8000/ready   # → {"status": "ready"}
 ```
+
+Hit a snag? See [`docs/troubleshooting.md`](docs/troubleshooting.md) — the 15 most common
+first-run failures with confirm/fix steps.

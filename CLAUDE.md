@@ -654,3 +654,13 @@ For tasks that are close to but do not meet an escalation trigger, emit a brief 
 ```
 
 Full ADR: `docs/adr/ADR-0034-agentic-escalation-protocol.md`
+
+---
+
+## 15. See Also
+
+- [`AGENTS.md`](AGENTS.md) — concise cross-tool contract for AI coding agents (Copilot,
+  Cursor, Claude Code): files not to edit casually, hard prohibitions, validation
+  commands. This `CLAUDE.md` remains the deeper, authoritative behavioural contract.
+- [`SETUP.md`](SETUP.md) — first-run setup (`make template-init`, `make doctor`).
+- [`docs/troubleshooting.md`](docs/troubleshooting.md) — common first-run failures.
