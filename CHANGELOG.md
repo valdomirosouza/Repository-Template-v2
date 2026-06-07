@@ -17,6 +17,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 - `docs/adr/ADR-0060-task-atomicity-skill-budget.md` — adopt Task Atomicity & the 2-Skill Budget as the decomposition oracle (≤ 2 skills per task as the atomicity test; one task = one reviewable artifact). Rollout tracked in #70–#74 (Issue #70, ADR-0060)
 - `docs/governance/control-applicability-matrix.md` — cross-cutting compliance/privacy/security control-binding trigger table + per-project applicability matrix (regulatory scope, data residency, data-subject jurisdictions); 3+ control triggers = split signal (Issue #73, ADR-0060)
+- `docs/change-management/rfc/RFC-0004-control-binding-ci-gate.md` — propose enforcing control-binding declarations as a CI governance gate (declaration discipline, not compliance correctness); corrects the source prompt's stale ADR/skill references (Issue #83, RFC-0004)
 
 ### Changed
 
