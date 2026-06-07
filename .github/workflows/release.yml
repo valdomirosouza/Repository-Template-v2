@@ -27,6 +27,12 @@ jobs:
         id: release
         continue-on-error: true # manual releases are used; release-please requires "Allow Actions to create PRs" repo setting
         with:
+          # Use a PAT (RELEASE_PLEASE_TOKEN) so the release PR is authored by a real user and
+          # therefore TRIGGERS the required status checks — GitHub does NOT run workflows on
+          # GITHUB_TOKEN-authored PRs, which otherwise leaves the release PR permanently BLOCKED
+          # under branch protection (RFC-0014). Falls back to GITHUB_TOKEN until the secret is
+          # set; with the PAT present the release PR goes green and merges with no --admin.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
           # Manifest mode (RFC-0006): release-type + custom changelog sections live in
           # release-please-config.json (v4 dropped the inline `changelog-types` input, #93).
           config-file: release-please-config.json
