@@ -43,7 +43,7 @@ Phase 14: Post-Deploy     → DORA metrics, retrospective, learn stage
 ### SDD Cycle (aligned with Phase 4–7 above)
 
 ```
-1. SPEC    → Write or identify the spec in specs/* that governs the change
+1. SPEC    → Copy specs/SPEC-TEMPLATE.md to specs/<domain>/SPEC-<DOMAIN>-<NNN>-<slug>.md, or identify the existing spec
 2. ADR     → Check docs/adr/ for relevant architectural decisions
 3. ISSUE   → Open a GitHub Issue referencing the spec
 4. RFC     → File docs/change-management/rfc/RFC-NNNN-<title>.md for Normal/Emergency changes
@@ -54,6 +54,11 @@ Phase 14: Post-Deploy     → DORA metrics, retrospective, learn stage
 9. REVIEW  → Minimum 1 approved reviewer; security review if guardrails touched
 10. MERGE  → Squash or merge commit; CHANGELOG.md updated; branch deleted
 ```
+
+**Spec template:** start every new spec from [`specs/SPEC-TEMPLATE.md`](specs/SPEC-TEMPLATE.md)
+— its 16 sections map 1:1 onto the 15 phases. You can dry-run the whole lifecycle with
+`/deliver specs/<domain>/<your-spec>.md` (governed, no side-effects); see an example output in
+[`docs/sdlc/deliver-example/`](docs/sdlc/deliver-example/README.md).
 
 ---
 

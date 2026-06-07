@@ -31,20 +31,20 @@ Draft → Review → Approved → Implemented → Deprecated
 
 ## Writing a New Spec
 
-1. Create file at `specs/<domain>/<name>.md`
-2. Add header block:
+1. **Copy the canonical template:** [`specs/SPEC-TEMPLATE.md`](../../specs/SPEC-TEMPLATE.md) →
+   `specs/<domain>/SPEC-<DOMAIN>-<NNN>-<slug>.md`. Its machine-readable metadata header and 16
+   sections map 1:1 onto the 15-phase workflow (ADR-0058) and carry a _section → phase_ map, so
+   the spec is directly drivable by `/deliver`. Keep every heading; write `N/A — <reason>` where
+   a section truly does not apply.
+2. Fill every section. Pay special attention to **§5 Functional Requirements** (each must trace
+   to an acceptance criterion) and **§12 Acceptance Criteria** (observable & runnable — these
+   become the dry-run evidence in `/deliver`'s FINAL-REPORT).
+3. Add to the ownership table in `specs/README.md`.
+4. Open a PR for review — do not start implementation until `status: approved`.
+5. _(Optional)_ Dry-run the full lifecycle: `/deliver specs/<domain>/<your-spec>.md` →
+   `reports/<slug>/FINAL-REPORT.md` (governed, no side-effects).
 
-   ```markdown
-   # <Title>
-
-   **Status:** Draft | **Owner:** <Role> | **Last updated:** YYYY-MM-DD
-   **ADR references:** ADR-NNNN (if applicable)
-   ```
-
-3. Add to the ownership table in `specs/README.md`
-4. Open a PR for review — do not start implementation until status is `Approved`
-
-**Naming convention:** `specs/<domain>/<kebab-case-name>.md`
+**Naming convention:** `specs/<domain>/<kebab-case-name>.md` (template uses `SPEC-<DOMAIN>-<NNN>-<slug>`).
 
 ---
 

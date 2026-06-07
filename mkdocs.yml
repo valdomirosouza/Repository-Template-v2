@@ -33,6 +33,7 @@ nav:
       - RACI Matrix: process/RACI.md
       - Sprint Tracking: process/SPRINT-TRACKING.md
       - Retrospective Guide: process/RETROSPECTIVE-GUIDE.md
+      - "/deliver — Example Output": sdlc/deliver-example/README.md
   - Quickstart:
       - Overview: quickstart/README.md
       - Python Backend: quickstart/python-backend.md

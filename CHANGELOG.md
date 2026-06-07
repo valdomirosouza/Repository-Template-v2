@@ -11,12 +11,21 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
-## [2.11.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.11.0...v2.11.1) (2026-06-07)
+## [Unreleased]
 
+### Added
+
+- `.claude/skills/deliver/SKILL.md` + `.claude/agents/phase-executor.md` — a `/deliver <spec>` skill and its subagent that drive one feature spec through the full 15-phase Agentic Spec-Driven Delivery workflow (ADR-0058) as a governed **dry-run** (no real side-effects): plan → backlog → per-phase execution → `reports/<slug>/FINAL-REPORT.md` with requirement-traceability, agent timing, and a human-vs-agent speedup ratio. HITL gates honored (auto-approved-and-logged in dry-run, ADR-0011/0034). `reports/` is gitignored (DELIVER.md)
+- `specs/SPEC-TEMPLATE.md` — canonical spec template whose machine-readable header + 16 sections map 1:1 onto the 15 phases and carry a _section → phase_ table, so specs are directly drivable by `/deliver`. Documented in README, `skills/sdlc/spec-lifecycle.md`, `CONTRIBUTING.md`, and the `/deliver` SKILL (ADR-0058)
+- `specs/system/SPEC-LGS-001-log-based-golden-signals.md` — example spec (Log-Based Golden Signals) authored from the template; `docs/sdlc/deliver-example/` — committed example of a `/deliver` dry-run output (plan + backlog + FINAL-REPORT)
+
+---
+
+## [2.11.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.11.0...v2.11.1) (2026-06-07)
 
 ### Bug Fixes
 
-* **release:** reconcile release-please manifest to 2.11.0 ([#104](https://github.com/valdomirosouza/Repository-Template-v2/issues/104)) ([c89edf9](https://github.com/valdomirosouza/Repository-Template-v2/commit/c89edf9b7769de40715ab0265ea1c34bd612608d))
+- **release:** reconcile release-please manifest to 2.11.0 ([#104](https://github.com/valdomirosouza/Repository-Template-v2/issues/104)) ([c89edf9](https://github.com/valdomirosouza/Repository-Template-v2/commit/c89edf9b7769de40715ab0265ea1c34bd612608d))
 
 ## [Unreleased]
 
