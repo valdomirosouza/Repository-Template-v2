@@ -23,6 +23,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 - **RTK (Rust Token Killer) integration** — deleted the `skills/token-efficiency/{rtk-setup,rtk-commands,rtk-context-hygiene}.md` skills, their `.claude/skills/rtk-*` copies, the `.rtk/` config, and the `RTK-001` spec (`specs/tooling/rtk-token-efficiency.md`); removed all references in CLAUDE.md (§4, §13), README, glossary, `CLAUDE_SESSION_INIT.md`, and onboarding. ADR-0030 marked **Deprecated** (kept as historical record). The tool-agnostic guidance it motivated — read surgically + the ≤ 2-skill budget — is retained in CLAUDE.md §13 (ADR-0030)
 
+### Fixed
+
+- `.github/workflows/ci.yml` + `sbom.yml` — remove the misplaced "Attest SBOM to container image" steps that failed on every `main`/`develop` push after `CONTAINER_REGISTRY` was enabled (mixed-case OCI ref + no image is pushed in CI/SBOM to attest). SBOM is still generated, validated, and uploaded; image attestation stays in `release.yml` (Issue #108, RFC-0011)
+
 ---
 
 ## [2.11.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.11.0...v2.11.1) (2026-06-07)

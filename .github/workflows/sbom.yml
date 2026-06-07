@@ -1,4 +1,8 @@
-name: SBOM — Generate and Attest
+name: SBOM — Generate
+
+# Generates the project SBOM (CycloneDX + SPDX) on every push to main and weekly,
+# and retains it as an artifact. Image-level SBOM *attestation* is done in release.yml —
+# the only workflow that builds + pushes a container image to attest against (RFC-0011).
 
 on:
   push:
@@ -8,51 +12,35 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   sbom:
-    name: Generate and Sign SBOM
+    name: Generate SBOM
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: read
-      packages: write
-    env:
-      REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
-      REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Login to container registry
-        if: env.REGISTRY_USERNAME != '' && env.REGISTRY_PASSWORD != ''
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
-        with:
-          registry: ${{ vars.CONTAINER_REGISTRY }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: Install Syft
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
             | sh -s -- -b /usr/local/bin
 
-      - name: Generate CycloneDX SBOM
+      - name: Generate CycloneDX + SPDX SBOM
         run: |
           syft . \
             --output cyclonedx-json=sbom.cyclonedx.json \
             --output spdx-json=sbom.spdx.json
 
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3.9.2
-
-      - name: Attest SBOM to container image
-        if: vars.CONTAINER_REGISTRY != ''
+      - name: Validate SBOM component count
         run: |
-          cosign attest \
-            --predicate sbom.cyclonedx.json \
-            --type cyclonedx \
-            ${{ vars.CONTAINER_REGISTRY }}/${{ github.repository }}:${{ github.sha }}
+          count=$(jq '.components | length' sbom.cyclonedx.json)
+          echo "SBOM component count: $count"
+          if [ "$count" -eq 0 ]; then
+            echo "ERROR: SBOM is empty — syft scan found 0 components."
+            exit 1
+          fi
 
       - name: Upload SBOM artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
