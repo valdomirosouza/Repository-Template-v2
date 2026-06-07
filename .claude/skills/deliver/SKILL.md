@@ -32,6 +32,9 @@ that and stop (the spec must exist before delivery).
 - `docs/adr/README.md` — ADR index, for phase→ADR mapping (esp. ADR-0058, 0052, 0034, 0011).
 - `src/agents/hitl_gateway.py` — where HITL interception happens (ADR-0011; timeout always rejects).
 - `Makefile` / `README.md` — the real validation targets used for evidence.
+- `specs/SPEC-TEMPLATE.md` — the canonical spec template; well-formed specs follow it and its
+  `§N → phase` map mirrors this procedure. If the spec is missing key sections, note the gap in
+  the affected phase rather than inventing content.
 
 ## The 15 phases (exact names, from phase-gates.yaml — run in dependency order)
 
