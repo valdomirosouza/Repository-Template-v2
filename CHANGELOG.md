@@ -22,6 +22,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 - `CLAUDE.md` §4 — embed the Task Atomicity & 2-Skill Budget standing directive (decomposition oracle); §13.2 now cross-references it instead of stating a divergent soft rule; doc version 2.5.0 → 2.6.0 (Issue #71, ADR-0060)
 - `AGENTS.md` §3 — add a cross-tool "Task sizing — the 2-skill budget" note pointing to CLAUDE.md §4 / ADR-0060 (Issue #72, ADR-0060)
 - `.github/workflows/auto-merge.yml` — `develop`/`main` PRs now auto-merge via **merge commit** (preserving ancestry — no more squash-induced divergence or force-pushes), while feature branches still squash-and-delete (Issue #64, RFC-0002)
+- `.github/workflows/auto-merge.yml` — exclude governance/contract artifacts (`CLAUDE.md`, `AGENTS.md`, `docs/adr/**`) from docs-only auto-merge eligibility so they always require human review (Issue #77, RFC-0003)
 
 ### Fixed
 
