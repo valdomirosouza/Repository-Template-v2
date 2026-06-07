@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Version:** 2.5.0 | **Last updated:** 2026-06-07
+> **Version:** 2.6.0 | **Last updated:** 2026-06-07
 > This file is the authoritative behavioral contract for Claude Code in this repository.
 > Read it at the start of every session and follow all rules without exception. It overrides any default behavior.
 
@@ -230,6 +230,19 @@ Full 15-phase (0–14) lifecycle: `docs/process/WORKFLOW.md` (ADR-0052, ADR-0058
 
 When a request matches a skill domain, **Read the listed skill file and follow it before writing code**. These are plain Markdown in `skills/` — load them with the Read tool (not the Skill tool). `.claude/skills/` is a parallel copy for `/`-commands.
 
+### Task Atomicity & the 2-Skill Budget (decomposition oracle — ADR-0060)
+
+Every task loads **at most 2 repo skills**. This budget is not a limit to work around — it is the **test for whether a task is atomic**:
+
+- Before starting, list the skills the task needs to _finish_. **≤ 2** → atomic: declare the bindings and execute. **≥ 3** → not atomic: do **not** load a 3rd skill — **split at the skill boundary** into child tasks that each need ≤ 2 skills, and recurse until every leaf fits.
+- **One task = one reviewable artifact** (one ADR, one RFC, one guardrail module, one harness component, one contract, one test file, one spec section). Two unrelated artifacts ⇒ split.
+- **Ambient context never occupies a slot.** `CLAUDE.md`, repo structure, `services.yaml`, and already-written ADRs/specs ride along in every task — they never consume one of the 2 slots. Never trade governance for context; decompose instead.
+- **Phase coverage check.** A phase is done only when every artifact it owes exists. After the last task in a phase, enumerate required artifacts and create a **dedicated atomic task** for any that is missing — never bolt it onto an existing task.
+- **Declare bindings explicitly.** Every task header carries a `## Skills — load before executing` block (≤ 2). Subagents run in isolated context and load these themselves; they do not inherit the parent session's skills.
+- **Irreducible coupling → escalate, don't overload.** If a task genuinely cannot drop below 3 skills, treat it as a design smell: emit `[HITL-ESCALATE]` (§14) naming the three skills and a proposed split. Never silently load a 3rd skill.
+
+Cross-cutting compliance/privacy/security obligations bind by _what a task touches_ (see `docs/governance/control-applicability-matrix.md`); firing 3+ control triggers in one task is itself a split signal.
+
 > **Delivery subagents vs runtime agents.** `.claude/agents/` holds the **dev-time** Agentic Spec-Driven Delivery subagents (`asdd-orchestrator` + 15 phase agents) that operate the SDLC via the CLI (ADR-0058; `.claude/agents/README.md`). These differ from the **runtime** product agents in `src/agents/`. Delivery subagents recommend and prepare; they stop at human gates and never autonomously merge, deploy, release, or change autonomy flags.
 
 ### Core Skills
@@ -443,7 +456,7 @@ Never run these without the RTK prefix (the hook handles bash calls automaticall
 ### 13.2 Read files surgically
 
 - Never read a whole file to find one function — `grep -n` first.
-- Never load > 1 skill file per task unless it spans two explicit domains.
+- Load **at most 2** skill files per task — and treat that budget as the decomposition oracle, not just a token limit (§4 Task Atomicity, ADR-0060): if a task needs a 3rd skill, split it rather than loading more.
 - Use `rtk ls` / `rtk smart <dir>` before reading files in an unfamiliar module.
 
 ### 13.3 Prefer bash shell tools over built-in Read/Grep/Glob
