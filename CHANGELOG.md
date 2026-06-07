@@ -2500,7 +2500,6 @@ API or configuration keys were removed.
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.10.2...HEAD
 [2.10.2]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.10.1...v2.10.2
 [2.10.1]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.10.0...v2.10.1
 [2.10.0]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.9.0...v2.10.0

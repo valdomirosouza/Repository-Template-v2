@@ -2,7 +2,7 @@
 
 > **Version:** 1.0.0 | **Last updated:** 2026-06-06
 > **Owner:** Release Manager | **Approver:** Release Manager + Security Lead
-> **ADR:** ADR-0052 | **Workflow phase:** Phase 11 — Release Candidate
+> **ADR:** ADR-0052 | **Workflow phase:** Phase 12 — Release Candidate
 
 A release is ready for production promotion only when **ALL** of the following criteria are met. The Release Manager applies the `rc-approved` label on the release PR once satisfied.
 
@@ -74,7 +74,7 @@ Abort and rollback automatically if the SLO burn rate exceeds the threshold at a
 ## Related
 
 - `docs/process/DEFINITION_OF_DONE.md` — story-level completion criteria
-- `docs/process/WORKFLOW.md` — full Phase 11–13 release process
+- `docs/process/WORKFLOW.md` — full Phase 12–14 release process
 - `skills/change-management/deploy-rollback.md` — deployment procedure
 - `skills/sre/prr.md` — Production Readiness Review checklist
 - `docs/sre/slo/slo.yaml` — SLO definitions and MTTR targets
