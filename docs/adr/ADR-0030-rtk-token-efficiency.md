@@ -1,9 +1,18 @@
 # ADR-0030: RTK Token Efficiency Integration
 
-**Status:** Accepted
+**Status:** Deprecated (2026-06-07)
 **Date:** 2026-05-31
 **Author:** Valdomiro Souza
-**Spec:** RTK-001 (`specs/tooling/rtk-token-efficiency.md`)
+**Spec:** RTK-001 (removed)
+
+> **Deprecation note (2026-06-07).** The RTK (Rust Token Killer) integration has been
+> **removed** from this repository: the `skills/token-efficiency/*` skills, their
+> `.claude/skills/rtk-*` copies, the `.rtk/` config, and the `RTK-001` spec
+> (`specs/tooling/rtk-token-efficiency.md`) were deleted, and all references in CLAUDE.md,
+> README, glossary, and onboarding were dropped. The durable, tool-agnostic guidance it
+> motivated — **read files surgically** and the **≤ 2-skill budget** — is retained in
+> CLAUDE.md §13. This ADR is kept as a historical record (append-only); the decision below
+> is no longer in force.
 
 ---
 

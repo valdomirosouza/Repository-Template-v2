@@ -28,9 +28,6 @@ You can also reference a skill explicitly by mentioning it in your request.
 | DevSecOps            | `skills/devsecops/secret-scanning.md`            | DevSecOps        | CI/CD, secret scanning, SAST, dep audit                  |
 | Spec Lifecycle (SDD) | `skills/sdlc/spec-lifecycle.md`                  | SDLC             | Writing, reviewing, or updating a spec                   |
 | Multi-Agent Harness  | `skills/ai/harness.md`                           | AI Agents        | Multi-step agent tasks, sprint contracts, harness design |
-| RTK Setup            | `skills/token-efficiency/rtk-setup.md`           | Token Efficiency | First session on a new machine; "install rtk"            |
-| RTK Commands         | `skills/token-efficiency/rtk-commands.md`        | Token Efficiency | Any test/lint/build/git/docker command                   |
-| RTK Context Hygiene  | `skills/token-efficiency/rtk-context-hygiene.md` | Token Efficiency | Session start, context window concerns                   |
 
 ---
 

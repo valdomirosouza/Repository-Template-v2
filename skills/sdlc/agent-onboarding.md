@@ -95,7 +95,6 @@ It contains repo-specific context that supplements this skill.
 
 - Load **at most 2 skills per task** (the decomposition oracle — split, don't exceed; §4, ADR-0060); one per domain, never bulk-load.
 - Use `grep -n` before `Read` on any file > 100 lines.
-- Prefer `rtk git status` / `rtk git diff` over plain git commands.
 
 ---
 

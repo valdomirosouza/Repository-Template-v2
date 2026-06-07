@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Version:** 2.6.0 | **Last updated:** 2026-06-07
+> **Version:** 2.7.0 | **Last updated:** 2026-06-07
 > This file is the authoritative behavioral contract for Claude Code in this repository.
 > Read it at the start of every session and follow all rules without exception. It overrides any default behavior.
 
@@ -274,9 +274,6 @@ Cross-cutting compliance/privacy/security obligations bind by _what a task touch
 | DORA metrics, deployment frequency, MTTR               | `skills/sre/dora-metrics.md`                      | Any pipeline/deploy work                                                     |
 | OWASP Top 10, DAST, remediation                        | `skills/devsecops/owasp-top10.md`                 | Any API/auth/data-handling change                                            |
 | DevSecOps pipeline, SAST, SCA, IaC scan                | `skills/devsecops/pipeline-security.md`           | Any CI/CD pipeline modification                                              |
-| Token efficiency, RTK setup                            | `skills/token-efficiency/rtk-setup.md`            | First session on a machine; "install rtk"                                    |
-| Test/lint/build/git/docker commands                    | `skills/token-efficiency/rtk-commands.md`         | Any shell command execution                                                  |
-| Session start, context hygiene                         | `skills/token-efficiency/rtk-context-hygiene.md`  | Start of every session                                                       |
 
 ### AI Agents Module Skills _(opt-in — only when `src/agents/` is present)_
 
@@ -438,38 +435,19 @@ Skill: `skills/sre/dora-metrics.md` | Spec: `specs/observability/dora-metrics.md
 
 ---
 
-## 13. Token Efficiency Rules
+## 13. Context & Token Efficiency
 
-RTK (Rust Token Killer, https://github.com/rtk-ai/rtk) is installed and active. The PreToolUse hook auto-rewrites bash commands. **Spec:** RTK-001 | **ADR:** ADR-0030
+Keep context lean: read surgically and respect the skill budget.
 
-### 13.1 Always use RTK for high-output commands
+### 13.1 Read files surgically
 
-Never run these without the RTK prefix (the hook handles bash calls automatically; apply manually where it may not):
+- Never read a whole file to find one function — `grep -n` (or a targeted search) first.
+- Prefer `grep -rn "pattern" src/` and `find src/ -name "*.py"` to locate before reading; read only the region you need (offset/limit, or `head -N` / line ranges for large files).
 
-- test runners → `rtk pytest` / `rtk go test` / `rtk jest`
-- `git status`/`diff`/`log` → `rtk git <subcommand>`
-- `docker ps`/`logs`, `kubectl logs` → `rtk docker ...` / `rtk kubectl ...`
-- `ls -la` on >20 files → `rtk ls`
-- `ruff check`/`golangci-lint run` → `rtk ruff check` / `rtk golangci-lint run`
-- `cat` on >200-line files → `rtk read <file>` or `head -N`
+### 13.2 Skill budget (the decomposition oracle)
 
-### 13.2 Read files surgically
-
-- Never read a whole file to find one function — `grep -n` first.
-- Load **at most 2** skill files per task — and treat that budget as the decomposition oracle, not just a token limit (§4 Task Atomicity, ADR-0060): if a task needs a 3rd skill, split it rather than loading more.
-- Use `rtk ls` / `rtk smart <dir>` before reading files in an unfamiliar module.
-
-### 13.3 Prefer bash shell tools over built-in Read/Grep/Glob
-
-Built-in tools bypass the hook; prefer shell so RTK filtering applies: `cat file | head -N`, `grep -rn "pattern" src/`, `find src/ -name "*.py"`. Exception: files < 100 lines → built-in Read is fine.
-
-### 13.4 Skill activation
-
-"install rtk"/"set up token savings" → `skills/token-efficiency/rtk-setup.md` · any test/lint/build/git/docker command → `skills/token-efficiency/rtk-commands.md` · session start / context concerns → `skills/token-efficiency/rtk-context-hygiene.md`.
-
-### 13.5 Weekly maintenance
-
-Run `rtk discover --since 7` at week start. Any 0%-savings command appearing > 3 times → add to `.rtk/filters.toml`.
+- Load **at most 2** skill files per task — treat that budget as the decomposition oracle, not just a token limit (§4 Task Atomicity, ADR-0060): if a task needs a 3rd skill, split it rather than loading more.
+- Load at most one skill per domain; never bulk-load all skills.
 
 ---
 

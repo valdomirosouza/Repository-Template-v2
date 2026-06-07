@@ -19,6 +19,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 - `specs/SPEC-TEMPLATE.md` — canonical spec template whose machine-readable header + 16 sections map 1:1 onto the 15 phases and carry a _section → phase_ table, so specs are directly drivable by `/deliver`. Documented in README, `skills/sdlc/spec-lifecycle.md`, `CONTRIBUTING.md`, and the `/deliver` SKILL (ADR-0058)
 - `specs/system/SPEC-LGS-001-log-based-golden-signals.md` — example spec (Log-Based Golden Signals) authored from the template; `docs/sdlc/deliver-example/` — committed example of a `/deliver` dry-run output (plan + backlog + FINAL-REPORT)
 
+### Removed
+
+- **RTK (Rust Token Killer) integration** — deleted the `skills/token-efficiency/{rtk-setup,rtk-commands,rtk-context-hygiene}.md` skills, their `.claude/skills/rtk-*` copies, the `.rtk/` config, and the `RTK-001` spec (`specs/tooling/rtk-token-efficiency.md`); removed all references in CLAUDE.md (§4, §13), README, glossary, `CLAUDE_SESSION_INIT.md`, and onboarding. ADR-0030 marked **Deprecated** (kept as historical record). The tool-agnostic guidance it motivated — read surgically + the ≤ 2-skill budget — is retained in CLAUDE.md §13 (ADR-0030)
+
 ---
 
 ## [2.11.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.11.0...v2.11.1) (2026-06-07)
