@@ -27,17 +27,10 @@ jobs:
         id: release
         continue-on-error: true # manual releases are used; release-please requires "Allow Actions to create PRs" repo setting
         with:
-          release-type: python
-          changelog-types: |
-            [
-              {"type":"feat","section":"Features"},
-              {"type":"fix","section":"Bug Fixes"},
-              {"type":"security","section":"Security"},
-              {"type":"privacy","section":"Privacy"},
-              {"type":"perf","section":"Performance"},
-              {"type":"docs","section":"Documentation"},
-              {"type":"chore","section":"Miscellaneous","hidden":true}
-            ]
+          # Manifest mode (RFC-0006): release-type + custom changelog sections live in
+          # release-please-config.json (v4 dropped the inline `changelog-types` input, #93).
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
 
       - name: Sync version.txt on the release PR (ADR-0057 SoT, RFC-0005)
         # release-please bumps pyproject.toml on its PR branch, but `version.txt` is the
