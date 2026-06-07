@@ -331,8 +331,7 @@ make new-service NAME=my-service LANG=python OWNER=platform PORT=8020 REGISTER=t
     ├── observability/           ← otel-instrumentation
     ├── api/                     ← rest-api-design
     ├── devsecops/               ← secret-scanning
-    ├── sdlc/                    ← spec-lifecycle
-    └── token-efficiency/        ← rtk-setup · rtk-commands · rtk-context-hygiene
+    └── sdlc/                    ← spec-lifecycle
 ```
 
 Full annotated tree: [`docs/repo-structure.md`](docs/repo-structure.md)
@@ -585,7 +584,6 @@ All 51 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
 | [ADR-0027](docs/adr/ADR-0027-iso27001-change-management.md)        | ISO 27001 three-tier change management                 |
 | [ADR-0028](docs/adr/ADR-0028-dora-metrics.md)                      | DORA metrics — Elite targets and enforcement           |
 | [ADR-0029](docs/adr/ADR-0029-devsecops-pipeline-security.md)       | DevSecOps pipeline security (SAST, SCA, IaC, SBOM)     |
-| [ADR-0030](docs/adr/ADR-0030-rtk-token-efficiency.md)              | RTK token efficiency integration (developer tool)      |
 
 ---
 

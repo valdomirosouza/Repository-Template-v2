@@ -247,7 +247,6 @@ Jump to section:
 | **Phase Gate** | A machine-readable gate contract (`docs/process/gates/phase-gates.yaml`, schema `phase_gates_v1`) defining, per lifecycle phase, the required artifacts / approvals, CI checks, and allowed / prohibited agent actions (ADR-0054). |
 | **Quality Gate** | A blocking CI check that must pass to progress (coverage ≥80%, zero CRITICAL SAST/SCA, PRR ≥90%, etc.); summarised per phase in `docs/process/WORKFLOW.md`. |
 | **RACI** | Responsible, Accountable, Consulted, Informed — the responsibility-assignment matrix for SDLC roles. `docs/process/RACI.md`. |
-| **RTK** | Rust Token Killer — a CLI + PreToolUse hook that compresses high-output command results (tests, git, docker, logs) to save context tokens. CLAUDE.md §13, ADR-0030. |
 | **Spec-as-PR** | The governance model where pre-code artefacts (discovery, NFR, spec, ADR) are reviewed via GitHub PR — the human-review equivalent of the runtime HITL gateway for the spec phase (ADR-0052, `docs/process/HITL-GOVERNANCE.md`). |
 
 ---

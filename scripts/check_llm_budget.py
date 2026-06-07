@@ -12,7 +12,7 @@ Exit codes:
 GitHub Actions output:
   budget_ok=true|false  — written to GITHUB_OUTPUT if the env var is set
 
-Spec: RTK-001 / ADR-0051 (model behavioral contracts, Q5 — non-blocking budget gate)
+Spec: ADR-0051 (model behavioral contracts, Q5 — non-blocking budget gate)
 """
 
 from __future__ import annotations

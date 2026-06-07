@@ -8,7 +8,7 @@ name: LLM CI Budget Tracker
 # and, optionally, LLM_CI_MONTHLY_BUDGET_USD (default 50.0).
 # If the secret is absent the workflow exits cleanly (non-blocking).
 #
-# ADR: ADR-0051 | Spec: RTK-001 (Q5 — non-blocking budget gate)
+# ADR: ADR-0051 (Q5 — non-blocking budget gate)
 
 on:
   schedule:
