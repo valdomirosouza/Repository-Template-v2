@@ -65,11 +65,11 @@ cp .env.example .env
 
 Minimum required values (marked `[REQUIRED]` in `.env.example`):
 
-| Variable            | How to generate        | Used for                                                  |
-| ------------------- | ---------------------- | --------------------------------------------------------- |
-| `SECRET_KEY`        | `openssl rand -hex 32` | JWT signing                                               |
-| `DB_ENCRYPTION_KEY` | `openssl rand -hex 32` | AES-256-GCM column encryption                             |
-| `ANTHROPIC_API_KEY` | console.anthropic.com  | AI Agents extension only — leave placeholder if not using |
+| Variable            | How to generate        | Used for                                                                                                                       |
+| ------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `SECRET_KEY`        | `openssl rand -hex 32` | JWT signing                                                                                                                    |
+| `DB_ENCRYPTION_KEY` | `openssl rand -hex 32` | AES-256-GCM column encryption                                                                                                  |
+| `LLM_API_KEY`       | console.anthropic.com  | **Required only when `AI_AGENTS_ENABLED=true`** — leave placeholder otherwise (`ANTHROPIC_API_KEY` is a backward-compat alias) |
 
 > `REDIS_TLS_ENABLED` and `PAGERDUTY_INTEGRATION_KEY` are required for production but not for local dev.
 

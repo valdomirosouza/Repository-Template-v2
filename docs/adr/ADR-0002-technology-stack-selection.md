@@ -4,6 +4,12 @@
 **Date:** 2026-05-24
 **Authors:** Tech Lead
 
+> **Baseline update (2026-06-06, ADR-0059):** the Python runtime baseline was raised
+> from 3.12 to **3.13** (and Go to 1.24, Node to 22) to keep the toolchain aligned across
+> devcontainer, Dockerfiles, and docs. The original decision below is preserved as the
+> historical record; the authoritative current versions are in `pyproject.toml`
+> (`requires-python`), the Dockerfiles, and `.devcontainer/devcontainer.json`.
+
 ---
 
 ## Context

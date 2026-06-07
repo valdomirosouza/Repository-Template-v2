@@ -11,7 +11,7 @@ APP         ?= frontend
         test-go test-unit-go lint-go format-go build-go run-go \
         test-frontend test-unit-frontend lint-frontend format-frontend build-frontend run-frontend \
         gen-proto-go gen-proto-python gen-sources-java gen-api-client-ts gen-api-client-python \
-        gen-context-graph check-version \
+        gen-context-graph check-version check-versions \
         new-service \
         deploy-staging rollback \
         docs-serve openapi-ui asyncapi-ui \
@@ -154,6 +154,9 @@ gen-context-graph: ## Generate .agent/context-graph.json for agent session boots
 
 check-version: ## Verify version.txt is the single source of truth (ADR-0057)
 	uv run python scripts/check_version_consistency.py
+
+check-versions: ## Verify installed runtimes meet minimum versions (Python/Java/Go/Node/uv)
+	@bash scripts/check-versions.sh
 
 # ── Frontend ───────────────────────────────────────────────────────────────
 

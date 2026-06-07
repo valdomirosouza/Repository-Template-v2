@@ -1,6 +1,6 @@
 # Quickstart — Go Backend
 
-> **Stack:** Go 1.23 · net/http (or chi) · pgx · confluent-kafka-go · OpenTelemetry Go SDK
+> **Stack:** Go 1.24 · net/http (or chi) · pgx · confluent-kafka-go · OpenTelemetry Go SDK
 > **Service types:** High-throughput worker, sidecar, Kafka consumer, gRPC server
 > **Read first:** [docs/quickstart/README.md](README.md) for shared governance rules.
 

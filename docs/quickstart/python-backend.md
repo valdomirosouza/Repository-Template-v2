@@ -59,8 +59,9 @@ cp .env.example .env
 # Required fields — edit before running:
 #   DATABASE_URL      postgresql+asyncpg://user:password@localhost:5432/dbname
 #   REDIS_URL         redis://localhost:6379/0
-#   ANTHROPIC_API_KEY your-api-key-here
 #   SECRET_KEY        minimum-32-character-secret
+# Optional (only when AI_AGENTS_ENABLED=true):
+#   LLM_API_KEY       your-api-key-here   (ANTHROPIC_API_KEY is a backward-compat alias)
 
 # 3. Start shared infrastructure
 docker compose up -d

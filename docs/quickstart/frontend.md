@@ -1,6 +1,6 @@
 # Quickstart — Frontend (React / Next.js)
 
-> **Stack:** Node 20 · Next.js 14 · TypeScript · React Query · Tailwind CSS · OpenTelemetry Browser SDK
+> **Stack:** Node 22 · Next.js 15 · TypeScript · React Query · Tailwind CSS · OpenTelemetry Browser SDK
 > **Service types:** Customer-facing UI, internal operator dashboard, HITL approval interface
 > **Read first:** [docs/quickstart/README.md](README.md) for shared governance rules.
 
