@@ -1,0 +1,103 @@
+# Control-binding trigger ruleset (ADR-0061, RFC-0004).
+#
+# Maps changed-file surfaces to the controls a PR must DECLARE under its
+# `## Skills — load before executing` block. Enforced by
+# scripts/governance/check_control_bindings.py via the CI Governance Checks job.
+#
+# Semantics:
+#   - A trigger FIRES when any `paths` glob matches a changed file AND
+#     (the `content` list is empty OR any `content` regex matches an added diff line).
+#   - `requires_all`     : every listed skill control must be declared.
+#   - `requires_any`     : at least one listed skill control must be declared.
+#   - `requires_ambient` : every listed ambient control (ADR-NNNN or named gate) must be declared.
+#   - `kind`             : skill | ambient | skill+ambient (documentation only).
+#   - `conditional_on`   : the trigger only requires its controls when
+#                          regulatory_scope.<key>.in_scope == true in the applicability matrix.
+#
+# This gate enforces DECLARATION DISCIPLINE, not compliance correctness (ADR-0061).
+version: 1
+triggers:
+  - id: personal-data
+    description: Reads, stores, or transmits personal data
+    paths: ["src/guardrails/pii_filter.py", "src/jobs/**", "docs/privacy/**"]
+    content: ['(?i)\b(pii|personal[_-]?data|cpf|email|phone|address)\b']
+    requires_all: ["privacy/pii"]
+    requires_any: ["privacy/lgpd", "privacy/gdpr"]
+    kind: skill
+
+  - id: data-subject-rights
+    description: Handles data-subject requests (access / erasure / portability)
+    paths: ["src/**/data_subject*.py", "skills/privacy/data-subject-rights.md"]
+    requires_all: ["privacy/data-subject-rights"]
+    kind: skill
+
+  - id: endpoint-untrusted-input
+    description: Exposes an endpoint or processes untrusted input
+    paths: ["src/api/rest/**", "services/domain-service/**/*Controller.java"]
+    content:
+      [
+        '@router\.',
+        '@app\.(get|post|put|delete|patch)',
+        "@(Get|Post|Put|Delete)Mapping",
+      ]
+    requires_all: ["devsecops/owasp-top10"]
+    kind: skill
+
+  - id: llm-io
+    description: LLM prompt/response handling (untrusted model I/O)
+    # NOTE: source prompt asked for `devsecops/owasp-llm-top10`, which does not exist as a
+    # skill; mapped to the existing `devsecops/owasp-top10` (covers OWASP LLM Top 10). RFC-0004.
+    paths: ["src/agents/**", "src/guardrails/prompt_injection_guard.py"]
+    content: ['(?i)(prompt|completion|messages\s*=)', "anthropic", "claude-"]
+    requires_all: ["devsecops/owasp-top10"]
+    kind: skill
+
+  - id: dependency-or-pipeline
+    description: Adds/changes a dependency, image, or pipeline step
+    paths:
+      [
+        "pyproject.toml",
+        "uv.lock",
+        "**/pom.xml",
+        "**/go.mod",
+        "**/package.json",
+        "Dockerfile",
+        ".github/workflows/**",
+        "infrastructure/helm/**",
+      ]
+    requires_all: ["devsecops/secret-scanning"]
+    requires_ambient: ["sbom-sca-gate"]
+    kind: skill+ambient
+
+  - id: audit-log
+    description: Writes/reads the audit log or a financial-relevant record
+    paths: ["src/guardrails/audit_logger.py", "src/**/audit*.py"]
+    content: ["(?i)audit", "(?i)immutab"]
+    requires_ambient: ["ADR-0026"]
+    kind: ambient
+    conditional_on: sox
+
+  - id: deploy-change-process
+    description: Changes the production deploy / change process
+    paths:
+      [
+        "infrastructure/terraform/**",
+        "infrastructure/helm/**",
+        ".github/workflows/cd-*.yml",
+        "services.yaml",
+      ]
+    requires_ambient: ["ADR-0027"]
+    requires_all: ["change-management/cab-process"]
+    kind: ambient+skill
+
+  - id: cicd-security
+    description: Modifies CI/CD security posture
+    paths:
+      [
+        ".github/workflows/ci*.yml",
+        ".pre-commit-config.yaml",
+        ".trivyignore",
+        ".secrets.baseline",
+      ]
+    requires_ambient: ["ADR-0029"]
+    kind: ambient

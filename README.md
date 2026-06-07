@@ -526,12 +526,22 @@ To verify the current state: `cat infrastructure/feature-flags/flags/autonomous-
 
 Path-filtered CI workflows — each language's pipeline only runs when its code changes:
 
-| Workflow          | Triggered by                         | Key gates                                                                                   |
-| ----------------- | ------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `ci.yml`          | all pushes                           | Governance checks · lint · unit ≥ 80% · integration · security · contract drift · env drift |
-| `ci-java.yml`     | `services/**/*.java`, `**/pom.xml`   | Checkstyle · SpotBugs · OWASP dep-check · JaCoCo ≥ 80% · Testcontainers                     |
-| `ci-go.yml`       | `services/**/*.go`, `**/go.mod`      | `go mod tidy` · golangci-lint · race detector · proto drift · 80% coverage                  |
-| `ci-frontend.yml` | `frontend/**`, `docs/api/openapi/**` | ESLint · TS type-check · API client drift · Jest ≥ 80% · Playwright                         |
+| Workflow          | Triggered by                         | Key gates                                                                                                                              |
+| ----------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yml`          | all pushes                           | Governance checks (incl. **control-binding gate**, ADR-0061) · lint · unit ≥ 80% · integration · security · contract drift · env drift |
+| `ci-java.yml`     | `services/**/*.java`, `**/pom.xml`   | Checkstyle · SpotBugs · OWASP dep-check · JaCoCo ≥ 80% · Testcontainers                                                                |
+| `ci-go.yml`       | `services/**/*.go`, `**/go.mod`      | `go mod tidy` · golangci-lint · race detector · proto drift · 80% coverage                                                             |
+| `ci-frontend.yml` | `frontend/**`, `docs/api/openapi/**` | ESLint · TS type-check · API client drift · Jest ≥ 80% · Playwright                                                                    |
+
+**Control-binding gate (ADR-0061).** The `Governance Checks` job runs
+`scripts/governance/check_control_bindings.py`: if a PR touches a controlled surface
+(per `.github/control-triggers.yml`) but its `## Skills — load before executing` block
+omits the matching control, the gate reports a violation. It also enforces the 2-skill
+budget and flags the 3-domain atomicity smell, and respects conditional controls via
+`docs/governance/applicability-matrix.yml`. It enforces _declaration discipline_, not
+compliance correctness. It ships in **report mode** for the initial rollout cycle
+(RFC-0004 §5) — remove `continue-on-error` from the CI step to make it blocking. Run it
+locally with `make check-control-bindings`.
 
 CD workflows:
 
