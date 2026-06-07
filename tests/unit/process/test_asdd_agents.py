@@ -17,8 +17,17 @@ _AGENTS = _ROOT / ".claude" / "agents"
 
 # Real Claude Code tool names that may appear in subagent frontmatter.
 _VALID_TOOLS = {
-    "Read", "Write", "Edit", "Bash", "Grep", "Glob",
-    "Agent", "TodoWrite", "WebFetch", "WebSearch", "NotebookEdit",
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Grep",
+    "Glob",
+    "Agent",
+    "TodoWrite",
+    "WebFetch",
+    "WebSearch",
+    "NotebookEdit",
 }
 
 # Phases whose handoff must cross a mandatory human-approval gate.

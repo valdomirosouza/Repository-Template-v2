@@ -88,15 +88,16 @@ def test_append_invalid_handoff_raises(mod, tmp_path):
 
 def test_human_gate_defaults_false_then_recorded(mod, tmp_path):
     mod.init_state("FEAT-5", "T", "normal feature", root=tmp_path)
-    state = mod.append_handoff(
-        "FEAT-5", _handoff(phase=2, human_gate=True), root=tmp_path
-    )
+    state = mod.append_handoff("FEAT-5", _handoff(phase=2, human_gate=True), root=tmp_path)
     assert state["handoffs"][-1]["human_gate"] is True
 
 
 def test_cli_init_and_show(mod, tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(mod, "ROOT", tmp_path)
-    assert mod.main(["init", "--feature", "FEAT-9", "--title", "X", "--risk-class", "small bug fix"]) == 0
+    assert (
+        mod.main(["init", "--feature", "FEAT-9", "--title", "X", "--risk-class", "small bug fix"])
+        == 0
+    )
     assert mod.main(["show", "--feature", "FEAT-9"]) == 0
     out = capsys.readouterr().out
     assert "FEAT-9" in out
