@@ -71,3 +71,6 @@ frontend/frontend/pnpm-lock.yaml
 
 # Per-run delivery agent state (Agentic Spec-Driven Delivery, ADR-0058)
 .agent/delivery/
+
+# Deprecated/consumed prompt & recommendation inputs (local archive, not part of the repo)
+deprecated/
