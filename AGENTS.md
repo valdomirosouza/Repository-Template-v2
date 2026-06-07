@@ -35,6 +35,13 @@ Java, Go, Next.js services; opt-in AI agents). It practises **Spec-Driven Develo
 4. Run `make lint-python` and `make test-unit-python` before pushing.
 5. Reference the spec in every module docstring you write.
 
+**Task sizing — the 2-skill budget (ADR-0060).** Every task loads **at most 2 repo
+skills** (`skills/<domain>/<name>.md`). Treat that budget as the _test_ for whether a task
+is atomic: list the skills the task needs to finish — if it would need a 3rd, the task is
+too big, so **split it at the skill boundary** instead of loading more. One task = one
+reviewable artifact; declare bindings under `## Skills — load before executing`.
+`CLAUDE.md` and repo context are ambient and never count. Full rule: CLAUDE.md §4.
+
 ## 4. How to choose a setup profile
 
 Pick the smallest tier that fits and see `SETUP.md`: `make setup-minimal` (no Docker —
