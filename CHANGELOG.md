@@ -11,6 +11,13 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [2.11.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.11.0...v2.11.1) (2026-06-07)
+
+
+### Bug Fixes
+
+* **release:** reconcile release-please manifest to 2.11.0 ([#104](https://github.com/valdomirosouza/Repository-Template-v2/issues/104)) ([c89edf9](https://github.com/valdomirosouza/Repository-Template-v2/commit/c89edf9b7769de40715ab0265ea1c34bd612608d))
+
 ## [Unreleased]
 
 ### Changed
