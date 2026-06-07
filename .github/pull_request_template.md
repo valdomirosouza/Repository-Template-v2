@@ -1,3 +1,10 @@
+<!--
+Tip: for a lighter, change-type-specific template, append a query string to the PR URL:
+  ?expand=1&template=docs.md | standard-change.md | ai-agent-change.md
+                            | security-change.md | infrastructure-change.md
+See the change-type table in CONTRIBUTING.md. This default is the full enterprise checklist.
+-->
+
 ## Summary
 
 <!-- One paragraph description of the change and its purpose -->

@@ -153,7 +153,17 @@ Then confirm the full checklist:
 
 ### PR template
 
-Use `.github/pull_request_template.md` — it is automatically populated when you open a PR.
+The default `.github/pull_request_template.md` (full enterprise checklist) is applied
+automatically. For lighter, change-type-specific templates, append
+`?expand=1&template=<file>` to the PR URL. Pick by change type:
+
+| Change type                         | Template (`.github/PULL_REQUEST_TEMPLATE/`) |
+| ----------------------------------- | ------------------------------------------- |
+| Docs only                           | `docs.md`                                   |
+| Standard code change (low/med risk) | `standard-change.md`                        |
+| AI / agent / guardrail / autonomy   | `ai-agent-change.md`                        |
+| Security fix / vuln remediation     | `security-change.md`                        |
+| Infrastructure / pipeline / deploy  | `infrastructure-change.md`                  |
 
 ### Required reviewers
 

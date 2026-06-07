@@ -211,9 +211,11 @@ make gen-proto-go      # regenerate Go gRPC stubs from proto
 make deploy-staging SERVICE=api-gateway VERSION=x.y.z
 make rollback
 
-# Scaffold a new service
-make new-service NAME=my-service LANG=python   # or java / go
+# Scaffold a new service (REGISTER=true also updates services.yaml + CODEOWNERS + Prometheus)
+make new-service NAME=my-service LANG=python OWNER=platform PORT=8020 REGISTER=true
 ```
+
+> See [`scaffold/README.md`](scaffold/README.md) for templates, flags, and per-language file trees.
 
 ---
 

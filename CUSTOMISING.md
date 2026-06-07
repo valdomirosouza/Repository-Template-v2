@@ -147,15 +147,18 @@ ADR:  ADR-NNNN
 
 ## 4. How to Register a New Service
 
-Full 10-step checklist: [`docs/quickstart/add-new-service.md`](docs/quickstart/add-new-service.md)
+Full guide: [`scaffold/README.md`](scaffold/README.md) (templates, flags, file trees) and
+the 10-step checklist in [`docs/quickstart/add-new-service.md`](docs/quickstart/add-new-service.md).
 
-Quick reference:
+Quick reference — `REGISTER=true` updates `services.yaml`, `.github/CODEOWNERS`, and the
+Prometheus scrape config for you:
 
 ```bash
-# Scaffold the service
-make new-service NAME=my-service LANG=python   # or java / go
+# Scaffold AND self-register in one step:
+make new-service NAME=my-service LANG=python OWNER=platform PORT=8020 REGISTER=true
 
-# Then:
+# Or scaffold only, then register manually:
+make new-service NAME=my-service LANG=python   # or java / go
 # 1. Add entry to services.yaml (name, port, topics, owner)
 # 2. Add to .github/CODEOWNERS
 # 3. Add Prometheus scrape job to infrastructure/monitoring/prometheus/prometheus.yml
