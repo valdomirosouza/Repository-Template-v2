@@ -17,6 +17,14 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 - `docs/repository-maintenance/orphan-files-analysis.md` — report-only repository governance scan (orphan/obsolete/misplaced/duplicated files), classified per the `scan.md` policy; recommends a low-risk follow-up cleanup (archive 3 stray root prompts, remove dead `_scaffold-*` Makefile recipes, clarify `MONOREPO-STRUCTURE-EN.md`). No files moved/deleted by the report (Issue #61). Added to mkdocs nav
 
+### Changed
+
+- Repository cleanup (Issue #61, approved): moved `MONOREPO-STRUCTURE-EN.md` → `docs/template-structure.md` (reference in `docs/change-management/README.md` + mkdocs nav updated); archived 3 stray root prompt artifacts to the gitignored `deprecated/` (+ `deprecated/README.md` provenance index)
+
+### Removed
+
+- Dead `_scaffold-python/java/go/k8s-$(NAME)` Makefile recipes (Issue #61) — orphaned in the v2.10.0 uplift when `new-service` was repointed to `scripts/new-service.sh`; no callers; carried stale `go 1.23`/`com.yourorg`
+
 ---
 
 ## [2.10.0] - 2026-06-06

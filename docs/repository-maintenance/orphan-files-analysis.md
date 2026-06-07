@@ -105,7 +105,7 @@ Add `deprecated/README.md` recording, per item: original path, reason, date, rep
 - [x] `_scaffold-*` Makefile targets confirmed dead (no callers).
 - [x] `asdd_state.py` confirmed in active use (corrects automated false positive).
 - [x] `MONOREPO-STRUCTURE-EN.md` vs `docs/repo-structure.md` confirmed **not** duplicates.
-- [ ] PR 2 moves applied (pending human approval).
+- [x] PR 2 moves applied (approved 2026-06-06): 3 prompts archived to `deprecated/` + `deprecated/README.md` provenance index; dead `_scaffold-*` Makefile recipes removed; `MONOREPO-STRUCTURE-EN.md` → `docs/template-structure.md` (references + mkdocs nav updated).
 
 ## Final Recommendation
 

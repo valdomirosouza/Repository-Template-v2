@@ -265,34 +265,6 @@ new-service: ## Scaffold a new service. NAME= LANG=python|java|go [OWNER=team] [
 	@bash scripts/new-service.sh \
 	  "$(NAME)" "$(LANG)" "$(or $(OWNER),platform-team)" "$(or $(PORT),8010)" "$(or $(REGISTER),false)"
 
-_scaffold-python-$(NAME):
-	mkdir -p services/$(NAME)/src/$(NAME)
-	@printf '"""$(NAME) service."""\n' > services/$(NAME)/src/$(NAME)/__init__.py
-	@printf '# $(NAME)\n\nTODO: describe this service.\n' > services/$(NAME)/README.md
-	@printf '[project]\nname = "$(NAME)"\nversion = "0.1.0"\n\n[build-system]\nrequires = ["hatchling"]\nbuild-backend = "hatchling.build"\n' \
-		> services/$(NAME)/pyproject.toml
-
-_scaffold-java-$(NAME):
-	mkdir -p services/$(NAME)/src/main/java/com/yourorg/$(NAME)/{api,domain,infra,config}
-	mkdir -p services/$(NAME)/src/main/resources
-	mkdir -p services/$(NAME)/src/test/java/com/yourorg/$(NAME)/{unit,integration}
-	@printf '# $(NAME)\n\nTODO: describe this service.\n' > services/$(NAME)/README.md
-
-_scaffold-go-$(NAME):
-	mkdir -p services/$(NAME)/cmd/$(NAME)
-	mkdir -p services/$(NAME)/internal/{handler,domain,infra,config}
-	@printf 'module github.com/yourorg/monorepo/services/$(NAME)\n\ngo 1.23\n' \
-		> services/$(NAME)/go.mod
-	@printf '# $(NAME)\n\nTODO: describe this service.\n' > services/$(NAME)/README.md
-
-_scaffold-k8s-$(NAME):
-	@sed 's/agent-service/$(NAME)/g' infrastructure/k8s/deployment.yaml \
-		> infrastructure/k8s/$(NAME)-deployment.yaml
-	@sed 's/agent-service/$(NAME)/g' infrastructure/k8s/service.yaml \
-		> infrastructure/k8s/$(NAME)-service.yaml
-	@echo "  K8s manifests created: infrastructure/k8s/$(NAME)-{deployment,service}.yaml"
-	@echo "  Edit image name and port in the deployment manifest."
-
 # ── Utilities ──────────────────────────────────────────────────────────────
 
 sbom: ## Generate signed Software Bill of Materials
