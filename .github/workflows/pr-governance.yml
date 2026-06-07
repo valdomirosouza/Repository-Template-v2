@@ -2,11 +2,13 @@
 #
 # Turns the repo's documented conventions into *enforced* CI checks:
 #   • Conventional-Commit PR title (the squash-merge subject)
-#   • CHANGELOG.md updated under [Unreleased]
 #   • spec reference for product/code changes (feat/fix/security/privacy/perf)
 #   • version.txt ⇄ pyproject.toml consistency when either is changed
 #
-# Escape hatches: `no-issue` (issue check), `skip-changelog`, `no-spec` labels;
+# CHANGELOG ownership: release-please generates CHANGELOG.md from Conventional-Commit
+# titles (RFC-0012) — there is no manual `[Unreleased]` gate.
+#
+# Escape hatches: `no-issue` (issue check), `no-spec` label;
 # docs: PR titles are exempt from the issue check; Dependabot and the
 # release-please bot are exempted where appropriate.
 #
@@ -76,32 +78,9 @@ jobs:
           fi
           echo "OK"
 
-  changelog-updated:
-    name: CHANGELOG updated
-    runs-on: ubuntu-latest
-    if: github.event.pull_request.user.login != 'dependabot[bot]'
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      PR: ${{ github.event.pull_request.number }}
-      REPO: ${{ github.repository }}
-      LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
-    steps:
-      - name: Require a CHANGELOG entry
-        run: |
-          if printf ',%s,' "$LABELS" | grep -q ',skip-changelog,'; then
-            echo "skip-changelog label present — exempt"; exit 0
-          fi
-          files=$(gh pr view "$PR" --repo "$REPO" --json files --jq '.files[].path')
-          nondoc=$(printf '%s\n' "$files" | grep -vE '^docs/|\.md$|\.markdown$' || true)
-          if [ -z "$nondoc" ]; then
-            echo "documentation-only PR — CHANGELOG not required"; exit 0
-          fi
-          if printf '%s\n' "$files" | grep -qx "CHANGELOG.md"; then
-            echo "CHANGELOG.md updated"
-          else
-            echo "::error::Update CHANGELOG.md under [Unreleased], or add the 'skip-changelog' label."
-            exit 1
-          fi
+  # NOTE: the "CHANGELOG updated" job was removed in RFC-0012. release-please is now the
+  # single owner of CHANGELOG.md (generated from Conventional-Commit PR titles, which the
+  # `conventional-title` job above already enforces). Manual `[Unreleased]` upkeep is retired.
 
   spec-reference:
     name: Spec reference

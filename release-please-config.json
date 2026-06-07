@@ -9,6 +9,10 @@
         { "type": "security", "section": "Security" },
         { "type": "privacy", "section": "Privacy" },
         { "type": "perf", "section": "Performance" },
+        { "type": "refactor", "section": "Refactoring" },
+        { "type": "ci", "section": "CI/CD" },
+        { "type": "build", "section": "Build & Dependencies" },
+        { "type": "revert", "section": "Reverts" },
         { "type": "docs", "section": "Documentation" },
         { "type": "chore", "section": "Miscellaneous", "hidden": true }
       ]
