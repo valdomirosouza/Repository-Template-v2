@@ -25,6 +25,13 @@ These must be done before your first commit on a real project:
 
 The template includes scaffolding for every language and subsystem. Remove what you won't use to reduce noise.
 
+> **Prefer profiles over deletion for infrastructure.** Each `docker-compose.yml` service
+> is tagged with a `profiles:` key (`core` / `observability` / `events` / `full`). To run
+> a lighter stack, just pick a setup profile — `make setup-minimal` (no Docker),
+> `make setup-core` (PostgreSQL + Redis + observability), or `make setup-full` (everything).
+> You only need the `rm -rf` steps below when you want to permanently drop a language or
+> subsystem from the repo.
+
 ### No Java services
 
 ```bash
@@ -339,3 +346,30 @@ The 13-phase Agentic SDLC (ADR-0052) is designed for progressive adoption. Start
 - [ ] Governance Council charter defined
 - [ ] Red-team exercise schedule established
 ```
+
+---
+
+## 15. Running Multiple Template Instances
+
+Several projects cloned from this template can run on the same machine without
+container/port collisions:
+
+1. **Namespace the stack.** Set a unique `COMPOSE_PROJECT_NAME` per project in `.env`
+   (`make template-init` does this automatically). The Docker network and container
+   names are derived from it, so two clones never clash:
+
+   ```env
+   COMPOSE_PROJECT_NAME=my-project
+   ```
+
+2. **Override conflicting ports.** Uncomment and change the port variables in `.env` —
+   `docker-compose.yml` reads them with fallbacks:
+
+   ```env
+   POSTGRES_PORT=5433
+   REDIS_PORT=6380
+   GRAFANA_PORT=3002
+   ```
+
+3. **Verify.** `docker compose config` will show the resolved project name and ports;
+   `make doctor` warns about any port already in use.
