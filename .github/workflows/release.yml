@@ -82,15 +82,27 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Compute lowercase image name (GHCR/OCI require lowercase)
+        id: img
+        env:
+          REGISTRY: ${{ vars.CONTAINER_REGISTRY }}
+          REPO: ${{ github.repository }}
+        run: |
+          name=$(printf '%s/%s' "$REGISTRY" "$REPO" | tr '[:upper:]' '[:lower:]')
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       - name: Login to container registry
+        # GHCR via the built-in GITHUB_TOKEN (RFC-0010) — no stored registry secrets needed
+        # (the workflow grants packages: write). For an external registry instead, swap
+        # username/password to REGISTRY_USERNAME / REGISTRY_PASSWORD secrets.
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ vars.CONTAINER_REGISTRY }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push release image
         id: build
@@ -99,8 +111,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ vars.CONTAINER_REGISTRY }}/${{ github.repository }}:${{ needs.release-please.outputs.version }}
-            ${{ vars.CONTAINER_REGISTRY }}/${{ github.repository }}:latest
+            ${{ steps.img.outputs.name }}:${{ needs.release-please.outputs.version }}
+            ${{ steps.img.outputs.name }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -108,7 +120,7 @@ jobs:
         # REM-007 — emit signed SLSA build provenance for the released image (SLSA Build L2+).
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
-          subject-name: ${{ vars.CONTAINER_REGISTRY }}/${{ github.repository }}
+          subject-name: ${{ steps.img.outputs.name }}
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
 
@@ -116,9 +128,10 @@ jobs:
         uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3.9.2
 
       - name: Sign release image
+        # --yes: non-interactive keyless signing in CI (OIDC via id-token: write)
         run: |
-          cosign sign \
-            ${{ vars.CONTAINER_REGISTRY }}/${{ github.repository }}:${{ needs.release-please.outputs.version }}
+          cosign sign --yes \
+            ${{ steps.img.outputs.name }}:${{ needs.release-please.outputs.version }}
 
       - name: Install Syft and generate SBOM
         run: |
@@ -128,10 +141,10 @@ jobs:
 
       - name: Attest SBOM
         run: |
-          cosign attest \
+          cosign attest --yes \
             --predicate sbom.cyclonedx.json \
             --type cyclonedx \
-            ${{ vars.CONTAINER_REGISTRY }}/${{ github.repository }}:${{ needs.release-please.outputs.version }}
+            ${{ steps.img.outputs.name }}:${{ needs.release-please.outputs.version }}
 
       - name: Attach SBOM to GitHub release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
