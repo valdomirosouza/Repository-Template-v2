@@ -13,6 +13,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ## [Unreleased]
 
+### Changed
+
+- `.github/workflows/auto-merge.yml` — `develop`/`main` PRs now auto-merge via **merge commit** (preserving ancestry — no more squash-induced divergence or force-pushes), while feature branches still squash-and-delete (Issue #64, RFC-0002)
+
 ### Fixed
 
 - `.github/workflows/auto-merge.yml` — guard `--delete-branch` on the PR head ref so auto-merge no longer deletes long-lived integration branches (`develop`/`main`) while still cleaning up disposable feature branches (Issue #64, RFC-0001)

@@ -79,9 +79,10 @@ jobs:
         env:
           HEAD_REF: ${{ github.head_ref }}
         run: |
-          # Keep long-lived integration branches; clean up disposable feature branches (RFC-0001).
           if [[ "$HEAD_REF" == "develop" || "$HEAD_REF" == "main" ]]; then
-            gh pr merge "$PR_NUMBER" --repo "$REPO" --squash --auto
+            # Long-lived integration branch: merge commit preserves ancestry (no divergence), keep branch (RFC-0001, RFC-0002).
+            gh pr merge "$PR_NUMBER" --repo "$REPO" --merge --auto
           else
+            # Disposable feature branch: squash for clean history, delete after merge (RFC-0001).
             gh pr merge "$PR_NUMBER" --repo "$REPO" --squash --auto --delete-branch
           fi
