@@ -7,6 +7,13 @@ Read it after completing the [Quick Start in README.md](README.md#quick-start-cl
 
 ## 1. Minimum Required Changes
 
+> **Do it all in one command:**
+> `make template-init PROJECT_NAME=<name> ORG=<org> REGISTRY=<registry> [PROFILE=python-api] [PACKAGE_ROOT=com.x]`
+> performs every change in the table below — placeholder replacement, version reset,
+> `.env` creation (`SETUP_COMPLETE=true`, `COMPOSE_PROJECT_NAME`), CHANGELOG reset, and
+> profile-based service removal — idempotently. The table is the manual reference; run
+> `make doctor` afterwards to verify.
+
 These must be done before your first commit on a real project:
 
 | File / directory       | What to change                                                  | Why                                                                |

@@ -14,6 +14,7 @@ APP         ?= frontend
         test-frontend test-unit-frontend lint-frontend format-frontend build-frontend run-frontend \
         gen-proto-go gen-proto-python gen-sources-java gen-api-client-ts gen-api-client-python \
         gen-context-graph check-version check-versions check-placeholders doctor version \
+        template-init init \
         new-service \
         deploy-staging rollback \
         docs-serve openapi-ui asyncapi-ui \
@@ -189,6 +190,15 @@ check-versions: ## Verify installed runtimes meet minimum versions (Python/Java/
 
 check-placeholders: ## Detect unresolved template placeholder strings
 	@bash scripts/check-template-placeholders.sh
+
+template-init: ## First-run init — replaces placeholders. PROJECT_NAME= ORG= REGISTRY= [PROFILE=full] [PACKAGE_ROOT=com.x]
+	@[ -n "$(PROJECT_NAME)" ] || (echo "ERROR: PROJECT_NAME is required" && exit 1)
+	@[ -n "$(ORG)" ]         || (echo "ERROR: ORG is required"          && exit 1)
+	@[ -n "$(REGISTRY)" ]    || (echo "ERROR: REGISTRY is required"     && exit 1)
+	@bash scripts/template-init.sh \
+	  "$(PROJECT_NAME)" "$(ORG)" "$(REGISTRY)" "$(or $(PROFILE),full)" "$(PACKAGE_ROOT)"
+
+init: template-init ## Alias for template-init
 
 doctor: ## Validate local environment before setup (tools, .env, ports, placeholders)
 	@bash scripts/doctor.sh

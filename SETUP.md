@@ -1,6 +1,15 @@
 # First-Run Setup Checklist
 
+> **Step 0 — fastest path:** run `make template-init PROJECT_NAME=<name> ORG=<org> REGISTRY=<registry> [PROFILE=python-api]`
+> to perform Steps 1–4 below in one idempotent command, then `make doctor` to validate.
+> The steps below remain as the manual/verification reference.
+
 Complete these steps **before opening your first PR**. Steps 1–3 are enforced by CI gates and will block every merge until done. Steps 4–6 are strongly recommended before inviting collaborators.
+
+> **Note:** the CODEOWNERS and placeholder governance checks are **automatically skipped**
+> until the template is initialised (until `@your-org/`/`yourorg/` placeholders are
+> replaced). A fresh "Use this template" clone will not fail CI on day zero; it gets a
+> reminder annotation instead. Once `make template-init` has run, the checks enforce normally.
 
 ---
 
