@@ -17,6 +17,8 @@ nav:
   - Home: repo-structure.md
   - Glossary: glossary.md
   - Troubleshooting: troubleshooting.md
+  - Repository Maintenance:
+      - Orphan Files Analysis: repository-maintenance/orphan-files-analysis.md
   - Delivery Workflow:
       - Agentic Spec-Driven Delivery: sdlc/agentic-spec-driven-delivery.md
       - Delivery Agents (handoff schema): sdlc/agent-handoff-schema.md

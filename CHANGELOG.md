@@ -11,6 +11,14 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- `docs/repository-maintenance/orphan-files-analysis.md` — report-only repository governance scan (orphan/obsolete/misplaced/duplicated files), classified per the `scan.md` policy; recommends a low-risk follow-up cleanup (archive 3 stray root prompts, remove dead `_scaffold-*` Makefile recipes, clarify `MONOREPO-STRUCTURE-EN.md`). No files moved/deleted by the report (Issue #61). Added to mkdocs nav
+
+---
+
 ## [2.10.0] - 2026-06-06
 
 > **Reusability Uplift — progressive adoption UX (ADR-0059).** Makes the template simple
