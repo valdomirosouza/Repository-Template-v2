@@ -23,6 +23,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Check template initialisation status (Improvement 8, ADR-0059)
+        id: setup_status
+        # .env is gitignored and never present in CI, so SETUP_COMPLETE is detected from
+        # the repo itself: a still-present placeholder means `make template-init` has not
+        # been run yet. Placeholder-dependent gates are skipped for un-initialised clones
+        # so a fresh "Use this template" repo does not fail CI on day zero.
+        run: |
+          if grep -q '@your-org/' .github/CODEOWNERS 2>/dev/null \
+             || grep -q 'yourorg/' services.yaml 2>/dev/null; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Post setup reminder (un-initialised template)
+        if: steps.setup_status.outputs.ready == 'false'
+        run: |
+          echo "::warning::Template not initialised — run 'make template-init PROJECT_NAME=<name> ORG=<org> REGISTRY=<registry>' then 'make doctor'. Placeholder governance gates are skipped until then. See SETUP.md."
       - name: Validate ADR index — every linked file must exist (A-04)
         run: |
           echo "Checking ADR index links..."
@@ -96,6 +113,7 @@ jobs:
               print(f"All {len(fields)} Settings fields are documented in .env.example.")
           EOF
       - name: Validate CODEOWNERS has no @org/ placeholder teams (REM-009)
+        if: steps.setup_status.outputs.ready == 'true'
         # Fails if any @org/ patterns remain — these are unresolved template placeholders
         # that won't resolve on GitHub, silently breaking reviewer auto-assignment.
         # See docs/governance/owner-onboarding.md for how to assign real owners.
