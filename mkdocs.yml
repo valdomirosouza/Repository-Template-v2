@@ -15,6 +15,7 @@ theme:
 
 nav:
   - Home: repo-structure.md
+  - Template Structure (full reference): template-structure.md
   - Glossary: glossary.md
   - Troubleshooting: troubleshooting.md
   - Repository Maintenance:

@@ -1,7 +1,7 @@
 # Change Management Process
 
 **Owner:** Tech Lead + SRE Lead | **Last reviewed:** 2026-05-24
-**Reference:** MONOREPO-STRUCTURE-EN.md Section 1
+**Reference:** [`docs/template-structure.md`](../template-structure.md) Section 1
 
 ---
 
