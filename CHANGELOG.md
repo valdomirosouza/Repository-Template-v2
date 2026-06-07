@@ -17,6 +17,10 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 - `.github/workflows/release.yml`, `cd-staging.yml`, `sbom.yml` — bump `google-github-actions/release-please-action@v4.1.1` → `googleapis/release-please-action@v5.0.0` (rename + Node 24) and `docker/login-action@v3.7.0` → `v4.2.0` (Node 24), resolving the deprecation/Node-20-sunset warnings; v5 keeps the RFC-0006 manifest config (Issue #97, RFC-0007)
 
+### Fixed
+
+- `README.md` — bump `**Version:**` badge 2.10.2 → 2.11.0 to match `version.txt` after the 2.11.0 release (the release process bumps version.txt/pyproject but not the README badge — version-consistency drift; tracked for a release-process fix in #99)
+
 ---
 
 ## [2.11.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.10.2...v2.11.0) (2026-06-07)
