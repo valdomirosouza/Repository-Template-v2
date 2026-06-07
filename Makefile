@@ -191,6 +191,10 @@ check-versions: ## Verify installed runtimes meet minimum versions (Python/Java/
 check-placeholders: ## Detect unresolved template placeholder strings
 	@bash scripts/check-template-placeholders.sh
 
+check-control-bindings: ## Control-binding gate (ADR-0061). BASE=main DECLARED=<file> | BINDINGS="..."
+	@uv run python scripts/governance/check_control_bindings.py --local --base $${BASE:-main} \
+		$${DECLARED:+--declared "$$DECLARED"} $${BINDINGS:+--declared-text "$$BINDINGS"}
+
 template-init: ## First-run init — replaces placeholders. PROJECT_NAME= ORG= REGISTRY= [PROFILE=full] [PACKAGE_ROOT=com.x]
 	@[ -n "$(PROJECT_NAME)" ] || (echo "ERROR: PROJECT_NAME is required" && exit 1)
 	@[ -n "$(ORG)" ]         || (echo "ERROR: ORG is required"          && exit 1)

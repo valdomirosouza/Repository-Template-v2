@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0 # full history so the control-binding gate can diff against the base ref
       - name: Check template initialisation status (Improvement 8, ADR-0059)
         id: setup_status
         # .env is gitignored and never present in CI, so SETUP_COMPLETE is detected from
@@ -132,6 +134,22 @@ jobs:
             exit 1
           fi
           echo "CODEOWNERS: no @org/ placeholder teams found in non-comment lines."
+
+      - name: Control-binding governance gate (ADR-0061)
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          python3 -m pip install --quiet pyyaml
+          git fetch --quiet origin "$BASE_REF"
+          git diff --name-only "origin/$BASE_REF...HEAD" > /tmp/cb_files.txt
+          git diff "origin/$BASE_REF...HEAD" > /tmp/cb_diff.txt
+          printf '%s' "$PR_BODY" > /tmp/cb_declared.txt
+          python3 scripts/governance/check_control_bindings.py \
+            --changed-files /tmp/cb_files.txt \
+            --diff /tmp/cb_diff.txt \
+            --declared /tmp/cb_declared.txt
 
   lint:
     name: Lint

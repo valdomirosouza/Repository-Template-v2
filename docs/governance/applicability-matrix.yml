@@ -1,0 +1,23 @@
+# Machine-readable applicability matrix (ADR-0061, RFC-0004).
+#
+# Conditional controls in .github/control-triggers.yml fire ONLY when marked in scope here.
+# This is the executable companion to the human-readable
+# docs/governance/control-applicability-matrix.md — keep the two consistent.
+#
+# NEVER apply a regulatory control by default. Default this template to the most common
+# case (private / non-US-listed) and document each scope decision with a rationale.
+version: 1
+
+regulatory_scope:
+  sox:
+    in_scope: false # true ONLY for U.S.-listed public companies / SEC-regulated entities
+    rationale: "Repo template default — not a U.S.-listed public company."
+  iso27001:
+    in_scope: true
+    rationale: "Change-management controls (ADR-0027) apply to this template."
+
+privacy_jurisdictions:
+  lgpd:
+    in_scope: true # Brazil
+  gdpr:
+    in_scope: true # EU
