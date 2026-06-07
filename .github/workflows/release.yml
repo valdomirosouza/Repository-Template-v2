@@ -36,6 +36,36 @@ jobs:
               {"type":"chore","section":"Miscellaneous","hidden":true}
             ]
 
+      - name: Sync version.txt on the release PR (ADR-0057 SoT, RFC-0005)
+        # release-please bumps pyproject.toml on its PR branch, but `version.txt` is the
+        # single source of truth (ADR-0057). Mirror the bumped version into version.txt on
+        # the same branch so the release PR never drifts and the version-consistency gate
+        # (pr-governance) stays green. version.txt is consumed raw, so it cannot carry
+        # release-please annotation markers — hence this sync rather than `extra-files`.
+        # Runs after the action on every push to main, so it survives release-please's
+        # force-push; pushing to the release branch does not re-trigger this workflow
+        # (it triggers on push to `main` only).
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH=release-please--branches--main
+          if ! git fetch origin "$BRANCH"; then
+            echo "No release PR branch — nothing to sync."; exit 0
+          fi
+          git checkout "$BRANCH"
+          VER="$(grep -m1 -E '^version *= *"' pyproject.toml | sed -E 's/^version *= *"([^"]+)".*/\1/')"
+          if [ -z "$VER" ]; then echo "Could not read pyproject version"; exit 0; fi
+          if [ "$(cat version.txt 2>/dev/null)" = "$VER" ]; then
+            echo "version.txt already consistent ($VER)"; exit 0
+          fi
+          printf '%s\n' "$VER" > version.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: sync version.txt to $VER (ADR-0057, RFC-0005)"
+          git push origin "$BRANCH"
+          echo "Synced version.txt -> $VER on $BRANCH"
+
   build-release-image:
     name: Build and Push Release Image
     runs-on: ubuntu-latest
