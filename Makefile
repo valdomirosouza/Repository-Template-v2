@@ -11,7 +11,7 @@ APP         ?= frontend
         test-go test-unit-go lint-go format-go build-go run-go \
         test-frontend test-unit-frontend lint-frontend format-frontend build-frontend run-frontend \
         gen-proto-go gen-proto-python gen-sources-java gen-api-client-ts gen-api-client-python \
-        gen-context-graph check-version check-versions \
+        gen-context-graph check-version check-versions check-placeholders doctor version \
         new-service \
         deploy-staging rollback \
         docs-serve openapi-ui asyncapi-ui \
@@ -157,6 +157,15 @@ check-version: ## Verify version.txt is the single source of truth (ADR-0057)
 
 check-versions: ## Verify installed runtimes meet minimum versions (Python/Java/Go/Node/uv)
 	@bash scripts/check-versions.sh
+
+check-placeholders: ## Detect unresolved template placeholder strings
+	@bash scripts/check-template-placeholders.sh
+
+doctor: ## Validate local environment before setup (tools, .env, ports, placeholders)
+	@bash scripts/doctor.sh
+
+version: ## Print the canonical project version (version.txt — single source, ADR-0057)
+	@cat version.txt
 
 # ── Frontend ───────────────────────────────────────────────────────────────
 

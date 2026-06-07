@@ -16,6 +16,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 ### Added
 
 - **Reusability Uplift Wave 1** (Issue #54, ADR-0059): `scripts/check-versions.sh` + `make check-versions` — verify installed runtimes (Python 3.13 / Java 21 / Go 1.24 / Node 22 / uv 0.4) meet minimums; optional runtimes report SKIP not FAIL (shellcheck clean)
+- **Reusability Uplift Wave 2** (Issue #55, ADR-0059): `scripts/check-template-placeholders.sh` + `make check-placeholders` (detects unresolved template placeholders; LLM placeholder is a warning when `AI_AGENTS_ENABLED=false`); `scripts/doctor.sh` + `make doctor` (validates tools, `.env`, ports, placeholders with fix hints; exits 1 when Docker is down); `make version` (prints the canonical version — `version.txt` kept as single source per ADR-0057, reconciling the prompt's "delete version.txt"). All scripts shellcheck-clean; SETUP.md references the new checks
 
 ### Changed
 
