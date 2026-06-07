@@ -11,7 +11,12 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
-## [Unreleased]
+## [2.10.1] - 2026-06-06
+
+> **Repository governance cleanup (ADR-0059 follow-up, Issue #61).** A report-only orphan-file
+> scan plus the approved low-risk cleanup: relocated a misplaced structure doc, removed dead
+> Makefile recipes, and archived consumed prompt artifacts. No runtime, API, or behavioural
+> changes.
 
 ### Added
 
@@ -2438,7 +2443,8 @@ API or configuration keys were removed.
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.10.0...HEAD
+[Unreleased]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.10.1...HEAD
+[2.10.1]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.10.0...v2.10.1
 [2.10.0]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.2...v2.8.0
