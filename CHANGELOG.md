@@ -22,6 +22,7 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ### Fixed
 
+- `.release-please-manifest.json` — reconcile to `2.11.0` (was stale at `2.10.2` after the pre-manifest-mode 2.11.0 release), so release-please stops re-proposing a duplicate 2.11.0 and computes the next version correctly (Issue #103)
 - `README.md` — bump `**Version:**` badge 2.10.2 → 2.11.0 to match `version.txt` after the 2.11.0 release (the release process bumps version.txt/pyproject but not the README badge — version-consistency drift; tracked for a release-process fix in #99)
 
 ---
