@@ -11,7 +11,14 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
-## [Unreleased]
+## [2.9.0] - 2026-06-06
+
+> **Claude Code delivery-agent system.** A multi-agent system (`.claude/agents/`) that
+> _operates_ the 15-phase Agentic Spec-Driven Delivery Workflow: an orchestrator plus
+> 15 phase subagents (Phase 0–14) with a structured handoff schema, a runnable shared-
+> state helper, fail-closed input validation, and human-gate stops (agents recommend
+> and prepare; humans approve, own, operate). Dev-time delivery agents — distinct from
+> the runtime `src/agents/`.
 
 ### Added
 
@@ -2390,7 +2397,8 @@ API or configuration keys were removed.
 - DPIA and RIPD templates created for GDPR Art. 35 and LGPD Art. 38 compliance
 - Data Processing Register (RoPA) template created
 
-[Unreleased]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.8.0...HEAD
+[Unreleased]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.9.0...HEAD
+[2.9.0]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.2...v2.8.0
 [2.7.2]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.1...v2.7.2
 [2.7.1]: https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.7.0...v2.7.1
