@@ -11,6 +11,14 @@ Every entry must reference: Issue #, ADR # (if applicable), RFC # (if applicable
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **Claude Code delivery-agent foundation** (Issue #51, ADR-0058): `docs/sdlc/agent-handoff-schema.md` (handoff message + shared-state JSON schema, governance rules), `scripts/asdd_state.py` (runnable shared-state helper persisting `.agent/delivery/<feature>/state.json`), `.claude/agents/README.md` (agent roster + run model), and `tests/unit/process/test_asdd_state.py`. `.agent/delivery/` gitignored; both new docs added to mkdocs nav
+
+---
+
 ## [2.8.0] - 2026-06-06
 
 > **Agentic Spec-Driven Delivery Workflow.** Adopts the documentation-recommendation
