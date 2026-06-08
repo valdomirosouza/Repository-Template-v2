@@ -12,7 +12,7 @@ This is a living list — check items off as they are fixed or filed as issues.
 | F4  | Phase-6 gate requires a manual `CHANGELOG [Unreleased]` edit, contradicting release-please ownership (RFC-0012)                | Low      | `phase-gates.yaml` id=6      | ✅ Fixed — [#132][132]  |
 | F5  | Local supply-chain tooling absent (`trivy`/`checkov`/`bandit`/`pip-audit`/`syft`/`cosign`) — Phase 9 SAST/SCA/SBOM are CI-only | Info     | environment                  | ⬜ Expected / no action |
 | F6  | `make sbom`/`make doctor`/`make smoke` need infra (`syft`, Docker, `.env`) — Phase 9/11 evidence partial locally               | Info     | environment                  | ⬜ Expected / no action |
-| F7  | `/deliver` + `phase-executor` grant unscoped `Bash`; push/merge/deploy/flag prohibitions are prose-only, not tool-enforced     | Medium   | skill/agent permissions      | 📋 Filed — [#133][133]  |
+| F7  | `/deliver` + `phase-executor` grant unscoped `Bash`; push/merge/deploy/flag prohibitions are prose-only, not tool-enforced     | Medium   | skill/agent permissions      | ✅ Fixed — [#133][133]  |
 
 [130]: https://github.com/valdomirosouza/Repository-Template-v2/issues/130
 [131]: https://github.com/valdomirosouza/Repository-Template-v2/issues/131
@@ -62,17 +62,26 @@ Expected when running locally without the full stack / CI tooling. The affected 
 correctly recorded these as evidence gaps rather than failing the phase. No action required; they
 are asserted by CI (`ci.yml` `test-security`, `trivy`, `checkov`; `cd-staging` ZAP).
 
-## F7 — Bash grant is unscoped (defence-in-depth follow-up) — [#133][133]
+## F7 — Bash grant is unscoped (FIXED — harness hook) — [#133][133]
 
 Surfaced by the code-review of the two-mode change. Both `.claude/skills/deliver/SKILL.md` and
 `.claude/agents/phase-executor.md` declare an unscoped `Bash`/`Write`/`Edit` tool set. The
 critical invariants — never autonomously `git push`/merge/tag/release/deploy or change a flag —
-are enforced **only by prose instruction**, not at the tool-permission layer. CODE mode (which
+were enforced **only by prose instruction**, not at the tool-permission layer. CODE mode (which
 writes the real tree) widens the blast radius of the same grant, so a single instruction-following
 lapse or spec/output-borne prompt injection could issue `git push` or a deploy with nothing below
 the model to stop it.
 
-**Out of scope for this change** (a prose edit can't fix a permission gap). Proper fix is
-defence-in-depth at the harness layer — e.g. a `PreToolUse` hook or a `settings.json` deny-rule
-blocking `git push`, `gh pr merge`, `helm upgrade`, `make deploy-*`, and feature-flag writes
-during a `/deliver` run. Tracked in [#133][133]; candidate for an `update-config` change.
+**Fix.** A `PreToolUse` guard — [`.claude/hooks/high-risk-action-guard.py`](../../.claude/hooks/high-risk-action-guard.py),
+wired in `.claude/settings.json` and documented in `.claude/hooks/README.md` — now enforces this
+at the harness layer for both `Bash` and `Edit`/`Write` tool calls:
+
+- **Subagent context** (`agent_type` set, e.g. `phase-executor`) → **`deny`**: autonomous delivery
+  runs are hard-blocked from `git push`, `gh pr merge`, `gh release create`,
+  `helm upgrade|install|rollback`, `kubectl apply|delete|rollout`, `make deploy*`, `make rollback`,
+  feature-flag writes, and edits to governance-controlled paths (`src/guardrails/`,
+  `hitl_gateway.py`/`hitl_store.py`, `feature_flags.py`, `infrastructure/feature-flags/`).
+- **Main session** → **`ask`**: the human confirms the high-risk action once.
+- Safe / read-only commands defer to normal rules; the guard fails open on any parse error.
+
+This makes the "stop at every human gate" guarantee real, not just instructed.
