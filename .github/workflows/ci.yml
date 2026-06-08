@@ -204,6 +204,15 @@ jobs:
           # upload can't run (e.g. CODECOV_TOKEN not configured).
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Save unit coverage data (RFC-0017)
+        run: mv .coverage .coverage.unit
+      - name: Upload unit coverage data
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-data-unit
+          path: .coverage.unit
+          include-hidden-files: true
+          retention-days: 1
 
   test-integration:
     name: Integration Tests
@@ -251,10 +260,64 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra dev
       - name: Run integration tests
-        run: uv run pytest tests/integration/ -v
+        # --cov collects data for the combined report; --cov-fail-under=0 overrides the
+        # pyproject 80% gate here (integration alone covers far less; the gate lives on
+        # the unit job + the combined report). Integration test failures still fail this job.
+        run: uv run pytest tests/integration/ -v --cov=src --cov-report= --cov-fail-under=0
         env:
           KAFKA_BOOTSTRAP_SERVERS: localhost:9092
           REDIS_URL: redis://localhost:6379
+      - name: Save integration coverage data (RFC-0017)
+        run: mv .coverage .coverage.integration
+      - name: Upload integration coverage data
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-data-integration
+          path: .coverage.integration
+          include-hidden-files: true
+          retention-days: 1
+
+  coverage:
+    name: Combined Coverage (report)
+    # Reports unit+integration coverage to Codecov for visibility (RFC-0017). NON-BLOCKING:
+    # the deterministic 80% gate stays on the unit job, so merges never couple to flaky
+    # integration infra (RFC-0013). If integration didn't succeed, this job is skipped.
+    runs-on: ubuntu-latest
+    needs: [test-unit, test-integration]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.13"
+      - name: Install coverage
+        run: pip install coverage
+      - name: Download unit coverage data
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: coverage-data-unit
+          path: .
+      - name: Download integration coverage data
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: coverage-data-integration
+          path: .
+      - name: Combine + report combined coverage
+        run: |
+          coverage combine
+          {
+            echo "### Combined coverage (unit + integration)"
+            echo '```'
+            coverage report
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          coverage xml
+      - name: Upload combined coverage to Codecov
+        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
+        with:
+          file: coverage.xml
+          flags: combined
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   test-security:
     name: Security Tests
