@@ -421,7 +421,11 @@ Every feature starts as a spec (no code without a spec — CLAUDE.md §2). Use t
 
 1. **Copy the template:** [`specs/SPEC-TEMPLATE.md`](specs/SPEC-TEMPLATE.md) → `specs/<domain>/SPEC-<DOMAIN>-<NNN>-<slug>.md`. Its machine-readable metadata header and 16 sections **map 1:1 onto the 15 phases**, and a built-in _section → phase_ table shows which section feeds which gate (e.g. §8 Interface Contracts → Phase 4/6; §11 Governance/Privacy → Phase 9; §12 Acceptance Criteria → Phase 8 + becomes the dry-run evidence). See [`skills/sdlc/spec-lifecycle.md`](skills/sdlc/spec-lifecycle.md).
 2. **Fill every section** (write `N/A — <reason>` where one genuinely doesn't apply), get it to `status: approved` via Spec-as-PR review.
-3. **Dry-run the whole lifecycle:** `/deliver specs/<domain>/<your-spec>.md` drives the spec through all 15 phases as a **governed dry-run** (no real side-effects) via the `phase-executor` subagent, and emits `reports/<slug>/FINAL-REPORT.md` with requirement-traceability, per-phase timing, gate verdicts, and the open-HITL list. The skill never invents a spec. See [`.claude/skills/deliver/SKILL.md`](.claude/skills/deliver/SKILL.md).
+3. **Drive the whole lifecycle:** `/deliver [dry-run|code] specs/<domain>/<your-spec>.md` drives the spec through all 15 phases via the `phase-executor` subagent, and emits `reports/<slug>/FINAL-REPORT.md` with requirement-traceability, per-phase timing, gate verdicts, and the open-HITL list. Two modes (default `dry-run`):
+   - **`dry-run`** (`/deliver specs/…` or `/deliver dry-run specs/…`) — a **governed simulation** with no real side-effects; artefacts are drafted into `reports/<slug>/` and each gate is auto-approved-and-logged (a CLAUDE.md §14 escalation still STOPs the run, in both modes).
+   - **`code`** (`/deliver code specs/…`) — **real implementation** into the working tree (code, tests, ADRs, docs — local and uncommitted), running the real validation suite. It still **STOPS at every human gate** and never autonomously pushes, merges, releases, deploys, or changes autonomy flags (CLAUDE.md §3/§14).
+
+   The skill never invents a spec. See [`.claude/skills/deliver/SKILL.md`](.claude/skills/deliver/SKILL.md).
 
 > A well-filled `§12 Acceptance Criteria` is what gives `/deliver` real material to validate — each criterion becomes a row in the FINAL-REPORT traceability table.
 
