@@ -14,7 +14,7 @@ APP         ?= frontend
         test-frontend test-unit-frontend lint-frontend format-frontend build-frontend run-frontend \
         gen-proto-go gen-proto-python gen-sources-java gen-api-client-ts gen-api-client-python \
         gen-context-graph check-version check-versions check-placeholders doctor version \
-        verify-f7-hook \
+        verify-f7-hook sync-develop \
         template-init init \
         new-service \
         deploy-staging rollback \
@@ -217,6 +217,20 @@ doctor: ## Validate local environment before setup (tools, .env, ports, placehol
 
 version: ## Print the canonical project version (version.txt — single source, ADR-0057)
 	@cat version.txt
+
+sync-develop: ## Fast-forward develop to origin/main and push (ff-only — never force/merge)
+	@git fetch origin --prune --quiet
+	@git rev-parse --verify --quiet develop >/dev/null || { echo "✗ no local 'develop' branch"; exit 1; }
+	@if [ "$$(git rev-list --count origin/main..develop)" != "0" ]; then \
+		echo "✗ develop has commits not in origin/main — refusing to auto-sync; reconcile manually"; exit 1; \
+	fi
+	@if [ "$$(git symbolic-ref --short HEAD 2>/dev/null)" = "develop" ]; then \
+		git merge --ff-only origin/main; \
+	else \
+		git fetch . origin/main:develop; \
+	fi
+	@git push origin develop
+	@echo "✓ develop synced to origin/main ($$(git rev-parse --short develop))"
 
 # ── Frontend ───────────────────────────────────────────────────────────────
 
