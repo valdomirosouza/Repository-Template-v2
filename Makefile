@@ -195,6 +195,9 @@ check-control-bindings: ## Control-binding gate (ADR-0061). BASE=main DECLARED=<
 	@uv run python scripts/governance/check_control_bindings.py --local --base $${BASE:-main} \
 		$${DECLARED:+--declared "$$DECLARED"} $${BINDINGS:+--declared-text "$$BINDINGS"}
 
+check-action-pins: ## Fail if any GitHub Actions `uses:` is not SHA-pinned (RFC-0015)
+	@bash scripts/governance/check_action_pins.sh
+
 template-init: ## First-run init — replaces placeholders. PROJECT_NAME= ORG= REGISTRY= [PROFILE=full] [PACKAGE_ROOT=com.x]
 	@[ -n "$(PROJECT_NAME)" ] || (echo "ERROR: PROJECT_NAME is required" && exit 1)
 	@[ -n "$(ORG)" ]         || (echo "ERROR: ORG is required"          && exit 1)
