@@ -188,9 +188,13 @@ phases:
   - id: 12
     name: Release Candidate
     primary_actor: release_manager
+    # Produced automatically on the release-please PR — pyproject.toml + CHANGELOG.md by
+    # release-please (RFC-0012), version.txt + README badge by release.yml's version-sync step
+    # (RFC-0005/0008). No manual [Unreleased] move or version bump; the human reviews/approves
+    # and merges the release PR (which then cuts the tag + GitHub Release).
     required_artifacts:
       - version.txt
-      - CHANGELOG.md # [Unreleased] moved to [{version}]
+      - CHANGELOG.md
     required_approvals: [release_manager, security_lead] # rc-approved label
     ci_checks: [test-chaos, ci-model-contract.yml, sbom]
     blocking: true
