@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Extract linked issue numbers
         id: extract
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           result-encoding: string
           script: |
@@ -30,7 +30,7 @@ jobs:
         if: |
           steps.extract.outputs.result != '' &&
           (github.event.action == 'opened' || github.event.action == 'reopened')
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const numbers = '${{ steps.extract.outputs.result }}'.split(',').filter(Boolean);
@@ -62,7 +62,7 @@ jobs:
           steps.extract.outputs.result != '' &&
           github.event.action == 'closed' &&
           github.event.pull_request.merged == true
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const numbers = '${{ steps.extract.outputs.result }}'.split(',').filter(Boolean);

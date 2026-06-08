@@ -155,6 +155,9 @@ jobs:
             --diff /tmp/cb_diff.txt \
             --declared /tmp/cb_declared.txt
 
+      - name: Validate GitHub Actions are SHA-pinned (RFC-0015)
+        run: bash scripts/governance/check_action_pins.sh
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -453,7 +456,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install Syft
-        uses: anchore/sbom-action/download-syft@v0
+        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
 
       - name: Generate SBOM (CycloneDX JSON)
         run: |
@@ -506,7 +509,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Post maturity report as PR comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const report = `${{ steps.maturity.outputs.report }}`;
