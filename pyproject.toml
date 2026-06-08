@@ -153,7 +153,9 @@ omit = [
 ]
 
 [tool.coverage.report]
-fail_under = 80
+# Ratchet (RFC-0020): floor set just below current unit coverage (~86.6%). Raise it as
+# coverage rises; never lower it. CI enforces this via --cov-fail-under in ci.yml.
+fail_under = 85
 show_missing = true
 skip_covered = false
 exclude_lines = [

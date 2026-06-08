@@ -39,12 +39,25 @@ jobs:
       REPO: ${{ github.repository }}
       PR_AUTHOR: ${{ github.event.pull_request.user.login }}
     steps:
-      - name: Determine eligibility (docs-only or Dependabot)
+      - name: Dependabot metadata
+        id: meta
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
+        uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # v2
+      - name: Determine eligibility (docs-only or Dependabot patch/minor)
         id: scope
+        env:
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
         run: |
           if [ "$PR_AUTHOR" = "dependabot[bot]" ]; then
-            echo "Dependabot PR — eligible (dependency bump)."
-            echo "eligible=true" >> "$GITHUB_OUTPUT"
+            # Auto-merge only patch/minor bumps; major bumps fall back to human review (RFC-0020).
+            case "$UPDATE_TYPE" in
+              version-update:semver-patch|version-update:semver-minor)
+                echo "Dependabot $UPDATE_TYPE — eligible."
+                echo "eligible=true" >> "$GITHUB_OUTPUT" ;;
+              *)
+                echo "::notice::Dependabot '$UPDATE_TYPE' (major/unknown) — manual review required."
+                echo "eligible=false" >> "$GITHUB_OUTPUT" ;;
+            esac
             exit 0
           fi
 
