@@ -238,9 +238,10 @@ shared and pinned. State is **never** committed to git (NFR-09).
 
 ### 9.3 Retention
 
-RDS automated backups + PITR (e.g. 7-day retention prod / 1-day non-prod); MSK + ElastiCache
-snapshots per environment; S3 state versioning retains prior states; CloudWatch log retention set
-per log group (e.g. 30–90 days). Final values are open (§15) pending cost/compliance review.
+RDS automated backups + PITR (7-day prod / 1-day non-prod) plus a monthly manual snapshot kept 1
+year; MSK + ElastiCache daily snapshots, 7-day retention; S3 state versioning retains prior states;
+CloudWatch log retention 90 d (prod) / 30 d (non-prod). See §15 for the (illustrative) resolved
+values — re-confirm at the cost/compliance gate for a real run.
 
 ### 9.4 Governance/response metadata
 
@@ -329,16 +330,28 @@ or `src/guardrails/` surface → Phase 10 (AI Safety) is **N/A** for this spec.
 
 <!-- Resolved at a HITL gate, not assumed. /deliver lists these as open-HITL items. -->
 
-1. **Instance sizing & cost envelope** per environment (RDS class, EKS node types/counts, MSK
-   broker type, Redis node type) — needs a cost/CAB decision before prod apply.
-2. **MSK mode** — ZooKeeper vs **KRaft**, and provisioned vs **MSK Serverless** — which fits the
-   throughput + cost profile?
-3. **Backup/retention windows** (RDS PITR days, snapshot cadence, log retention) — compliance-driven.
-4. **WAF on the ALB** — required for the internet-facing surface, or deferred?
-5. **Multi-account strategy** — single account with environments by tag/VPC, or separate AWS
-   accounts per environment (org/Control Tower)?
-6. **Terraform execution** — Terraform Cloud / Atlantis / GitHub Actions OIDC role — which runs the
-   gated `apply`?
+> ⚠️ **Illustrative example values — this is a template/demo spec.** The six items below carry
+> **fake, plausible** answers to show a fully-resolved spec; they are **not** real production
+> decisions. A real run must re-decide each at the §11 CAB gate and replace these figures.
+
+1. **Instance sizing & cost envelope** _(resolved — example)_: **RDS** `db.r6g.2xlarge` primary
+   (Multi-AZ) + `db.r6g.xlarge` ×2 replicas, gp3 500 GB; **EKS** `m6i.2xlarge` managed nodes, 2/AZ
+   (6 baseline) autoscaling 6–15; **MSK** `kafka.m5.large` ×3, 1 TB/broker; **Redis**
+   `cache.r6g.xlarge`, 1 primary + 2 replicas. Cost envelope (example): **prod ≈ \$6,500/mo**,
+   **staging ≈ \$1,800/mo**, **dev ≈ \$700/mo**. (Figures fabricated for the example.)
+2. **MSK mode** _(resolved — example)_: **KRaft** (no ZooKeeper) on **provisioned** MSK (not
+   Serverless) — predictable cost and broker-level tuning at the expected throughput.
+3. **Backup/retention windows** _(resolved — example)_: RDS **PITR 7 days** (prod) / 1 day
+   (non-prod); automated snapshots 7 d + a **monthly manual snapshot kept 1 year**; MSK & Redis
+   daily snapshots, 7-day retention; CloudWatch logs **90 d** (prod) / 30 d (non-prod).
+4. **WAF on the ALB** _(resolved — example)_: **Yes — AWS WAFv2** web ACL on the internet-facing
+   ALB in prod (AWS managed rule groups: Common, SQLi, Known-Bad-Inputs + a rate-based rule).
+5. **Multi-account strategy** _(resolved — example)_: **Separate AWS accounts per environment**
+   under **AWS Organizations + Control Tower** (`dev`/`staging`/`prod` + a central logging
+   account); environments isolated by account, not just VPC.
+6. **Terraform execution** _(resolved — example)_: **GitHub Actions with OIDC-assumed IAM role**
+   (no long-lived keys) — `plan` on PR, `apply` on merge gated by environment protection + a
+   CAB-approved RFC (ADR-0027); reuses the repo's existing OIDC/SHA-pinned-actions posture.
 
 ## 16. References
 
