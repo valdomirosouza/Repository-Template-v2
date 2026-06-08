@@ -23,6 +23,11 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0 # full history so the version.txt sync step (RFC-0005) can operate on the release branch
+          # Persist the PAT as the git credential so the version-sync step's push below is authored
+          # by a real user and TRIGGERS the release PR's required CI checks. A GITHUB_TOKEN push does
+          # NOT trigger workflows, which left the release PR un-mergeable (checks "expected") — see
+          # RFC-0014 / #148. release-please-action uses its own `token:` input, so it is unaffected.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         continue-on-error: true # manual releases are used; release-please requires "Allow Actions to create PRs" repo setting
@@ -48,8 +53,10 @@ jobs:
         # release branch. (CLAUDE.md's own **Version:** is the behavioral-contract version and
         # is deliberately excluded by check_version_consistency.py — do NOT touch it.)
         # Runs after the action on every push to main, so it survives release-please's
-        # force-push; pushing to the release branch does not re-trigger this workflow
-        # (it triggers on push to `main` only).
+        # force-push. This push does not re-trigger release.yml (which is `on: push` to `main`),
+        # but because checkout authenticated with the PAT above, it DOES trigger the release PR's
+        # `pull_request` checks in ci.yml — which is required for the PR to become mergeable
+        # (RFC-0014 / #148). A GITHUB_TOKEN push would not, leaving the checks "expected".
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
