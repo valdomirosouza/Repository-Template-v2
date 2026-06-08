@@ -194,13 +194,13 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra dev
       - name: Run unit tests
-        run: uv run pytest tests/unit/ -v --cov=src --cov-report=xml --cov-fail-under=80
+        run: uv run pytest tests/unit/ -v --cov=src --cov-report=xml --cov-fail-under=85
       - name: Upload coverage
         uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
         with:
           file: coverage.xml
-          # Coverage reporting is non-blocking; the real 80% gate is enforced by
-          # pytest's --cov-fail-under=80 above. Don't fail CI when the Codecov
+          # Coverage reporting is non-blocking; the real 85% gate (ratchet, RFC-0020) is
+          # enforced by pytest's --cov-fail-under=85 above. Don't fail CI when the Codecov
           # upload can't run (e.g. CODECOV_TOKEN not configured).
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
