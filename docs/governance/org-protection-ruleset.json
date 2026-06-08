@@ -1,0 +1,47 @@
+{
+  "_comment": "Post-migration main branch ruleset (RFC-0018). Apply AFTER the repo is in an org and the 7 Teams exist: gh api -X POST repos/<ORG>/Repository-Template-v2/rulesets --input docs/governance/org-protection-ruleset.json . Differences vs the personal-repo ruleset (RFC-0013): require_code_owner_review=true, required_approving_review_count=1, and an OrganizationAdmin bypass so the release-please PR merges without --admin. For SOX financial paths, raise approvals to 2 via a path-targeted ruleset or team policy.",
+  "name": "main-protection",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": [
+    {
+      "actor_id": 1,
+      "actor_type": "OrganizationAdmin",
+      "bypass_mode": "always"
+    }
+  ],
+  "conditions": {
+    "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] }
+  },
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 1,
+        "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": true,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": true
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": false,
+        "required_status_checks": [
+          { "context": "Governance Checks" },
+          { "context": "Lint" },
+          { "context": "Unit Tests" },
+          { "context": "Contract Drift Check" },
+          { "context": "Conventional PR title" },
+          { "context": "Spec reference" },
+          { "context": "Version consistency" },
+          { "context": "GitHub Issue referenced" },
+          { "context": "Detect Secrets" }
+        ]
+      }
+    }
+  ]
+}
