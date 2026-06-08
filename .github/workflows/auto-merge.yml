@@ -83,8 +83,20 @@ jobs:
         run: |
           if [[ "$HEAD_REF" == "develop" || "$HEAD_REF" == "main" ]]; then
             # Long-lived integration branch: merge commit preserves ancestry (no divergence), keep branch (RFC-0001, RFC-0002).
-            gh pr merge "$PR_NUMBER" --repo "$REPO" --merge --auto
+            flags="--merge --auto"
           else
             # Disposable feature branch: squash for clean history, delete after merge (RFC-0001).
-            gh pr merge "$PR_NUMBER" --repo "$REPO" --squash --auto --delete-branch
+            flags="--squash --auto --delete-branch"
+          fi
+          # Degrade gracefully if the repo's "Allow auto-merge" setting is off (GitHub's default —
+          # template clones start disabled). Don't fail the check; tell the maintainer how to enable it.
+          if ! gh pr merge "$PR_NUMBER" --repo "$REPO" $flags 2>/tmp/am_err; then
+            if grep -qi "auto merge is not allowed" /tmp/am_err; then
+              echo "::warning::Repo setting 'Allow auto-merge' is disabled — enable it under" \
+                   "Settings → General → Pull Requests (or 'gh api -X PATCH repos/$REPO -F allow_auto_merge=true')" \
+                   "to activate scoped docs/deps auto-merge (REM-005). Skipping (not a failure)."
+              exit 0
+            fi
+            cat /tmp/am_err >&2
+            exit 1
           fi
