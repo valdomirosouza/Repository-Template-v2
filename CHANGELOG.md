@@ -12,6 +12,18 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.12.4](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.12.3...v2.12.4) (2026-06-08)
+
+
+### CI/CD
+
+* **release:** push version-sync commit with the PAT so it triggers the release PR's CI ([#148](https://github.com/valdomirosouza/Repository-Template-v2/issues/148)) ([#150](https://github.com/valdomirosouza/Repository-Template-v2/issues/150)) ([590afdb](https://github.com/valdomirosouza/Repository-Template-v2/commit/590afdbb90e6c7138d9ec00cbfc4d794e4203792))
+
+
+### Documentation
+
+* **sdlc:** record F10 (release version-sync de-triggers CI) in findings ledger ([#149](https://github.com/valdomirosouza/Repository-Template-v2/issues/149)) ([3c792d6](https://github.com/valdomirosouza/Repository-Template-v2/commit/3c792d66c6dc4f2e7558754222b3eafd1fdb6354)), closes [#148](https://github.com/valdomirosouza/Repository-Template-v2/issues/148)
+
 ## [2.12.3](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.12.2...v2.12.3) (2026-06-08)
 
 
