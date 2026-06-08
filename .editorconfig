@@ -1,0 +1,27 @@
+# EditorConfig — consistent formatting across editors (RFC-0017).
+# Mirrors the pre-commit hooks (trailing-whitespace, end-of-file-fixer) and ruff-format.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.py]
+indent_size = 4
+
+[Makefile]
+indent_style = tab
+
+[*.go]
+indent_style = tab
+
+[*.{json,yml,yaml,toml,ts,tsx,js,jsx,css,scss,html}]
+indent_size = 2
+
+[*.md]
+# Preserve two-space hard line breaks in Markdown.
+trim_trailing_whitespace = false

@@ -145,6 +145,7 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["src"]
+relative_files = true  # RFC-0017: combine coverage data across the unit + integration CI jobs
 omit = [
     "src/shared/generated/*",   # generated gRPC stubs
     "src/api/rest/main.py",     # lifespan/startup wiring — covered by integration tests
