@@ -14,6 +14,7 @@ APP         ?= frontend
         test-frontend test-unit-frontend lint-frontend format-frontend build-frontend run-frontend \
         gen-proto-go gen-proto-python gen-sources-java gen-api-client-ts gen-api-client-python \
         gen-context-graph check-version check-versions check-placeholders doctor version \
+        verify-f7-hook \
         template-init init \
         new-service \
         deploy-staging rollback \
@@ -197,6 +198,9 @@ check-control-bindings: ## Control-binding gate (ADR-0061). BASE=main DECLARED=<
 
 check-action-pins: ## Fail if any GitHub Actions `uses:` is not SHA-pinned (RFC-0015)
 	@bash scripts/governance/check_action_pins.sh
+
+verify-f7-hook: ## Verify the F7 high-risk-action guard hook (decision logic + settings.json wiring; issue #133)
+	@python3 .claude/hooks/verify-high-risk-guard.py
 
 template-init: ## First-run init — replaces placeholders. PROJECT_NAME= ORG= REGISTRY= [PROFILE=full] [PACKAGE_ROOT=com.x]
 	@[ -n "$(PROJECT_NAME)" ] || (echo "ERROR: PROJECT_NAME is required" && exit 1)
