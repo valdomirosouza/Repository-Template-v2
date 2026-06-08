@@ -12,6 +12,22 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.12.3](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.12.2...v2.12.3) (2026-06-08)
+
+
+### Build & Dependencies
+
+* **make:** align lint-python/format-python with CI (F9) ([#142](https://github.com/valdomirosouza/Repository-Template-v2/issues/142)) ([c48477d](https://github.com/valdomirosouza/Repository-Template-v2/commit/c48477df81a3710db93b02c70cb678fab502553c)), closes [#141](https://github.com/valdomirosouza/Repository-Template-v2/issues/141)
+
+
+### Documentation
+
+* **contract:** document `make sync-develop` in CLAUDE.md §0 ([#147](https://github.com/valdomirosouza/Repository-Template-v2/issues/147)) ([1ebb657](https://github.com/valdomirosouza/Repository-Template-v2/commit/1ebb657c2ee10a32149709917b7c95c8c2cd8847))
+* **deliver:** link findings F2-F4/F7 to tracking issues [#130](https://github.com/valdomirosouza/Repository-Template-v2/issues/130)-133 ([#134](https://github.com/valdomirosouza/Repository-Template-v2/issues/134)) ([3129a4a](https://github.com/valdomirosouza/Repository-Template-v2/commit/3129a4a0f3ef91efc4f3950288ee59c89686246f))
+* **process:** add sprint retrospective for 2026-06-08 (/deliver CODE mode + F1-F9) ([#145](https://github.com/valdomirosouza/Repository-Template-v2/issues/145)) ([cfb5aa3](https://github.com/valdomirosouza/Repository-Template-v2/commit/cfb5aa3bfbbcf1d50ca476e84174e74f863d39f7)), closes [#144](https://github.com/valdomirosouza/Repository-Template-v2/issues/144)
+* **process:** fix phase-gates drift F2-F4 (DoR count, smoke ref, CHANGELOG) ([#135](https://github.com/valdomirosouza/Repository-Template-v2/issues/135)) ([cce3635](https://github.com/valdomirosouza/Repository-Template-v2/commit/cce3635cc6fa0991a4623aea7f6a0e6caf48ec04)), closes [#130](https://github.com/valdomirosouza/Repository-Template-v2/issues/130) [#131](https://github.com/valdomirosouza/Repository-Template-v2/issues/131) [#132](https://github.com/valdomirosouza/Repository-Template-v2/issues/132)
+* **sdlc:** archive the real SPEC-LGS-001 dry-run as the /deliver example ([#143](https://github.com/valdomirosouza/Repository-Template-v2/issues/143)) ([5e6f4a8](https://github.com/valdomirosouza/Repository-Template-v2/commit/5e6f4a851a0334850f4d55a9dc1abc927828e1f0))
+
 ## [2.12.2](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.12.1...v2.12.2) (2026-06-08)
 
 
