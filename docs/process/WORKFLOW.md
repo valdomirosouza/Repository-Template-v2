@@ -64,7 +64,7 @@ many downstream gates apply. No code, no deploy.
 | 3    | ⚡ Agent | Pre-populate `specs/features/FEAT-{id}/feature-spec.md` from template | Spec shell             |
 | 4    | ◈ Human  | Grooming Ceremony — review AC and spec; Definition of Ready checked   | Sprint board populated |
 
-**Gate:** Definition of Ready (see `docs/process/DEFINITION_OF_READY.md`) — all 8 criteria met.
+**Gate:** Definition of Ready (see `docs/process/DEFINITION_OF_READY.md`) — all checklist criteria met.
 
 ---
 
@@ -94,12 +94,12 @@ many downstream gates apply. No code, no deploy.
 
 ## Phase 6 — Development
 
-| Step | Actor    | Action                                                                    | Output                    |
-| ---- | -------- | ------------------------------------------------------------------------- | ------------------------- |
-| 1    | ⚡ Agent | Session Bootstrap — read `CLAUDE_SESSION_INIT.md`, load skills, read spec | `[CONTEXT_GRAPH]` emitted |
-| 2    | ⚡ Agent | Planner → Generator → Evaluator harness cycle                             | Feature branch            |
-| 3    | ◈ Human  | Checkpoint reviews at spec section boundaries                             | Continue / redirect       |
-| 4    | ⚡ Agent | Update `CHANGELOG.md [Unreleased]`, skill files, quickstart docs          | Documentation             |
+| Step | Actor    | Action                                                                                                   | Output                    |
+| ---- | -------- | -------------------------------------------------------------------------------------------------------- | ------------------------- |
+| 1    | ⚡ Agent | Session Bootstrap — read `CLAUDE_SESSION_INIT.md`, load skills, read spec                                | `[CONTEXT_GRAPH]` emitted |
+| 2    | ⚡ Agent | Planner → Generator → Evaluator harness cycle                                                            | Feature branch            |
+| 3    | ◈ Human  | Checkpoint reviews at spec section boundaries                                                            | Continue / redirect       |
+| 4    | ⚡ Agent | Update skill files & quickstart docs (CHANGELOG is release-please-generated from the PR title, RFC-0012) | Documentation             |
 
 **Escalation:** `[HITL-ESCALATE]` emitted on guardrail or ADR boundary — see CLAUDE.md §14.
 
@@ -200,7 +200,7 @@ Rollback: `make rollback` — must complete within MTTR target (`dora_mttr_targe
 
 | Step | Actor    | Action                                                                             |
 | ---- | -------- | ---------------------------------------------------------------------------------- |
-| 1    | ⚡ CI    | Smoke tests after 100% rollout (`harness/smoke-test.yml`)                          |
+| 1    | ⚡ CI    | Smoke tests after 100% rollout (`infrastructure/scripts/deploy/smoke-test.sh`)     |
 | 2    | ◈ Human  | 24h health check — SRE reviews dashboards at T+1h, T+8h, T+24h                     |
 | 3    | ⚡ Agent | Learn stage — `FeedbackLearner` weekly bias summary → Grafana Agent dashboard      |
 | 4    | ◈ Human  | Retrospective — DORA delta, security review, agent behaviour review                |

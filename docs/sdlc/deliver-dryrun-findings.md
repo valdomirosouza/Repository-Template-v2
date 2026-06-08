@@ -7,9 +7,9 @@ This is a living list — check items off as they are fixed or filed as issues.
 | ID  | Finding                                                                                                                        | Severity | Owner area                   | Status                  |
 | --- | ------------------------------------------------------------------------------------------------------------------------------ | -------- | ---------------------------- | ----------------------- |
 | F1  | DRY-RUN validation targets mutate **tracked** files                                                                            | Medium   | `/deliver` skill             | ✅ Fixed in this change |
-| F2  | DoR checklist count drift: gate says "8 criteria", `DEFINITION_OF_READY.md` lists 13                                           | Low      | `phase-gates.yaml` / process | 📋 Filed — [#130][130]  |
-| F3  | Phase-14 gate references `smoke-test.yml` which doesn't exist as a standalone workflow                                         | Low      | `phase-gates.yaml` id=14     | 📋 Filed — [#131][131]  |
-| F4  | Phase-6 gate requires a manual `CHANGELOG [Unreleased]` edit, contradicting release-please ownership (RFC-0012)                | Low      | `phase-gates.yaml` id=6      | 📋 Filed — [#132][132]  |
+| F2  | DoR checklist count drift: gate says "8 criteria", `DEFINITION_OF_READY.md` lists 13                                           | Low      | `phase-gates.yaml` / process | ✅ Fixed — [#130][130]  |
+| F3  | Phase-14 gate references `smoke-test.yml` which doesn't exist as a standalone workflow                                         | Low      | `phase-gates.yaml` id=14     | ✅ Fixed — [#131][131]  |
+| F4  | Phase-6 gate requires a manual `CHANGELOG [Unreleased]` edit, contradicting release-please ownership (RFC-0012)                | Low      | `phase-gates.yaml` id=6      | ✅ Fixed — [#132][132]  |
 | F5  | Local supply-chain tooling absent (`trivy`/`checkov`/`bandit`/`pip-audit`/`syft`/`cosign`) — Phase 9 SAST/SCA/SBOM are CI-only | Info     | environment                  | ⬜ Expected / no action |
 | F6  | `make sbom`/`make doctor`/`make smoke` need infra (`syft`, Docker, `.env`) — Phase 9/11 evidence partial locally               | Info     | environment                  | ⬜ Expected / no action |
 | F7  | `/deliver` + `phase-executor` grant unscoped `Bash`; push/merge/deploy/flag prohibitions are prose-only, not tool-enforced     | Medium   | skill/agent permissions      | 📋 Filed — [#133][133]  |
@@ -39,22 +39,22 @@ validation**: capture `git status --porcelain` before phase execution, and after
 Pre-existing dirty files and the gitignored `reports/<SLUG>/` sandbox are never touched. This makes
 DRY-RUN provably side-effect-free on the tracked tree.
 
-## F2–F4 — `phase-gates.yaml` / process drift (filed follow-ups)
+## F2–F4 — `phase-gates.yaml` / process drift (FIXED)
 
-These are pre-existing inconsistencies in the gate definitions, **out of scope** for the skill
-change (no scope creep — CLAUDE.md §3.4). Each is a small, independent fix, now tracked as its own
-issue:
+These were pre-existing inconsistencies in the gate definitions, **out of scope** for the original
+skill change but fixed in a dedicated follow-up. Each was corrected in both the machine-readable
+`docs/process/gates/phase-gates.yaml` and its human-readable projection `docs/process/WORKFLOW.md`
+(the header mandates the two stay in sync):
 
-- **F2** ([#130][130]) — reconcile the "8 criteria" wording in `phase-gates.yaml` id=3
-  `exit_criteria` with the 13 bullets now in `docs/process/DEFINITION_OF_READY.md` (or update the
-  DoR doc).
-- **F3** ([#131][131]) — fix the `ci_checks: [smoke-test.yml]` reference in `phase-gates.yaml`
-  id=14; the smoke check is `make smoke` / a job in `ci.yml`, not a standalone `smoke-test.yml`
-  workflow.
-- **F4** ([#132][132]) — Phase-6 `required_artifacts: [CHANGELOG.md]` (manual `[Unreleased]`)
-  contradicts release-please ownership (RFC-0012; the manual CHANGELOG gate was removed from
-  pr-governance). Update id=6 to reflect that conventional-commit titles, not manual edits, drive
-  the changelog.
+- **F2** ([#130][130]) — `phase-gates.yaml` id=3 `exit_criteria` and `WORKFLOW.md` no longer
+  hard-code a criteria count (the DoR doc actually has 13, not 8); both now reference
+  "all checklist criteria in `docs/process/DEFINITION_OF_READY.md`" so the count can't drift again.
+- **F3** ([#131][131]) — id=14 `ci_checks` and `WORKFLOW.md` no longer reference the non-existent
+  `smoke-test.yml` (nor `harness/smoke-test.yml`); they now point at the real post-deploy smoke:
+  the `cd-staging.yml` smoke-test step → `infrastructure/scripts/deploy/smoke-test.sh`.
+- **F4** ([#132][132]) — id=6 no longer requires a manual `CHANGELOG.md [Unreleased]` artifact
+  (it is `[]` with a note that release-please generates the changelog from the Conventional-Commit
+  PR title, RFC-0012); the matching `WORKFLOW.md` development step was reworded to match.
 
 ## F5–F6 — environment gaps (informational)
 
