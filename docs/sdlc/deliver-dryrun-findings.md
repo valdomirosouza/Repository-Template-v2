@@ -14,12 +14,14 @@ This is a living list — check items off as they are fixed or filed as issues.
 | F6  | `make sbom`/`make doctor`/`make smoke` need infra (`syft`, Docker, `.env`) — Phase 9/11 evidence partial locally               | Info     | environment                  | ⬜ Expected / no action |
 | F7  | `/deliver` + `phase-executor` grant unscoped `Bash`; push/merge/deploy/flag prohibitions are prose-only, not tool-enforced     | Medium   | skill/agent permissions      | ✅ Fixed — [#133][133]  |
 | F8  | Stale `uv.lock`: `template-service` pinned at 2.10.2 while `pyproject`/`version.txt` are 2.12.2 — every `uv run` rewrites it   | Low      | dependency lockfile          | ✅ Fixed — [#138][138]  |
+| F9  | `make lint-python` (ruff `src/ tests/`, no format-check) is narrower than CI (`ruff check .` + `ruff format --check .`)        | Low      | dev tooling / CI parity      | ✅ Fixed — [#141][141]  |
 
 [130]: https://github.com/valdomirosouza/Repository-Template-v2/issues/130
 [131]: https://github.com/valdomirosouza/Repository-Template-v2/issues/131
 [132]: https://github.com/valdomirosouza/Repository-Template-v2/issues/132
 [133]: https://github.com/valdomirosouza/Repository-Template-v2/issues/133
 [138]: https://github.com/valdomirosouza/Repository-Template-v2/issues/138
+[141]: https://github.com/valdomirosouza/Repository-Template-v2/issues/141
 
 ## F1 — DRY-RUN validation targets mutate tracked files (FIXED)
 
@@ -99,3 +101,15 @@ but did not re-run `uv lock`.
 **Fix.** Ran `uv lock` to refresh the lockfile — a one-line change (`template-service 2.10.2 ->
 2.12.2`; all 135 packages otherwise unchanged) — so the lockfile matches the released version and
 no longer drifts.
+
+## F9 — `make lint-python` is narrower than CI (FIXED) — [#141][141]
+
+Adding `make verify-f7-hook` (#140) tripped CI Lint twice even though `make lint-python` passed
+locally. Root cause: `make lint-python` ran `ruff check src/ tests/` with **no** `ruff format
+--check`, while the CI lint job runs `ruff check .` **and** `ruff format --check .` repo-wide. So
+any Python outside `src/`/`tests/` (`.claude/`, `scripts/`, `scaffold/`) and any formatting drift
+anywhere passed locally but failed CI — a round-trip trap only seen after pushing.
+
+**Fix.** Aligned `make lint-python` with CI: `ruff check .` + `ruff format --check .` (mypy +
+detect-secrets unchanged), and widened `make format-python` to `ruff format .` so the formatter
+covers everything the checker checks. Local lint is now authoritative for the ruff gates.

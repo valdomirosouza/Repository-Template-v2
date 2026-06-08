@@ -86,13 +86,14 @@ test-unit-python: ## Python: unit tests only (no Docker required)
 test-security-python: ## Python: guardrail + PII leakage + OWASP-LLM checks
 	uv run pytest tests/security/ -q
 
-lint-python: ## Python: ruff + mypy + secret scan
-	uv run ruff check src/ tests/
+lint-python: ## Python: ruff lint + format-check (repo-wide, matches CI) + mypy + secret scan
+	uv run ruff check .
+	uv run ruff format --check .
 	uv run mypy src/
 	uv run detect-secrets scan --baseline .secrets.baseline
 
-format-python: ## Python: auto-format with ruff
-	uv run ruff format src/ tests/
+format-python: ## Python: auto-format with ruff (repo-wide, matches CI's format check)
+	uv run ruff format .
 
 build-python: ## Python: build multi-stage Docker image
 	docker build --target production \
