@@ -260,7 +260,10 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra dev
       - name: Run integration tests
-        run: uv run pytest tests/integration/ -v --cov=src --cov-report=
+        # --cov collects data for the combined report; --cov-fail-under=0 overrides the
+        # pyproject 80% gate here (integration alone covers far less; the gate lives on
+        # the unit job + the combined report). Integration test failures still fail this job.
+        run: uv run pytest tests/integration/ -v --cov=src --cov-report= --cov-fail-under=0
         env:
           KAFKA_BOOTSTRAP_SERVERS: localhost:9092
           REDIS_URL: redis://localhost:6379
