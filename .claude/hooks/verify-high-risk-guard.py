@@ -74,8 +74,11 @@ CASES: list[tuple[str, object, str]] = [
     ("main · kubectl apply", _bash("kubectl apply -f x.yaml"), "ask"),
     ("main · make deploy-staging", _bash("make deploy-staging SERVICE=x"), "ask"),
     ("main · make rollback", _bash("make rollback"), "ask"),
-    ("main · write feature-flags",
-     _edit("infrastructure/feature-flags/f.json", tool="Write"), "ask"),
+    (
+        "main · write feature-flags",
+        _edit("infrastructure/feature-flags/f.json", tool="Write"),
+        "ask",
+    ),
     ("main · edit guardrails", _edit("src/guardrails/pii_filter.py"), "ask"),
     # --- safe / read-only -> DEFER (no false positives) ---
     ("main · git status", _bash("git status"), "defer"),
@@ -92,10 +95,16 @@ CASES: list[tuple[str, object, str]] = [
     ("subagent · edit guardrails", _edit("src/guardrails/x.py", agent="phase-executor"), "deny"),
     ("subagent · make lint (safe)", _bash("make lint-python", agent="phase-executor"), "defer"),
     # --- malformed input -> fail OPEN (defer, never crash) ---
-    ("fail-open · command=123 (int)",
-     {"tool_name": "Bash", "tool_input": {"command": 123}}, "defer"),
-    ("fail-open · file_path=99 (int)",
-     {"tool_name": "Edit", "tool_input": {"file_path": 99}}, "defer"),
+    (
+        "fail-open · command=123 (int)",
+        {"tool_name": "Bash", "tool_input": {"command": 123}},
+        "defer",
+    ),
+    (
+        "fail-open · file_path=99 (int)",
+        {"tool_name": "Edit", "tool_input": {"file_path": 99}},
+        "defer",
+    ),
     ("fail-open · payload is a list", [], "defer"),
 ]
 
@@ -138,8 +147,10 @@ def main() -> int:
 
     total = len(CASES)
     print("-" * 42)
-    print(f"{total - failures}/{total} decision checks passed; "
-          f"wiring {'OK' if not wiring else 'FAILED'}.")
+    print(
+        f"{total - failures}/{total} decision checks passed; "
+        f"wiring {'OK' if not wiring else 'FAILED'}."
+    )
     if failures or wiring:
         print("RESULT: FAIL")
         return 1
