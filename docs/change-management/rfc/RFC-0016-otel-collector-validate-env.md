@@ -24,13 +24,26 @@ expanding ${env:PROMETHEUS_REMOTE_WRITE_TOKEN}: expected convertable to string v
 `otelcol-contrib:0.104.0` errors on an unset `${env}` (it does not treat missing as empty). This
 is pre-existing; it surfaced when the workflow was re-triggered during RFC-0015.
 
+Fixing the env resolution then revealed a **second, latent config bug** the lint had never been
+able to reach: the `tail_sampling` processor declared `policies[0]` with `type: or` + an
+`and_sub_policy` block — but **tail_sampling has no `or` policy type** (`otelcol validate`:
+`'policies[0]' has invalid keys: or`). Top-level tail_sampling policies are already implicitly
+**OR'd**, so the intended "sample error traces OR HITL-rejected decisions" was mis-modelled.
+
 ## 2. Decision
 
-Pass **non-secret placeholder** env vars to the `docker run … validate` step for all five refs, so
-otelcol resolves them and structurally validates the **real, unmodified** config. The config is
-left with its `${env:...}` refs **required at runtime** (no in-config defaults) on purpose — a
-missing secret (`PROMETHEUS_REMOTE_WRITE_TOKEN`) should **fail fast** in production rather than
-silently send an empty `Bearer`. Placeholders are validation-only and never leave CI.
+Two-part fix:
+
+1. **Env resolution:** pass **non-secret placeholder** env vars to the `docker run … validate`
+   step for all five refs, so otelcol resolves them and structurally validates the **real,
+   unmodified** config. The config keeps its `${env:...}` refs **required at runtime** (no
+   in-config defaults) on purpose — a missing secret (`PROMETHEUS_REMOTE_WRITE_TOKEN`) should
+   **fail fast** in production rather than silently send an empty `Bearer`. Placeholders are
+   validation-only and never leave CI.
+2. **tail_sampling fix:** replace the invalid `or` policy with two top-level policies
+   (`error-status` via `status_code`, `hitl-rejected` via `string_attribute`). Because top-level
+   policies are OR'd, this preserves the original intent (sample either category at 100%) using a
+   valid schema.
 
 ## 3. Alternatives Considered
 
