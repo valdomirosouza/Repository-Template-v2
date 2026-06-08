@@ -175,12 +175,12 @@ SBOM generated and cosign-attested after every build. DAST (OWASP ZAP) required 
 
 ## Phase 12 — Release Candidate
 
-| Step | Actor    | Action                                                                                 |
-| ---- | -------- | -------------------------------------------------------------------------------------- |
-| 1    | ⚡ Agent | Generate release notes from `CHANGELOG.md [Unreleased]`                                |
-| 2    | ◈ Human  | Version bump in `version.txt` + `pyproject.toml`; move `[Unreleased]` → `[{version}]`  |
-| 3    | ⚡ CI    | Full suite including chaos + model contract tests; SBOM; `make agentic-maturity-check` |
-| 4    | ◈ Human  | RC sign-off — Release Manager + Security Lead; apply `rc-approved` label               |
+| Step | Actor   | Action                                                                                                                                                                                                                                                      |
+| ---- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | ⚡ Bot  | **release-please** maintains the release PR: bumps `pyproject.toml` + generates `CHANGELOG.md` from Conventional-Commit titles (RFC-0012); `release.yml` syncs `version.txt` + README badge (RFC-0005/0008). No manual `[Unreleased]` move or version bump. |
+| 2    | ⚡ CI   | Full suite runs on the release PR: chaos + model-contract tests; SBOM; `make agentic-maturity-check`                                                                                                                                                        |
+| 3    | ◈ Human | RC sign-off — Release Manager + Security Lead review/approve the release PR; apply `rc-approved`                                                                                                                                                            |
+| 4    | ◈ Human | Merge the release PR → `release.yml` cuts the tag + GitHub Release                                                                                                                                                                                          |
 
 **Gate:** All CI green including chaos. SBOM attested. Zero open P0/P1 issues.
 
