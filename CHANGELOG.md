@@ -12,6 +12,27 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.12.2](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.12.1...v2.12.2) (2026-06-08)
+
+
+### Bug Fixes
+
+* **ci:** enable auto-merge setting + degrade gracefully when it's off (RFC-0019) ([#126](https://github.com/valdomirosouza/Repository-Template-v2/issues/126)) ([9033444](https://github.com/valdomirosouza/Repository-Template-v2/commit/90334447caa454fc14f2622f90d23bb0169e628a))
+* **ci:** OTel Collector config validation — inject placeholder envs (RFC-0016) ([#123](https://github.com/valdomirosouza/Repository-Template-v2/issues/123)) ([5c2e3be](https://github.com/valdomirosouza/Repository-Template-v2/commit/5c2e3be63bebea4d32b3852e1cefc342b93218cf))
+
+
+### CI/CD
+
+* author release-please PR with a PAT so required checks run (RFC-0014) ([#120](https://github.com/valdomirosouza/Repository-Template-v2/issues/120)) ([f158128](https://github.com/valdomirosouza/Repository-Template-v2/commit/f1581284923b34002de36d5b38a953a88ccb7ce5))
+* SHA-pin all actions + enforce it, and extend SCA to all languages (RFC-0015) ([#121](https://github.com/valdomirosouza/Repository-Template-v2/issues/121)) ([f2df9ff](https://github.com/valdomirosouza/Repository-Template-v2/commit/f2df9ffaa1ddd2d1f0cade62a5fb587f2fe97218))
+
+
+### Documentation
+
+* **governance:** Phase 3 prep — org migration to enforce CODEOWNERS/dual-approval (RFC-0018) ([#125](https://github.com/valdomirosouza/Repository-Template-v2/issues/125)) ([ab81d00](https://github.com/valdomirosouza/Repository-Template-v2/commit/ab81d001188e3aa113fe1c8b50b557d9450342e5))
+* **rfc:** mark RFC-0014 accepted/applied ([#119](https://github.com/valdomirosouza/Repository-Template-v2/issues/119)) ([f383ef2](https://github.com/valdomirosouza/Repository-Template-v2/commit/f383ef20e564bff67bade140994ec374a236c0f6))
+* **rfc:** RFC-0014 — ruleset migration + release-please bypass actor ([#117](https://github.com/valdomirosouza/Repository-Template-v2/issues/117)) ([9bad7cb](https://github.com/valdomirosouza/Repository-Template-v2/commit/9bad7cb999120d5cdc8160838d4387f5313eea97))
+
 ## [2.12.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.12.0...v2.12.1) (2026-06-07)
 
 
