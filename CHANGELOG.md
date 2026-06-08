@@ -12,6 +12,26 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.13.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.12.4...v2.13.0) (2026-06-08)
+
+
+### Features
+
+* **deliver:** add optional [language] arg (default PYTHON) to /deliver ([#157](https://github.com/valdomirosouza/Repository-Template-v2/issues/157)) ([8030265](https://github.com/valdomirosouza/Repository-Template-v2/commit/803026559b9f92f84350dd4792324606418a8103))
+
+
+### CI/CD
+
+* **auto-merge:** require human review for behavioural .claude/** and skills/** changes ([#158](https://github.com/valdomirosouza/Repository-Template-v2/issues/158)) ([#159](https://github.com/valdomirosouza/Repository-Template-v2/issues/159)) ([19ec803](https://github.com/valdomirosouza/Repository-Template-v2/commit/19ec8034bff0031c728ffd4e3c784a5fa3fbd19b))
+
+
+### Documentation
+
+* **process:** correct retro — [#154](https://github.com/valdomirosouza/Repository-Template-v2/issues/154) default-branch root cause was wrong ([#156](https://github.com/valdomirosouza/Repository-Template-v2/issues/156)) ([513b86a](https://github.com/valdomirosouza/Repository-Template-v2/commit/513b86a42c8ea32174a6ffabd643b79813178885))
+* **process:** extend 2026-06-08 retro with the release work (F10, 2.12.3/2.12.4) ([#153](https://github.com/valdomirosouza/Repository-Template-v2/issues/153)) ([b1e25a7](https://github.com/valdomirosouza/Repository-Template-v2/commit/b1e25a7487fa3b63745942116cd4a927ee05956f))
+* **process:** link retro action item to its tracked issue [#154](https://github.com/valdomirosouza/Repository-Template-v2/issues/154) ([#155](https://github.com/valdomirosouza/Repository-Template-v2/issues/155)) ([44c3ed6](https://github.com/valdomirosouza/Repository-Template-v2/commit/44c3ed6b6449d2f9040e69185e0839e54d35fcf6))
+* **process:** reconcile release-phase docs with release-please automation ([#144](https://github.com/valdomirosouza/Repository-Template-v2/issues/144)) ([#152](https://github.com/valdomirosouza/Repository-Template-v2/issues/152)) ([d9fa17f](https://github.com/valdomirosouza/Repository-Template-v2/commit/d9fa17feec82a0c4d9b11d7b8b929e9d759e2ef6))
+
 ## [2.12.4](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.12.3...v2.12.4) (2026-06-08)
 
 
