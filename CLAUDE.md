@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Version:** 2.7.0 | **Last updated:** 2026-06-07
+> **Version:** 2.7.0 | **Last updated:** 2026-06-08
 > This file is the authoritative behavioral contract for Claude Code in this repository.
 > Read it at the start of every session and follow all rules without exception. It overrides any default behavior.
 
@@ -62,6 +62,7 @@ make rollback                                # rollback last staging deploy
 make new-service NAME=foo LANG=python|java|go
 make sbom            # CycloneDX SBOM
 make doctor          # first-run diagnostics
+make sync-develop    # fast-forward develop to origin/main and push (ff-only; refuses if diverged)
 ```
 
 Pre-commit hooks (`.pre-commit-config.yaml`) run ruff, mypy, detect-secrets, bandit on every commit — install once with `uv run pre-commit install`; the same gates run in `harness/code-check.yml` in CI. After scaffolding a service, register it in `services.yaml` and add it to `.github/CODEOWNERS`.
