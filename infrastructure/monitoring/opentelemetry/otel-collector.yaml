@@ -89,20 +89,18 @@ processors:
     num_traces: 50000
     expected_new_traces_per_sec: 500
     policies:
-      # Always sample error traces and HITL-rejected decisions (100%)
-      - name: errors-and-rejections
-        type: or
-        or:
-          and_sub_policy:
-            - name: error-status
-              type: status_code
-              status_code:
-                status_codes: [ERROR]
-            - name: hitl-rejected
-              type: string_attribute
-              string_attribute:
-                key: "act.hitl_decision"
-                values: [rejected]
+      # Always sample error traces and HITL-rejected decisions (100%).
+      # tail_sampling has no `or` policy type — top-level policies are implicitly OR'd
+      # (a trace is sampled if ANY matches), so these two cover "errors OR HITL-rejected".
+      - name: error-status
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: hitl-rejected
+        type: string_attribute
+        string_attribute:
+          key: "act.hitl_decision"
+          values: [rejected]
       # Always sample HITL and request submission endpoints (100%)
       - name: hitl-full
         type: string_attribute
