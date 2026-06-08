@@ -24,8 +24,17 @@ jobs:
 
       - name: Validate collector config syntax
         id: validate
+        # The config uses ${env:...} refs (endpoints, region, secret token) that are injected at
+        # deploy time. They are intentionally left required at runtime (no in-config defaults) so a
+        # missing secret fails fast in prod. For static validation we pass non-secret placeholders so
+        # otelcol can resolve + structurally validate the real config (it errors on an unset ${env}).
         run: |
           docker run --rm \
+            -e SERVICE_ENVIRONMENT=ci \
+            -e DEPLOYMENT_REGION=ci \
+            -e JAEGER_ENDPOINT=jaeger:14250 \
+            -e PROMETHEUS_REMOTE_WRITE_ENDPOINT=http://prometheus:9090/api/v1/write \
+            -e PROMETHEUS_REMOTE_WRITE_TOKEN=ci-validate-placeholder \
             -v "${{ github.workspace }}/infrastructure/monitoring/opentelemetry:/config:ro" \
             otel/opentelemetry-collector-contrib:0.104.0 \
             validate --config=/config/otel-collector.yaml
