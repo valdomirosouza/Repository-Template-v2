@@ -6,11 +6,13 @@ description: >-
   side-effects) or CODE (real implementation into the working tree, still stopping
   at every human gate). Trigger on "deliver", "deliver a spec", "15-phase",
   "Agentic SDLC", "dry-run delivery", or "delivery report". Usage:
-  /deliver [dry-run|code] <path-to-spec.md> (mode defaults to dry-run if omitted).
-  Produces a plan, a decomposed backlog, per-phase execution via the phase-executor
-  subagent, and a FINAL-REPORT with requirement-traceability, agent timing, and a
-  human-vs-agent speedup ratio. Never invents a spec; never autonomously merges,
-  pushes, releases, deploys, or changes autonomy flags.
+  /deliver [dry-run|code] [language] <path-to-spec.md> — mode defaults to dry-run,
+  language defaults to PYTHON; declare JAVA, GO, NODE, TYPESCRIPT, IAC (Terraform/
+  Ansible), or another stack to build the spec in that language. Produces a plan, a
+  decomposed backlog, per-phase execution via the phase-executor subagent, and a
+  FINAL-REPORT with requirement-traceability, agent timing, and a human-vs-agent
+  speedup ratio. Never invents a spec; never autonomously merges, pushes, releases,
+  deploys, or changes autonomy flags.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash, Task
 ---
 
@@ -21,20 +23,38 @@ Delivery** lifecycle, delegating each phase to the `phase-executor` subagent. Th
 **thin** orchestrator: it points to repo knowledge and does **not** restate phase criteria —
 the executor reads them per phase.
 
-## Argument parsing — mode + spec path
+## Argument parsing — mode + language + spec path
 
-`$ARGUMENTS` is `[<mode>] <path-to-spec.md>`, where `<mode>` ∈ {`dry-run`, `code`}
-(case-insensitive; `dryrun`/`dry_run` accepted as aliases for `dry-run`).
+`$ARGUMENTS` is `[<mode>] [<language>] <path-to-spec.md>` (case-insensitive). Canonical order is
+mode, then language, then spec — but parse **by classifying tokens**, so order/omission is
+tolerated:
 
-1. Split `$ARGUMENTS` on whitespace. If the **first** token is a recognised mode keyword,
-   `MODE` = that keyword and the remaining token is `SPEC`. Otherwise `MODE` = `dry-run`
-   (the safe default) and the whole of `$ARGUMENTS` is `SPEC`.
-2. **If no spec path remains, ask the user for the spec path and stop** — never invent or
+- **`<mode>`** ∈ {`dry-run`, `code`} (aliases: `dryrun`, `dry_run` → `dry-run`). **Default `dry-run`.**
+- **`<language>`** — the stack the spec is built in. **Default `PYTHON`.** Recognised keywords
+  (normalise to the canonical name on the left):
+  - `PYTHON` ← python, py
+  - `JAVA` ← java (Spring Boot)
+  - `GO` ← go, golang
+  - `NODE` ← node, nodejs, javascript, js
+  - `TYPESCRIPT` ← typescript, ts
+  - `IAC` ← iac, terraform, ansible, infra (infrastructure-as-code)
+  - **other** — any token that is neither a mode nor the spec path is taken as the declared
+    language verbatim (upper-cased) and built best-effort in that stack.
+
+**Procedure:**
+
+1. Split `$ARGUMENTS` on whitespace. **`SPEC`** = the token that ends in `.md` (or contains `/`);
+   if none, the **last** token. The other 0–2 leading tokens are mode and/or language.
+2. Classify each remaining token: a mode keyword → `MODE`; otherwise → `LANGUAGE` (normalised).
+   Unset → defaults (`MODE=dry-run`, `LANGUAGE=PYTHON`). If two tokens both look like languages
+   or both like modes, report the ambiguity and ask.
+3. **If no spec path remains, ask the user for the spec path and stop** — never invent or
    fabricate a spec. If the path does not exist, report that and stop (the spec must exist
    before delivery).
-3. Echo the resolved mode and spec back to the user before doing anything, e.g.
-   `Mode: CODE · Spec: specs/foo.md`. For `code`, also state the gate boundary up front
-   (see **Modes** below) so the human knows where execution will pause.
+4. Echo the resolved mode, language, and spec back before doing anything, e.g.
+   `Mode: CODE · Language: JAVA · Spec: specs/foo.md`. For `code`, also state the gate boundary
+   up front (see **Modes** below). For a non-PYTHON language, note the canonical location +
+   validation targets it maps to (see **Languages**).
 
 ## Modes
 
@@ -58,6 +78,30 @@ of these gates and does not continue past it on its own:
 In CODE mode these are **real STOPs** (emit the gate line, stop file writes, wait). In DRY-RUN
 they are simulated-and-logged. In **neither** mode do you push, merge, release, deploy, or
 change a flag without a human explicitly approving in this session.
+
+## Languages
+
+`LANGUAGE` selects the stack the spec is implemented in (CODE) and the validation targets used for
+evidence (both modes). It does **not** change any gate, guardrail, or human-stop — only **where**
+code lands and **which** `make` targets run. Default `PYTHON`.
+
+| LANGUAGE                    | CODE writes to                                            | Evidence (make) targets                                                                                                              | Scaffold                                 |
+| --------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| **PYTHON** (default)        | `src/` + `tests/`                                         | `make lint-python` · `make test-unit-python` · `make test-security-python`                                                           | (active core)                            |
+| **JAVA**                    | `services/<name>/` (Spring Boot)                          | `make lint-java SERVICE=<name>` · `make test-unit-java SERVICE=<name>`                                                               | `make new-service NAME=<name> LANG=java` |
+| **GO**                      | `services/<name>/`                                        | `make lint-go SERVICE=<name>` · `make test-unit-go SERVICE=<name>`                                                                   | `make new-service NAME=<name> LANG=go`   |
+| **NODE** / **TYPESCRIPT**   | `frontend/<app>/` (Next.js)                               | `make lint-frontend APP=<app>` · `make test-unit-frontend APP=<app>`                                                                 | (frontend template)                      |
+| **IAC** (Terraform/Ansible) | `infrastructure/`                                         | `terraform fmt -check` + `terraform validate` + Checkov (`make`/CI), or `ansible-lint` — see `skills/devsecops/pipeline-security.md` | n/a                                      |
+| **other**                   | the stack's conventional layout (note it in `00-plan.md`) | the stack's standard lint + unit targets; if the repo has no target, run the toolchain directly and **document the gap**             | per the stack                            |
+
+- **Cross-cutting gates are language-agnostic** — DevSecOps (SAST/SCA/SBOM), AI-safety, OTel,
+  privacy/PII, coverage ≥80%, and every human gate apply regardless of `LANGUAGE`. Only the lint/
+  unit/build evidence commands and the code location change.
+- Register a new `services/`/`frontend/` entry in `services.yaml` and `.github/CODEOWNERS` per
+  CLAUDE.md §0 (CODE mode drafts these; they are not outward-facing actions, so no human STOP —
+  but treat editing `.github/CODEOWNERS`/workflows with care).
+- If `LANGUAGE` is unknown to the repo (no matching `make` target), still implement it best-effort
+  in that stack and **log the missing-target gap** in the affected phase rather than failing.
 
 ## Ground truth (read these; do not restate them in this file)
 
@@ -94,9 +138,10 @@ Let `SLUG` = the spec filename without extension. All output goes under `reports
    `docs/process/gates/phase-gates.yaml`. **Record the tracked-tree baseline** now:
    `git status --porcelain` → `reports/<SLUG>/logs/00-tree-baseline.txt` (the set of files
    already dirty before the run; used by the DRY-RUN snapshot-and-restore invariant below).
-2. Write `reports/<SLUG>/00-plan.md`: the resolved `MODE`, problem summary, risk class, the
-   15-phase plan with the governing ADR(s) per phase, the guardrails in scope, the evidence
-   strategy, and — for `code` — the list of human gates where the run will STOP.
+2. Write `reports/<SLUG>/00-plan.md`: the resolved `MODE` and `LANGUAGE` (+ the canonical code
+   location and validation targets that language maps to — see **Languages**), problem summary,
+   risk class, the 15-phase plan with the governing ADR(s) per phase, the guardrails in scope, the
+   evidence strategy, and — for `code` — the list of human gates where the run will STOP.
 3. Decompose the spec into `reports/<SLUG>/backlog.yaml` — a list of items, each with:
    `id`, `title`, `phase` (0–14), `depends_on` (list of ids), `adr_refs` (list),
    `acceptance` (testable criteria), `estimate_tshirt` (XS|S|M|L|XL).
@@ -117,6 +162,9 @@ PHASE: <N> — <exact phase name>
 SPEC: <SPEC>
 SLUG: <SLUG>
 MODE: <DRY-RUN | CODE>   # emit the CANONICAL upper-case token (normalise dry-run/dryrun/code first)
+LANGUAGE: <PYTHON | JAVA | GO | NODE | TYPESCRIPT | IAC | other>   # the stack to build in + validate
+  (CODE writes to that language's canonical location; evidence uses its make targets — see Languages.
+   PYTHON→src/+tests/; JAVA/GO→services/<name>/; NODE/TS→frontend/<app>/; IAC→infrastructure/)
 BACKLOG_IDS: <ids whose phase == N>
 GOVERNING_ADRS: <from phase-gates.yaml / docs/adr/README.md>
 GATE_CRITERIA: read docs/process/gates/phase-gates.yaml id=<N> (required_artifacts,
@@ -125,13 +173,19 @@ GUARDRAILS: CLAUDE.md §3 + src/guardrails/ relevant to this phase
 MODE CONTRACT:
   - DRY-RUN — no real side-effects. Draft artefacts into reports/<SLUG>/ only; never touch
     src/, tests/, docs/, infrastructure/, .github/. Simulate-and-log every gated action.
-  - CODE — implement for real into the canonical locations (src/, tests/, docs/adr/, docs/,
+  - CODE — implement for real in the LANGUAGE's canonical location (PYTHON→src/+tests/;
+    JAVA/GO→services/<name>/; NODE/TS→frontend/<app>/; IAC→infrastructure/; + docs/adr/, docs/,
     migrations). Run the real validation suite; a failing required gate ⇒ gate: FAIL.
     NEVER push/merge/tag/release/deploy or change a flag/ACL/autonomy — return those as a
     BLOCKED human gate for the orchestrator to STOP on. Honour every CLAUDE.md §14 trigger
     and any action src/agents/hitl_gateway.py would intercept as a real STOP.
-EVIDENCE: validate with the repo's own make targets and tee logs into
-  reports/<SLUG>/logs/<N>-<slug>.log
+EVIDENCE: validate with the LANGUAGE-appropriate make targets (PYTHON: lint-python/
+  test-unit-python/test-security-python · JAVA: lint-java/test-unit-java SERVICE=<name> ·
+  GO: lint-go/test-unit-go SERVICE=<name> · NODE|TS: lint-frontend/test-unit-frontend APP=<app> ·
+  IAC: terraform fmt/validate + Checkov, or ansible-lint · other: the stack's standard lint+unit —
+  if no repo target exists, run the toolchain directly and log the gap). Plus the
+  language-agnostic gates (check-control-bindings, sbom, smoke/doctor) as the phase needs. Tee
+  logs into reports/<SLUG>/logs/<N>-<slug>.log
 Return: artefacts produced (real paths in CODE / reports/<SLUG>/ in DRY-RUN), commands run,
   evidence excerpts (≤20 lines), gate PASS/FAIL/N-A/BLOCKED (DRY-RUN Phase 6 may be SIMULATED)
   with reason, any human gate hit (with payload), `restored` (DRY-RUN tracked files reverted, or
@@ -164,11 +218,13 @@ At each phase boundary, and for any action `src/agents/hitl_gateway.py` would in
 - **Never autonomously** `git push`, open/merge a PR, tag, release, deploy, roll back, or
   change a feature-flag/ACL/autonomy setting — these always require an explicit human gate
   (CLAUDE.md §3/§14; ADR-0011/0015/0034). DRY-RUN simulates-and-logs them; CODE STOPs on them.
-- Evidence = running the repo's **own** validation targets and tee-ing output:
-  `make lint-python`, `make test-unit-python`, `make test-security-python`,
-  `make check-control-bindings`, `make smoke`/`make doctor` as relevant per phase →
-  `reports/<SLUG>/logs/`.
-- One spec per invocation; honour the 2-skill budget per task (ADR-0060).
+- Evidence = running the repo's **own** validation targets and tee-ing output → `reports/<SLUG>/logs/`.
+  Pick the **LANGUAGE-appropriate** lint/unit targets (PYTHON `lint-python`/`test-unit-python`/
+  `test-security-python`; JAVA `lint-java`/`test-unit-java SERVICE=`; GO `lint-go`/`test-unit-go
+SERVICE=`; NODE|TS `lint-frontend`/`test-unit-frontend APP=`; IAC terraform validate + Checkov /
+  ansible-lint — see **Languages**), plus the **language-agnostic** gates as the phase needs
+  (`make check-control-bindings`, `make sbom`, `make smoke`/`make doctor`).
+- One spec, one LANGUAGE per invocation; honour the 2-skill budget per task (ADR-0060).
 
 **DRY-RUN only:**
 
@@ -214,8 +270,9 @@ At each phase boundary, and for any action `src/agents/hitl_gateway.py` would in
 
 Write `reports/<SLUG>/FINAL-REPORT.md` containing, in order:
 
-0. **Run header** — `MODE` (DRY-RUN | CODE), spec path, SLUG, (DRY-RUN) the tracked files restored
-   at close-out, and (CODE) the list of human gates the run STOPPED at and their resolution.
+0. **Run header** — `MODE` (DRY-RUN | CODE), `LANGUAGE` (+ the code location & validation targets it
+   mapped to), spec path, SLUG, (DRY-RUN) the tracked files restored at close-out, and (CODE) the
+   list of human gates the run STOPPED at and their resolution.
 1. **Summary + gate results** — one line per phase: phase, gate (**PASS/FAIL/N-A/BLOCKED**, plus
    **SIMULATED** for a DRY-RUN Phase 6), human-equiv approver.
 2. **Requirement-traceability table** — `| Criterion | Phase | ADR(s) | Evidence (log/path) |`

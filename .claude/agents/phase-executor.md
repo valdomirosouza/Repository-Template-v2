@@ -26,12 +26,14 @@ ACL/autonomy setting, or weaken a guardrail.
 
 ## Inputs (provided in your brief)
 
-`PHASE` (0–14 + exact name), `SPEC` (path), `SLUG`, `MODE` (`DRY-RUN` | `CODE`), `BACKLOG_IDS`,
-`GOVERNING_ADRS`, `GATE_CRITERIA` pointer, `GUARDRAILS`. Match `MODE` **case-insensitively**
-(`code`, `Code`, `DRY-RUN`, `dry-run` all valid). If any required input is missing or the `SPEC`
-path does not exist, return `gate: BLOCKED` with the reason — do not guess. If `MODE` is absent,
-default to `DRY-RUN` (the safe mode); only a non-empty value that is neither dry-run nor code is
-"unrecognised" → `gate: BLOCKED`.
+`PHASE` (0–14 + exact name), `SPEC` (path), `SLUG`, `MODE` (`DRY-RUN` | `CODE`), `LANGUAGE`
+(the stack to build in/validate — `PYTHON` | `JAVA` | `GO` | `NODE` | `TYPESCRIPT` | `IAC` | other),
+`BACKLOG_IDS`, `GOVERNING_ADRS`, `GATE_CRITERIA` pointer, `GUARDRAILS`. Match `MODE` and `LANGUAGE`
+**case-insensitively**. If any required input is missing or the `SPEC` path does not exist, return
+`gate: BLOCKED` with the reason — do not guess. If `MODE` is absent, default to `DRY-RUN` (the safe
+mode); only a non-empty value that is neither dry-run nor code is "unrecognised" → `gate: BLOCKED`.
+If `LANGUAGE` is absent, default to `PYTHON`. `LANGUAGE` changes only **where** code lands and
+**which** validation targets run — never a gate, guardrail, or human-stop.
 
 ## Steps
 
@@ -46,23 +48,33 @@ default to `DRY-RUN` (the safe mode); only a non-empty value that is neither dry
      section, an ADR draft, a test plan, a runbook stub). Do **not** edit anything under
      `src/`, `tests/`, `docs/`, `infrastructure/`, `.github/`, or product specs — you draft
      into the report sandbox only.
-   - **CODE:** implement the phase for real into its canonical location — e.g. Phase 4 → a
-     spec under `specs/`, Phase 5 → an ADR under `docs/adr/` (+ threat model if security/AI
-     risk), Phase 6 → code under `src/` and tests under `tests/` (+ migrations), Phase 8 →
-     the real test suites, Phase 11 → real probes/dashboards/runbooks. Keep changes local and
-     **uncommitted**. Still mirror a short artefact note into `reports/<SLUG>/artifacts/`. If
-     this phase's required action is one you must not perform autonomously (push, open/merge a
-     PR, tag, release, deploy, rollback, or change a flag/ACL/autonomy — Phases 7, 12, 13), do
-     **not** do it: return `gate: BLOCKED` describing the human gate and its payload.
+   - **CODE:** implement the phase for real into its canonical location, **in `LANGUAGE`**.
+     Doc/governance artefacts are language-agnostic (Phase 4 → spec under `specs/`, Phase 5 → ADR
+     under `docs/adr/` + threat model). **Code** lands in the language's home: `PYTHON` → `src/` +
+     `tests/` (+ migrations); `JAVA`/`GO` → `services/<name>/` (scaffold with
+     `make new-service NAME=<name> LANG=java|go`); `NODE`/`TYPESCRIPT` → `frontend/<app>/`;
+     `IAC` → `infrastructure/`; other → that stack's conventional layout (note it). Register new
+     `services/`/`frontend/` entries in `services.yaml` + `.github/CODEOWNERS`. Keep changes local
+     and **uncommitted**; mirror a short artefact note into `reports/<SLUG>/artifacts/`. If this
+     phase's required action is one you must not perform autonomously (push, open/merge a PR, tag,
+     release, deploy, rollback, or change a flag/ACL/autonomy — Phases 7, 12, 13), do **not** do
+     it: return `gate: BLOCKED` describing the human gate and its payload.
 3. **Gather evidence with the repo's own validation targets** (only those relevant to this
-   phase) and tee output into `reports/<SLUG>/logs/<PHASE>-<slug>.log`. Typical mappings:
-   - Phases 6–8 → `make lint-python`, `make test-unit-python`, `make test-security-python`
+   phase) and tee output into `reports/<SLUG>/logs/<PHASE>-<slug>.log`. Pick the **LANGUAGE**-
+   appropriate lint/unit targets for Phases 6–8:
+   - `PYTHON` → `make lint-python`, `make test-unit-python`, `make test-security-python`
+   - `JAVA` → `make lint-java SERVICE=<name>`, `make test-unit-java SERVICE=<name>`
+   - `GO` → `make lint-go SERVICE=<name>`, `make test-unit-go SERVICE=<name>`
+   - `NODE` | `TYPESCRIPT` → `make lint-frontend APP=<app>`, `make test-unit-frontend APP=<app>`
+   - `IAC` → `terraform fmt -check` + `terraform validate` + Checkov, or `ansible-lint`
+   - other → the stack's standard lint + unit toolchain; if the repo has no matching target, run
+     the toolchain directly and **document the missing-target gap** (do not fail the phase on it).
+     Language-agnostic gates regardless of `LANGUAGE`:
    - Phase 9 → `make check-control-bindings`, `make sbom` (report-only)
    - Phase 11 → `make smoke` / `make doctor`, probe/observability checks
    - Other phases → document the artefact + the gate check performed (no code to run).
-     Capture exit codes. Never invoke deploy/release/rollback/flag-change targets.
-     In **CODE** mode a failing required validation gate (lint/test/security/coverage) is a real
-     `FAIL`, not a note — report it as such so the orchestrator can stop.
+     Capture exit codes. Never invoke deploy/release/rollback/flag-change targets. In **CODE** mode a
+     failing required validation gate (lint/test/security/coverage) is a real `FAIL`, not a note.
    - **DRY-RUN side-effect safety:** some targets incidentally mutate **tracked** files
      (`make lint-python`→`detect-secrets` rewrites `.secrets.baseline`; `uv run` rewrites
      `uv.lock` drift). In DRY-RUN, capture `git status --porcelain` immediately **before** and
@@ -85,8 +97,10 @@ default to `DRY-RUN` (the safe mode); only a non-empty value that is neither dry
 
 ### CODE-mode only
 
-- Implement into canonical locations (`src/`, `tests/`, `docs/adr/`, `specs/`, migrations);
-  keep changes **local, uncommitted, and unstaged** for human review (no `git add`/commit/push).
+- Implement into the `LANGUAGE`'s canonical location (PYTHON→`src/`+`tests/`; JAVA/GO→
+  `services/<name>/`; NODE/TS→`frontend/<app>/`; IAC→`infrastructure/`) + language-agnostic
+  `docs/adr/`, `specs/`, migrations; keep changes **local, uncommitted, and unstaged** for human
+  review (no `git add`/commit/push).
 - Required validation gates are enforced for real — a failing lint/test/security/coverage gate
   is `FAIL`, never a note.
 - **Do NOT run the DRY-RUN snapshot/restore in CODE.** Never `git checkout`/revert/`git clean`
