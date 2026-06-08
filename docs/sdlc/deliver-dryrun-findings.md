@@ -13,11 +13,13 @@ This is a living list — check items off as they are fixed or filed as issues.
 | F5  | Local supply-chain tooling absent (`trivy`/`checkov`/`bandit`/`pip-audit`/`syft`/`cosign`) — Phase 9 SAST/SCA/SBOM are CI-only | Info     | environment                  | ⬜ Expected / no action |
 | F6  | `make sbom`/`make doctor`/`make smoke` need infra (`syft`, Docker, `.env`) — Phase 9/11 evidence partial locally               | Info     | environment                  | ⬜ Expected / no action |
 | F7  | `/deliver` + `phase-executor` grant unscoped `Bash`; push/merge/deploy/flag prohibitions are prose-only, not tool-enforced     | Medium   | skill/agent permissions      | ✅ Fixed — [#133][133]  |
+| F8  | Stale `uv.lock`: `template-service` pinned at 2.10.2 while `pyproject`/`version.txt` are 2.12.2 — every `uv run` rewrites it   | Low      | dependency lockfile          | ✅ Fixed — [#138][138]  |
 
 [130]: https://github.com/valdomirosouza/Repository-Template-v2/issues/130
 [131]: https://github.com/valdomirosouza/Repository-Template-v2/issues/131
 [132]: https://github.com/valdomirosouza/Repository-Template-v2/issues/132
 [133]: https://github.com/valdomirosouza/Repository-Template-v2/issues/133
+[138]: https://github.com/valdomirosouza/Repository-Template-v2/issues/138
 
 ## F1 — DRY-RUN validation targets mutate tracked files (FIXED)
 
@@ -85,3 +87,15 @@ at the harness layer for both `Bash` and `Edit`/`Write` tool calls:
 - Safe / read-only commands defer to normal rules; the guard fails open on any parse error.
 
 This makes the "stop at every human gate" guarantee real, not just instructed.
+
+## F8 — stale `uv.lock` (FIXED) — [#138][138]
+
+The committed `uv.lock` pinned the editable `template-service` package at **2.10.2** while
+`pyproject.toml` / `version.txt` were at **2.12.2**. Any `uv run` / `uv sync` rewrote that line
+back to 2.12.2, so the drift kept reappearing as a phantom diff that had to be reverted (twice
+during #128 and #136). Likely cause: a prior version bump updated `version.txt` + `pyproject.toml`
+but did not re-run `uv lock`.
+
+**Fix.** Ran `uv lock` to refresh the lockfile — a one-line change (`template-service 2.10.2 ->
+2.12.2`; all 135 packages otherwise unchanged) — so the lockfile matches the released version and
+no longer drifts.
