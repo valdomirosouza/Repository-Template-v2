@@ -15,6 +15,7 @@ This is a living list — check items off as they are fixed or filed as issues.
 | F7  | `/deliver` + `phase-executor` grant unscoped `Bash`; push/merge/deploy/flag prohibitions are prose-only, not tool-enforced     | Medium   | skill/agent permissions      | ✅ Fixed — [#133][133]  |
 | F8  | Stale `uv.lock`: `template-service` pinned at 2.10.2 while `pyproject`/`version.txt` are 2.12.2 — every `uv run` rewrites it   | Low      | dependency lockfile          | ✅ Fixed — [#138][138]  |
 | F9  | `make lint-python` (ruff `src/ tests/`, no format-check) is narrower than CI (`ruff check .` + `ruff format --check .`)        | Low      | dev tooling / CI parity      | ✅ Fixed — [#141][141]  |
+| F10 | Release PR blocked: version-sync step pushes with `GITHUB_TOKEN`, which de-triggers required CI checks (RFC-0014 regression)   | Medium   | release pipeline             | 📋 Filed — [#148][148]  |
 
 [130]: https://github.com/valdomirosouza/Repository-Template-v2/issues/130
 [131]: https://github.com/valdomirosouza/Repository-Template-v2/issues/131
@@ -22,6 +23,7 @@ This is a living list — check items off as they are fixed or filed as issues.
 [133]: https://github.com/valdomirosouza/Repository-Template-v2/issues/133
 [138]: https://github.com/valdomirosouza/Repository-Template-v2/issues/138
 [141]: https://github.com/valdomirosouza/Repository-Template-v2/issues/141
+[148]: https://github.com/valdomirosouza/Repository-Template-v2/issues/148
 
 ## F1 — DRY-RUN validation targets mutate tracked files (FIXED)
 
@@ -113,3 +115,19 @@ anywhere passed locally but failed CI — a round-trip trap only seen after push
 **Fix.** Aligned `make lint-python` with CI: `ruff check .` + `ruff format --check .` (mypy +
 detect-secrets unchanged), and widened `make format-python` to `ruff format .` so the formatter
 covers everything the checker checks. Local lint is now authoritative for the ruff gates.
+
+## F10 — release PR de-triggered by the version-sync push (filed) — [#148][148]
+
+Surfaced releasing 2.12.3 (#137 was un-mergeable, including by `--admin`). The release-please
+PR's head was the **version-sync commit** authored by `github-actions[bot]`; because
+`GITHUB_TOKEN` pushes do not trigger workflows, `ci.yml`'s `pull_request` checks never re-ran on
+that head, so the branch ruleset reported "9 of 9 required status checks are expected" and refused
+the merge. Same class as RFC-0014 (the `RELEASE_PLEASE_TOKEN` fix), re-introduced by the
+`Sync version files` step in `release.yml` pushing with `GITHUB_TOKEN`.
+
+**Workaround used this cycle:** close + reopen the PR (re-triggers CI as a real user) → wait for
+green → `--admin` merge. Released 2.12.3 successfully.
+
+**Proposed fix (tracked in [#148][148]):** push the version-sync commit with `RELEASE_PLEASE_TOKEN`
+so it triggers CI; or fold the sync into the release-please commit; or make the version files
+release-please-managed (`extra-files`).
