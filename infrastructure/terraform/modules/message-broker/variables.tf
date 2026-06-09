@@ -48,6 +48,18 @@ variable "min_insync_replicas" {
   description = "Kafka min.insync.replicas. Must be < default_replication_factor to allow leader election."
 }
 
+variable "client_topics" {
+  type        = list(string)
+  default     = ["*"]
+  description = "Topic name patterns the IRSA client may read/write (per-topic least-privilege, FR-06). Default '*' = all topics in this cluster only."
+}
+
+variable "client_consumer_groups" {
+  type        = list(string)
+  default     = ["*"]
+  description = "Consumer-group name patterns the IRSA client may join (least-privilege, FR-06). Default '*' = all groups in this cluster only."
+}
+
 variable "tags" {
   type        = map(string)
   default     = {}

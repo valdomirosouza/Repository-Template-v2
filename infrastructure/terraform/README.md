@@ -139,7 +139,7 @@ without MSK access.
 
 `staging` / `production` expose:
 `cluster_endpoint`, `redis_url` (sensitive), `db_endpoint`, `db_secret_arn`, `kafka_bootstrap_brokers` (sensitive),
-`kafka_credentials_secret_arn`, `vector_db_endpoint`, `vector_db_arn`, and the four `*_irsa_role_arn` +
+`kafka_client_iam_policy_arn`, `vector_db_endpoint`, `vector_db_arn`, and the four `*_irsa_role_arn` +
 four `obs_*_sns_arn` values.
 `dev` exposes the same set minus the database and Kafka outputs.
 
@@ -251,8 +251,8 @@ SCRAM credentials in Secrets Manager.
 | `min_insync_replicas`        | number       | `2`              | Must be < replication factor                        |
 | `tags`                       | map(string)  | `{}`             | Extra tags                                          |
 
-**Outputs:** `bootstrap_brokers_sasl_scram` (use as `KAFKA_BOOTSTRAP_SERVERS`), `cluster_arn`, `cluster_name`,
-`credentials_secret_arn`, `security_group_id`, `zookeeper_connect_string` (legacy).
+**Outputs:** `bootstrap_brokers_sasl_iam` (use as `KAFKA_BOOTSTRAP_SERVERS`), `cluster_arn`, `cluster_name`,
+`kafka_client_iam_policy_arn` (attach to the IRSA role), `kms_key_arn`, `security_group_id`.
 
 ### `vector-db`
 

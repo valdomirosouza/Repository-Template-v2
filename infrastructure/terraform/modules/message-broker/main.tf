@@ -1,35 +1,20 @@
 # Message-broker module — Amazon MSK (Managed Streaming for Apache Kafka).
 #
-# Spec: specs/system/async-event-flow.md, specs/api/async-api-design.md
-# ADR:  ADR-0005 (Message Broker Selection)
+# Spec: SPEC-INFRA-001 FR-06 (§15.7 decision) — authentication = IAM (SASL/IAM),
+#       bound via IRSA; no SASL/SCRAM secret, no client certs; per-topic
+#       least-privilege through an IAM policy attachable to the IRSA role.
+#       specs/system/async-event-flow.md, specs/api/async-api-design.md
+# ADR:  ADR-0005 (Message Broker Selection),
+#       ADR-0003 (async / Kafka),
+#       ADR-0063 (brownfield reconciliation — flip auth in place, do not fork).
 #
-# Authentication: SASL/SCRAM with credentials stored in Secrets Manager.
-# Application reads KAFKA_BOOTSTRAP_SERVERS from the cluster outputs.
+# Authentication: IAM (SASL/IAM). Clients (EKS pods) authenticate with their
+# IRSA-bound IAM role — there is no shared SCRAM secret to store or rotate.
+# Application reads KAFKA_BOOTSTRAP_SERVERS from bootstrap_brokers_sasl_iam.
 
-resource "random_password" "kafka_password" {
-  length  = 20
-  special = false
-}
-
-resource "aws_secretsmanager_secret" "kafka" {
-  name                    = "${var.name_prefix}/msk/credentials"
-  recovery_window_in_days = 7
-  # MSK SASL/SCRAM secrets must use the "AmazonMSK_" prefix.
-  kms_key_id = aws_kms_key.msk.arn
-  tags       = var.tags
-}
-
-resource "aws_secretsmanager_secret_version" "kafka" {
-  secret_id = aws_secretsmanager_secret.kafka.id
-  secret_string = jsonencode({
-    username = "kafka-app"
-    password = random_password.kafka_password.result
-  })
-}
-
-# MSK SASL/SCRAM secrets must be encrypted with a customer-managed KMS key.
+# CMK for MSK encryption at rest (ADR-0018).
 resource "aws_kms_key" "msk" {
-  description             = "CMK for MSK SASL/SCRAM secret encryption"
+  description             = "CMK for MSK encryption at rest"
   deletion_window_in_days = 7
   enable_key_rotation     = true
   tags                    = merge(var.tags, { Name = "${var.name_prefix}-msk-cmk" })
@@ -48,9 +33,9 @@ resource "aws_security_group" "msk" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "Kafka SASL/SCRAM TLS from app"
-    from_port       = 9096
-    to_port         = 9096
+    description     = "Kafka SASL/IAM TLS from app"
+    from_port       = 9098
+    to_port         = 9098
     protocol        = "tcp"
     security_groups = var.allowed_security_group_ids
   }
@@ -98,13 +83,17 @@ resource "aws_msk_cluster" "main" {
     }
   }
 
+  # Authentication = IAM (SASL/IAM). SCRAM disabled (FR-06 §15.7).
   client_authentication {
     sasl {
-      scram = true
+      iam   = true
+      scram = false
     }
   }
 
   encryption_info {
+    encryption_at_rest_kms_key_arn = aws_kms_key.msk.arn
+
     encryption_in_transit {
       client_broker = "TLS"
       in_cluster    = true
@@ -141,16 +130,63 @@ resource "aws_msk_configuration" "main" {
   ])
 }
 
-# Associate the SCRAM secret with the MSK cluster.
-resource "aws_msk_scram_secret_association" "main" {
-  cluster_arn     = aws_msk_cluster.main.arn
-  secret_arn_list = [aws_secretsmanager_secret.kafka.arn]
-
-  depends_on = [aws_secretsmanager_secret_version.kafka]
-}
-
 resource "aws_cloudwatch_log_group" "msk" {
   name              = "/aws/msk/${var.name_prefix}"
   retention_in_days = 30
   tags              = var.tags
+}
+
+# ── Per-topic least-privilege IAM policy (FR-06) ──────────────────────────────
+# IAM policy document granting the minimum kafka-cluster actions for an IRSA role
+# to connect and produce/consume on the configured topics + consumer groups.
+# Attach to the application's IRSA role (no wildcard actions — CLAUDE.md §3.2).
+
+data "aws_iam_policy_document" "kafka_client" {
+  # Cluster-level connect + describe.
+  statement {
+    sid    = "KafkaClusterConnect"
+    effect = "Allow"
+    actions = [
+      "kafka-cluster:Connect",
+      "kafka-cluster:DescribeCluster",
+    ]
+    resources = [aws_msk_cluster.main.arn]
+  }
+
+  # Topic-level read/write/describe, scoped to var.client_topics.
+  statement {
+    sid    = "KafkaTopicReadWrite"
+    effect = "Allow"
+    actions = [
+      "kafka-cluster:DescribeTopic",
+      "kafka-cluster:ReadData",
+      "kafka-cluster:WriteData",
+    ]
+    resources = [
+      for topic in var.client_topics :
+      "${replace(aws_msk_cluster.main.arn, ":cluster/", ":topic/")}/${topic}"
+    ]
+  }
+
+  # Consumer-group describe/alter, scoped to var.client_consumer_groups.
+  statement {
+    sid    = "KafkaConsumerGroup"
+    effect = "Allow"
+    actions = [
+      "kafka-cluster:AlterGroup",
+      "kafka-cluster:DescribeGroup",
+    ]
+    resources = [
+      for group in var.client_consumer_groups :
+      "${replace(aws_msk_cluster.main.arn, ":cluster/", ":group/")}/${group}"
+    ]
+  }
+}
+
+# Managed policy that an IRSA role can attach for Kafka SASL/IAM access.
+resource "aws_iam_policy" "kafka_client" {
+  name        = "${var.name_prefix}-msk-client"
+  description = "Least-privilege Kafka SASL/IAM access for ${var.name_prefix} (per-topic)."
+  policy      = data.aws_iam_policy_document.kafka_client.json
+  tags        = var.tags
 }
