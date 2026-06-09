@@ -9,7 +9,13 @@ locals {
     ManagedBy   = "terraform"
     Module      = "networking"
   })
+
+  # One NAT gateway per AZ for HA (default), or a single shared NAT for non-prod cost
+  # savings when var.single_nat_gateway = true.
+  nat_gateway_count = var.single_nat_gateway ? 1 : length(var.public_subnet_cidrs)
 }
+
+data "aws_region" "current" {}
 
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
@@ -51,15 +57,16 @@ resource "aws_subnet" "private" {
   })
 }
 
-# NAT gateway — egress for private subnets (one per AZ for HA)
+# NAT gateway — egress for private subnets.
+# One per AZ for HA (default), or a single shared NAT when var.single_nat_gateway = true.
 resource "aws_eip" "nat" {
-  count  = length(var.public_subnet_cidrs)
+  count  = local.nat_gateway_count
   domain = "vpc"
   tags   = merge(local.common_tags, { Name = "${local.name}-nat-eip-${count.index + 1}" })
 }
 
 resource "aws_nat_gateway" "main" {
-  count         = length(var.public_subnet_cidrs)
+  count         = local.nat_gateway_count
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
   tags          = merge(local.common_tags, { Name = "${local.name}-nat-${count.index + 1}" })
@@ -80,8 +87,10 @@ resource "aws_route_table" "private" {
   count  = length(var.private_subnet_cidrs)
   vpc_id = aws_vpc.main.id
   route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main[count.index].id
+    cidr_block = "0.0.0.0/0"
+    # With a single shared NAT, every private subnet routes through nat[0];
+    # otherwise each private subnet uses the NAT in its own AZ.
+    nat_gateway_id = var.single_nat_gateway ? aws_nat_gateway.main[0].id : aws_nat_gateway.main[count.index].id
   }
   tags = merge(local.common_tags, { Name = "${local.name}-rt-private-${count.index + 1}" })
 }
@@ -177,4 +186,67 @@ resource "aws_security_group" "data" {
     description     = "Kafka from app"
   }
   tags = merge(local.common_tags, { Name = "${local.name}-sg-data" })
+}
+
+# ── VPC endpoints (INFRA-6a) ──────────────────────────────────────────────────
+# Route EKS image pulls and secret fetches off the NAT gateway and keep that
+# traffic on the AWS private network: S3 + ECR (api/dkr) for container pulls,
+# Secrets Manager for credential fetches, STS for IRSA AssumeRoleWithWebIdentity.
+# Spec: SPEC-INFRA-001 FR-01/§15 · ADR-0063 (extend networking in place).
+
+# Security group for interface endpoints — accept HTTPS from inside the VPC only.
+resource "aws_security_group" "vpc_endpoints" {
+  name        = "${local.name}-sg-vpce"
+  description = "Allow HTTPS to interface VPC endpoints from within the VPC"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.main.cidr_block]
+    description = "HTTPS from within the VPC to interface endpoints"
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow all egress"
+  }
+  tags = merge(local.common_tags, { Name = "${local.name}-sg-vpce" })
+}
+
+# Gateway endpoint — S3 (free; attached to the private route tables, no ENI).
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = aws_route_table.private[*].id
+  tags              = merge(local.common_tags, { Name = "${local.name}-vpce-s3" })
+}
+
+# Interface endpoints — ECR (api + dkr), Secrets Manager, STS. One ENI per AZ
+# in the private subnets; private DNS lets the AWS SDKs resolve the regional
+# endpoint to the VPCE automatically.
+locals {
+  interface_endpoints = {
+    ecr_api        = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
+    ecr_dkr        = "com.amazonaws.${data.aws_region.current.name}.ecr.dkr"
+    secretsmanager = "com.amazonaws.${data.aws_region.current.name}.secretsmanager"
+    sts            = "com.amazonaws.${data.aws_region.current.name}.sts"
+  }
+}
+
+resource "aws_vpc_endpoint" "interface" {
+  for_each = local.interface_endpoints
+
+  vpc_id              = aws_vpc.main.id
+  service_name        = each.value
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = merge(local.common_tags, { Name = "${local.name}-vpce-${each.key}" })
 }

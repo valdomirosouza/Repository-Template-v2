@@ -30,6 +30,16 @@ variable "availability_zones" {
   type        = list(string)
 }
 
+variable "single_nat_gateway" {
+  description = <<-EOT
+    When true, provision a single shared NAT gateway (in the first public subnet) and
+    route all private subnets through it. Reduces cost for non-prod environments at the
+    expense of AZ-isolated egress. When false (default), one NAT gateway per AZ for HA.
+  EOT
+  type        = bool
+  default     = false
+}
+
 variable "tags" {
   description = "Additional tags applied to all resources"
   type        = map(string)

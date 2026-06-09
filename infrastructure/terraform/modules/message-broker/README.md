@@ -28,14 +28,14 @@ encryption, KMS at-rest encryption, CloudWatch broker logging, and SCRAM credent
 
 ## Outputs
 
-| Name                           | Description                                                                         |
-| ------------------------------ | ----------------------------------------------------------------------------------- |
-| `bootstrap_brokers_sasl_scram` | SASL/SCRAM bootstrap endpoints (comma-separated). Use as `KAFKA_BOOTSTRAP_SERVERS`. |
-| `cluster_arn`                  | ARN of the MSK cluster.                                                             |
-| `cluster_name`                 | Name of the MSK cluster.                                                            |
-| `credentials_secret_arn`       | ARN of the Secrets Manager secret with the Kafka SASL/SCRAM credentials.            |
-| `security_group_id`            | Security group ID attached to the brokers.                                          |
-| `zookeeper_connect_string`     | ZooKeeper connection string (legacy — prefer bootstrap brokers).                    |
+| Name                          | Description                                                                          |
+| ----------------------------- | ------------------------------------------------------------------------------------ |
+| `bootstrap_brokers_sasl_iam`  | SASL/IAM bootstrap endpoints (comma-separated). Use as `KAFKA_BOOTSTRAP_SERVERS`.    |
+| `cluster_arn`                 | ARN of the MSK cluster.                                                              |
+| `cluster_name`                | Name of the MSK cluster.                                                             |
+| `kafka_client_iam_policy_arn` | ARN of the least-privilege Kafka SASL/IAM policy to attach to the IRSA role (FR-06). |
+| `kms_key_arn`                 | ARN of the CMK used for MSK encryption at rest.                                      |
+| `security_group_id`           | Security group ID attached to the brokers.                                           |
 
 ## Usage
 

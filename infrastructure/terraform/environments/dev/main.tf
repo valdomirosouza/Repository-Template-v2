@@ -81,9 +81,9 @@ variable "aws_region" {
 # ── Networking ──────────────────────────────────────────────────────────────
 # Single AZ to cut NAT-gateway costs. Expand to multi-AZ before staging.
 module "networking" {
-  source      = "../../modules/networking"
-  environment = "dev"
-  vpc_cidr    = "10.2.0.0/16"
+  source               = "../../modules/networking"
+  environment          = "dev"
+  vpc_cidr             = "10.2.0.0/16"
   public_subnet_cidrs  = ["10.2.1.0/24"]
   private_subnet_cidrs = ["10.2.11.0/24"]
   availability_zones   = ["${var.aws_region}a"]
@@ -92,15 +92,15 @@ module "networking" {
 # ── Kubernetes ──────────────────────────────────────────────────────────────
 # Single t3.medium node — enough for all services in dev.
 module "kubernetes" {
-  source             = "../../modules/kubernetes"
-  environment        = "dev"
-  cluster_name       = "monorepo-dev"
-  vpc_id             = module.networking.vpc_id
-  private_subnet_ids = module.networking.private_subnet_ids
+  source              = "../../modules/kubernetes"
+  environment         = "dev"
+  cluster_name        = "monorepo-dev"
+  vpc_id              = module.networking.vpc_id
+  private_subnet_ids  = module.networking.private_subnet_ids
   node_instance_types = ["t3.medium"]
-  node_desired_size  = 1
-  node_min_size      = 1
-  node_max_size      = 2
+  node_desired_size   = 1
+  node_min_size       = 1
+  node_max_size       = 2
 }
 
 # ── Cache ────────────────────────────────────────────────────────────────────
@@ -120,54 +120,54 @@ module "cache" {
 module "api_gateway" {
   source = "../../modules/api-gateway"
 
-  environment          = "dev"
-  cluster_name         = module.kubernetes.cluster_name
-  oidc_provider_arn    = module.kubernetes.oidc_provider_arn
-  oidc_provider_url    = module.kubernetes.oidc_provider_url
-  aws_account_id       = data.aws_caller_identity.current.account_id
-  aws_region           = var.aws_region
-  helm_values_file     = "infrastructure/helm/api-gateway/values-dev.yaml"
-  image_tag            = var.image_tag
+  environment       = "dev"
+  cluster_name      = module.kubernetes.cluster_name
+  oidc_provider_arn = module.kubernetes.oidc_provider_arn
+  oidc_provider_url = module.kubernetes.oidc_provider_url
+  aws_account_id    = data.aws_caller_identity.current.account_id
+  aws_region        = var.aws_region
+  helm_values_file  = "infrastructure/helm/api-gateway/values-dev.yaml"
+  image_tag         = var.image_tag
 }
 
 # ── Domain Service ───────────────────────────────────────────────────────────
 module "domain_service" {
   source = "../../modules/domain-service"
 
-  environment          = "dev"
-  oidc_provider_arn    = module.kubernetes.oidc_provider_arn
-  oidc_provider_url    = module.kubernetes.oidc_provider_url
-  aws_account_id       = data.aws_caller_identity.current.account_id
-  aws_region           = var.aws_region
-  db_secret_arn        = var.db_secret_arn
-  helm_values_file     = "infrastructure/helm/domain-service/values-dev.yaml"
-  image_tag            = var.image_tag
+  environment       = "dev"
+  oidc_provider_arn = module.kubernetes.oidc_provider_arn
+  oidc_provider_url = module.kubernetes.oidc_provider_url
+  aws_account_id    = data.aws_caller_identity.current.account_id
+  aws_region        = var.aws_region
+  db_secret_arn     = var.db_secret_arn
+  helm_values_file  = "infrastructure/helm/domain-service/values-dev.yaml"
+  image_tag         = var.image_tag
 }
 
 # ── Event Worker ─────────────────────────────────────────────────────────────
 module "event_worker" {
   source = "../../modules/event-worker"
 
-  environment          = "dev"
-  oidc_provider_arn    = module.kubernetes.oidc_provider_arn
-  oidc_provider_url    = module.kubernetes.oidc_provider_url
-  aws_account_id       = data.aws_caller_identity.current.account_id
-  aws_region           = var.aws_region
-  helm_values_file     = "infrastructure/helm/event-worker/values-dev.yaml"
-  image_tag            = var.image_tag
+  environment       = "dev"
+  oidc_provider_arn = module.kubernetes.oidc_provider_arn
+  oidc_provider_url = module.kubernetes.oidc_provider_url
+  aws_account_id    = data.aws_caller_identity.current.account_id
+  aws_region        = var.aws_region
+  helm_values_file  = "infrastructure/helm/event-worker/values-dev.yaml"
+  image_tag         = var.image_tag
 }
 
 # ── Frontend ──────────────────────────────────────────────────────────────────
 module "frontend" {
   source = "../../modules/frontend"
 
-  environment          = "dev"
-  oidc_provider_arn    = module.kubernetes.oidc_provider_arn
-  oidc_provider_url    = module.kubernetes.oidc_provider_url
-  aws_account_id       = data.aws_caller_identity.current.account_id
-  aws_region           = var.aws_region
-  helm_values_file     = "infrastructure/helm/frontend/values-dev.yaml"
-  image_tag            = var.image_tag
+  environment       = "dev"
+  oidc_provider_arn = module.kubernetes.oidc_provider_arn
+  oidc_provider_url = module.kubernetes.oidc_provider_url
+  aws_account_id    = data.aws_caller_identity.current.account_id
+  aws_region        = var.aws_region
+  helm_values_file  = "infrastructure/helm/frontend/values-dev.yaml"
+  image_tag         = var.image_tag
 }
 
 # ── Observability ─────────────────────────────────────────────────────────────
@@ -179,8 +179,8 @@ locals {
 }
 
 module "obs_api_gateway" {
-  source      = "../../modules/observability"
-  name_prefix = "monorepo-dev"
+  source                   = "../../modules/observability"
+  name_prefix              = "monorepo-dev"
   service_name             = "api-gateway"
   log_retention_days       = 7
   error_rate_threshold     = 5.0
@@ -189,8 +189,8 @@ module "obs_api_gateway" {
 }
 
 module "obs_domain_service" {
-  source      = "../../modules/observability"
-  name_prefix = "monorepo-dev"
+  source                   = "../../modules/observability"
+  name_prefix              = "monorepo-dev"
   service_name             = "domain-service"
   log_retention_days       = 7
   error_rate_threshold     = 5.0
@@ -199,8 +199,8 @@ module "obs_domain_service" {
 }
 
 module "obs_event_worker" {
-  source      = "../../modules/observability"
-  name_prefix = "monorepo-dev"
+  source                   = "../../modules/observability"
+  name_prefix              = "monorepo-dev"
   service_name             = "event-worker"
   log_retention_days       = 7
   error_rate_threshold     = 5.0
@@ -209,8 +209,8 @@ module "obs_event_worker" {
 }
 
 module "obs_frontend" {
-  source      = "../../modules/observability"
-  name_prefix = "monorepo-dev"
+  source                   = "../../modules/observability"
+  name_prefix              = "monorepo-dev"
   service_name             = "frontend"
   log_retention_days       = 7
   error_rate_threshold     = 5.0
@@ -245,15 +245,18 @@ variable "image_tag" {
   default     = "latest"
 }
 
-output "cluster_endpoint"             { value = module.kubernetes.cluster_endpoint }
-output "redis_url"                    { value = module.cache.redis_url; sensitive = true }
-output "vector_db_endpoint"           { value = module.vector_db.collection_endpoint }
-output "vector_db_arn"               { value = module.vector_db.collection_arn }
-output "api_gateway_irsa_role_arn"    { value = module.api_gateway.irsa_role_arn }
+output "cluster_endpoint" { value = module.kubernetes.cluster_endpoint }
+output "redis_url" {
+  value     = module.cache.redis_url
+  sensitive = true
+}
+output "vector_db_endpoint" { value = module.vector_db.collection_endpoint }
+output "vector_db_arn" { value = module.vector_db.collection_arn }
+output "api_gateway_irsa_role_arn" { value = module.api_gateway.irsa_role_arn }
 output "domain_service_irsa_role_arn" { value = module.domain_service.irsa_role_arn }
-output "event_worker_irsa_role_arn"   { value = module.event_worker.irsa_role_arn }
-output "frontend_irsa_role_arn"       { value = module.frontend.irsa_role_arn }
-output "obs_api_gateway_sns_arn"      { value = module.obs_api_gateway.sns_topic_arn }
-output "obs_domain_service_sns_arn"   { value = module.obs_domain_service.sns_topic_arn }
-output "obs_event_worker_sns_arn"     { value = module.obs_event_worker.sns_topic_arn }
-output "obs_frontend_sns_arn"         { value = module.obs_frontend.sns_topic_arn }
+output "event_worker_irsa_role_arn" { value = module.event_worker.irsa_role_arn }
+output "frontend_irsa_role_arn" { value = module.frontend.irsa_role_arn }
+output "obs_api_gateway_sns_arn" { value = module.obs_api_gateway.sns_topic_arn }
+output "obs_domain_service_sns_arn" { value = module.obs_domain_service.sns_topic_arn }
+output "obs_event_worker_sns_arn" { value = module.obs_event_worker.sns_topic_arn }
+output "obs_frontend_sns_arn" { value = module.obs_frontend.sns_topic_arn }

@@ -27,3 +27,18 @@ output "sg_data_id" {
   description = "Security group ID for data layer (Postgres, Redis, Kafka)"
   value       = aws_security_group.data.id
 }
+
+output "sg_vpc_endpoints_id" {
+  description = "Security group ID for interface VPC endpoints"
+  value       = aws_security_group.vpc_endpoints.id
+}
+
+output "s3_vpc_endpoint_id" {
+  description = "ID of the S3 gateway VPC endpoint"
+  value       = aws_vpc_endpoint.s3.id
+}
+
+output "interface_vpc_endpoint_ids" {
+  description = "Map of interface VPC endpoint name => endpoint ID (ecr_api, ecr_dkr, secretsmanager, sts)"
+  value       = { for k, v in aws_vpc_endpoint.interface : k => v.id }
+}
