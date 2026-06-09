@@ -20,12 +20,28 @@ and CLAUDE.md step 1.
 Draft → Review → Approved → Implemented → Deprecated
 ```
 
-| Transition             | Who approves              | What changes                          |
-| ---------------------- | ------------------------- | ------------------------------------- |
-| Draft → Review         | Spec author               | Open PR; tag spec owner and reviewer  |
-| Review → Approved      | Owner + Reviewer          | Merge PR; update status field in spec |
-| Approved → Implemented | Tech Lead                 | After implementation PR merges        |
-| Approved → Deprecated  | Tech Lead + Product Owner | Link to superseding spec              |
+| Transition             | Who approves              | What changes                                                                                                  |
+| ---------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Draft → Review         | Spec author               | Open PR; tag spec owner and reviewer                                                                          |
+| Review → Approved      | Owner + Reviewer          | Merge PR; update status field in spec                                                                         |
+| Approved → Implemented | Tech Lead                 | After implementation PR merges                                                                                |
+| Approved → Deprecated  | Tech Lead + Product Owner | Set `status: superseded`, link the superseding spec, and **move the file to `specs/deprecated/`** (see below) |
+
+### Deprecating a spec — move, never delete
+
+Specs are **decision records**: a superseded spec is still evidence of _what we decided and why_,
+so it is **preserved, not removed**.
+
+- When a spec reaches `status: superseded` (or is otherwise retired), **move** it with
+  `git mv specs/<domain>/<file>.md specs/deprecated/<file>.md` — **never `git rm`** it.
+- In the moved file's metadata, keep `status: superseded` and add the superseding spec to
+  `related_specs` (e.g. `superseded_by: SPEC-XXX-NNN`).
+- Update the ownership table in `specs/README.md` to reflect the move.
+- The `id` stays unique forever — never re-issue a retired spec's id.
+
+`specs/deprecated/` is an archive; its contents are excluded from "active spec" tooling but kept in
+history. Moving a spec there is a governance action (Spec-as-PR review applies — it is not
+auto-merged).
 
 ---
 
