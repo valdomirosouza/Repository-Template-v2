@@ -1,6 +1,6 @@
 # ADR-0062 — Aurora PostgreSQL as the platform RDBMS (vs RDS Multi-AZ + read replicas)
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-06-09
 **Authors:** Valdomiro Souza
 

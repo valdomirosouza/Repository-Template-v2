@@ -1,6 +1,6 @@
 # ADR-0063 — Brownfield Terraform reconciliation (extend existing modules, do not fork)
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-06-09
 **Authors:** Valdomiro Souza
 
