@@ -74,6 +74,10 @@ frontend/frontend/pnpm-lock.yaml
 
 # Deprecated/consumed prompt & recommendation inputs (local archive, not part of the repo)
 deprecated/
+# …but specs/deprecated/ IS tracked — superseded specs are decision records we move there,
+# never delete (skills/sdlc/spec-lifecycle.md). Carve it back out of the broad rule above.
+!specs/deprecated/
+!specs/deprecated/**
 
 # Per-run /deliver dry-run outputs (plans, backlog, logs, FINAL-REPORT) — not source
 reports/

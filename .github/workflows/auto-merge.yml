@@ -70,9 +70,10 @@ jobs:
             case "$f" in
               CLAUDE.md|AGENTS.md|docs/adr/*)       # governance/contract — never auto-merge (RFC-0003)
                 echo "::notice::Governance/contract change requires human review: $f"; ineligible=1 ;;
-              .claude/*|skills/*)                   # agent/skill/hook/persona BEHAVIOUR — requires
-                                                    # human review even though .md (NOT prose docs; #158)
-                echo "::notice::Agent/skill behavioural change requires human review: $f"; ineligible=1 ;;
+              .claude/*|skills/*|specs/*)           # agent/skill/hook BEHAVIOUR + Spec-as-PR
+                                                    # GOVERNANCE artefacts (PO/TL-owned) — require human
+                                                    # review even though .md (NOT prose docs; #158)
+                echo "::notice::Behavioural/governance change requires human review: $f"; ineligible=1 ;;
               docs/*|*.md|*.markdown) ;;            # ordinary documentation (README, docs/**) — eligible
               *) echo "::notice::Non-docs change requires review: $f"; ineligible=1 ;;
             esac
