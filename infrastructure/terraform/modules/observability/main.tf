@@ -83,7 +83,9 @@ resource "aws_cloudwatch_metric_alarm" "high_p99_latency" {
   metric_name = "http_request_duration_ms"
   namespace   = local.metric_namespace
   period      = 60
-  statistic   = "p99"
+  # Percentiles must use extended_statistic, not statistic (which only accepts
+  # SampleCount/Average/Sum/Minimum/Maximum) — SPEC-LGS-001 G-02 tail-latency.
+  extended_statistic = "p99"
 
   alarm_actions = local.alarm_actions
   ok_actions    = local.alarm_actions
