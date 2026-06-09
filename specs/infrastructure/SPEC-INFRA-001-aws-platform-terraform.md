@@ -4,8 +4,8 @@
 # ─────────────────────────────────────────────────────────────────────────
 id: SPEC-INFRA-001
 title: AWS Production Platform — multi-AZ data + compute + streaming, provisioned by immutable Terraform IaC
-version: 0.3.0
-status: in-review # draft | in-review | approved | implemented | superseded
+version: 1.0.0
+status: approved # draft | in-review | approved | implemented | superseded
 owner: valdomirosouza
 created: 2026-06-08
 source: >-
