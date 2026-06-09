@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.13.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.13.0...v2.13.1) (2026-06-09)
+
+
+### Documentation
+
+* **spec:** SPEC-INFRA-001 — AWS platform (immutable Terraform IaC) [DRAFT for review] ([#162](https://github.com/valdomirosouza/Repository-Template-v2/issues/162)) ([fffa2e0](https://github.com/valdomirosouza/Repository-Template-v2/commit/fffa2e0c7da211351e47c55fb2c8958b794f19f4))
+
 ## [2.13.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.12.4...v2.13.0) (2026-06-08)
 
 
