@@ -4,8 +4,8 @@
 # ─────────────────────────────────────────────────────────────────────────
 id: SPEC-INFRA-001
 title: AWS Production Platform — multi-AZ data + compute + streaming, provisioned by immutable Terraform IaC
-version: 0.2.0
-status: draft # draft | in-review | approved | implemented | superseded
+version: 0.3.0
+status: in-review # draft | in-review | approved | implemented | superseded
 owner: valdomirosouza
 created: 2026-06-08
 source: >-
@@ -47,11 +47,15 @@ slo_ref: docs/sre/slo/slo.yaml
 
 # SPEC-INFRA-001 — AWS Production Platform (Immutable Terraform IaC)
 
-> **One-line scope.** A reproducible, version-controlled AWS production platform — **RDS
-> PostgreSQL 17 (Multi-AZ primary + 2 read replicas), EKS, Application/Network load balancers,
-> ElastiCache for Redis, and MSK (Kafka)** — spread across **3 Availability Zones in `us-east-1`**
-> and provisioned end-to-end by **Terraform** under **Immutable Infrastructure** discipline (no
-> manual changes; replace-don't-mutate; remote state; plan-in-CI, apply behind a CAB gate).
+> **One-line scope.** A reproducible, version-controlled AWS production platform — **Aurora
+> PostgreSQL 17 (writer + 2 reader instances, readers are failover targets), EKS, Application/
+> Network load balancers, ElastiCache for Redis, and MSK (Kafka, IAM auth)** — spread across **3
+> Availability Zones in `us-east-1`** and provisioned end-to-end by **Terraform** under **Immutable
+> Infrastructure** discipline (no manual changes; replace-don't-mutate; remote state; plan-in-CI,
+> apply behind a CAB gate).
+>
+> _v0.3.0 resolves §15.7/§15.8: **Aurora PostgreSQL** (not RDS Multi-AZ + async replicas) and **MSK
+> IAM authentication** (not SASL/SCRAM or mTLS). See those sections + §1.5._
 
 <!-- Every numbered section is mandatory; (gate) sections are checked by docs/process/gates/phase-gates.yaml.
      This is an INFRASTRUCTURE spec — §8 maps to Terraform module contracts and §9 to the resource/state
@@ -122,25 +126,24 @@ parallel tree.** Use the **existing module names** (`networking`, `database`, `c
 onto them, not new modules. Three concrete deltas are resolved as explicit, ADR-backed decisions
 (`new_adrs_required: brownfield-terraform-reconciliation`):
 
-| Delta              | Existing today                              | Target (this spec)                                 | Decision                                                                                                                  |
-| ------------------ | ------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| PostgreSQL version | `database` → **16.3** (`postgres16` family) | **17** (FR-02) → new `postgres17` parameter family | In-place major-version upgrade **or** blue/green via snapshot-restore — pick at the CAB gate; **not** a destroy/recreate. |
-| Read replicas      | single `aws_db_instance.main`, **none**     | **+2** `replicate_source_db` read replicas (FR-02) | Net-new resources added to the `database` module.                                                                         |
-| MSK authentication | `message-broker` → **SASL/SCRAM**           | **TLS** mutual-auth (FR-06)                        | Either keep SASL/SCRAM (then amend FR-06) **or** migrate to TLS — an ADR decision with a client-config migration step.    |
+| Delta              | Existing today                                 | Target (this spec)                                           | **Decision (v0.3.0 — resolved)**                                                                                                                                                                                                                                                                 |
+| ------------------ | ---------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| DB engine + HA     | `database` → single `aws_db_instance`, PG 16.3 | **Aurora PostgreSQL 17 cluster** (writer + 2 readers, FR-02) | **§15.8:** rewrite the `database` module to `aws_rds_cluster` + `aws_rds_cluster_instance`. As data migration is a non-goal (§3), provision **fresh at PG 17** — no in-place 16→17 upgrade needed; **RDS/Aurora Blue/Green** is the documented runbook only for any future data-bearing cutover. |
+| MSK authentication | `message-broker` → **SASL/SCRAM**              | **IAM (SASL/IAM)** via IRSA (FR-06)                          | **§15.7:** drop the SCRAM secret + `aws_msk_scram_secret_association`; enable `client_authentication.sasl.iam`; bind per-topic IAM policy to the IRSA role. TLS-in-transit unchanged.                                                                                                            |
 
-State for any in-place change is **moved with `terraform state mv`**, never destroyed. Until these
-deltas are decided, building this spec is **blocked** (carried as an open item in §15).
+State for any retained-data change is **moved with `terraform state mv`**, never destroyed. With
+§15.7/§15.8 now decided, these deltas are **no longer blocking**.
 
 ## 2. Goals & Success Metrics
 
-| ID   | Goal                                  | Measure of success                                                                                                                                                                                         |
-| ---- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| G-01 | Entire platform provisioned from code | `terraform apply` from an empty account stands up 100% of §7 resources; **zero** console-created resources                                                                                                 |
-| G-02 | Highly available across 3 AZs         | HA = **RDS Multi-AZ standby** (auto-failover), ElastiCache Multi-AZ failover, MSK 3-broker quorum, EKS nodes across 3 AZs. The **2 RDS read replicas are read-scaling, not HA** (async, manual promotion). |
-| G-03 | Immutable & drift-free                | `terraform plan` on a deployed environment is **empty** (no drift); changes ship as replacements, not in-place edits, for breaking attributes                                                              |
-| G-04 | Reproducible & recoverable            | A second (staging) environment is created from the **same modules** with only a tfvars change; full rebuild ≤ 2h                                                                                           |
-| G-05 | Secure by construction                | Encryption at rest (KMS) + TLS in transit on every data store; **zero** Checkov CRITICAL/HIGH; no public data-plane endpoints                                                                              |
-| G-06 | Cost-attributed & bounded             | Every resource carries the cost-allocation tag set (§11/ADR-0020); a documented monthly cost envelope per environment                                                                                      |
+| ID   | Goal                                  | Measure of success                                                                                                                                                                                                                                              |
+| ---- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| G-01 | Entire platform provisioned from code | `terraform apply` from an empty account stands up 100% of §7 resources; **zero** console-created resources                                                                                                                                                      |
+| G-02 | Highly available across 3 AZs         | **Aurora cluster** (writer + 2 reader instances across 3 AZs; readers **are** auto-failover targets, sub-second lag), ElastiCache Multi-AZ failover, MSK 3-broker quorum, EKS nodes across 3 AZs — each tier survives the loss of 1 AZ with automatic failover. |
+| G-03 | Immutable & drift-free                | `terraform plan` on a deployed environment is **empty** (no drift); changes ship as replacements, not in-place edits, for breaking attributes                                                                                                                   |
+| G-04 | Reproducible & recoverable            | A second (staging) environment is created from the **same modules** with only a tfvars change; full rebuild ≤ 2h                                                                                                                                                |
+| G-05 | Secure by construction                | Encryption at rest (KMS) + TLS in transit on every data store; **zero** Checkov CRITICAL/HIGH; no public data-plane endpoints                                                                                                                                   |
+| G-06 | Cost-attributed & bounded             | Every resource carries the cost-allocation tag set (§11/ADR-0020); a documented monthly cost envelope per environment                                                                                                                                           |
 
 ## 3. Non-Goals / Out of Scope
 
@@ -168,20 +171,20 @@ deltas are decided, building this spec is **blocked** (carried as an open item i
 
 <!-- One testable statement per row; each FR traces to an AC in §12. -->
 
-| ID    | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| FR-01 | Provision a **VPC** in `us-east-1` spanning **3 AZs** (`us-east-1a/b/c`) with public + private (app) + isolated (data) subnet tiers per AZ, an internet gateway, route tables, **one NAT gateway per AZ in prod** (a single shared NAT allowed in non-prod for cost), and **VPC endpoints** for S3/ECR/Secrets Manager/STS (keep EKS pulls + secret fetches off the NAT/egress path — cost + A10 allow-list).                                                                                                                                                                                                                  |
-| FR-02 | Provision **RDS PostgreSQL 17** with **two distinct mechanisms**: (a) **HA** via `multi_az = true` — a synchronous hidden standby in a second AZ that **auto-promotes** on primary failure (same endpoint); (b) **read-scaling** via **2 asynchronous read replicas** in the remaining AZs (separate reader endpoints, replica lag, **no automatic promotion** — a manual/runbook operation). Storage **encrypted with a customer-managed KMS key**; automated backups + PITR enabled. _(Decision deferred to §15: stay RDS Multi-AZ, or adopt **Aurora PostgreSQL** where reader instances are themselves failover targets.)_ |
-| FR-03 | Provision an **EKS** cluster (control plane + managed node groups) with worker nodes **balanced across the 3 AZs**; private API endpoint; IRSA (IAM Roles for Service Accounts) enabled.                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| FR-04 | Provision **load balancing**: an internet-facing **ALB** (via the AWS Load Balancer Controller / ingress) for HTTP(S), and an **NLB** where L4/static-IP is required; TLS terminated with ACM certs.                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| FR-05 | Provision **ElastiCache for Redis** (cluster/replication group) with nodes across **3 AZs**, **Multi-AZ automatic failover**, **encryption in transit (TLS) and at rest** (ADR-0019).                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| FR-06 | Provision **Amazon MSK (Kafka)** with **brokers across 3 AZs**, encryption at rest (KMS) + TLS in transit + in-cluster encryption, and a private bootstrap endpoint.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| FR-07 | Use **RDS-managed master passwords** (`manage_master_user_password = true`) so RDS owns rotation and the credential never enters Terraform state; store other generated secrets (MSK/Redis auth) in **AWS Secrets Manager** (SecureString). **Never** output secrets to logs. Note: `sensitive = true` only redacts CLI/output — it does **not** encrypt state; that is the SSE-KMS backend's job (NFR-09).                                                                                                                                                                                                                    |
-| FR-08 | Manage **Terraform remote state** in an encrypted **S3 backend** with **DynamoDB state locking**, versioning, and per-environment state isolation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| FR-09 | Apply a **consistent tag set** to every taggable resource: `environment`, `owner`, `cost-center`, `managed-by=terraform`, `spec=SPEC-INFRA-001` (ADR-0020 cost allocation).                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| FR-10 | Expose stable **module outputs**: VPC/subnet IDs, RDS writer + reader endpoints, EKS cluster name/OIDC, Redis primary endpoint, MSK bootstrap brokers — for app deploys to consume (§8).                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| FR-11 | Enforce **least-privilege security groups**: data stores (RDS/Redis/MSK) reachable **only** from the EKS node/pod security groups; **no** public ingress to any data-plane service.                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| FR-12 | Be **environment-parameterised** (`dev`/`staging`/`prod` via tfvars) so the same modules build any environment with differing sizing — no copy-paste of resource definitions.                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ID    | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-01 | Provision a **VPC** in `us-east-1` spanning **3 AZs** (`us-east-1a/b/c`) with public + private (app) + isolated (data) subnet tiers per AZ, an internet gateway, route tables, **one NAT gateway per AZ in prod** (a single shared NAT allowed in non-prod for cost), and **VPC endpoints** for S3/ECR/Secrets Manager/STS (keep EKS pulls + secret fetches off the NAT/egress path — cost + A10 allow-list).                                                                                                                                                                                                                                                                 |
+| FR-02 | Provision an **Aurora PostgreSQL 17 cluster** (§15.8 decision): **1 writer + 2 reader instances**, one per AZ across the 3 AZs, on **shared cluster storage** (sub-second replica lag). The **readers are first-class failover targets** — on writer failure Aurora auto-promotes a reader (~30s) and the **cluster writer endpoint** follows it; apps read via the **cluster reader endpoint** (AWS load-balances across readers). Storage **encrypted with a customer-managed KMS key**; automated backups + PITR; consider **Aurora I/O-Optimized** for steady workloads (§15.1 cost). _HA and read-scaling are the same mechanism here — no async-replica/standby split._ |
+| FR-03 | Provision an **EKS** cluster (control plane + managed node groups) with worker nodes **balanced across the 3 AZs**; private API endpoint; IRSA (IAM Roles for Service Accounts) enabled.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| FR-04 | Provision **load balancing**: an internet-facing **ALB** (via the AWS Load Balancer Controller / ingress) for HTTP(S), and an **NLB** where L4/static-IP is required; TLS terminated with ACM certs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| FR-05 | Provision **ElastiCache for Redis** (cluster/replication group) with nodes across **3 AZs**, **Multi-AZ automatic failover**, **encryption in transit (TLS) and at rest** (ADR-0019).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| FR-06 | Provision **Amazon MSK (Kafka)** with **brokers across 3 AZs**, encryption at rest (KMS) + **TLS in transit** + in-cluster encryption, **authentication = IAM (SASL/IAM)** bound via IRSA (§15.7 decision — no SASL/SCRAM secret, no client certs; per-topic least-privilege through IAM policy), and a private bootstrap endpoint.                                                                                                                                                                                                                                                                                                                                           |
+| FR-07 | Use **RDS-managed master passwords** (`manage_master_user_password = true`) so RDS owns rotation and the credential never enters Terraform state; store other generated secrets (MSK/Redis auth) in **AWS Secrets Manager** (SecureString). **Never** output secrets to logs. Note: `sensitive = true` only redacts CLI/output — it does **not** encrypt state; that is the SSE-KMS backend's job (NFR-09).                                                                                                                                                                                                                                                                   |
+| FR-08 | Manage **Terraform remote state** in an encrypted **S3 backend** with **DynamoDB state locking**, versioning, and per-environment state isolation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| FR-09 | Apply a **consistent tag set** to every taggable resource: `environment`, `owner`, `cost-center`, `managed-by=terraform`, `spec=SPEC-INFRA-001` (ADR-0020 cost allocation).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| FR-10 | Expose stable **module outputs**: VPC/subnet IDs, RDS writer + reader endpoints, EKS cluster name/OIDC, Redis primary endpoint, MSK bootstrap brokers — for app deploys to consume (§8).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| FR-11 | Enforce **least-privilege security groups**: data stores (RDS/Redis/MSK) reachable **only** from the EKS node/pod security groups; **no** public ingress to any data-plane service.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| FR-12 | Be **environment-parameterised** (`dev`/`staging`/`prod` via tfvars) so the same modules build any environment with differing sizing — no copy-paste of resource definitions.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## 6. Non-Functional Requirements
 
@@ -191,7 +194,7 @@ deltas are decided, building this spec is **blocked** (carried as an open item i
 | NFR-02 | **Pinned & reproducible:** Terraform `required_version` pinned; all providers and modules pinned to exact versions in `.terraform.lock.hcl`; no version ranges.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | NFR-03 | **Encryption everywhere:** at rest via customer-managed **KMS** (RDS, MSK, ElastiCache, EBS, S3 state); in transit via **TLS 1.2+** (rediss://, MSK TLS, RDS SSL `require`) — aligns ADR-0018/0019.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | NFR-04 | **Least-privilege IAM:** scoped roles/policies; **IRSA** for in-cluster AWS access; no wildcard `*` actions on resources; no long-lived access keys in code.                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| NFR-05 | **Multi-AZ availability:** every stateful tier tolerates the loss of **1 AZ** with **automatic** failover — **RDS Multi-AZ standby** (auto-promoted), ElastiCache Multi-AZ failover, MSK 3-broker quorum (RF=3/minISR=2), EKS nodes spread by AZ. The **read replicas do not count toward this** — they are async and not auto-promoted (FR-02).                                                                                                                                                                                                                                                                                    |
+| NFR-05 | **Multi-AZ availability:** every stateful tier tolerates the loss of **1 AZ** with **automatic** failover — **Aurora reader→writer auto-promotion** (~30s, readers are failover targets), ElastiCache Multi-AZ failover, MSK 3-broker quorum (RF=3/minISR=2), EKS nodes spread by AZ. No manual-promotion path (Aurora resolves the old async-replica caveat).                                                                                                                                                                                                                                                                      |
 | NFR-06 | **Observability:** CloudWatch metrics/alarms + Container Insights for EKS; RDS/MSK/ElastiCache enhanced monitoring; logs shipped; golden-signal alarms (§10). Structured, no secrets in logs.                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | NFR-07 | **DevSecOps gate:** `terraform fmt -check`, `terraform validate`, and **Checkov** (and/or tfsec) run in CI on every change; **zero CRITICAL/HIGH** unsuppressed (ADR-0029); SHA-pinned GitHub Actions; a plan-time **SBOM/inventory** of provisioned resource types.                                                                                                                                                                                                                                                                                                                                                                |
 | NFR-08 | **Config via variables:** all environment-specific values are tfvars/variables with documented defaults; **no** hardcoded account IDs, ARNs, AMIs, or secrets in module bodies.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -228,14 +231,15 @@ versioned Terraform modules with remote state.
   Terraform state: S3 (SSE-KMS, versioned) + DynamoDB lock — per environment
 ```
 
-> **On the diagram:** "RDS primary / replica1 / replica2" shows the **read-scaling** layout. HA is
-> provided **additionally** by the Multi-AZ **hidden synchronous standby** (not drawn, in a second
-> AZ) which auto-promotes on primary failure — the replicas do **not** perform that role (FR-02).
+> **On the diagram:** read "RDS primary / replica1 / replica2" as the **Aurora cluster** — a
+> **writer + 2 reader instances**, one per AZ, over shared cluster storage. The readers **are**
+> failover targets (Aurora auto-promotes one on writer failure); the cluster writer/reader
+> endpoints abstract which instance is which (FR-02, §15.8).
 
 **Module decomposition — extends the existing tree (§1.5), does not fork it.** The role labels
 below map onto the **existing** modules under `infrastructure/terraform/modules/` (keep their
 names): `network`→**`networking`** (VPC, subnets, NAT, routes, **VPC endpoints**) ·
-`rds-postgres`→**`database`** (primary + **Multi-AZ standby** + 2 read replicas + KMS + params) ·
+`aurora-postgres`→**`database`** (rewritten to `aws_rds_cluster` + 3 `aws_rds_cluster_instance` + KMS + cluster params) ·
 `eks`→**`kubernetes`** (cluster, MNG, IRSA, addons) · `loadbalancing` (ALB controller IAM, NLB,
 ACM) · `elasticache-redis`→**`cache`** · `msk-kafka`→**`message-broker`** · plus `kms`, `secrets`,
 `iam`, **`observability`**, and a `remote-state` bootstrap. Composed per environment under
@@ -247,14 +251,14 @@ deviation is a new ADR (§14).
 <!-- The "interface" of an IaC change is each module's input variables and output values. These are
      the contract app deploys and other modules depend on — generate/validate, don't hand-drift. -->
 
-| Module              | Key inputs (variables)                                                                                                                                                           | Key outputs                                                                                       |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `network`           | `cidr`, `azs=[a,b,c]`, `env`, tags                                                                                                                                               | `vpc_id`, `public_subnet_ids`, `app_subnet_ids`, `data_subnet_ids`                                |
-| `rds-postgres`      | `engine_version=17`, `instance_class`, `multi_az=true` (HA standby), `replica_count=2` (read-scaling), `manage_master_user_password=true`, `kms_key_arn`, `subnet_ids`, `sg_ids` | `writer_endpoint` (HA, stable across failover), `reader_endpoints[]`, `port`, `master_secret_arn` |
-| `eks`               | `cluster_version`, `node_groups{az→size}`, `subnet_ids`, `irsa=true`                                                                                                             | `cluster_name`, `cluster_endpoint`, `oidc_provider_arn`, `node_security_group_id`                 |
-| `loadbalancing`     | `cluster_name`, `acm_cert_arn`, `public_subnet_ids`                                                                                                                              | `alb_controller_role_arn`, `nlb_arn` (if used)                                                    |
-| `elasticache-redis` | `node_type`, `replicas`, `multi_az=true`, `transit_encryption=true`, `at_rest_encryption=true`, `subnet_ids`                                                                     | `primary_endpoint`, `reader_endpoint`, `auth_secret_arn`                                          |
-| `msk-kafka`         | `kafka_version`, `broker_count=3`, `broker_instance_type`, `kms_key_arn`, `subnet_ids`, `encryption_in_transit=TLS`                                                              | `bootstrap_brokers_tls` (clients need only this in KRaft mode)                                    |
+| Module              | Key inputs (variables)                                                                                                                                                                 | Key outputs                                                                                                                            |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `network`           | `cidr`, `azs=[a,b,c]`, `env`, tags                                                                                                                                                     | `vpc_id`, `public_subnet_ids`, `app_subnet_ids`, `data_subnet_ids`                                                                     |
+| `aurora-postgres`   | `engine=aurora-postgresql`, `engine_version=17`, `instance_class`, `reader_count=2` (3 AZs), `manage_master_user_password=true`, `io_optimized`, `kms_key_arn`, `subnet_ids`, `sg_ids` | `cluster_writer_endpoint` (follows the writer on failover), `cluster_reader_endpoint` (LB across readers), `port`, `master_secret_arn` |
+| `eks`               | `cluster_version`, `node_groups{az→size}`, `subnet_ids`, `irsa=true`                                                                                                                   | `cluster_name`, `cluster_endpoint`, `oidc_provider_arn`, `node_security_group_id`                                                      |
+| `loadbalancing`     | `cluster_name`, `acm_cert_arn`, `public_subnet_ids`                                                                                                                                    | `alb_controller_role_arn`, `nlb_arn` (if used)                                                                                         |
+| `elasticache-redis` | `node_type`, `replicas`, `multi_az=true`, `transit_encryption=true`, `at_rest_encryption=true`, `subnet_ids`                                                                           | `primary_endpoint`, `reader_endpoint`, `auth_secret_arn`                                                                               |
+| `msk-kafka`         | `kafka_version` (KRaft), `broker_count=3`, `broker_instance_type`, `kms_key_arn`, `subnet_ids`, `encryption_in_transit=TLS`, `client_auth=IAM`                                         | `bootstrap_brokers_sasl_iam` (clients auth via IRSA-bound IAM role)                                                                    |
 
 Outputs of FR-10 are the **stable contract** app-deploy specs (and the EKS workloads) consume;
 breaking an output is a versioned, reviewed change.
@@ -263,11 +267,12 @@ breaking an output is a versioned, reviewed change.
 
 ### 9.1 Resources (managed at boundaries)
 
-VPC + subnets/route tables/NAT/IGW · RDS DB instance (primary) + 2 read-replica instances + subnet
-group + parameter group + KMS key · EKS cluster + managed node groups + OIDC provider + addons
-(VPC-CNI, CoreDNS, kube-proxy, EBS-CSI) · ElastiCache replication group + subnet group · MSK
-cluster + configuration · ALB controller IAM + NLB + ACM cert · Secrets Manager secrets · KMS
-CMKs · IAM roles/policies · CloudWatch alarms/log groups · security groups.
+VPC + subnets/route tables/NAT/IGW + **VPC endpoints** · **Aurora cluster** (`aws_rds_cluster`) +
+**3 `aws_rds_cluster_instance`** (writer + 2 readers) + DB subnet group + cluster parameter group +
+KMS key · EKS cluster + managed node groups + OIDC provider + addons (VPC-CNI, CoreDNS, kube-proxy,
+EBS-CSI) · ElastiCache replication group + subnet group · MSK cluster + configuration + **IAM
+auth** · ALB controller IAM + NLB + ACM cert · Secrets Manager secrets · KMS CMKs · IAM
+roles/policies (incl. **per-topic MSK IAM** for IRSA) · CloudWatch alarms/log groups · security groups.
 
 ### 9.2 State convention _(define once; all environments agree)_
 
@@ -293,17 +298,17 @@ These are the **platform-plane** signals this spec owns (per ADR-0004 Observabil
 Application-plane request signals (ALB 5xx, `TargetResponseTime` per service) belong to the
 workloads that run on the platform — **out of scope** here (§3) and owned by the app specs.
 
-| Signal     | Derivation (platform infra)                                                                                                      | Exposed as               |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| Traffic    | MSK `BytesIn/Out`; RDS connections; Redis ops/sec; NAT `BytesOut`; ALB `ActiveFlowCount`                                         | throughput/conn counts   |
-| Latency    | RDS read/write latency; **RDS `ReplicaLag`** (read-replica freshness); Redis latency; ALB `TargetResponseTime` (infra view only) | P50 / P95 / P99          |
-| Error      | RDS failed connections + failover events; MSK under-replicated/offline partitions; ElastiCache failovers; unhealthy-host count   | error_rate / event count |
-| Saturation | RDS CPU/FreeableStorage/IOPS; EKS node CPU/mem + pod headroom; Redis evictions/memory; MSK disk; **NAT GW throughput**           | saturation_pct, headroom |
+| Signal     | Derivation (platform infra)                                                                                                                 | Exposed as               |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| Traffic    | MSK `BytesIn/Out`; RDS connections; Redis ops/sec; NAT `BytesOut`; ALB `ActiveFlowCount`                                                    | throughput/conn counts   |
+| Latency    | Aurora read/write latency; **`AuroraReplicaLag`** (sub-second, reader freshness); Redis latency; ALB `TargetResponseTime` (infra view only) | P50 / P95 / P99          |
+| Error      | RDS failed connections + failover events; MSK under-replicated/offline partitions; ElastiCache failovers; unhealthy-host count              | error_rate / event count |
+| Saturation | RDS CPU/FreeableStorage/IOPS; EKS node CPU/mem + pod headroom; Redis evictions/memory; MSK disk; **NAT GW throughput**                      | saturation_pct, headroom |
 
 SLO targets recorded in `docs/sre/slo/slo.yaml` (e.g. RDS availability ≥ 99.95%, ElastiCache ≥
-99.9%, MSK under-replicated-partitions = 0, **read-replica lag < N s**). CloudWatch alarms page on
-breach; an AZ-failure test (§12 AC-09) validates the multi-AZ standby SLO. PRR ≥ 90% before
-production promotion.
+99.9%, MSK under-replicated-partitions = 0, **`AuroraReplicaLag` < N ms**). CloudWatch alarms page
+on breach; an AZ-failure test (§12 AC-09) validates the **Aurora auto-failover** SLO. PRR ≥ 90%
+before production promotion.
 
 ## 11. Governance, Privacy & Security _(gate: threat & IaC scan review)_
 
@@ -326,42 +331,43 @@ or `src/guardrails/` surface → Phase 10 (AI Safety) is **N/A** for this spec.
 
 <!-- Each observable & runnable; these become the dry-run evidence in /deliver's FINAL-REPORT. -->
 
-| ID    | Acceptance criterion                                                                                                                                                                                                                                                                                                                                       |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| AC-01 | `terraform fmt -check` and `terraform validate` pass for every module and environment.                                                                                                                                                                                                                                                                     |
-| AC-02 | **Checkov/tfsec** scan reports **zero** CRITICAL/HIGH findings (or each is documented + risk-accepted).                                                                                                                                                                                                                                                    |
-| AC-03 | `terraform plan` from an empty state proposes the full §7 footprint; a second `plan` on the applied state is **empty modulo a documented `lifecycle.ignore_changes` allow-list** (managed services emit known perpetual diffs — the allow-list is reviewed, not silently growing).                                                                         |
-| AC-04 | `aws rds describe-db-instances` shows PostgreSQL **17** with **`MultiAZ=true`** (HA standby) on the primary, **plus 2 read replicas** (`ReadReplicaDBInstanceIdentifiers`), each in a distinct AZ, all `StorageEncrypted=true` with the CMK. (Standby and replicas are verified as **separate** facts.)                                                    |
-| AC-05 | EKS worker nodes are present in **all 3 AZs**; the cluster API endpoint is **private**; IRSA OIDC provider exists.                                                                                                                                                                                                                                         |
-| AC-06 | ElastiCache Redis has **Multi-AZ automatic failover**, `TransitEncryptionEnabled=true`, `AtRestEncryptionEnabled=true`, nodes across 3 AZs.                                                                                                                                                                                                                |
-| AC-07 | MSK cluster has **3 brokers across 3 AZs**, encryption-in-transit = TLS, encryption-at-rest with the CMK; bootstrap-brokers-TLS endpoint resolves.                                                                                                                                                                                                         |
-| AC-08 | No data-plane service (RDS/Redis/MSK) is reachable from `0.0.0.0/0`; security groups allow only the EKS node/pod SG.                                                                                                                                                                                                                                       |
-| AC-09 | **AZ-failure drill:** `reboot-db-instance --force-failover` (or simulated AZ loss) keeps the **writer endpoint** serving within the RDS Multi-AZ RTO via the **standby** (replicas play no part); Redis/MSK remain available. A separate documented **read-replica promotion runbook** is exercised (replicas are NOT auto-promoted) and its RTO recorded. |
-| AC-10 | The **same modules** build a `staging` environment from a different tfvars file with no module edits, and a **timed full rebuild completes ≤ 2 h** (validates G-04).                                                                                                                                                                                       |
-| AC-11 | Every provisioned resource carries the mandatory tag set (`environment`, `owner`, `cost-center`, `managed-by=terraform`, `spec=SPEC-INFRA-001`).                                                                                                                                                                                                           |
-| AC-12 | No secret appears in `terraform output`, state, or CI logs in plaintext; the **RDS master password is RDS-managed** (`manage_master_user_password`, absent from state) and Redis/MSK credentials resolve from Secrets Manager.                                                                                                                             |
-| AC-13 | _(traces FR-04)_ An **internet-facing ALB** exists with an **ACM cert** and an HTTPS listener terminating **TLS 1.2+**; where L4 is required an **NLB** is present; the AWS Load Balancer Controller IRSA role is bound.                                                                                                                                   |
-| AC-14 | _(traces FR-10)_ Every §8 module **output resolves non-empty** (`terraform output` for `writer_endpoint`, `reader_endpoints`, `cluster_name`, `oidc_provider_arn`, Redis `primary_endpoint`, `bootstrap_brokers_tls`) — the app-deploy contract is satisfiable.                                                                                            |
+| ID    | Acceptance criterion                                                                                                                                                                                                                                                                               |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AC-01 | `terraform fmt -check` and `terraform validate` pass for every module and environment.                                                                                                                                                                                                             |
+| AC-02 | **Checkov/tfsec** scan reports **zero** CRITICAL/HIGH findings (or each is documented + risk-accepted).                                                                                                                                                                                            |
+| AC-03 | `terraform plan` from an empty state proposes the full §7 footprint; a second `plan` on the applied state is **empty modulo a documented `lifecycle.ignore_changes` allow-list** (managed services emit known perpetual diffs — the allow-list is reviewed, not silently growing).                 |
+| AC-04 | `aws rds describe-db-clusters` shows an **`aurora-postgresql`** engine at version **17** with **1 writer + 2 reader** cluster members in **3 distinct AZs**, `StorageEncrypted=true` with the CMK, and `Endpoint`/`ReaderEndpoint` both resolving.                                                 |
+| AC-05 | EKS worker nodes are present in **all 3 AZs**; the cluster API endpoint is **private**; IRSA OIDC provider exists.                                                                                                                                                                                 |
+| AC-06 | ElastiCache Redis has **Multi-AZ automatic failover**, `TransitEncryptionEnabled=true`, `AtRestEncryptionEnabled=true`, nodes across 3 AZs.                                                                                                                                                        |
+| AC-07 | MSK cluster has **3 brokers across 3 AZs**, encryption-in-transit = TLS, encryption-at-rest with the CMK, **`client_authentication.sasl.iam = true`** (no SCRAM/unauthenticated); the `bootstrap_brokers_sasl_iam` endpoint resolves and a pod with the bound IRSA role can produce/consume.       |
+| AC-08 | No data-plane service (RDS/Redis/MSK) is reachable from `0.0.0.0/0`; security groups allow only the EKS node/pod SG.                                                                                                                                                                               |
+| AC-09 | **AZ-failure drill:** `failover-db-cluster` (or simulated AZ loss) auto-promotes a **reader to writer** (~30s); the **cluster writer endpoint** follows it and keeps serving with no manual step (Aurora — readers are failover targets); ElastiCache/MSK remain available. Failover RTO recorded. |
+| AC-10 | The **same modules** build a `staging` environment from a different tfvars file with no module edits, and a **timed full rebuild completes ≤ 2 h** (validates G-04).                                                                                                                               |
+| AC-11 | Every provisioned resource carries the mandatory tag set (`environment`, `owner`, `cost-center`, `managed-by=terraform`, `spec=SPEC-INFRA-001`).                                                                                                                                                   |
+| AC-12 | No secret appears in `terraform output`, state, or CI logs in plaintext; the **RDS master password is RDS-managed** (`manage_master_user_password`, absent from state) and Redis/MSK credentials resolve from Secrets Manager.                                                                     |
+| AC-13 | _(traces FR-04)_ An **internet-facing ALB** exists with an **ACM cert** and an HTTPS listener terminating **TLS 1.2+**; where L4 is required an **NLB** is present; the AWS Load Balancer Controller IRSA role is bound.                                                                           |
+| AC-14 | _(traces FR-10)_ Every §8 module **output resolves non-empty** (`terraform output` for `writer_endpoint`, `reader_endpoints`, `cluster_name`, `oidc_provider_arn`, Redis `primary_endpoint`, `bootstrap_brokers_tls`) — the app-deploy contract is satisfiable.                                    |
 
 ## 13. Risks & Limitations
 
 - **Single region.** `us-east-1` only — a full-region outage is not covered. Documented exit path:
-  cross-region read-replica + Route53 failover (future ADR). Record as an explicit consequence,
-  not a silent assumption.
-- **Managed-service constraints.** RDS read replicas are asynchronous (replica lag under write
-  bursts); MSK/ElastiCache patching windows can cause brief failovers — surface in runbooks.
-- **Cost.** A 3-AZ managed footprint (RDS Multi-AZ + 2 replicas, MSK 3-broker, ElastiCache MAZ,
+  **Aurora Global Database** (cross-region) + Route53 failover (future ADR). Record as an explicit
+  consequence, not a silent assumption.
+- **Managed-service constraints.** Aurora reader lag is sub-second but non-zero under write bursts;
+  MSK/ElastiCache patching windows can cause brief failovers — surface in runbooks.
+- **Cost.** A 3-AZ managed footprint (Aurora writer + 2 readers (I/O-Optimized), MSK 3-broker, ElastiCache MAZ,
   EKS, NAT×3) is non-trivial; non-prod must be sized down and the envelope tracked (G-06/ADR-0020).
 - **Stateful "immutability" is bounded (NFR-01).** Compute is genuinely immutable (node groups
   replaced); data stores are **not** recreated on change — they use in-place managed ops or
   snapshot-restore/blue-green. The claim is "no out-of-band mutation," not "recreate every change."
-- **Read replicas are not HA (FR-02/NFR-05).** They are async (lag under write bursts) and **not
-  auto-promoted** — writer-HA is the Multi-AZ standby alone. Adopting **Aurora** (where readers are
-  failover targets) is the open alternative (§15).
-- **Brownfield migration risk (§1.5).** Extending the existing `database` (PG 16.3, single instance,
-  SASL/SCRAM MSK) into the PG-17 + read-replica + TLS target involves a major-version upgrade and an
-  auth migration — done via `terraform state mv` / snapshot-restore, **never** destroy-recreate;
-  perpetual-diff `ignore_changes` lists must be reviewed (AC-03), not silently grown.
+- **Aurora trade-offs (FR-02/§15.8).** Aurora resolves the readers-as-failover-targets need but
+  costs ~15–25% over plain RDS (mitigated by I/O-Optimized) and is **not byte-for-byte vanilla PG**
+  (rare extension/version gaps) — accept the mild lock-in for the HA+read fit, or fall back to the
+  RDS Multi-AZ DB cluster (§15.8 runner-up).
+- **Brownfield migration risk (§1.5).** The existing `database` module (`aws_db_instance`, PG 16.3)
+  is **rewritten to an Aurora cluster** and `message-broker` auth flips **SCRAM→IAM**. As data
+  migration is a non-goal (§3) this is a fresh provision, not a live cutover; perpetual-diff
+  `ignore_changes` lists must be reviewed (AC-03), not silently grown.
 - **Apply blast radius.** A bad `apply` can affect production; mitigated by plan-in-PR + CAB gate +
   per-environment state isolation + targeted applies.
 
@@ -376,11 +382,12 @@ or `src/guardrails/` surface → Phase 10 (AI Safety) is **N/A** for this spec.
   tier-scoped), `aws-three-az-region-topology` (VPC/subnet/AZ design), `terraform-remote-state-
 management` (S3+DynamoDB backend, isolation, locking), `managed-services-selection-rds-msk-
 elasticache` (managed vs self-hosted + exit paths), **`brownfield-terraform-reconciliation`**
-  (extend-not-fork; PG-16→17 + SCRAM→TLS migration plan; `state mv` discipline — §1.5), and
-  **`rds-availability-model-multiaz-vs-aurora`** (HA-standby vs read-replicas; the Aurora option).
+  (extend-not-fork; **decided** v0.3.0: `database`→Aurora cluster + MSK SCRAM→IAM; fresh-provision,
+  not in-place — §1.5/§15.7), and **`rds-availability-model-multiaz-vs-aurora`** (**decided** v0.3.0:
+  **Aurora PostgreSQL**; RDS Multi-AZ DB cluster the documented runner-up — §15.8).
 - **Produces:** Terraform modules + environments under `infrastructure/terraform/`,
   `.terraform.lock.hcl` (pinned), a Checkov policy/baseline, module input/output docs, a
-  resource-inventory/SBOM artifact, runbook stubs (RDS failover, AZ loss, state recovery), and
+  resource-inventory/SBOM artifact, runbook stubs (Aurora failover, AZ loss, Blue/Green DB upgrade, state recovery), and
   `slo.yaml` entries for the platform golden signals.
 
 ## 15. Open Questions
@@ -391,11 +398,11 @@ elasticache` (managed vs self-hosted + exit paths), **`brownfield-terraform-reco
 > **fake, plausible** answers to show a fully-resolved spec; they are **not** real production
 > decisions. A real run must re-decide each at the §11 CAB gate and replace these figures.
 
-1. **Instance sizing & cost envelope** _(resolved — example)_: **RDS** `db.r6g.2xlarge` primary
-   (Multi-AZ) + `db.r6g.xlarge` ×2 replicas, gp3 500 GB; **EKS** `m6i.2xlarge` managed nodes, 2/AZ
-   (6 baseline) autoscaling 6–15; **MSK** `kafka.m5.large` ×3, 1 TB/broker; **Redis**
-   `cache.r6g.xlarge`, 1 primary + 2 replicas. Cost envelope (example): **prod ≈ \$6,500/mo**,
-   **staging ≈ \$1,800/mo**, **dev ≈ \$700/mo**. (Figures fabricated for the example.)
+1. **Instance sizing & cost envelope** _(resolved — example)_: **Aurora** `db.r6g.2xlarge` writer +
+   2× `db.r6g.xlarge` readers, **I/O-Optimized**; **EKS** `m6i.2xlarge` managed nodes, 2/AZ (6
+   baseline) autoscaling 6–15; **MSK** `kafka.m5.large` ×3, 1 TB/broker; **Redis** `cache.r6g.xlarge`,
+   1 primary + 2 replicas. Cost envelope (example): **prod ≈ \$7,200/mo** (Aurora + I/O-Optimized is
+   ~15–25% over plain RDS), **staging ≈ \$2,000/mo**, **dev ≈ \$800/mo**. (Figures fabricated for the example.)
 2. **MSK mode** _(resolved — example)_: **KRaft** (no ZooKeeper) on **provisioned** MSK (not
    Serverless) — predictable cost and broker-level tuning at the expected throughput.
 3. **Backup/retention windows** _(resolved — example)_: RDS **PITR 7 days** (prod) / 1 day
@@ -410,14 +417,19 @@ elasticache` (managed vs self-hosted + exit paths), **`brownfield-terraform-reco
    (no long-lived keys) — `plan` on PR, `apply` on merge gated by environment protection + a
    CAB-approved RFC (ADR-0027); reuses the repo's existing OIDC/SHA-pinned-actions posture.
 
-> 🔴 **Genuinely open — these BLOCK `status: approved` (not example-fillable; real decisions):**
+> ✅ **Resolved in v0.3.0** — the two formerly-blocking architectural decisions (these were real,
+> not example-fillable). Each becomes its named ADR in §14.
 
-7. **Brownfield deltas (§1.5).** (a) PG **16.3 → 17**: in-place major-version upgrade vs blue/green
-   snapshot-restore? (b) MSK **SASL/SCRAM → TLS** mutual-auth (FR-06) vs keep SCRAM (amend FR-06)?
-   Each needs an ADR + a client-config migration step. **Until decided, the build is blocked.**
-8. **RDS availability model (FR-02).** Stay **RDS Multi-AZ** (hidden standby + 2 manual-promotion
-   read replicas) or adopt **Aurora PostgreSQL** (reader instances are failover targets, cluster
-   reader/writer endpoints)? Drives AC-04/AC-09 and the §10 replica-lag SLO.
+7. **Brownfield deltas (§1.5) — DECIDED.** (a) PG **16.3 → 17**: provision **fresh at PG 17**
+   (data migration is a non-goal, §3); **Aurora/RDS Blue/Green** is the runbook reserved for any
+   future data-bearing cutover — no in-place 16→17 upgrade. (b) MSK auth: **IAM (SASL/IAM) via
+   IRSA** — _not_ mTLS (avoids ACM Private CA cost/cert-lifecycle) and _not_ SCRAM (no shared
+   secret); TLS-in-transit stays. FR-06 amended accordingly.
+8. **DB availability model (FR-02) — DECIDED: Aurora PostgreSQL.** Aurora's reader instances _are_
+   auto-failover targets with sub-second lag and clean cluster reader/writer endpoints — it
+   delivers the spec's HA+read intent natively (no async-replica/manual-promotion gap). _Runner-up
+   if Aurora is ever rejected on cost/lock-in: **RDS Multi-AZ DB cluster** (1 writer + 2 readable
+   standbys, vanilla PG, capped at 2 readers)._ Drives FR-02/AC-04/AC-09 and the §10 lag SLO.
 
 ## 16. References
 
