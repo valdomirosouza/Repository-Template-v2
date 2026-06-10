@@ -360,6 +360,7 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `security`, `privacy`
 - **CHANGELOG updated** — non-docs changes touch `[Unreleased]`. Escape: `skip-changelog` label. Docs-only & Dependabot auto-exempt.
 - **Spec reference** — `feat`/`fix`/`security`/`privacy`/`perf` cite a spec (`SPEC-NNN`/`REM-NNN`). Escape: `no-spec` label.
 - **Version consistency** — `version.txt` is the single source of truth (ADR-0057, REM-010); `version.txt` and `pyproject.toml` must agree. Don't bump in one place only.
+- **Test integrity** (ADR-0065) — `scripts/governance/check_test_integrity.py` (wired in `harness/code-check.yml`) blocks a silent test-count decrease (escape: a `TEST-WAIVER: <reason>` line + refreshed `tests/.test-integrity-baseline.json`) and a skip/xfail added without a rationale. Coverage is the quantity gate; this is the integrity gate beside it. Never weaken or skip a test to make a gate pass.
 
 Full pipeline (`ci.yml`) jobs: `governance`, `lint`, `test-unit`, `test-integration`, `test-security`, `contract-drift`, `build`. The `harness/*.yml` specs are the Claude Code PR-review gates that complement these.
 

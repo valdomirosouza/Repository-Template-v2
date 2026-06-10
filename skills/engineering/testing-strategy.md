@@ -81,6 +81,40 @@ open htmlcov/index.html
 
 ---
 
+## Test-Integrity Invariants (ADR-0065)
+
+Coverage is a **quantity** metric — it is fully satisfiable while the suite's integrity erodes
+(weak tests added, strong assertions gutted, flaky tests skipped). These four invariants guard the
+integrity coverage cannot see. Two are **machine-enforced** by
+`scripts/governance/check_test_integrity.py` (wired into `harness/code-check.yml`); two are
+**review-time** rules.
+
+1. **RED before GREEN** _(review-time)._ Write the test, **confirm it fails**, then implement until
+   it passes. A test that passes on first write is too weak to constrain the code — strengthen it.
+2. **Test co-location** _(review-time)._ Tests ship in the **same task/commit** as the code they
+   cover. "Tested in a later task/PR" is **test deferral** — an anti-pattern (one task = one
+   reviewable artifact, ADR-0060).
+3. **No silent test-count decrease** _(enforced)._ The gate compares per-marker + total test counts
+   against `tests/.test-integrity-baseline.json`. A decrease **fails the PR** unless a
+   `TEST-WAIVER: <reason>` line is present (PR body or diff) **and** the baseline is refreshed:
+
+   ```bash
+   uv run python scripts/governance/check_test_integrity.py            # check vs baseline
+   uv run python scripts/governance/check_test_integrity.py --update-baseline   # after an intended change
+   ```
+
+4. **No assertion weakening / silent skip** _(enforced for added skips)._ A newly added
+   `@pytest.mark.skip|xfail|skipif`, `pytest.skip(...)`, or `@unittest.skip` **must** carry a
+   rationale — `reason="…"`, a string argument, or an inline `# why` comment — or the PR fails.
+   Never weaken or disable an assertion to make a gate go green: **tests are the spec; the
+   implementation conforms to the tests**, not the reverse.
+
+The RED-first flow in practice: a sub-task writes its failing test(s) first (RED), implements to
+green (GREEN) in the **same** commit, and never reduces the test count or skips a test to pass —
+exactly what the gate verifies after the fact.
+
+---
+
 ## Unit Test Conventions
 
 ### Naming
