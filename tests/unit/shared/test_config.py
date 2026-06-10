@@ -4,10 +4,14 @@ Spec: specs/system/architecture.md (Technology Stack)
 ADR:  ADR-0008 (Secrets Management)
 """
 
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
 from src.shared.config import Settings
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 class TestProductionSecretValidation:
@@ -127,3 +131,48 @@ class TestProductionSecretValidation:
                 database_url="postgresql+asyncpg://appuser:real-db-pass@prod-db:5432/appdb",
                 redis_url="redis://:real-redis-pass@prod-redis:6379/0",
             )
+
+
+class TestEnvCompatibility:
+    """`allowed_origins` accepts comma OR JSON; unknown env keys are ignored.
+
+    Regression for the .env/.env.example ↔ Settings mismatch: `.env.example` documents a
+    comma-separated `allowed_origins` and ships infra/frontend keys (POSTGRES_*, NEXT_PUBLIC_*,
+    OTEL_*, JOB_*, …) that previously crashed `Settings()` on load (allowed_origins JSON-decode
+    error, then extra_forbidden).
+    """
+
+    def test_allowed_origins_comma_separated(self):
+        s = Settings(_env_file=None, allowed_origins="http://a.com, http://b.com")
+        assert s.allowed_origins == ["http://a.com", "http://b.com"]
+
+    def test_allowed_origins_json_list(self):
+        s = Settings(_env_file=None, allowed_origins='["http://x.com","http://y.com"]')
+        assert s.allowed_origins == ["http://x.com", "http://y.com"]
+
+    def test_allowed_origins_empty_string_is_empty_list(self):
+        assert Settings(_env_file=None, allowed_origins="").allowed_origins == []
+
+    def test_allowed_origins_default_and_list_passthrough(self):
+        assert Settings(_env_file=None).allowed_origins == ["http://localhost:3000"]
+        assert Settings(_env_file=None, allowed_origins=["http://z.com"]).allowed_origins == [
+            "http://z.com"
+        ]
+
+    def test_unknown_env_keys_are_ignored(self):
+        # extra="ignore": keys that aren't Settings fields (infra/frontend/test vars in .env.example)
+        # must not raise and must not become attributes.
+        s = Settings(
+            _env_file=None,
+            postgres_password="x",
+            next_public_api_base_url="y",
+            job_batch_size="500",
+        )
+        assert not hasattr(s, "postgres_password")
+
+    def test_env_example_is_loadable(self):
+        # The repo's own .env.example must load via Settings (it ships comma-separated
+        # allowed_origins + infra/frontend keys that previously crashed loading).
+        s = Settings(_env_file=str(_REPO_ROOT / ".env.example"))
+        assert isinstance(s.allowed_origins, list)
+        assert s.allowed_origins  # non-empty

@@ -5,9 +5,10 @@ ADR:  ADR-0002 (Technology Stack Selection), ADR-0008 (Secrets Management)
 """
 
 from pathlib import Path
+from typing import Annotated
 
-from pydantic import model_validator
-from pydantic_settings import BaseSettings
+from pydantic import field_validator, model_validator
+from pydantic_settings import BaseSettings, NoDecode
 
 _version_file = Path(__file__).parent.parent.parent / "version.txt"
 _service_version_default: str = (
@@ -131,7 +132,9 @@ class Settings(BaseSettings):
     jwt_expiry_seconds: int = 3600
     # Role claim required to submit HITL approval decisions (REM-001, ADR-0011).
     hitl_operator_role: str = "hitl-operator"
-    allowed_origins: list[str] = ["http://localhost:3000"]
+    # NoDecode: take the raw env string (skip pydantic-settings' default JSON decoding) so the
+    # comma-separated form documented in .env.example is accepted, not only a JSON list.
+    allowed_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000"]
     rate_limit_requests_per_minute: int = 60
 
     # ── Database Encryption at Rest (ADR-0018) ────────────────────────────────
@@ -169,6 +172,24 @@ class Settings(BaseSettings):
     # ── FinOps ────────────────────────────────────────────────────────────────
     llm_monthly_token_budget: int = 1_000_000
     cost_alert_threshold_usd: float = 100.0
+
+    @field_validator("allowed_origins", mode="before")
+    @classmethod
+    def _parse_allowed_origins(cls, v: object) -> object:
+        """Accept a comma-separated string (as documented in .env.example) or a JSON list.
+
+        Already-list values (defaults, programmatic construction) pass through unchanged.
+        """
+        if isinstance(v, str):
+            s = v.strip()
+            if not s:
+                return []
+            if s.startswith("["):  # JSON list form, e.g. '["http://a","http://b"]'
+                import json
+
+                return json.loads(s)
+            return [origin.strip() for origin in s.split(",") if origin.strip()]
+        return v
 
     @model_validator(mode="after")
     def resolve_llm_api_key(self) -> "Settings":
@@ -229,6 +250,11 @@ class Settings(BaseSettings):
         "env_file": ".env",
         "env_file_encoding": "utf-8",
         "case_sensitive": False,
+        # Ignore env/.env keys that aren't Settings fields. .env.example legitimately ships
+        # infra/frontend/test keys (POSTGRES_*, REDIS_PASSWORD, NEXT_PUBLIC_*, OTEL_*, JOB_*, …)
+        # consumed by docker-compose / the frontend / the OTel SDK — not by this model. Without
+        # this, loading a .env copied from .env.example raises extra_forbidden.
+        "extra": "ignore",
     }
 
 
