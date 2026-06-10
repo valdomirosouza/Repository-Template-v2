@@ -21,3 +21,33 @@ privacy_jurisdictions:
     in_scope: true # Brazil
   gdpr:
     in_scope: true # EU
+
+# ── Delivery right-sizing tiers (ADR-0064) ───────────────────────────────────
+# Surfaces the /deliver SCOPE axis. The AUTHORITATIVE tier→phase mapping lives in
+# docs/process/gates/phase-gates.yaml (each phase's `applicability:` block); this
+# section is the governance-facing projection. Keep the two in sync.
+#
+# control_phase: true phases are NEVER waivable in any tier — right-sizing trims
+# PROCESS phases only, never CONTROL phases. Default tier on omission is GOVERNED.
+delivery_tiers:
+  default: GOVERNED # conservative — omission never under-governs
+  ids: [TRIVIAL, STANDARD, GOVERNED, REGULATED]
+  control_floor: # required (or conditional on their own trigger) in EVERY tier
+    - phase: 2 # Discovery — PII classification (conditional: processes_data)
+    - phase: 4 # Specification — "no code without a spec" (§3.4); artifact weight scales
+    - phase: 7 # Code Review — >=1 human approval (ADR-0011)
+    - phase: 8 # Testing — coverage >=80% + security/abuse tests (§3.5)
+    - phase: 9 # Security & DevSecOps — SAST/SCA/secret/SBOM (ADR-0029)
+    - phase: 10 # AI Safety — conditional: ai_or_agent_change; mandatory when it fires
+    - phase: 13 # Production Deployment — CAB-gated (conditional: deploys_prod)
+  safety_valve: # see phase-gates.yaml › escalation_triggers for the full ruleset
+    triggers:
+      [
+        scope-ceiling-exceeded,
+        coverage-drop,
+        new-dependency,
+        control-trigger-fired,
+        task-expansion,
+        guardrail-touch,
+      ]
+    evidence_line: TIER_ESCALATION # emitted in the /deliver FINAL-REPORT on promotion

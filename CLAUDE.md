@@ -225,6 +225,26 @@ Full 15-phase (0–14) lifecycle: `docs/process/WORKFLOW.md` (ADR-0052, ADR-0058
 - **NEVER** merge with failing tests or linter violations.
 - **ALWAYS** update `CHANGELOG.md` with every production change.
 
+### 3.6 Grounding & Non-Fabrication
+
+For an agentic system that auto-generates ADRs, specs, migrations, and code, a hallucinated
+API or pattern is the **highest-severity failure mode**: it propagates cleanly through
+spec → design → tasks → code and survives until a gate that may not exist yet. The defence is
+an explicit grounding chain with a mandated "I don't know" terminal state.
+
+- **ALWAYS** ground every factual or API-level claim down this ordered chain, stopping at the
+  first step that confirms it: **(1)** the codebase → **(2)** `specs/` & `docs/` → **(3)** the
+  Context7 MCP server → **(4)** web search → **(5)** flag as `uncertain — verify`. Never skip a
+  step to reach a more convenient answer.
+- **NEVER** assume or fabricate an API, signature, config key, flag, file path, ADR number, or
+  behaviour. If the chain does not confirm it, **say so** — write "uncertain — verify" rather
+  than inventing. **Uncertainty is always preferable to invention.**
+- A confidently-stated claim you did not verify is a **violation of this section**, not a
+  stylistic lapse. When unsure whether something exists, search (steps 1–4) before asserting it;
+  if still unconfirmed, label it and — where it blocks the work — escalate per §14 rather than guess.
+- This rule binds every artifact an agent produces (ADR, spec, RFC, code comment, PR body,
+  review). The `ai-guardrails` skill enforces it for LLM-output handling.
+
 ---
 
 ## 4. Skill Activation Table
@@ -241,6 +261,7 @@ Every task loads **at most 2 repo skills**. This budget is not a limit to work a
 - **Phase coverage check.** A phase is done only when every artifact it owes exists. After the last task in a phase, enumerate required artifacts and create a **dedicated atomic task** for any that is missing — never bolt it onto an existing task.
 - **Declare bindings explicitly.** Every task header carries a `## Skills — load before executing` block (≤ 2). Subagents run in isolated context and load these themselves; they do not inherit the parent session's skills.
 - **Irreducible coupling → escalate, don't overload.** If a task genuinely cannot drop below 3 skills, treat it as a design smell: emit `[HITL-ESCALATE]` (§14) naming the three skills and a proposed split. Never silently load a 3rd skill.
+- **Recommend a complementary skill at most once per session.** When a useful skill falls outside the 2-skill budget, you may surface it **once** ("consider `skills/...` for this") and then proceed without it — do not re-suggest the same or other out-of-budget skills on every step. One nudge, not nagging; the budget still binds.
 
 Cross-cutting compliance/privacy/security obligations bind by _what a task touches_ (see `docs/governance/control-applicability-matrix.md`); firing 3+ control triggers in one task is itself a split signal.
 
@@ -325,6 +346,7 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `security`, `privacy`
 - [ ] PII masking applied if new data fields introduced
 - [ ] DPIA/RIPD review flagged if new PII processing added
 - [ ] Guardrails unmodified or strengthened (never weakened)
+- [ ] Every `SPEC_DEVIATION` marker maps to a tracked decision (ADR/issue/spec update) — none left unmapped (`skills/sdlc/spec-lifecycle.md`)
 - [ ] _(AI Agents only)_ HITL gateway used for any new agent action
 - [ ] **[IF SOX]** RFC_ID in commit for normal/emergency-change labels; financial write paths produce audit records (`make test-security-python`)
 - [ ] ISO 27001: change-type label applied (`standard-change`/`normal-change`/`emergency-change`); deploy-rollback skill followed; rollback tested in staging
@@ -340,6 +362,7 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `security`, `privacy`
 - **CHANGELOG updated** — non-docs changes touch `[Unreleased]`. Escape: `skip-changelog` label. Docs-only & Dependabot auto-exempt.
 - **Spec reference** — `feat`/`fix`/`security`/`privacy`/`perf` cite a spec (`SPEC-NNN`/`REM-NNN`). Escape: `no-spec` label.
 - **Version consistency** — `version.txt` is the single source of truth (ADR-0057, REM-010); `version.txt` and `pyproject.toml` must agree. Don't bump in one place only.
+- **Test integrity** (ADR-0065) — `scripts/governance/check_test_integrity.py` (wired in `harness/code-check.yml`) blocks a silent test-count decrease (escape: a `TEST-WAIVER: <reason>` line + refreshed `tests/.test-integrity-baseline.json`) and a skip/xfail added without a rationale. Coverage is the quantity gate; this is the integrity gate beside it. Never weaken or skip a test to make a gate pass.
 
 Full pipeline (`ci.yml`) jobs: `governance`, `lint`, `test-unit`, `test-integration`, `test-security`, `contract-drift`, `build`. The `harness/*.yml` specs are the Claude Code PR-review gates that complement these.
 

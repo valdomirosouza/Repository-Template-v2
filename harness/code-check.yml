@@ -13,6 +13,11 @@ gates:
     blocking: true
     failure_message: "Unit tests failed or coverage < 80%. All tests must pass and coverage must be ≥ 80% before merge."
 
+  - name: test-integrity
+    command: "uv run python scripts/governance/check_test_integrity.py --local --base main"
+    blocking: true
+    failure_message: "Test-integrity gate failed (ADR-0065): a test-count decrease without a 'TEST-WAIVER: <reason>' line, or a newly added skip/xfail without a rationale (reason= or inline comment). Coverage is a quantity metric; this guards integrity. See skills/engineering/testing-strategy.md. If a deletion is intended, add the TEST-WAIVER line and refresh tests/.test-integrity-baseline.json with --update-baseline."
+
   - name: sast
     command: "uv run bandit -r src/ -ll -x tests/"
     blocking: true
@@ -46,6 +51,20 @@ gates:
     failure_message: >
       No spec reference found in the PR body. Add a 'Referenced Spec: specs/...' line.
       In CI, ensure PR_BODY_FILE points to a file containing the PR description body.
+
+  - name: spec-deviation-markers
+    command: >
+      bash -c "
+        MARKERS=\$(git diff origin/main...HEAD | grep -E '^\+' | grep -oE 'SPEC_DEVIATION:.*' || true);
+        if [ -n \"\$MARKERS\" ]; then
+          echo 'Open SPEC_DEVIATION markers added in this PR — each MUST map to a tracked ADR / issue / spec update before merge (CLAUDE.md §7; skills/sdlc/spec-lifecycle.md):';
+          echo \"\$MARKERS\";
+        else
+          echo 'No SPEC_DEVIATION markers added.';
+        fi
+      "
+    blocking: false # informational: lists drift; the §7 PR checklist enforces each maps to a decision
+    failure_message: "A SPEC_DEVIATION marker is unmapped. Pair it with a '# Reason:' line and a tracked ADR/issue/spec update, or fix the code to match the spec (skills/sdlc/spec-lifecycle.md)."
 
 compliance_checks:
   sox:

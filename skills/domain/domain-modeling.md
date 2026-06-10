@@ -159,6 +159,37 @@ Before writing any code, answer:
 
 ---
 
+## Diagram ↔ Definition Cross-Check (pre-approval gate)
+
+We produce a lot of **paired representations** — a Mermaid diagram _and_ prose, a dependency graph
+_and_ a list of `Depends on:` lines, an ADR diagram _and_ its decision text. The two drift silently:
+the diagram says A→B, the prose forgot it (or vice-versa). Before approving any design, spec, or
+ADR that carries a diagram, run this mechanical check — it is cheap and catches real drift.
+
+**The check (generalises to any diagram-vs-text pair):** build a two-column table and confirm the
+edge sets are equal in both directions.
+
+1. **Text → Diagram.** For every dependency the prose states (`Depends on: X`, "A calls B", "reads
+   from C"), confirm there is a **matching arrow** in the diagram. A stated dependency with no arrow
+   is a **missing edge** in the diagram.
+2. **Diagram → Text.** For every arrow/edge in the diagram, confirm the prose **names it**. An arrow
+   with no prose is an **undocumented dependency** (or a stale diagram).
+3. **Reconcile or fail.** Every row must be ✓ on both sides. A mismatch blocks approval: fix the
+   diagram or the text so they agree — never approve a design whose two representations disagree.
+
+| Edge (from → to) | In diagram? | In prose (`Depends on` / call)? | Status                                        |
+| ---------------- | :---------: | :-----------------------------: | --------------------------------------------- |
+| `A → B`          |      ✓      |                ✓                | OK                                            |
+| `A → C`          |      ✓      |                ✗                | undocumented edge — add prose or remove arrow |
+| `B → D`          |      ✗      |                ✓                | missing edge — add arrow or remove prose      |
+
+This pairs with requirement-ID traceability and the `SPEC_DEVIATION` convention
+(`skills/sdlc/spec-lifecycle.md`): traceability checks spec↔code, this checks diagram↔definition.
+Apply it in Phase 5 (Architecture) review and whenever a task plan ships a dependency diagram. A
+Mermaid-edge-vs-prose linter could automate it later; until then it is a review-time gate.
+
+---
+
 ## Anti-Patterns to Avoid
 
 | Anti-pattern                     | Why it's harmful                                         | Correct approach                                |

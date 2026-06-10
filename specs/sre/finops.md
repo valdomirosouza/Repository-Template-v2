@@ -60,3 +60,6 @@ FinOps Foundation's Inform → Optimize → Operate maturity model.
 - ADR-0020: Cost allocation strategy
 - FinOps Foundation: https://www.finops.org
 - `docs/sre/slo/slo.yaml` — SLO targets (cost efficiency is a reliability concern)
+- `docs/process/gates/phase-gates.yaml` › `recommended_model_tier` — advisory per-phase model-tier
+  hints (economy/standard/frontier) that steer cheaper models toward light phases; a per-phase LLM
+  cost-optimization input for FinOps telemetry (ADR-0064 companion; report §4)

@@ -40,6 +40,7 @@ dev = [
     "pytest>=8.2.0",
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=5.0.0",
+    "pytest-timeout>=2.3.0",  # provides --timeout used by ci-model-contract.yml
     "ruff>=0.5.0",
     "mypy>=1.10.0",
     "bandit[toml]>=1.7.9",

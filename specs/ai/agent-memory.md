@@ -218,6 +218,58 @@ memory_bug_history_records_total        counter
 
 ---
 
+## 5b. Durable State Ledger (typed-ID) & Self-Pruning Archival
+
+The three runtime layers above (§1) are _machine_ memory. This section adds a fourth, **document-
+level** layer for **cross-session work state** an agent and a human both read: a durable
+`STATE.md` ledger of typed, numbered entries, plus a transient `HANDOFF` checkpoint. It uplifts
+(does not replace) the per-feature machine state in `docs/sdlc/agent-handoff-schema.md` /
+`scripts/asdd_state.py` — that JSON is per-run delivery state; this is the durable decision/lesson
+ledger that survives across sessions.
+
+### Typed-ID ledger — `docs/product/FEAT-{id}/STATE.md`
+
+Durable, append-mostly, cross-session. Each entry has a **typed, numbered ID** so it can be cited
+(e.g. "per `L-007`") from specs, ADRs, PRs, and later agent reasoning:
+
+| Prefix   | Zone            | Meaning                                                                          |
+| -------- | --------------- | -------------------------------------------------------------------------------- |
+| `AD-NNN` | Decisions       | A decision made during delivery + its rationale (pre-ADR or local)               |
+| `B-NNN`  | Blockers        | An open/closed blocker; closed ones keep a resolution note                       |
+| `L-NNN`  | Lessons Learned | A reusable lesson — **first-class and citable** (feeds the §3.4 BugHistoryStore) |
+| —        | Deferred Ideas  | Out-of-scope ideas captured so they are not lost                                 |
+| —        | Todos           | Outstanding work items not yet promoted to GitHub Issues                         |
+
+IDs are monotonic per type and never reused (a closed `B-003` stays `B-003`). PII constraints (§2)
+apply to every ledger write — `pii_filter` runs before persistence, same as any memory layer.
+
+### Self-pruning zones (keep the file from bloating context)
+
+`STATE.md` carries a size indicator so it never silently bloats the per-phase context budget
+(`docs/process/context-budget.md`, ADR-0060):
+
+| Zone | Trigger                        | Action                                                                                                 |
+| ---- | ------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| 🟢   | within budget                  | normal operation                                                                                       |
+| 🟡   | approaching the file's ceiling | review; summarise verbose entries                                                                      |
+| 🔴   | over ceiling                   | **archive** entries older than **60 days** (or any closed `B-`/superseded `AD-`) to `STATE-ARCHIVE.md` |
+
+Archival **moves, never deletes** (consistent with `skills/sdlc/spec-lifecycle.md` — deprecate by
+moving). `STATE-ARCHIVE.md` is `on_demand` context, never base-load.
+
+### Durable `STATE` vs transient `HANDOFF`
+
+| Aspect   | `STATE.md` (this section)               | `HANDOFF` (`docs/sdlc/agent-handoff-schema.md`)       |
+| -------- | --------------------------------------- | ----------------------------------------------------- |
+| Lifetime | **durable** — persists across sessions  | **transient** — overwritten each pause/resume         |
+| Holds    | decisions, blockers, lessons, deferrals | "where we are, what's next" — a ~500-token checkpoint |
+| Size     | budgeted + self-pruned (🟢/🟡/🔴)       | bounded small (≈ 500 tokens) by design                |
+
+Keep the two separate: durable knowledge accretes in `STATE.md`; the resume checkpoint stays tiny
+in the handoff message. The handoff schema documents the transient side of this split.
+
+---
+
 ## 6. Acceptance Criteria
 
 - [ ] `pii_filter.mask_text()` called before every write (enforced in implementation)

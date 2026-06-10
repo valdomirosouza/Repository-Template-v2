@@ -17,6 +17,37 @@ changes pass every gate.
 
 ---
 
+## Delivery Right-Sizing Tiers (ADR-0064)
+
+The 15 phases below are the **full** lifecycle. How many of them a given change actually runs is
+set by its **delivery tier** — the scope axis of `/deliver` (`/deliver [dry-run|code] [tier]
+[language] <spec>`), alongside mode and language. This is the lifecycle dual of the 2-skill
+budget (ADR-0060): _not every spec deserves every phase_.
+
+| Tier        | Runs                                                                                           |
+| ----------- | ---------------------------------------------------------------------------------------------- |
+| `TRIVIAL`   | Control phases + a lightweight spec; process phases (Conception, Grooming, Post-Deploy) waived |
+| `STANDARD`  | A normal feature path; heavier process phases run conditionally                                |
+| `GOVERNED`  | **Default.** The full lifecycle for cross-cutting / production-shipping change                 |
+| `REGULATED` | Every phase, no waivers — control-surface change (guardrails, autonomy, PII/financial core)    |
+
+Two rules make this safe, not reckless:
+
+1. **Control phases are never waived.** Right-sizing trims **process** phases only. Testing (8),
+   Security & DevSecOps (9), AI Safety (10, when it fires), Code Review (7), the PII classification
+   in Discovery (2), the CAB gate in Production (13), and the _no-code-without-a-spec_ invariant in
+   Specification (4) run in **every** tier (`phase-gates.yaml › phases[*].applicability.control_phase`).
+2. **A safety valve self-corrects under-sizing.** If a run exceeds its declared tier mid-flight
+   (scope-ceiling exceeded, coverage drop, a new dependency, an unanticipated control trigger, a
+   > 5-step task expansion, or a guardrail touch), `/deliver` **promotes to the next tier**,
+   > **re-enters** the skipped phases, and emits a `TIER_ESCALATION` line in the FINAL-REPORT.
+
+The authoritative tier → phase mapping and escalation triggers live in
+`docs/process/gates/phase-gates.yaml` (`tiers:`, each phase's `applicability:` block, and
+`escalation_triggers:`); the governance projection is in `docs/governance/applicability-matrix.yml`.
+
+---
+
 ## Phase 0 — Intake & Prioritization
 
 | Step | Actor    | Action                                                                                                         | Output                      |
