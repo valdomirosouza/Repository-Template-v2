@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.14.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.14.0...v2.14.1) (2026-06-10)
+
+
+### Bug Fixes
+
+* **model-contract:** robust refusal detection; exclude AWS example keys ([#176](https://github.com/valdomirosouza/Repository-Template-v2/issues/176)) ([#177](https://github.com/valdomirosouza/Repository-Template-v2/issues/177)) ([bc654f2](https://github.com/valdomirosouza/Repository-Template-v2/commit/bc654f2cd1b0d15aa1924302c37d9fd426e31a18))
+
 ## [2.14.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.13.1...v2.14.0) (2026-06-10)
 
 
