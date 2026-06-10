@@ -84,11 +84,13 @@ slo_ref: docs/sre/slo/slo.yaml # where this feature's SLOs are/were recorded
 
 ## 5. Functional Requirements
 
-<!-- One testable statement per row. Each FR must trace to an acceptance criterion in §12. -->
+<!-- One testable statement per row, phrased EARS-style: "WHEN <trigger/condition>, the system
+     SHALL <observable response>." (For ubiquitous behaviour: "The system SHALL <response>.")
+     Each FR MUST trace to an acceptance criterion in §12 — see the coverage footer there. -->
 
-| ID    | Requirement |
-| ----- | ----------- |
-| FR-01 |             |
+| ID    | Requirement (EARS: WHEN … the system SHALL …) |
+| ----- | --------------------------------------------- |
+| FR-01 |                                               |
 
 ## 6. Non-Functional Requirements
 
@@ -149,11 +151,17 @@ record any deviation as a new ADR in `new_adrs_required`.>
 
 ## 12. Acceptance Criteria _(gate: dry-run validation)_
 
-<!-- Phrase each as observable & runnable. These become the dry-run evidence in /deliver's FINAL-REPORT. -->
+<!-- Phrase each EARS-style and observable/runnable: "WHEN <condition>, THEN <observable result>"
+     (the testable form of the §5 "the system SHALL …"). These become the dry-run evidence in
+     /deliver's FINAL-REPORT. Map every AC back to the FR(s) it covers. -->
 
-| ID    | Acceptance criterion |
-| ----- | -------------------- |
-| AC-01 |                      |
+| ID    | Acceptance criterion (WHEN … THEN …) | Covers FR(s) |
+| ----- | ------------------------------------ | ------------ |
+| AC-01 |                                      |              |
+
+> **Requirement coverage footer (gate).** _N_ FRs total · _M_ mapped to ≥ 1 AC · **_K_ unmapped ⚠️**.
+> Every FR in §5 MUST map to at least one AC above; any unmapped FR (`K > 0`) **blocks Definition of
+> Ready / Done** until covered or explicitly moved to §3 Non-Goals. Fill the counts before review.
 
 ## 13. Risks & Limitations
 
