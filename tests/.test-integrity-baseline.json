@@ -1,5 +1,5 @@
 {
-  "total": 1195,
+  "total": 1201,
   "per_marker": {
     "abuse_case": 34,
     "benchmark": 15,
@@ -9,6 +9,6 @@
     "model_contract": 8,
     "security": 6,
     "unit": 65,
-    "unmarked": 974
+    "unmarked": 980
   }
 }
