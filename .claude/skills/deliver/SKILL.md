@@ -210,10 +210,13 @@ EVIDENCE: validate with the LANGUAGE-appropriate make targets (PYTHON: lint-pyth
   if no repo target exists, run the toolchain directly and log the gap). Plus the
   language-agnostic gates (check-control-bindings, sbom, smoke/doctor) as the phase needs. Tee
   logs into reports/<SLUG>/logs/<N>-<slug>.log
-Return: artefacts produced (real paths in CODE / reports/<SLUG>/ in DRY-RUN), commands run,
-  evidence excerpts (≤20 lines), gate PASS/FAIL/N-A/BLOCKED (DRY-RUN Phase 6 may be SIMULATED)
-  with reason, any human gate hit (with payload), `restored` (DRY-RUN tracked files reverted, or
-  none), and per-task wall-clock (start/end ISO-8601).
+Return: the fixed return envelope of the sub-agent context contract
+  (docs/sdlc/agent-handoff-schema.md › Sub-agent context contract) — artefacts/files_changed (real
+  paths in CODE / reports/<SLUG>/ in DRY-RUN), commands run, evidence excerpts (≤20 lines), gate
+  PASS/FAIL/N-A/BLOCKED/WAIVED (DRY-RUN Phase 6 may be SIMULATED) with reason + gate_counts,
+  spec_deviations (open SPEC_DEVIATION markers) or none, issues or none, tier_escalation or none,
+  any human gate hit (with payload), `restored` (DRY-RUN tracked files reverted, or none), and
+  per-task wall-clock (start/end ISO-8601).
 """)
 ```
 

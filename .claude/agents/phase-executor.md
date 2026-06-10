@@ -26,14 +26,24 @@ ACL/autonomy setting, or weaken a guardrail.
 
 ## Inputs (provided in your brief)
 
-`PHASE` (0–14 + exact name), `SPEC` (path), `SLUG`, `MODE` (`DRY-RUN` | `CODE`), `LANGUAGE`
+`PHASE` (0–14 + exact name), `SPEC` (path), `SLUG`, `MODE` (`DRY-RUN` | `CODE`), `TIER`
+(`TRIVIAL` | `STANDARD` | `GOVERNED` | `REGULATED`; the ADR-0064 scope axis), `LANGUAGE`
 (the stack to build in/validate — `PYTHON` | `JAVA` | `GO` | `NODE` | `TYPESCRIPT` | `IAC` | other),
-`BACKLOG_IDS`, `GOVERNING_ADRS`, `GATE_CRITERIA` pointer, `GUARDRAILS`. Match `MODE` and `LANGUAGE`
-**case-insensitively**. If any required input is missing or the `SPEC` path does not exist, return
-`gate: BLOCKED` with the reason — do not guess. If `MODE` is absent, default to `DRY-RUN` (the safe
-mode); only a non-empty value that is neither dry-run nor code is "unrecognised" → `gate: BLOCKED`.
-If `LANGUAGE` is absent, default to `PYTHON`. `LANGUAGE` changes only **where** code lands and
-**which** validation targets run — never a gate, guardrail, or human-stop.
+`BACKLOG_IDS`, `GOVERNING_ADRS`, `GATE_CRITERIA` pointer, `GUARDRAILS`. Match `MODE`, `TIER`, and
+`LANGUAGE` **case-insensitively**. If any required input is missing or the `SPEC` path does not
+exist, return `gate: BLOCKED` with the reason — do not guess. If `MODE` is absent, default to
+`DRY-RUN` (the safe mode); only a non-empty value that is neither dry-run nor code is
+"unrecognised" → `gate: BLOCKED`. If `TIER` is absent, default to `GOVERNED` (conservative —
+resolve this phase's `required`/`conditional`/`waivable` status from `phase-gates.yaml`
+`applicability`; never waive a `control_phase`). If `LANGUAGE` is absent, default to `PYTHON`.
+`LANGUAGE` changes only **where** code lands and **which** validation targets run — never a gate,
+guardrail, or human-stop.
+
+This input set is the **receive allow-list** of the sub-agent context contract
+(`docs/sdlc/agent-handoff-schema.md` › _Sub-agent context contract_): you run in isolated context
+and are given **only** your phase brief, the in-scope spec/design section(s), `CONVENTIONS` + your
+≤ 2 phase skills, and your phase `base_load` (`docs/process/context-budget.md`). You are **not**
+given other phases' tasks, chat history, the durable `STATE.md` ledger, or unrelated specs.
 
 ## Steps
 
@@ -111,11 +121,20 @@ If `LANGUAGE` is absent, default to `PYTHON`. `LANGUAGE` changes only **where** 
 
 ## Return (structured, for the orchestrator)
 
-- `mode`: DRY-RUN | CODE
-- `phase`, `gate`: PASS | FAIL | N-A | BLOCKED (+ one-line reason)
-- `artefacts`: list of paths created/modified (real tree in CODE; `reports/<SLUG>/` in DRY-RUN)
+This is the **return envelope** of the sub-agent context contract
+(`docs/sdlc/agent-handoff-schema.md` › _Sub-agent context contract_) — a fixed object so the
+orchestrator can parse it mechanically into the FINAL-REPORT, never free-text:
+
+- `mode`: DRY-RUN | CODE · `tier`: TRIVIAL | STANDARD | GOVERNED | REGULATED (+ effective tier if escalated)
+- `status`: done | blocked | failed
+- `phase`, `gate`: PASS | FAIL | N-A | BLOCKED | SIMULATED | WAIVED (+ one-line reason)
+- `gate_counts`: the numbers behind the result — tests run, coverage %, findings, etc.
+- `files_changed` (`artefacts`): paths created/modified (real tree in CODE; `reports/<SLUG>/` in DRY-RUN)
 - `commands`: list of commands run (with exit codes)
 - `evidence`: excerpts ≤ 20 lines each, referencing the `logs/` files
+- `spec_deviations`: open `SPEC_DEVIATION` markers introduced this phase (skills/sdlc/spec-lifecycle.md), or `none`
+- `issues`: problems/risks for the orchestrator or human, or `none`
+- `tier_escalation`: any safety-valve promotion (`from → to`, trigger, re-entered phases), or `none` (ADR-0064)
 - `hitl`: any gate/payload that would require a real human (the STOP point in CODE mode)
 - `restored`: (DRY-RUN) tracked files reverted after validation, or `none`
 - `timing`: `started_at` / `ended_at` (ISO-8601) for this phase's task
