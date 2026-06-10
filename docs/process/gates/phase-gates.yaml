@@ -93,6 +93,30 @@ escalation_triggers:
     description: Change touches src/guardrails/ or src/agents/hitl_gateway.py.
     action: promote_to_regulated_and_dual_approval # CLAUDE.md §14 dual-approval STOP
 
+# ── Advisory per-phase model-tier hint (FinOps; report §4) ───────────────────
+# NON-BINDING cost guidance: suggest a cheaper model class for light phases and reserve frontier
+# models for high-leverage reasoning. Tiers are abstract (map to your model classes):
+#   economy  — light/mechanical (intake, grooming, observability checks, release prep, post-deploy)
+#   standard — most development, review, testing, security, discovery
+#   frontier — high-leverage reasoning (specification, architecture, AI safety)
+# Advisory ONLY — never changes a gate, guardrail, or human-stop. Feeds specs/sre/finops.md telemetry.
+recommended_model_tier:
+  0: economy # Intake — risk-class draft
+  1: standard # Conception
+  2: standard # Discovery — PII/NFR reasoning
+  3: economy # Grooming
+  4: frontier # Specification — high-leverage authoring
+  5: frontier # Architecture — ADR reasoning
+  6: standard # Development
+  7: standard # Code Review
+  8: standard # Testing
+  9: standard # Security & DevSecOps
+  10: frontier # AI Safety — adversarial reasoning
+  11: economy # Observability checks
+  12: economy # Release Candidate prep
+  13: economy # Production Deployment validation
+  14: economy # Post-Deploy & Learn
+
 phases:
   - id: 0
     name: Intake & Prioritization
