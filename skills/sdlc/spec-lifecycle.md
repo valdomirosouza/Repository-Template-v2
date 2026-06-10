@@ -98,6 +98,36 @@ specs/ai/guardrails.md
 
 ---
 
+## `SPEC_DEVIATION` markers — record when code diverges from the spec
+
+When implementation must diverge from the spec or design (an unavoidable trade-off, a discovered
+constraint), make the drift **greppable and gateable** instead of silent. Coverage and lint cannot
+see "the code quietly stopped matching the spec"; an inline marker turns it into an auditable fact
+that complements requirement-ID traceability.
+
+Place the marker at the point of divergence, always paired with a reason:
+
+```python
+# SPEC_DEVIATION: store retries in Redis, not Postgres as specs/foo.md §9 states
+# Reason: Postgres write amplification breached the §10 latency budget; see ADR-00NN / #123
+```
+
+Rules:
+
+1. **Always paired.** A `# SPEC_DEVIATION: <what>` line must be followed by a `# Reason: <why>`.
+2. **Always mapped.** Every open deviation must map to a tracked decision — an ADR, an issue, or a
+   spec update — before merge (enforced via the `CLAUDE.md §7` PR checklist). An unmapped
+   deviation blocks merge: either land the ADR/issue or fix the code to match the spec.
+3. **Surfaced in CI.** `harness/code-check.yml` (`spec-deviation-markers`) greps the diff and lists
+   every added `SPEC_DEVIATION` in the PR summary so reviewers see the drift explicitly.
+4. **Temporary by default.** A deviation is debt: resolve it (update the spec, or revert the code)
+   rather than letting markers accumulate. The sub-agent return envelope reports open markers
+   (`docs/sdlc/agent-handoff-schema.md`).
+
+The marker works in any language — use that language's line-comment syntax (`//`, `#`, `--`).
+
+---
+
 ## Checklist: Is This Spec Ready to Implement?
 
 - [ ] Status is `Approved` (not Draft or Review)

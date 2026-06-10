@@ -345,6 +345,7 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `security`, `privacy`
 - [ ] PII masking applied if new data fields introduced
 - [ ] DPIA/RIPD review flagged if new PII processing added
 - [ ] Guardrails unmodified or strengthened (never weakened)
+- [ ] Every `SPEC_DEVIATION` marker maps to a tracked decision (ADR/issue/spec update) — none left unmapped (`skills/sdlc/spec-lifecycle.md`)
 - [ ] _(AI Agents only)_ HITL gateway used for any new agent action
 - [ ] **[IF SOX]** RFC_ID in commit for normal/emergency-change labels; financial write paths produce audit records (`make test-security-python`)
 - [ ] ISO 27001: change-type label applied (`standard-change`/`normal-change`/`emergency-change`); deploy-rollback skill followed; rollback tested in staging
