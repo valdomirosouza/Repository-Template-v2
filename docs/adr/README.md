@@ -125,7 +125,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0062](ADR-0062-aurora-postgresql-platform-rdbms.md)                   | Aurora PostgreSQL as the platform RDBMS (vs RDS Multi-AZ + read replicas)              | Accepted   | 2026-06-09 |
 | [ADR-0063](ADR-0063-brownfield-terraform-reconciliation.md)                | Brownfield Terraform reconciliation (extend existing modules, do not fork)             | Accepted   | 2026-06-09 |
 | [ADR-0064](ADR-0064-delivery-right-sizing-tiers.md)                        | Delivery Right-Sizing / Phase Applicability Tiers + auto-escalation safety valve       | Accepted   | 2026-06-09 |
-| [ADR-0065](ADR-0065-test-integrity-invariants.md)                          | Test-Integrity Invariants (RED-first, co-location, no silent count drop, no weakening) | Proposed   | 2026-06-09 |
+| [ADR-0065](ADR-0065-test-integrity-invariants.md)                          | Test-Integrity Invariants (RED-first, co-location, no silent count drop, no weakening) | Accepted   | 2026-06-09 |
 
 ### AI Agents Module _(opt-in)_
 

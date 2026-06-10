@@ -1,6 +1,6 @@
 # ADR-0065 — Test-Integrity Invariants
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-06-09
 **Authors:** Valdomiro Souza
 
