@@ -82,6 +82,21 @@ python scripts/asdd_state.py show --feature FEAT-42
 
 ---
 
+## Durable `STATE` vs transient `HANDOFF`
+
+The handoff message and shared-state JSON above are **transient**: they checkpoint "where we are,
+what's next" and are overwritten as the pipeline advances. They are deliberately **small — target
+≈ 500 tokens** for the resume checkpoint (`notes` is a summary, not a transcript) so a pause/resume
+re-hydrates cheaply within the per-phase context budget (`docs/process/context-budget.md`).
+
+**Durable** knowledge — decisions, blockers, and lessons that must survive across sessions — does
+**not** belong here. It accretes in the typed-ID State Ledger (`AD-NNN` / `B-NNN` / `L-NNN`,
+Deferred Ideas, Todos) defined in `specs/ai/agent-memory.md §5b`, which self-prunes (🟢/🟡/🔴,
+archive > 60 days). Cite ledger entries from a handoff's `notes` by ID (e.g. `"see L-007"`) rather
+than inlining them — that keeps the checkpoint tiny while preserving the durable trail.
+
+---
+
 ## Governance (non-negotiable)
 
 The delivery agents follow the workflow's core principle — _agents draft, analyze,
