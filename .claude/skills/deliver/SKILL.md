@@ -6,7 +6,9 @@ description: >-
   side-effects) or CODE (real implementation into the working tree, still stopping
   at every human gate). Trigger on "deliver", "deliver a spec", "15-phase",
   "Agentic SDLC", "dry-run delivery", or "delivery report". Usage:
-  /deliver [dry-run|code] [language] <path-to-spec.md> — mode defaults to dry-run,
+  /deliver [dry-run|code] [tier] [language] <path-to-spec.md> — mode defaults to
+  dry-run, tier defaults to GOVERNED (the SCOPE axis, ADR-0064: TRIVIAL|STANDARD|
+  GOVERNED|REGULATED — right-sizes which process phases run; control phases always run),
   language defaults to PYTHON; declare JAVA, GO, NODE, TYPESCRIPT, IAC (Terraform/
   Ansible), or another stack to build the spec in that language. Produces a plan, a
   decomposed backlog, per-phase execution via the phase-executor subagent, and a
@@ -23,13 +25,19 @@ Delivery** lifecycle, delegating each phase to the `phase-executor` subagent. Th
 **thin** orchestrator: it points to repo knowledge and does **not** restate phase criteria —
 the executor reads them per phase.
 
-## Argument parsing — mode + language + spec path
+## Argument parsing — mode + tier + language + spec path
 
-`$ARGUMENTS` is `[<mode>] [<language>] <path-to-spec.md>` (case-insensitive). Canonical order is
-mode, then language, then spec — but parse **by classifying tokens**, so order/omission is
-tolerated:
+`$ARGUMENTS` is `[<mode>] [<tier>] [<language>] <path-to-spec.md>` (case-insensitive). Canonical
+order is mode, then tier, then language, then spec — but parse **by classifying tokens**, so
+order/omission is tolerated:
 
 - **`<mode>`** ∈ {`dry-run`, `code`} (aliases: `dryrun`, `dry_run` → `dry-run`). **Default `dry-run`.**
+- **`<tier>`** ∈ {`TRIVIAL`, `STANDARD`, `GOVERNED`, `REGULATED`} (case-insensitive) — the **scope
+  axis** (ADR-0064). It right-sizes which **process** phases run; **control phases always run in
+  every tier** (`phase-gates.yaml › phases[*].applicability.control_phase: true`). **Default
+  `GOVERNED`** (conservative — omission never under-governs). Read the authoritative tier→phase
+  mapping from `docs/process/gates/phase-gates.yaml` (`tiers:`, each phase's `applicability:`
+  block, and `escalation_triggers:`); do not restate it here.
 - **`<language>`** — the stack the spec is built in. **Default `PYTHON`.** Recognised keywords
   (normalise to the canonical name on the left):
   - `PYTHON` ← python, py
@@ -44,17 +52,21 @@ tolerated:
 **Procedure:**
 
 1. Split `$ARGUMENTS` on whitespace. **`SPEC`** = the token that ends in `.md` (or contains `/`);
-   if none, the **last** token. The other 0–2 leading tokens are mode and/or language.
-2. Classify each remaining token: a mode keyword → `MODE`; otherwise → `LANGUAGE` (normalised).
-   Unset → defaults (`MODE=dry-run`, `LANGUAGE=PYTHON`). If two tokens both look like languages
-   or both like modes, report the ambiguity and ask.
+   if none, the **last** token. The other 0–3 leading tokens are mode, tier, and/or language.
+2. Classify each remaining token: a mode keyword → `MODE`; a tier keyword
+   (`TRIVIAL`|`STANDARD`|`GOVERNED`|`REGULATED`, case-insensitive) → `TIER`; otherwise →
+   `LANGUAGE` (normalised). Unset → defaults (`MODE=dry-run`, `TIER=GOVERNED`, `LANGUAGE=PYTHON`).
+   If two tokens both classify to the same axis (two modes / two tiers / two languages), report
+   the ambiguity and ask.
 3. **If no spec path remains, ask the user for the spec path and stop** — never invent or
    fabricate a spec. If the path does not exist, report that and stop (the spec must exist
    before delivery).
-4. Echo the resolved mode, language, and spec back before doing anything, e.g.
-   `Mode: CODE · Language: JAVA · Spec: specs/foo.md`. For `code`, also state the gate boundary
-   up front (see **Modes** below). For a non-PYTHON language, note the canonical location +
-   validation targets it maps to (see **Languages**).
+4. Echo the resolved mode, tier, language, and spec back before doing anything, e.g.
+   `Mode: CODE · Tier: STANDARD · Language: JAVA · Spec: specs/foo.md`. For `code`, also state
+   the gate boundary up front (see **Modes** below). State which **process** phases the tier
+   waives and that **control phases run regardless** (ADR-0064; resolve the per-phase
+   `applicability` from `phase-gates.yaml`). For a non-PYTHON language, note the canonical
+   location + validation targets it maps to (see **Languages**).
 
 ## Modes
 
@@ -138,10 +150,14 @@ Let `SLUG` = the spec filename without extension. All output goes under `reports
    `docs/process/gates/phase-gates.yaml`. **Record the tracked-tree baseline** now:
    `git status --porcelain` → `reports/<SLUG>/logs/00-tree-baseline.txt` (the set of files
    already dirty before the run; used by the DRY-RUN snapshot-and-restore invariant below).
-2. Write `reports/<SLUG>/00-plan.md`: the resolved `MODE` and `LANGUAGE` (+ the canonical code
-   location and validation targets that language maps to — see **Languages**), problem summary,
-   risk class, the 15-phase plan with the governing ADR(s) per phase, the guardrails in scope, the
-   evidence strategy, and — for `code` — the list of human gates where the run will STOP.
+2. Write `reports/<SLUG>/00-plan.md`: the resolved `MODE`, `TIER`, and `LANGUAGE` (+ the canonical
+   code location and validation targets that language maps to — see **Languages**), problem
+   summary, risk class, the 15-phase plan with the governing ADR(s) per phase **and each phase's
+   `required`/`conditional`/`waivable` status for `TIER`** (resolved from `phase-gates.yaml ›
+phases[*].applicability`; mark waived process phases `PHASE_WAIVED` with a reason, and list the
+   `escalation_triggers` that would promote the tier mid-run — ADR-0064), the guardrails in scope,
+   the evidence strategy, and — for `code` — the list of human gates where the run will STOP.
+   **Control phases (`applicability.control_phase: true`) are listed as running in every tier.**
 3. Decompose the spec into `reports/<SLUG>/backlog.yaml` — a list of items, each with:
    `id`, `title`, `phase` (0–14), `depends_on` (list of ids), `adr_refs` (list),
    `acceptance` (testable criteria), `estimate_tshirt` (XS|S|M|L|XL).
@@ -162,13 +178,21 @@ PHASE: <N> — <exact phase name>
 SPEC: <SPEC>
 SLUG: <SLUG>
 MODE: <DRY-RUN | CODE>   # emit the CANONICAL upper-case token (normalise dry-run/dryrun/code first)
+TIER: <TRIVIAL | STANDARD | GOVERNED | REGULATED>   # scope axis (ADR-0064); default GOVERNED
+  (Resolve this phase's applicability for TIER from phase-gates.yaml id=<N> applicability:
+   required → run it; conditional → run only if its `condition` holds, else record N/A;
+   waivable → skip ONLY if control_phase is false, emitting `PHASE_WAIVED: phase=<N> tier=<TIER>
+   reason=<…>`. control_phase:true phases run in EVERY tier — never waive a control phase.
+   If a safety-valve trigger fires mid-phase (scope-ceiling/coverage-drop/new-dependency/
+   control-trigger-fired/task-expansion/guardrail-touch), return a TIER_ESCALATION line so the
+   orchestrator promotes the tier and re-enters skipped phases.)
 LANGUAGE: <PYTHON | JAVA | GO | NODE | TYPESCRIPT | IAC | other>   # the stack to build in + validate
   (CODE writes to that language's canonical location; evidence uses its make targets — see Languages.
    PYTHON→src/+tests/; JAVA/GO→services/<name>/; NODE/TS→frontend/<app>/; IAC→infrastructure/)
 BACKLOG_IDS: <ids whose phase == N>
 GOVERNING_ADRS: <from phase-gates.yaml / docs/adr/README.md>
 GATE_CRITERIA: read docs/process/gates/phase-gates.yaml id=<N> (required_artifacts,
-  required_approvals, exit_criteria, allowed/prohibited actions)
+  required_approvals, exit_criteria, allowed/prohibited actions, applicability for TIER)
 GUARDRAILS: CLAUDE.md §3 + src/guardrails/ relevant to this phase
 MODE CONTRACT:
   - DRY-RUN — no real side-effects. Draft artefacts into reports/<SLUG>/ only; never touch
@@ -270,11 +294,15 @@ SERVICE=`; NODE|TS `lint-frontend`/`test-unit-frontend APP=`; IAC terraform vali
 
 Write `reports/<SLUG>/FINAL-REPORT.md` containing, in order:
 
-0. **Run header** — `MODE` (DRY-RUN | CODE), `LANGUAGE` (+ the code location & validation targets it
-   mapped to), spec path, SLUG, (DRY-RUN) the tracked files restored at close-out, and (CODE) the
-   list of human gates the run STOPPED at and their resolution.
+0. **Run header** — `MODE` (DRY-RUN | CODE), `TIER` (TRIVIAL | STANDARD | GOVERNED | REGULATED, the
+   ADR-0064 scope axis — and the _effective_ tier if the safety valve escalated), `LANGUAGE` (+ the
+   code location & validation targets it mapped to), spec path, SLUG, (DRY-RUN) the tracked files
+   restored at close-out, and (CODE) the list of human gates the run STOPPED at and their resolution.
 1. **Summary + gate results** — one line per phase: phase, gate (**PASS/FAIL/N-A/BLOCKED**, plus
-   **SIMULATED** for a DRY-RUN Phase 6), human-equiv approver.
+   **SIMULATED** for a DRY-RUN Phase 6, and **WAIVED** for a process phase the tier waived —
+   carrying its `PHASE_WAIVED` reason), human-equiv approver. **List every `TIER_ESCALATION`**
+   (ADR-0064 safety valve) as its own line: `from → to`, the trigger that fired, and the phases
+   re-entered — so any mid-run promotion is auditable. Control phases are never WAIVED.
 2. **Requirement-traceability table** — `| Criterion | Phase | ADR(s) | Evidence (log/path) |`
    (one row per acceptance criterion from the backlog/spec).
 3. **Task/sub-task table** —

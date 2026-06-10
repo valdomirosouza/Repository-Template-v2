@@ -7,7 +7,7 @@
 #
 # Spec:  Agentic-SDLC-Repository-Improvement-Directive.md §9
 # ADR:   ADR-0052 (E2E workflow), ADR-0058 (Phase 0 Intake + AI Safety phase),
-#        ADR-0054 (machine-readable contracts)
+#        ADR-0054 (machine-readable contracts), ADR-0064 (delivery right-sizing tiers)
 #
 # Consumed by: agents (allowed/prohibited action lookup per phase), CI gates.
 # See docs/process/gates/README.md for the schema and consumption contract.
@@ -35,6 +35,61 @@ action_vocabulary:
   - rollback
   - change_feature_flag
 
+# ── Delivery right-sizing tiers (ADR-0064) ───────────────────────────────────
+# The SCOPE axis for /deliver, complementing mode (DRY-RUN|CODE) and language.
+# Each phase's `applicability:` block below declares, per tier, whether the phase
+# is required | conditional | waivable. Control phases (`control_phase: true`) are
+# NEVER waivable in any tier — right-sizing trims PROCESS phases only, never CONTROL
+# phases (safety, privacy, security, AI-guardrail, human-oversight).
+tiers:
+  - id: TRIVIAL
+    description: Localized low-risk change; no data/security/AI surface, no new dependency (e.g. config tweak).
+    scope_ceiling: { files: 3, adrs: 0, modules: 1 }
+  - id: STANDARD
+    description: A normal feature or fix contained within one module / bounded context.
+    scope_ceiling: { files: 10, adrs: 1, modules: 2 }
+  - id: GOVERNED
+    default: true # /deliver defaults here on omission — conservative, never under-governs
+    description: Cross-cutting change, new architectural decision, or anything shipped to production.
+    scope_ceiling: { files: 25, adrs: 3, modules: null }
+  - id: REGULATED
+    description: Touches a control surface (guardrails, autonomy, financial/PII core) — full lifecycle.
+    scope_ceiling: { files: null, adrs: null, modules: null }
+
+# Condition keys referenced by a phase's `applicability.condition` (used for `conditional` tiers).
+applicability_conditions:
+  processes_data: Change reads, stores, or transmits personal data (ADR-0012, CLAUDE.md §3.1).
+  architectural_decision: An architectural decision is made / an ADR is warranted.
+  ai_or_agent_change: Change touches src/agents/, src/guardrails/, a new action_type, or autonomy.
+  new_failure_mode: Change introduces a new failure mode or runbook-worthy operational path.
+  ships_release: This delivery cycle cuts a release candidate.
+  deploys_prod: This delivery cycle deploys to production.
+
+# ── Safety valve / auto-escalation (ADR-0064 §4) ─────────────────────────────
+# If any trigger fires mid-run, /deliver PROMOTES to the next tier, RE-ENTERS the
+# now-required phases it had skipped, and emits a TIER_ESCALATION evidence line
+# (from / to / trigger / reentered_phases). Escalation is one-way (promotion only)
+# and re-entrant: an escalated run never silently drops a re-acquired phase.
+escalation_triggers:
+  - id: scope-ceiling-exceeded
+    description: File / module / ADR count exceeds the declared tier's scope_ceiling.
+    action: promote_one_tier
+  - id: coverage-drop
+    description: Coverage would fall below 80% (CLAUDE.md §14 hard-stops at <75%).
+    action: promote_to_governed
+  - id: new-dependency
+    description: A new dependency / image / pipeline step is added (ties to dependency-or-pipeline, ADR-0061).
+    action: promote_to_governed
+  - id: control-trigger-fired
+    description: A .github/control-triggers.yml trigger fires that the declared tier did not anticipate (e.g. personal-data, llm-io, deploy-change-process).
+    action: promote_to_governed
+  - id: task-expansion
+    description: Inline task listing reveals >5 atomic steps or complex dependencies (Spec-Driven "wrongly-skipped" rule).
+    action: reenter_phase_3_grooming
+  - id: guardrail-touch
+    description: Change touches src/guardrails/ or src/agents/hitl_gateway.py.
+    action: promote_to_regulated_and_dual_approval # CLAUDE.md §14 dual-approval STOP
+
 phases:
   - id: 0
     name: Intake & Prioritization
@@ -47,6 +102,12 @@ phases:
     prohibited_agent_actions:
       [write_code, deploy, rollback, change_feature_flag]
     exit_criteria: "Problem statement, value hypothesis, risk class, and owner recorded; prioritized into the backlog"
+    applicability: # ADR-0064 — Intake is the cheap entry point; required in every tier.
+      control_phase: false
+      trivial: required
+      standard: required
+      governed: required
+      regulated: required
 
   - id: 1
     name: Conception
@@ -60,6 +121,12 @@ phases:
     prohibited_agent_actions:
       [write_code, deploy, rollback, change_feature_flag]
     exit_criteria: "Discovery doc linked; size label applied; Tech Lead comment present"
+    applicability: # ADR-0064 — process phase; the full discovery.md is waivable for trivial scope.
+      control_phase: false
+      trivial: waivable
+      standard: conditional
+      governed: required
+      regulated: required
 
   - id: 2
     name: Discovery
@@ -73,6 +140,13 @@ phases:
     prohibited_agent_actions:
       [write_code, deploy, rollback, change_feature_flag]
     exit_criteria: "NFR doc with PII classification; Security Lead approved"
+    applicability: # ADR-0064 — CONTROL: carries PII classification; mandatory whenever data is processed.
+      control_phase: true
+      condition: processes_data
+      trivial: conditional
+      standard: conditional
+      governed: required
+      regulated: required
 
   - id: 3
     name: Grooming
@@ -87,6 +161,12 @@ phases:
     prohibited_agent_actions:
       [write_code, deploy, rollback, change_feature_flag]
     exit_criteria: "Definition of Ready checklist passed (all criteria in docs/process/DEFINITION_OF_READY.md); issue status: ready"
+    applicability: # ADR-0064 — process phase; formal grooming waivable for trivial scope.
+      control_phase: false
+      trivial: waivable
+      standard: conditional
+      governed: required
+      regulated: required
 
   - id: 4
     name: Specification
@@ -100,6 +180,14 @@ phases:
     prohibited_agent_actions:
       [write_code, deploy, rollback, change_feature_flag]
     exit_criteria: "Spec PR merged; governance spec-lint gate green; Tech + Security Lead approved"
+    applicability: # ADR-0064 — CONTROL: "no code without a spec" (§3.4). Required in every tier;
+      # only the ARTIFACT WEIGHT scales — TRIVIAL may use a lightweight spec (issue + inline AC)
+      # instead of a full feature-spec.md, but never zero spec.
+      control_phase: true
+      trivial: required
+      standard: required
+      governed: required
+      regulated: required
 
   - id: 5
     name: Architecture
@@ -113,6 +201,13 @@ phases:
     prohibited_agent_actions:
       [write_code, deploy, rollback, change_feature_flag]
     exit_criteria: "ADR(s) accepted and merged for any architectural decision"
+    applicability: # ADR-0064 — conditional on an architectural decision being made; always full for REGULATED.
+      control_phase: false
+      condition: architectural_decision
+      trivial: conditional
+      standard: conditional
+      governed: conditional
+      regulated: required
 
   - id: 6
     name: Development
@@ -124,6 +219,12 @@ phases:
     allowed_agent_actions: [read, draft_doc, write_code, write_tests, run_ci]
     prohibited_agent_actions: [deploy, rollback, change_feature_flag]
     exit_criteria: "Unit tests green; lint green; pre-commit green; spec implemented (no scope creep)"
+    applicability: # ADR-0064 — the implementation itself; required in every tier.
+      control_phase: false
+      trivial: required
+      standard: required
+      governed: required
+      regulated: required
 
   - id: 7
     name: Code Review
@@ -135,6 +236,12 @@ phases:
     allowed_agent_actions: [read, write_code, write_tests, open_pr, run_ci]
     prohibited_agent_actions: [deploy, rollback, change_feature_flag]
     exit_criteria: ">=1 human approval; AI review posted; governance labels applied if autonomy-affecting"
+    applicability: # ADR-0064 — CONTROL: >=1 human approval is human oversight (ADR-0011). Required in every tier.
+      control_phase: true
+      trivial: required
+      standard: required
+      governed: required
+      regulated: required
 
   - id: 8
     name: Testing
@@ -147,6 +254,12 @@ phases:
     allowed_agent_actions: [read, write_code, write_tests, run_ci]
     prohibited_agent_actions: [deploy, rollback, change_feature_flag]
     exit_criteria: ">=80% unit coverage; security + abuse-case tests green"
+    applicability: # ADR-0064 — CONTROL: coverage >=80% + security/abuse tests (§3.5). Never waivable.
+      control_phase: true
+      trivial: required
+      standard: required
+      governed: required
+      regulated: required
 
   - id: 9
     name: Security & DevSecOps
@@ -158,6 +271,12 @@ phases:
     allowed_agent_actions: [read, run_ci]
     prohibited_agent_actions: [deploy, rollback, change_feature_flag]
     exit_criteria: "Zero HIGH/CRITICAL SAST/SCA; zero secrets; SBOM generated + cosign-attested"
+    applicability: # ADR-0064 — CONTROL: SAST/SCA/secret/SBOM (§3.2, ADR-0029). Never waivable.
+      control_phase: true
+      trivial: required
+      standard: required
+      governed: required
+      regulated: required
 
   - id: 10
     name: AI Safety & Agent Governance
@@ -171,6 +290,13 @@ phases:
     allowed_agent_actions: [read, run_ci]
     prohibited_agent_actions: [deploy, rollback, change_feature_flag]
     exit_criteria: "Prompt-injection + data-leakage tests pass; tool-permission review done; evals + audit trail present; AI Safety checklist complete"
+    applicability: # ADR-0064 — CONTROL: conditional on ai_or_agent_change in EVERY tier; when it fires it is mandatory and never waived.
+      control_phase: true
+      condition: ai_or_agent_change
+      trivial: conditional
+      standard: conditional
+      governed: conditional
+      regulated: conditional
 
   - id: 11
     name: Observability & Operational Readiness
@@ -184,6 +310,13 @@ phases:
     allowed_agent_actions: [read, draft_doc, run_ci]
     prohibited_agent_actions: [deploy, rollback, change_feature_flag]
     exit_criteria: "PRR >= 90%; probe lint green; OTel spans + metrics verified for new paths"
+    applicability: # ADR-0064 — conditional on a new failure mode at low tiers; required once shipping (governed+).
+      control_phase: false
+      condition: new_failure_mode
+      trivial: conditional
+      standard: conditional
+      governed: required
+      regulated: required
 
   - id: 12
     name: Release Candidate
@@ -201,6 +334,13 @@ phases:
     allowed_agent_actions: [read, draft_doc, run_ci]
     prohibited_agent_actions: [deploy, rollback, change_feature_flag]
     exit_criteria: "Chaos + model-contract tests green; SBOM; rc-approved label applied"
+    applicability: # ADR-0064 — conditional on this cycle cutting a release; required for governed+.
+      control_phase: false
+      condition: ships_release
+      trivial: conditional
+      standard: conditional
+      governed: required
+      regulated: required
 
   - id: 13
     name: Production Deployment
@@ -214,6 +354,13 @@ phases:
     allowed_agent_actions: [read]
     prohibited_agent_actions: [write_code, change_feature_flag] # deploy/rollback are human-gated
     exit_criteria: "Canary readiness gate passed at each step; error-budget check green; CAB approved"
+    applicability: # ADR-0064 — CONTROL: CAB-gated; conditional on actually deploying this cycle, always full for REGULATED.
+      control_phase: true
+      condition: deploys_prod
+      trivial: conditional
+      standard: conditional
+      governed: conditional
+      regulated: required
 
   - id: 14
     name: Post-Deployment & Learn
@@ -227,3 +374,9 @@ phases:
     prohibited_agent_actions:
       [write_code, deploy, rollback, change_feature_flag]
     exit_criteria: "No P0 at T+48h; DORA within SLO; retrospective created"
+    applicability: # ADR-0064 — process phase; full retrospective waivable for trivial scope.
+      control_phase: false
+      trivial: waivable
+      standard: conditional
+      governed: required
+      regulated: required

@@ -124,6 +124,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0061](ADR-0061-control-binding-ci-gate.md)                            | Control-binding obligations enforced as a CI governance gate                          | Accepted   | 2026-06-07 |
 | [ADR-0062](ADR-0062-aurora-postgresql-platform-rdbms.md)                   | Aurora PostgreSQL as the platform RDBMS (vs RDS Multi-AZ + read replicas)             | Accepted   | 2026-06-09 |
 | [ADR-0063](ADR-0063-brownfield-terraform-reconciliation.md)                | Brownfield Terraform reconciliation (extend existing modules, do not fork)            | Accepted   | 2026-06-09 |
+| [ADR-0064](ADR-0064-delivery-right-sizing-tiers.md)                        | Delivery Right-Sizing / Phase Applicability Tiers + auto-escalation safety valve      | Proposed   | 2026-06-09 |
 
 ### AI Agents Module _(opt-in)_
 
