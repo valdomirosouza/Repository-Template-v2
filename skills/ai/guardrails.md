@@ -165,6 +165,27 @@ HITL timeout always rejects — never auto-approves on timeout. This is an invio
 
 ---
 
+## Grounding & Non-Fabrication gate (CLAUDE.md §3.6)
+
+A hallucinated API is the highest-severity failure mode for an agentic system — it propagates
+through spec → design → tasks → code. Before emitting LLM output, or any ADR / spec / code / PR
+text, **verify every factual or API-level claim down the grounding chain** and stop at the first
+step that confirms it:
+
+1. the **codebase**, then
+2. **`specs/` & `docs/`**, then
+3. the **Context7 MCP** server, then
+4. **web search**, then
+5. flag it **`uncertain — verify`**.
+
+**Check:** any factual/API claim that steps 1–4 do not confirm **MUST** be labelled
+`uncertain — verify` and never presented as fact. An unverified-but-confidently-stated API,
+signature, config key, flag, file path, or ADR number is a **guardrail violation** (sibling to
+LLM02 output handling and LLM09 over-reliance), not a style nit — uncertainty is always preferable
+to invention. When the gap blocks the work, escalate per `CLAUDE.md §14` rather than guess.
+
+---
+
 ## Checklist Before Merging Any Change to `src/guardrails/`
 
 - [ ] All four guardrail layers still in the execution chain (none removed)

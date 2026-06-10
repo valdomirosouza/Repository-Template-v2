@@ -225,6 +225,26 @@ Full 15-phase (0–14) lifecycle: `docs/process/WORKFLOW.md` (ADR-0052, ADR-0058
 - **NEVER** merge with failing tests or linter violations.
 - **ALWAYS** update `CHANGELOG.md` with every production change.
 
+### 3.6 Grounding & Non-Fabrication
+
+For an agentic system that auto-generates ADRs, specs, migrations, and code, a hallucinated
+API or pattern is the **highest-severity failure mode**: it propagates cleanly through
+spec → design → tasks → code and survives until a gate that may not exist yet. The defence is
+an explicit grounding chain with a mandated "I don't know" terminal state.
+
+- **ALWAYS** ground every factual or API-level claim down this ordered chain, stopping at the
+  first step that confirms it: **(1)** the codebase → **(2)** `specs/` & `docs/` → **(3)** the
+  Context7 MCP server → **(4)** web search → **(5)** flag as `uncertain — verify`. Never skip a
+  step to reach a more convenient answer.
+- **NEVER** assume or fabricate an API, signature, config key, flag, file path, ADR number, or
+  behaviour. If the chain does not confirm it, **say so** — write "uncertain — verify" rather
+  than inventing. **Uncertainty is always preferable to invention.**
+- A confidently-stated claim you did not verify is a **violation of this section**, not a
+  stylistic lapse. When unsure whether something exists, search (steps 1–4) before asserting it;
+  if still unconfirmed, label it and — where it blocks the work — escalate per §14 rather than guess.
+- This rule binds every artifact an agent produces (ADR, spec, RFC, code comment, PR body,
+  review). The `ai-guardrails` skill enforces it for LLM-output handling.
+
 ---
 
 ## 4. Skill Activation Table
