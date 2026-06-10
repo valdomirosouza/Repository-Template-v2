@@ -12,6 +12,25 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.14.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.13.1...v2.14.0) (2026-06-10)
+
+
+### Features
+
+* **governance:** incorporate Spec-Driven insights — right-sizing, grounding, test-integrity (ADR-0064/0065) ([#174](https://github.com/valdomirosouza/Repository-Template-v2/issues/174)) ([d139aea](https://github.com/valdomirosouza/Repository-Template-v2/commit/d139aea7d8ce87a1e8900c1b3b2047384748d74a))
+* **infra:** SPEC-INFRA-001 AWS platform — Aurora, MSK SASL/IAM, VPC endpoints ([#170](https://github.com/valdomirosouza/Repository-Template-v2/issues/170)) ([19627ad](https://github.com/valdomirosouza/Repository-Template-v2/commit/19627ad533baa1a04350b05c428a3f266bf86363))
+
+
+### Bug Fixes
+
+* **observability:** use extended_statistic for the P99 CloudWatch alarm ([#173](https://github.com/valdomirosouza/Repository-Template-v2/issues/173)) ([ec9e657](https://github.com/valdomirosouza/Repository-Template-v2/commit/ec9e65724148d579676f2acff05cd940d6173a0c))
+
+
+### Documentation
+
+* **adr:** ADR-0062 (Aurora RDBMS) + ADR-0063 (brownfield reconciliation) for SPEC-INFRA-001 ([#169](https://github.com/valdomirosouza/Repository-Template-v2/issues/169)) ([1f4b919](https://github.com/valdomirosouza/Repository-Template-v2/commit/1f4b9194fea721e4204d25b79f6353eb535422cd))
+* **spec:** SPEC-INFRA-001 — AWS platform (immutable Terraform IaC) [reopened for review] ([#166](https://github.com/valdomirosouza/Repository-Template-v2/issues/166)) ([fe6857a](https://github.com/valdomirosouza/Repository-Template-v2/commit/fe6857aba95a6082d71a5003f0619037b0ae6655))
+
 ## [2.13.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.13.0...v2.13.1) (2026-06-09)
 
 
