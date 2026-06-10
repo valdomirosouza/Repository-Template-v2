@@ -261,6 +261,7 @@ Every task loads **at most 2 repo skills**. This budget is not a limit to work a
 - **Phase coverage check.** A phase is done only when every artifact it owes exists. After the last task in a phase, enumerate required artifacts and create a **dedicated atomic task** for any that is missing — never bolt it onto an existing task.
 - **Declare bindings explicitly.** Every task header carries a `## Skills — load before executing` block (≤ 2). Subagents run in isolated context and load these themselves; they do not inherit the parent session's skills.
 - **Irreducible coupling → escalate, don't overload.** If a task genuinely cannot drop below 3 skills, treat it as a design smell: emit `[HITL-ESCALATE]` (§14) naming the three skills and a proposed split. Never silently load a 3rd skill.
+- **Recommend a complementary skill at most once per session.** When a useful skill falls outside the 2-skill budget, you may surface it **once** ("consider `skills/...` for this") and then proceed without it — do not re-suggest the same or other out-of-budget skills on every step. One nudge, not nagging; the budget still binds.
 
 Cross-cutting compliance/privacy/security obligations bind by _what a task touches_ (see `docs/governance/control-applicability-matrix.md`); firing 3+ control triggers in one task is itself a split signal.
 
