@@ -1,6 +1,6 @@
 # ADR-0064 — Delivery Right-Sizing / Phase Applicability Tiers + Auto-Escalation Safety Valve
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-06-09
 **Authors:** Valdomiro Souza
 
