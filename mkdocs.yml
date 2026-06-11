@@ -43,6 +43,7 @@ nav:
       - Jobs & Workers: quickstart/jobs-worker.md
       - Contract-Driven Dev: quickstart/contract-driven-dev.md
       - Add a Service: quickstart/add-new-service.md
+      - Delivering a Spec (/deliver): quickstart/delivering-a-spec.md
   - ADRs: adr/README.md
   - AI Governance:
       - AI Safety Checklist: ai-governance/ai-safety-checklist.md

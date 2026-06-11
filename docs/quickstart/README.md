@@ -58,6 +58,8 @@ These rules are language-independent. Every service must comply.
 | Golden Signals metrics                          | `skills/sre/golden-signals.md` | Instrument `requests_total`, `request_duration`, `errors_total`          |
 | Unit test coverage ≥ 80%                        | `CLAUDE.md §3.5`               | Enforced in CI — PRs fail below this threshold                           |
 
+> **Driving a feature end-to-end?** Once your spec is approved, **[Delivering a Spec with `/deliver`](delivering-a-spec.md)** explains every option (mode · tier · language) for taking it through all 15 phases — language-agnostic.
+
 ---
 
 ## Environment setup (all languages)
