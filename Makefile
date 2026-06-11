@@ -115,24 +115,29 @@ build: build-python
 
 # ── Java ───────────────────────────────────────────────────────────────────
 
+# NOTE: services are independent Maven projects (no root reactor pom), so each target
+# `cd`s into the service dir and runs mvn there — matching .github/workflows/ci-java.yml
+# (`(cd "$dir" && mvn ...)`). Do NOT use `-pl services/<name> -am` from the repo root:
+# without a root aggregator pom it fails with "Could not find the selected project in the
+# reactor". If a shared library is added later, `mvn install` it (or introduce a reactor pom).
 test-java: ## Java: full test suite with JaCoCo coverage (SERVICE=<name>)
-	mvn verify -pl services/$(SERVICE) -am
+	cd services/$(SERVICE) && mvn verify
 
 test-unit-java: ## Java: unit tests only — no Testcontainers (SERVICE=<name>)
-	mvn test -pl services/$(SERVICE) -am -Dsurefire.failIfNoSpecifiedTests=false
+	cd services/$(SERVICE) && mvn test -Dsurefire.failIfNoSpecifiedTests=false
 
 lint-java: ## Java: Checkstyle + SpotBugs + OWASP dependency-check (SERVICE=<name>)
-	mvn checkstyle:check spotbugs:check dependency-check:check -pl services/$(SERVICE)
+	cd services/$(SERVICE) && mvn checkstyle:check spotbugs:check dependency-check:check
 
 format-java: ## Java: apply google-java-format via Maven plugin (SERVICE=<name>)
-	mvn fmt:format -pl services/$(SERVICE)
+	cd services/$(SERVICE) && mvn fmt:format
 
 build-java: ## Java: build Docker image (SERVICE=<name>)
-	mvn spring-boot:build-image -pl services/$(SERVICE) \
+	cd services/$(SERVICE) && mvn spring-boot:build-image \
 		-Dspring-boot.build-image.imageName=$(REGISTRY)/$(SERVICE):$(VERSION)
 
 run-java: ## Java: start Spring Boot dev server (SERVICE=<name>)
-	mvn spring-boot:run -pl services/$(SERVICE)
+	cd services/$(SERVICE) && mvn spring-boot:run
 
 # ── Go ─────────────────────────────────────────────────────────────────────
 
@@ -173,7 +178,7 @@ gen-proto-python: ## Python: regenerate gRPC stubs from proto files into src/sha
 		--grpc_python_out=src/shared/generated/grpc
 
 gen-sources-java: ## Java: run mvn generate-sources (OpenAPI stubs + Avro classes) (SERVICE=<name>)
-	mvn generate-sources -pl services/$(SERVICE) -am
+	cd services/$(SERVICE) && mvn generate-sources
 
 gen-api-client-python: ## Python: regenerate REST client from OpenAPI spec into src/shared/generated/rest_client/
 	uv run openapi-python-client generate \

@@ -81,3 +81,6 @@ deprecated/
 
 # Per-run /deliver dry-run outputs (plans, backlog, logs, FINAL-REPORT) — not source
 reports/
+
+# Java / Maven build output — services build per-service in services/<name>/ (ADR-0025; no root reactor pom)
+services/**/target/
