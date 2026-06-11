@@ -126,6 +126,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0063](ADR-0063-brownfield-terraform-reconciliation.md)                | Brownfield Terraform reconciliation (extend existing modules, do not fork)             | Accepted   | 2026-06-09 |
 | [ADR-0064](ADR-0064-delivery-right-sizing-tiers.md)                        | Delivery Right-Sizing / Phase Applicability Tiers + auto-escalation safety valve       | Accepted   | 2026-06-09 |
 | [ADR-0065](ADR-0065-test-integrity-invariants.md)                          | Test-Integrity Invariants (RED-first, co-location, no silent count drop, no weakening) | Accepted   | 2026-06-09 |
+| [ADR-0066](ADR-0066-spec-lgs-001-runtime-stack-java-spring-boot.md)        | SPEC-LGS-001 runtime stack: Java 21 / Spring Boot (override of NFR-02 under ADR-0025)  | Accepted   | 2026-06-11 |
 
 ### AI Agents Module _(opt-in)_
 
