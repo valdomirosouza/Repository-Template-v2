@@ -83,11 +83,11 @@ See `docs/runbooks/README.md` for the full alert → runbook index. Quick refere
 
 | Alert                    | Severity | Action                                                                   |
 | ------------------------ | -------- | ------------------------------------------------------------------------ |
-| `CriticalErrorRate`      | P1       | [RB-001 rollback-procedure](runbooks/rollback-procedure.md)              |
-| `AuditLogWriteFailure`   | P1       | [RB-003 hitl-recovery](runbooks/RB-003-hitl-recovery.md)                 |
-| `ConsumerLagCritical`    | P1       | [RB-005 kafka-consumer-lag](runbooks/RB-005-kafka-consumer-lag.md)       |
-| `CircuitBreakerOpen`     | P1       | [RB-004 db-connection-failure](runbooks/RB-004-db-connection-failure.md) |
-| `HITLQueueDepthCritical` | P1       | [RB-003 hitl-recovery](runbooks/RB-003-hitl-recovery.md)                 |
+| `CriticalErrorRate`      | P1       | [RB-001 rollback-procedure](../runbooks/rollback-procedure.md)              |
+| `AuditLogWriteFailure`   | P1       | [RB-003 hitl-recovery](../runbooks/RB-003-hitl-recovery.md)                 |
+| `ConsumerLagCritical`    | P1       | [RB-005 kafka-consumer-lag](../runbooks/RB-005-kafka-consumer-lag.md)       |
+| `CircuitBreakerOpen`     | P1       | [RB-004 db-connection-failure](../runbooks/RB-004-db-connection-failure.md) |
+| `HITLQueueDepthCritical` | P1       | [RB-003 hitl-recovery](../runbooks/RB-003-hitl-recovery.md)                 |
 
 ---
 

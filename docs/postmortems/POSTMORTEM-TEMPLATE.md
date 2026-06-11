@@ -160,7 +160,7 @@
 
 <!-- Links para runbooks, ADRs, dashboards, incidentes relacionados, literatura. -->
 
-- Runbook relacionado: [docs/runbooks/XXX.md](../runbooks/XXX.md)
+- Runbook relacionado: <!-- [RB-XXX nome](../runbooks/RB-XXX-nome.md) — substituir pelo runbook relevante em docs/runbooks/ -->
 - Incidente similar: <!-- INC-XXX — Título -->
 - Dashboard: <!-- Grafana → "Golden Signals" → painel relevante -->
 - ADR relacionado: <!-- ADR-XXXX — Título -->

@@ -55,15 +55,15 @@
 
 ## Art. 14 — Human Oversight
 
-| Item                                                | Status       | Evidence                                                     |
-| --------------------------------------------------- | ------------ | ------------------------------------------------------------ |
-| HITL controls implemented for consequential actions | ✅ Compliant | `src/agents/hitl_gateway.py`, ADR-0011                       |
-| HOTL monitoring active for autonomous flows         | ✅ Compliant | Grafana agent-performance dashboard, alert routing           |
-| Override mechanism available at all times           | ✅ Compliant | Ops dashboard override; HITL rejection always available      |
-| Persons responsible for oversight identified        | ✅ Compliant | `docs/ai-governance/autonomy-boundaries.md`, CODEOWNERS      |
-| Oversight persons trained                           | In Progress  | Training programme to be defined                             |
-| Auto-approval on timeout is disabled                | ✅ Compliant | Expired HITL requests are rejected, never approved           |
-| Escalation from HOTL to HITL defined                | ✅ Compliant | `docs/ai-governance/autonomy-boundaries.md` escalation rules |
+| Item                                                | Status       | Evidence                                                          |
+| --------------------------------------------------- | ------------ | ----------------------------------------------------------------- |
+| HITL controls implemented for consequential actions | ✅ Compliant | `src/agents/hitl_gateway.py`, ADR-0011                            |
+| HOTL monitoring active for autonomous flows         | ✅ Compliant | Grafana agent-performance dashboard, alert routing                |
+| Override mechanism available at all times           | ✅ Compliant | Ops dashboard override; HITL rejection always available           |
+| Persons responsible for oversight identified        | ✅ Compliant | `docs/ai-governance/autonomy-boundaries.md`, CODEOWNERS           |
+| Oversight persons trained                           | In Progress  | Tracked in `docs/compliance/remediation-register.md` (issue #194) |
+| Auto-approval on timeout is disabled                | ✅ Compliant | Expired HITL requests are rejected, never approved                |
+| Escalation from HOTL to HITL defined                | ✅ Compliant | `docs/ai-governance/autonomy-boundaries.md` escalation rules      |
 
 ---
 
