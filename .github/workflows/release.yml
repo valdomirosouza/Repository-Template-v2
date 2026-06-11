@@ -3,6 +3,11 @@ name: Release
 on:
   push:
     branches: ["main"]
+  # Manual re-trigger. When a PR is auto-merged by the github-actions bot (GITHUB_TOKEN), the
+  # resulting push to main does NOT fire push-triggered workflows (GitHub anti-recursion), so
+  # release-please never runs and no release PR is opened. Dispatch this workflow manually
+  # (`gh workflow run release.yml --ref main`) to re-evaluate main and open/refresh the release PR.
+  workflow_dispatch:
 
 permissions:
   contents: write
