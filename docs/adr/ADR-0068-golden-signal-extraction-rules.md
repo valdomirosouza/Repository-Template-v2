@@ -23,12 +23,12 @@ read/write identically"). This ADR fixes all three concretely.
 
 ### 1. Signal extraction (per log entry → `(path, window)`)
 
-| Signal     | Rule (exact)                                                                                     |
-| ---------- | ------------------------------------------------------------------------------------------------ |
-| Traffic    | `count += 1` for the entry's `(path, window, bucket)`.                                            |
+| Signal     | Rule (exact)                                                                                                                          |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Traffic    | `count += 1` for the entry's `(path, window, bucket)`.                                                                                |
 | Latency    | append `response_time_ms` (float) to the bucket's latency sample sorted set; P50/P95/P99 by rank interpolation at query time (FR-07). |
-| Error      | `errors += 1` **iff** `status_code >= 400`; `error_rate = errors / count`.                        |
-| Saturation | sample is "saturated" **iff** `bytes_sent >= SATURATION_BYTES_THRESHOLD`; `saturation_pct = saturated / count * 100`. |
+| Error      | `errors += 1` **iff** `status_code >= 400`; `error_rate = errors / count`.                                                            |
+| Saturation | sample is "saturated" **iff** `bytes_sent >= SATURATION_BYTES_THRESHOLD`; `saturation_pct = saturated / count * 100`.                 |
 
 ### 2. Saturation threshold (resolves §15-Q3)
 
@@ -44,7 +44,7 @@ read/write identically"). This ADR fixes all three concretely.
 ### 3. Window semantics (resolves §13 reproducibility)
 
 - Two windows: **1m** (60s) and **5m** (300s), both **epoch-aligned**: `bucket_start =
-  floor(epoch_seconds / W) * W`.
+floor(epoch_seconds / W) * W`.
 - Boundaries are **LEFT-closed / RIGHT-open**: a sample with timestamp `t` belongs to bucket `b`
   iff `bucket_start <= t < bucket_start + W`. A sample at exactly `bucket_start + W` belongs to the
   **next** bucket. This single rule makes bucketing deterministic and reproducible across both
@@ -60,21 +60,32 @@ gs:paths                                              # Redis set: every tracked
 ```
 
 - `{signal}` ∈ `traffic|latency|error|saturation`; `{window}` ∈ `1m|5m`; `{epoch_bucket}` = integer.
-- **`{path}` MUST be URL-encoded (RFC 3986 percent-encoding) before insertion into any key.** This is
-  the key-injection defence (CLAUDE.md §3.2): a raw path containing `:`, `*`, whitespace, newline, or
-  a literal `gs:` prefix can otherwise forge or collide with another path's keys. Encoding makes the
-  `:` field separators unambiguous and the path opaque. The same encoding is applied identically on
-  write (ingestion/worker) and read (analytics), and is reversed only for the FR-08 `paths` listing.
+- **`{path}` MUST be percent-encoded before insertion into any key.** This is the key-injection
+  defence (CLAUDE.md §3.2): a raw path containing `:`, `*`, whitespace, newline, or a literal `gs:`
+  prefix can otherwise forge or collide with another path's keys. Encoding makes the `:` field
+  separators unambiguous and the path opaque. The same encoding is applied identically on write
+  (ingestion/worker) and read (analytics), and is reversed only for the FR-08 `paths` listing.
+- **Encoding standard (corrected — finding from the Node comparative build):** the encoder MUST be
+  **RFC 3986 percent-encoding** (the `pchar` set; space → `%20`). Note that Java's
+  `java.net.URLEncoder` is **`application/x-www-form-urlencoded`**, _not_ RFC 3986 — it emits `+`
+  for space and leaves `*` unencoded — so two languages do **not** produce byte-identical keys for
+  paths containing spaces or sub-delims. Within a single service this is harmless (one encoder used
+  for both write and read, so keys are self-consistent). The "byte-for-byte cross-language" guarantee
+  below holds **only** for paths restricted to unreserved characters; if a polyglot deployment ever
+  shares one Redis, every writer/reader MUST use a true RFC-3986 encoder (e.g. switch the Java side
+  off `URLEncoder`).
 
 ## Consequences
 
 ### Positive
+
 - Ingestion and analytics are guaranteed key-compatible — no silent read/write drift (§9.2 intent).
 - Window math is reproducible: the same log replay yields identical buckets and percentiles (§13).
 - URL-encoding closes the key-injection vector at the data-layer boundary (threat-model T/E entries).
 - Saturation is tunable per noisy path without code change (NFR-04).
 
 ### Negative / Trade-offs
+
 - `>=` saturation and the `bytes_sent` proxy remain approximations (source-spec §13) — documented,
   not hidden; surfaced honestly in responses.
 - LEFT-closed/RIGHT-open means a burst straddling a boundary is split across buckets by design; this
@@ -82,9 +93,11 @@ gs:paths                                              # Redis set: every tracked
 - URL-encoding adds an encode/decode step on every key op; negligible vs Redis round-trip.
 
 ### Neutral
+
 - Percentile interpolation method lives in the Java `PercentileCalculator` (feature-spec §1.2), not here.
 
 ## Alternatives Considered
+
 - **Global-only saturation threshold** — simpler, but can't accommodate large-payload paths; rejected
   in favour of per-path-with-default.
 - **Sliding/overlapping windows** — better burst smoothing, higher storage + compute; rejected for
@@ -94,6 +107,7 @@ gs:paths                                              # Redis set: every tracked
   the boundary case is explicitly "at or above threshold = saturated."
 
 ## References
+
 - `specs/system/SPEC-LGS-001-log-based-golden-signals.md` §10, §9.2, §13, §15-Q3
 - `reports/CODE-DELIVERY-SPEC-LGS-001/specs/feature-spec.md` §1.2, §3, §5
 - ADR-0067 (store + key usage), ADR-0012 (PII masking, applied before extraction)
