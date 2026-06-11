@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.14.4](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.14.3...v2.14.4) (2026-06-11)
+
+
+### Documentation
+
+* fix mkdocs broken anchors and unresolved directory links ([#186](https://github.com/valdomirosouza/Repository-Template-v2/issues/186)) ([a21e886](https://github.com/valdomirosouza/Repository-Template-v2/commit/a21e886a9a3c825e4cd008936b172082067790e1))
+
 ## [2.14.3](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.14.2...v2.14.3) (2026-06-11)
 
 
