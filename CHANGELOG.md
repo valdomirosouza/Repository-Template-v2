@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.14.2](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.14.1...v2.14.2) (2026-06-11)
+
+
+### Bug Fixes
+
+* **config:** load .env.example cleanly — comma/JSON allowed_origins + ignore extra keys ([#179](https://github.com/valdomirosouza/Repository-Template-v2/issues/179)) ([b87486e](https://github.com/valdomirosouza/Repository-Template-v2/commit/b87486e77195c868fc507ed6d6a067cb1454accb))
+
 ## [2.14.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.14.0...v2.14.1) (2026-06-10)
 
 
