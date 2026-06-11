@@ -29,16 +29,16 @@ After reading your language guide, read these in order:
 
 Before reading your language guide, understand the shared layer:
 
-| Asset                  | Location                                                                                                           | What it is                                              |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| Service catalog        | [`services.yaml`](../../services.yaml)                                                                             | All services, their language, port, and topic contracts |
-| REST contract          | [`docs/api/openapi/v1/openapi.yaml`](../api/openapi/v1/openapi.yaml)                                               | OpenAPI 3.1 — the canonical REST API                    |
-| Event contract         | [`docs/api/asyncapi/v1/asyncapi.yaml`](../api/asyncapi/v1/asyncapi.yaml)                                           | AsyncAPI 2.6 — all Kafka topics and event schemas       |
-| Avro schemas           | [`infrastructure/message-broker/schema-registry/avro/`](../../infrastructure/message-broker/schema-registry/avro/) | Event payload schemas (language-neutral)                |
-| gRPC contracts         | [`docs/api/grpc/proto/`](../api/grpc/proto/)                                                                       | Protobuf definitions for inter-service calls            |
-| Shared config          | [`.env.example`](../../.env.example)                                                                               | Infrastructure variables (DB, Redis, Kafka, OTel)       |
-| Architecture decisions | [`docs/adr/`](../adr/)                                                                                             | Binding decisions — read before writing code            |
-| AI governance          | [`specs/ai/`](../../specs/ai/)                                                                                     | HITL/HOTL model, guardrails, agent design               |
+| Asset                  | Location                                                                     | What it is                                              |
+| ---------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Service catalog        | [`services.yaml`](../../services.yaml)                                       | All services, their language, port, and topic contracts |
+| REST contract          | [`docs/api/openapi/v1/openapi.yaml`](../api/openapi/v1/openapi.yaml)         | OpenAPI 3.1 — the canonical REST API                    |
+| Event contract         | [`docs/api/asyncapi/v1/asyncapi.yaml`](../api/asyncapi/v1/asyncapi.yaml)     | AsyncAPI 2.6 — all Kafka topics and event schemas       |
+| Avro schemas           | `infrastructure/message-broker/schema-registry/avro/`                        | Event payload schemas (language-neutral)                |
+| gRPC contracts         | [`docs/api/grpc/proto/ai_service.proto`](../api/grpc/proto/ai_service.proto) | Protobuf definitions for inter-service calls            |
+| Shared config          | [`.env.example`](../../.env.example)                                         | Infrastructure variables (DB, Redis, Kafka, OTel)       |
+| Architecture decisions | [`docs/adr/`](../adr/README.md)                                              | Binding decisions — read before writing code            |
+| AI governance          | [`specs/ai/`](../../specs/ai/README.md)                                      | HITL/HOTL model, guardrails, agent design               |
 
 > **Rule:** Never duplicate shared contracts in your service. Consume the OpenAPI/AsyncAPI/proto
 > files as the source of truth. Generate clients from them — do not write them by hand.

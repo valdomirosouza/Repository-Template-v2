@@ -140,7 +140,7 @@ kubectl delete secret agent-service-tls -n default
 
 ### Step 3 — Reissue immediately
 
-Follow [Step 1–4 of Manual Rotation](#step-1--issue-a-new-certificate) above.
+Follow [Step 1–4 of Manual Rotation](#step-1-issue-a-new-certificate) above.
 
 ### Step 4 — Rotate dependent secrets
 
