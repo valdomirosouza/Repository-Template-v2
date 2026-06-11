@@ -3,7 +3,7 @@
 > **Activation:** Any Helm chart edit, new K8s Deployment, health endpoint change, or probe-related SLO work  
 > **Spec:** specs/k8s/probe-strategy.md (K8S-001)  
 > **ADR:** ADR-0042  
-> **Runbook:** docs/sre/runbooks/RB-004-canary-probe-validation.md
+> **Runbook:** docs/sre/runbooks/RB-SRE-004-canary-probe-validation.md
 
 ---
 

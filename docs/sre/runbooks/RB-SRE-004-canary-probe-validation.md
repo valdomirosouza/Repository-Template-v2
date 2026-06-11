@@ -1,4 +1,4 @@
-# RB-004 — Canary Probe Validation & Rollback
+# RB-SRE-004 — Canary Probe Validation & Rollback
 
 > **Spec:** specs/k8s/probe-strategy.md §6  
 > **ADR:** ADR-0042  

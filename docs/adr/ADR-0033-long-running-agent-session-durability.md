@@ -52,7 +52,7 @@ The `SprintContract` model is extended with a `task_type` field
 **Positive:**
 
 - Long-running sessions survive interruptions without data loss.
-- Operators can inspect checkpoint state directly in Redis or via the RB-005 runbook.
+- Operators can inspect checkpoint state directly in Redis or via the RB-SRE-005 runbook.
 - `task_type` field enables ROI measurement of "net-new" vs "planned" work.
 - Redis TTL=7d aligns with the sprint horizon; local fallback preserves devX without infra.
 
@@ -68,6 +68,6 @@ The `SprintContract` model is extended with a `task_type` field
 - A `plan-corrupted` checkpoint causes a session to halt with `[HITL-ESCALATE]` rather
   than auto-recovering. This is intentional — silent recovery from a corrupted plan
   could cause the agent to re-execute already-completed steps with real-world effects.
-  Operators can manually delete the checkpoint via RB-005 to force a clean restart.
+  Operators can manually delete the checkpoint via RB-SRE-005 to force a clean restart.
 - The local JSON fallback has no TTL and must be cleaned up manually. The `.claude/`
   directory is `.gitignore`d; checkpoints are never committed.

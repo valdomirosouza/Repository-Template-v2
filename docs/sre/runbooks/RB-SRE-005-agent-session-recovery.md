@@ -1,4 +1,4 @@
-# RB-005 — Agent Session Recovery
+# RB-SRE-005 — Agent Session Recovery
 
 **Owner:** SRE Lead | **Last updated:** 2026-06-05
 **Spec:** `specs/ai/long-running-session.md`
