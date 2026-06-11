@@ -257,7 +257,7 @@ make new-service NAME=my-service LANG=python OWNER=platform PORT=8020 REGISTER=t
 
 ```
 .
-├── CLAUDE.md                    ← AI behavioral contract (v2.2.0)
+├── CLAUDE.md                    ← AI behavioral contract (v2.7.0)
 ├── services.yaml                ← Service catalog (all languages, ports, topics)
 ├── docker-compose.yml           ← Full dev infrastructure stack
 ├── docker-compose.test.yml      ← Lightweight test stack (offset ports)
