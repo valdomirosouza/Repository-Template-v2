@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: golden-signals
+  threads:
+    virtual:
+      enabled: true # Java 21 Loom — request executor + worker (ADR-0066/0069, NFR-02)
+
+server:
+  port: ${APP_PORT:8085}
+  shutdown: graceful
+
+# All tunables via env with documented defaults (NFR-04; feature-spec §3, ADR-0067/0068/0069).
+gs:
+  api-keys: ${GS_API_KEYS:} # comma-separated valid API keys (required in prod)
+  ingest-queue-capacity: ${INGEST_QUEUE_CAPACITY:10000} # bounded queue (ADR-0069)
+  saturation-bytes-threshold: ${SATURATION_BYTES_THRESHOLD:1048576} # 1 MiB (ADR-0068)
+  retention-1m-seconds: ${RETENTION_1M_SECONDS:7200} # 1m TTL = 2h (ADR-0067)
+  retention-5m-seconds: ${RETENTION_5M_SECONDS:86400} # 5m TTL = 24h (ADR-0067)
+  rate-limit-per-minute: ${RATE_LIMIT_PER_MINUTE:600} # per-key sliding window (FR-11)
+  hitl-p99-latency-ms: ${HITL_P99_LATENCY_MS:1000} # P99 over this ⇒ HITL flip (FR-13)
+  hitl-error-rate: ${HITL_ERROR_RATE:0.05} # error_rate over this ⇒ HITL flip (FR-13)
+  audit-max-entries: ${AUDIT_MAX_ENTRIES:10000} # bounded in-memory audit ring (FR-14)
+  # Per-path saturation overrides (ADR-0068 §2): gs.saturation-overrides."<path>"=<bytes>
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  pattern:
+    # Structured-ish console pattern carrying the trace id from MDC (NFR-03).
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [trace_id=%X{trace_id:-}] %logger{36} - %msg%n"

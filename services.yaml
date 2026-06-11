@@ -69,6 +69,25 @@ services:
       - ADR-0011 # HITL/HOTL model
 
   # ────────────────────────────────────────────────────────────────
+  # Golden Signals — Java (Spring Boot)
+  # Log-based Golden-Signal ingestion & predictive-analytics pipeline (SPEC-LGS-001)
+  # ────────────────────────────────────────────────────────────────
+  - name: golden-signals
+    language: java
+    type: api
+    port: 8085
+    image: yourorg/golden-signals
+    owner: sre-team
+    # REST-only (ingestion + analytics); no Kafka topics in initial scope (spec §3).
+    adr:
+      - ADR-0066 # Runtime stack: Java 21 / Spring Boot (override of NFR-02)
+      - ADR-0067 # Redis as time-series store
+      - ADR-0068 # Golden-Signal extraction rules
+      - ADR-0069 # In-JVM bounded virtual-thread queue
+      - ADR-0012 # PII masking (client IP)
+      - ADR-0026 # Audit-log immutability
+
+  # ────────────────────────────────────────────────────────────────
   # Event Worker — Go
   # High-throughput Kafka consumer, stateless event processing
   # ────────────────────────────────────────────────────────────────

@@ -69,6 +69,7 @@ src/agents/hitl_gateway.py           @your-org/security-team @your-org/ai-govern
 src/agents/                          @your-org/platform-team @your-org/ai-governance
 src/observability/                   @your-org/sre-team
 src/shared/                          @your-org/platform-team
+services/golden-signals/             @your-org/platform-team @your-org/sre-team
 
 # ── SRE & Infrastructure ──────────────────────────────────────────────────────
 docs/sre/                            @your-org/sre-team

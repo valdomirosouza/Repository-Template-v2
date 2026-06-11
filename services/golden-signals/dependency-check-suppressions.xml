@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+  <!--
+    Add false-positive suppressions here. Each suppression must have:
+      <notes>: Reason the CVE does not apply or is mitigated
+      <cve>: The CVE identifier being suppressed
+    Example:
+    <suppress>
+      <notes>CVE-XXXX-YYYYY: not exploitable — we do not use the affected API</notes>
+      <cve>CVE-XXXX-YYYYY</cve>
+    </suppress>
+  -->
+</suppressions>
