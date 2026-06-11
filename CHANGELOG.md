@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.14.3](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.14.2...v2.14.3) (2026-06-11)
+
+
+### Documentation
+
+* **deliver:** document all /deliver options (mode · tier · language) ([#184](https://github.com/valdomirosouza/Repository-Template-v2/issues/184)) ([52ee92f](https://github.com/valdomirosouza/Repository-Template-v2/commit/52ee92f7d3ba68a9221ac1b3d38312c0d6e26b9f))
+
 ## [2.14.2](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.14.1...v2.14.2) (2026-06-11)
 
 
