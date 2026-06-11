@@ -20,9 +20,15 @@ from __future__ import annotations
 import pytest
 
 from src.agents.risk_scorer import RiskScorer
-from src.shared.config import settings
+from src.shared.config import Settings
 
 _TOL = 0.005
+
+# Calibrate routing against the CANONICAL DEFAULT threshold read straight from the model schema —
+# not the global `settings` singleton, which reflects the ambient .env/OS env. The golden matrix
+# below is authored against this default (0.4), so the test must be hermetic to a local .env that
+# overrides HITL_RISK_THRESHOLD (issue: env-coupled calibration test).
+_HITL_THRESHOLD: float = Settings.model_fields["hitl_risk_threshold"].default
 
 
 def _tier(score: float) -> str:
@@ -34,7 +40,7 @@ def _tier(score: float) -> str:
 
 
 def _route(score: float) -> str:
-    return "HOTL" if score < settings.hitl_risk_threshold else "HITL"
+    return "HOTL" if score < _HITL_THRESHOLD else "HITL"
 
 
 # id, action_type, parameters, expected_score, expected_tier, expected_route
