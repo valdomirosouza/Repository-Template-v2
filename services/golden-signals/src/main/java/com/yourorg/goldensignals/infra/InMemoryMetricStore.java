@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -32,6 +34,25 @@ public class InMemoryMetricStore implements MetricStore {
     private final ConcurrentMap<String, MutableBucket> store = new ConcurrentHashMap<>();
     private final Set<String> paths = ConcurrentHashMap.newKeySet();
 
+    /** Retention horizons (FR-06; defaults 1m→2h, 5m→24h per ADR-0067). */
+    private final long retention1mSeconds;
+    private final long retention5mSeconds;
+    /** Newest ingested bucket epoch per window — retention is measured relative to THIS, not wall-clock. */
+    private final ConcurrentMap<Window, Long> newestEpoch = new ConcurrentHashMap<>();
+
+    /** Defaults (2h / 24h) — used by direct construction in tests. */
+    public InMemoryMetricStore() {
+        this(7200L, 86400L);
+    }
+
+    @Autowired
+    public InMemoryMetricStore(
+            @Value("${gs.retention-1m-seconds:7200}") final long retention1mSeconds,
+            @Value("${gs.retention-5m-seconds:86400}") final long retention5mSeconds) {
+        this.retention1mSeconds = retention1mSeconds;
+        this.retention5mSeconds = retention5mSeconds;
+    }
+
     @Override
     public void persist(final Bucket bucket) {
         // Track samples under the LATENCY-keyed aggregate; the same bucket carries
@@ -46,6 +67,21 @@ public class InMemoryMetricStore implements MetricStore {
             return target;
         });
         paths.add(MetricKeys.encodePath(bucket.path()));
+        // FR-06 retention: prune buckets older than the horizon RELATIVE TO the newest ingested
+        // bucket for this window (data-relative, not server wall-clock), so historical replay is
+        // reproducible and does not silently evict seeded data. A production Redis backend may
+        // additionally apply wall-clock TTLs for live ingestion (ADR-0067).
+        final long newest = newestEpoch.merge(bucket.window(), bucket.epochBucket(), Math::max);
+        pruneExpired(bucket.window(), newest);
+    }
+
+    private long retentionSeconds(final Window window) {
+        return window == Window.ONE_MINUTE ? retention1mSeconds : retention5mSeconds;
+    }
+
+    private void pruneExpired(final Window window, final long newestEpochForWindow) {
+        final long horizon = newestEpochForWindow - retentionSeconds(window);
+        store.values().removeIf(mb -> mb.window == window && mb.epochBucket < horizon);
     }
 
     @Override
