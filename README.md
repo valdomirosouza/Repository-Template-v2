@@ -1,7 +1,7 @@
 # Enterprise Monorepo Template
 
 > Production-ready monorepo template for enterprise software systems. AI/agent capabilities are optional opt-in extensions.
-> **Version:** 2.14.3 | **Status:** Active | **License:** MIT
+> **Version:** 2.14.4 | **Status:** Active | **License:** MIT
 
 [![CI](https://github.com/valdomirosouza/Repository-Template-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/valdomirosouza/Repository-Template-v2/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/valdomirosouza/Repository-Template-v2)](https://github.com/valdomirosouza/Repository-Template-v2/releases/latest)
