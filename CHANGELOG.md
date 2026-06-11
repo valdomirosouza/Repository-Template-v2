@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.14.5](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.14.4...v2.14.5) (2026-06-11)
+
+
+### CI/CD
+
+* add workflow_dispatch to release.yml for manual re-trigger ([#188](https://github.com/valdomirosouza/Repository-Template-v2/issues/188)) ([07a121f](https://github.com/valdomirosouza/Repository-Template-v2/commit/07a121f6aa65bb93ebc4ed4563b54ffafc75c66c))
+
 ## [2.14.4](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.14.3...v2.14.4) (2026-06-11)
 
 
