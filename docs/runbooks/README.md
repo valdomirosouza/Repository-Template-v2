@@ -5,6 +5,18 @@ they focus on systems, processes, and improvements — not on individual mistake
 
 ---
 
+## Runbook namespaces
+
+Runbooks live in two namespaces so an ID never means two different things across domains
+(see ADR-0033 and issue #195):
+
+| Namespace    | Location             | Scope                                                                                                                                       |
+| ------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RB-NNN`     | `docs/runbooks/`     | **Incident-response** runbooks — this index; the alert → runbook mapping below                                                              |
+| `RB-SRE-NNN` | `docs/sre/runbooks/` | **SRE operational** runbooks (probe validation, agent-session recovery, …) — see [`docs/sre/runbooks/README.md`](../sre/runbooks/README.md) |
+
+---
+
 ## Runbook Index
 
 | ID     | Runbook                                                            | Severity | Owner              | Last reviewed |

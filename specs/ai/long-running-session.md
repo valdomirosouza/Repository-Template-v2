@@ -119,4 +119,4 @@ On failure at step N, the next session resumes at step N (not N+1).
 - [ ] Planner updates `completed_steps` after each sprint completes
 - [ ] `plan-corrupted` failure emits `[HITL-ESCALATE]` — never silently discarded
 - [ ] Unit test coverage ≥ 80% (`tests/unit/agents/test_session_checkpoint.py`)
-- [ ] Runbook RB-005 covers manual checkpoint inspection and deletion
+- [ ] Runbook RB-SRE-005 covers manual checkpoint inspection and deletion
