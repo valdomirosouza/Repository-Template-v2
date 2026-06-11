@@ -23,6 +23,11 @@
     <spotbugs-maven-plugin.version>4.8.6.2</spotbugs-maven-plugin.version>
     <maven-checkstyle-plugin.version>3.4.0</maven-checkstyle-plugin.version>
     <dependency-check-maven.version>10.0.3</dependency-check-maven.version>
+    <!-- Override Spring-Boot-managed transitive versions to clear residual CVE-2026-* (CVSS 7.5):
+         log4j-api 2.24.3 (4 CVEs; present only via the log4j-to-slf4j bridge — Logback is the impl)
+         and micrometer 1.15.x (CVE-2026-42154). See ADR-0029 / the dependency-check report. -->
+    <log4j2.version>2.26.0</log4j2.version>
+    <micrometer.version>1.17.0</micrometer.version>
   </properties>
 
   <dependencies>
