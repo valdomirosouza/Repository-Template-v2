@@ -1,0 +1,61 @@
+name: Branch Protection Audit
+
+# Drift audit for repository-settings-as-code (ADR-0071). Compares the LIVE branch-protection
+# rulesets to the versioned source in .github/rulesets/ and FAILS on drift — a UI-only change to
+# the enforced gate set is a governance bypass and must be caught, not silently tolerated.
+
+on:
+  schedule:
+    - cron: "17 6 * * 1-5" # weekday mornings (UTC)
+  workflow_dispatch: {}
+  pull_request:
+    paths:
+      - ".github/rulesets/**"
+      - ".github/workflows/branch-protection-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Ruleset drift audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare live rulesets to versioned source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Compare only the governance-meaningful fields (enforcement, target, the SET of
+          # required status-check contexts, and the set of rule types) — not byte-equality, since
+          # the API normalises/reorders and adds server-side defaults.
+          norm() { jq -S '{
+            target, enforcement,
+            rule_types: ([.rules[].type] | sort),
+            required_checks: ([.rules[] | select(.type=="required_status_checks")
+                              | .parameters.required_status_checks[].context] | sort)
+          }'; }
+
+          fail=0
+          for f in .github/rulesets/*.json; do
+            name="$(jq -r '.name' "$f")"
+            live="$(gh api "repos/$REPO/rulesets" --jq ".[] | select(.name==\"$name\") | .id" || true)"
+            if [ -z "$live" ]; then
+              echo "::error::Ruleset '$name' is versioned but NOT present live — apply scripts/governance/apply_branch_protection.sh"
+              fail=1; continue
+            fi
+            want="$(norm < "$f")"
+            got="$(gh api "repos/$REPO/rulesets/$live" | norm)"
+            if [ "$want" != "$got" ]; then
+              echo "::error::Ruleset '$name' has DRIFTED from .github/rulesets/$(basename "$f"):"
+              diff <(echo "$want") <(echo "$got") || true
+              fail=1
+            else
+              echo "OK: '$name' matches versioned source."
+            fi
+          done
+          [ "$fail" = 0 ] || { echo "::error::Branch-protection drift detected (ADR-0071)."; exit 1; }
+          echo "All rulesets match their versioned source."
