@@ -1,0 +1,31 @@
+# SLOs — golden-signals service (SPEC-LGS-001 §10; ADR-0043–0046)
+# NOTE: these are the SLOs of the service ITSELF, distinct from the Golden Signals it COMPUTES
+# about HAProxy traffic. Thresholds marked [CONFIRM] need SRE-Lead + agent-governance sign-off.
+service: golden-signals
+slos:
+  - id: analytics-availability
+    description: GET /analytics returns 2xx/4xx (not 5xx) — agent-facing read path
+    sli: success_ratio(http_server_requests{uri="/analytics",status!~"5.."})
+    objective: 99.5% # [CONFIRM]
+    window: 30d
+  - id: analytics-latency
+    description: incident-time read latency for /analytics
+    sli: histogram_quantile(0.99, http_server_requests_seconds_bucket{uri="/analytics"})
+    objective_ms: 750 # [CONFIRM] — read budget (NFR-07)
+    window: 30d
+  - id: aggregate-freshness
+    description: lag from ingestion to queryable aggregate (G-01 — within one window)
+    sli: gs_aggregate_freshness_seconds # custom Micrometer gauge (worker → store)
+    objective_seconds: 90 # [CONFIRM] — <= one 1m window + drain margin
+    window: 7d
+  - id: ingestion-availability
+    description: POST /ingestion accepts valid batches (non-5xx)
+    sli: success_ratio(http_server_requests{uri="/ingestion",status!~"5.."})
+    objective: 99.9% # [CONFIRM]
+    window: 30d
+# FR-13 HITL-flip thresholds (response governance, not service SLOs) — mirror application.yml:
+hitl_triggers:
+  p99_latency_ms: 1000 # HITL_P99_LATENCY_MS
+  error_rate: 0.05 # HITL_ERROR_RATE
+  saturation_pct: 80 # [CONFIRM] — derived from bytes_sent proxy (ADR-0068)
+metrics_source: Micrometer + /actuator/prometheus (exposed; application.yml management.endpoints)
