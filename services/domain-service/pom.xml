@@ -190,6 +190,10 @@
           <failBuildOnCVSS>7</failBuildOnCVSS>
           <suppressionFile>dependency-check-suppressions.xml</suppressionFile>
           <formats>HTML,JSON</formats>
+          <!-- OSS Index disabled: its anonymous tier 401/rate-limits on shared CI, making the
+               gate flaky. NVD (authoritative) remains the CVE source. Re-enable only with
+               ossIndex credentials in CI secrets. (Strengthening plan W1-3.) -->
+          <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
         </configuration>
       </plugin>
     </plugins>
