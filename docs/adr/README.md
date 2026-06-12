@@ -130,6 +130,11 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0067](ADR-0067-redis-as-timeseries-store.md)                          | Redis as the time-series store for golden-signals (retention; InfluxDB/TimescaleDB exit) | Accepted   | 2026-06-11 |
 | [ADR-0068](ADR-0068-golden-signal-extraction-rules.md)                     | Golden-Signal extraction rules (saturation proxy, window semantics, key grammar)         | Accepted   | 2026-06-11 |
 | [ADR-0069](ADR-0069-queue-implementation.md)                               | golden-signals queue: in-JVM bounded virtual-thread queue (honours ADR-0003)             | Accepted   | 2026-06-11 |
+| [ADR-0070](ADR-0070-governance-gate-enforcement-lifecycle.md)              | Governance gate enforcement lifecycle (report-mode → blocking after burn-in)             | Accepted   | 2026-06-12 |
+| [ADR-0071](ADR-0071-repository-settings-as-code.md)                        | Repository settings as code (branch protection codified + drift-checked)                 | Accepted   | 2026-06-12 |
+| [ADR-0072](ADR-0072-versioned-security-control-matrices.md)                | Versioned security control matrices (OWASP ASVS v5.0.0 + GenAI/LLM)                      | Accepted   | 2026-06-12 |
+| [ADR-0073](ADR-0073-slo-driven-canary-thresholds.md)                       | SLO-driven canary thresholds (per-service config, no hard-coded gates)                   | Accepted   | 2026-06-12 |
+| [ADR-0074](ADR-0074-automated-dependency-digest-policy.md)                 | Automated dependency & digest update policy (Renovate)                                   | Accepted   | 2026-06-12 |
 
 ### AI Agents Module _(opt-in)_
 
