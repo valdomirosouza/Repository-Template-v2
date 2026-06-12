@@ -38,7 +38,11 @@ HITL_REJECTIONS_COUNTER = Counter(
 LLM_TOKEN_COUNTER = Counter(
     "llm_tokens_total",
     "Total LLM tokens consumed",
-    ["service", "model", "token_type", "request_id"],
+    # NOTE: do NOT add request_id / trace_id as a label — it is unbounded and creates a new
+    # time series per request, which OOMs Prometheus under load (W1-4). Per-request token cost
+    # is carried on the OTel `llm.inference` span (gen_ai.usage.*) instead, where the trace_id
+    # already lives — that is the correct place to drill down by request.
+    ["service", "model", "token_type"],
 )
 
 # ── Histograms ────────────────────────────────────────────────────────────────
@@ -246,10 +250,9 @@ def record_llm_call(
     input_tokens: int,
     output_tokens: int,
     duration_seconds: float,
-    request_id: str = "",
 ) -> None:
-    LLM_TOKEN_COUNTER.labels(service, model, "input", request_id).inc(input_tokens)
-    LLM_TOKEN_COUNTER.labels(service, model, "output", request_id).inc(output_tokens)
+    LLM_TOKEN_COUNTER.labels(service, model, "input").inc(input_tokens)
+    LLM_TOKEN_COUNTER.labels(service, model, "output").inc(output_tokens)
     LLM_CALL_LATENCY.labels(service, model).observe(duration_seconds)
 
 

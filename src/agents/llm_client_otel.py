@@ -14,7 +14,8 @@ The wrapper:
    gen_ai.usage.*, gen_ai.response.finish_reason).
 3. Optionally attaches llm.prompt / llm.response span events when
    ``settings.otel_capture_prompts=True`` (debug only — stripped by Collector in production).
-4. Records Prometheus exemplars (llm_tokens_total with request_id label).
+4. Records bounded Prometheus counters (llm_tokens_total by service/model/token_type — no
+   per-request label; per-request cost lives on the span's gen_ai.usage.* attributes).
 5. Works with any LLMClient; falls back gracefully when the inner client does not
    expose ``complete_with_metadata()``.
 """
@@ -89,15 +90,15 @@ class OtelLLMClientWrapper:
 
             model = meta.model or settings.llm_model
 
-            # Prometheus — record token usage and latency; request_id label enables
-            # Grafana Exemplar pivot from this counter to the Jaeger trace.
+            # Prometheus — record bounded token-usage and latency counters (no per-request
+            # label). Per-request drill-down is via this call's OTel `llm.inference` span
+            # (gen_ai.usage.* + trace_id), recorded above — not a high-cardinality metric label.
             record_llm_call(
                 service=settings.otel_service_name,
                 model=model,
                 input_tokens=meta.input_tokens,
                 output_tokens=meta.output_tokens,
                 duration_seconds=duration,
-                request_id=trace_id or "",
             )
 
             return text

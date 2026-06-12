@@ -64,8 +64,10 @@ stable-updated when the spec reaches GA.
 
 **Negative / Trade-offs:**
 
-- `request_id` label on `llm_tokens_total` increases Prometheus cardinality. High request
-  volume may require label downsampling or a recording rule.
+- ~~`request_id` label on `llm_tokens_total` increases Prometheus cardinality.~~ **Resolved
+  (W1-4, 2026-06-12):** the `request_id` label was removed — it was unbounded (one time series
+  per request, OOM risk). `llm_tokens_total` is now `{service, model, token_type}`; per-request
+  token cost lives on the OTel `llm.inference` span (`gen_ai.usage.*`), the correct drill-down.
 - `OtelLLMClientWrapper` must be explicitly wired at the injection point (app startup).
   If not wired, `AnthropicLLMClient` calls are untraced (no silent breakage).
 
