@@ -59,9 +59,31 @@ def _cmd(binary: str, subcommand: str) -> str:
 # (`echo $(git push)` executes the push), see `_command_is_risky`.
 _READ_ONLY_LEADERS = frozenset(
     {
-        "grep", "egrep", "fgrep", "rg", "ag", "ack",
-        "echo", "printf", "cat", "head", "tail", "less", "more",
-        "awk", "sort", "uniq", "wc", "ls", "find", "tree", "diff", "comm", "cut", "tr", "column",
+        "grep",
+        "egrep",
+        "fgrep",
+        "rg",
+        "ag",
+        "ack",
+        "echo",
+        "printf",
+        "cat",
+        "head",
+        "tail",
+        "less",
+        "more",
+        "awk",
+        "sort",
+        "uniq",
+        "wc",
+        "ls",
+        "find",
+        "tree",
+        "diff",
+        "comm",
+        "cut",
+        "tr",
+        "column",
     }
 )
 _SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\||\n")
