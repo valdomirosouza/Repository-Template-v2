@@ -85,6 +85,13 @@ given other phases' tasks, chat history, the durable `STATE.md` ledger, or unrel
    - Other phases → document the artefact + the gate check performed (no code to run).
      Capture exit codes. Never invoke deploy/release/rollback/flag-change targets. In **CODE** mode a
      failing required validation gate (lint/test/security/coverage) is a real `FAIL`, not a note.
+   - **Bound every command (W1-6).** Wrap each validation invocation with the Bash tool's
+     `timeout` parameter (default ~600000 ms) — **never** run an unbounded command. A target that
+     exceeds the cap returns `gate: BLOCKED reason=tooling-timeout` (not a hang and not a silent
+     pass); record it and move on. In particular, do **not** run Java SCA in the inner loop:
+     `make lint-java` is now Checkstyle + SpotBugs only (fast, no network); OWASP dependency-check
+     (the unbounded NVD download that once stalled a run ~50 min) is `make lint-java-sca` and runs
+     as a CI gate — cite the CI result for SCA evidence rather than running it here.
    - **DRY-RUN side-effect safety:** some targets incidentally mutate **tracked** files
      (`make lint-python`→`detect-secrets` rewrites `.secrets.baseline`; `uv run` rewrites
      `uv.lock` drift). In DRY-RUN, capture `git status --porcelain` immediately **before** and

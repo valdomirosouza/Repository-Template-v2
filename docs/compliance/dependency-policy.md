@@ -61,8 +61,8 @@ All new production dependencies must go through the following process before mer
    # Python
    uv run pip-audit
 
-   # Java
-   make lint-java SERVICE=<name>   # includes OWASP dep-check
+   # Java (SCA is split out so the inner-loop lint stays fast — W1-6)
+   make lint-java-sca SERVICE=<name>   # OWASP dependency-check (NVD); also a CI gate
 
    # Go
    go list -json -m all | nancy sleuth
