@@ -9,6 +9,7 @@ APP         ?= frontend
         test-infra-up test-infra-down \
         test test-unit test-security lint format build \
         test-python test-unit-python test-security-python lint-python format-python build-python run run-python \
+        guard-SERVICE \
         test-java test-unit-java lint-java format-java build-java run-java \
         test-go test-unit-go lint-go format-go build-go run-go \
         test-frontend test-unit-frontend lint-frontend format-frontend build-frontend run-frontend \
@@ -120,38 +121,50 @@ build: build-python
 # (`(cd "$dir" && mvn ...)`). Do NOT use `-pl services/<name> -am` from the repo root:
 # without a root aggregator pom it fails with "Could not find the selected project in the
 # reactor". If a shared library is added later, `mvn install` it (or introduce a reactor pom).
-test-java: ## Java: full test suite with JaCoCo coverage (SERVICE=<name>)
+# Fail loudly if SERVICE is unset/invalid (W1-7). Without this guard, `cd services/ && mvn ...`
+# silently cd's into services/ (no pom) and the gate no-ops or errors cryptically — which is how
+# Java lint/coverage went unenforced. Every per-service target below depends on this.
+guard-SERVICE:
+	@if [ -z "$(SERVICE)" ] || [ ! -d "services/$(SERVICE)" ]; then \
+		echo "ERROR: SERVICE must name a service under services/ — got '$(SERVICE)'"; \
+		echo "       (the default 'api-gateway' is the Python core in src/, not a services/ project)."; \
+		echo "       e.g. make test-unit-java SERVICE=domain-service"; \
+		echo "Available: $$(ls -d services/*/ 2>/dev/null | xargs -n1 basename | tr '\n' ' ')"; \
+		exit 1; \
+	fi
+
+test-java: guard-SERVICE ## Java: full test suite with JaCoCo coverage (SERVICE=<name>)
 	cd services/$(SERVICE) && mvn verify
 
-test-unit-java: ## Java: unit tests only — no Testcontainers (SERVICE=<name>)
+test-unit-java: guard-SERVICE ## Java: unit tests only — no Testcontainers (SERVICE=<name>)
 	cd services/$(SERVICE) && mvn test -Dsurefire.failIfNoSpecifiedTests=false
 
-lint-java: ## Java: Checkstyle + SpotBugs + OWASP dependency-check (SERVICE=<name>)
+lint-java: guard-SERVICE ## Java: Checkstyle + SpotBugs + OWASP dependency-check (SERVICE=<name>)
 	cd services/$(SERVICE) && mvn checkstyle:check spotbugs:check dependency-check:check
 
-format-java: ## Java: apply google-java-format via Maven plugin (SERVICE=<name>)
+format-java: guard-SERVICE ## Java: apply google-java-format via Maven plugin (SERVICE=<name>)
 	cd services/$(SERVICE) && mvn fmt:format
 
-build-java: ## Java: build Docker image (SERVICE=<name>)
+build-java: guard-SERVICE ## Java: build Docker image (SERVICE=<name>)
 	cd services/$(SERVICE) && mvn spring-boot:build-image \
 		-Dspring-boot.build-image.imageName=$(REGISTRY)/$(SERVICE):$(VERSION)
 
-run-java: ## Java: start Spring Boot dev server (SERVICE=<name>)
+run-java: guard-SERVICE ## Java: start Spring Boot dev server (SERVICE=<name>)
 	cd services/$(SERVICE) && mvn spring-boot:run
 
 # ── Go ─────────────────────────────────────────────────────────────────────
 
-test-go: ## Go: full test suite with race detector + coverage
+test-go: guard-SERVICE ## Go: full test suite with race detector + coverage
 	go test -race -coverprofile=coverage.out ./services/$(SERVICE)/...
 	go tool cover -func=coverage.out | tail -1
 
-test-unit-go: ## Go: unit tests only (skips integration tests)
+test-unit-go: guard-SERVICE ## Go: unit tests only (skips integration tests)
 	go test -short ./services/$(SERVICE)/...
 
-lint-go: ## Go: golangci-lint (staticcheck + errcheck + gosec)
+lint-go: guard-SERVICE ## Go: golangci-lint (staticcheck + errcheck + gosec)
 	golangci-lint run ./services/$(SERVICE)/...
 
-format-go: ## Go: gofmt + goimports
+format-go: guard-SERVICE ## Go: gofmt + goimports
 	gofmt -w services/$(SERVICE)/
 	goimports -w services/$(SERVICE)/
 
@@ -177,7 +190,7 @@ gen-proto-python: ## Python: regenerate gRPC stubs from proto files into src/sha
 		--python_out=src/shared/generated/grpc \
 		--grpc_python_out=src/shared/generated/grpc
 
-gen-sources-java: ## Java: run mvn generate-sources (OpenAPI stubs + Avro classes) (SERVICE=<name>)
+gen-sources-java: guard-SERVICE ## Java: run mvn generate-sources (OpenAPI stubs + Avro classes) (SERVICE=<name>)
 	cd services/$(SERVICE) && mvn generate-sources
 
 gen-api-client-python: ## Python: regenerate REST client from OpenAPI spec into src/shared/generated/rest_client/
