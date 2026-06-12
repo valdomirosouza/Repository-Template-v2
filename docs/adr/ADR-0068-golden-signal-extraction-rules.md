@@ -65,15 +65,25 @@ gs:paths                                              # Redis set: every tracked
   prefix can otherwise forge or collide with another path's keys. Encoding makes the `:` field
   separators unambiguous and the path opaque. The same encoding is applied identically on write
   (ingestion/worker) and read (analytics), and is reversed only for the FR-08 `paths` listing.
-- **Encoding standard (corrected — finding from the Node comparative build):** the encoder MUST be
-  **RFC 3986 percent-encoding** (the `pchar` set; space → `%20`). Note that Java's
-  `java.net.URLEncoder` is **`application/x-www-form-urlencoded`**, _not_ RFC 3986 — it emits `+`
-  for space and leaves `*` unencoded — so two languages do **not** produce byte-identical keys for
-  paths containing spaces or sub-delims. Within a single service this is harmless (one encoder used
-  for both write and read, so keys are self-consistent). The "byte-for-byte cross-language" guarantee
-  below holds **only** for paths restricted to unreserved characters; if a polyglot deployment ever
-  shares one Redis, every writer/reader MUST use a true RFC-3986 encoder (e.g. switch the Java side
-  off `URLEncoder`).
+- **Encoding standard (corrected — verified across THREE language re-implementations).** "URL-encoded
+  (RFC 3986)" is too loose: every language's "URL encoder" disagrees. Verified divergence on the
+  same path:
+
+  | Encoder                                                      | space | `*`             | `& @ $ =`       |
+  | ------------------------------------------------------------ | ----- | --------------- | --------------- |
+  | Java `java.net.URLEncoder` (form-encoding, **not** RFC 3986) | `+`   | left raw        | percent-encoded |
+  | JS `encodeURIComponent`                                      | `%20` | left raw        | percent-encoded |
+  | Go `url.PathEscape`                                          | `%20` | percent-encoded | **left raw**    |
+
+  So three conformant "URL-encoders" produce **three different keys** for the same path. Within a
+  single service this is harmless (one encoder for both write and read ⇒ self-consistent keys, and
+  the injection defence holds since `:` is always encoded). But the "byte-for-byte cross-language"
+  guarantee is **false in three directions**. **Therefore the canonical encoder is mandated
+  explicitly:** percent-encode **every** byte outside the RFC 3986 `unreserved` set
+  (`A–Z a–z 0–9 - _ . ~`), upper-case hex, UTF-8 — i.e. the `encodeURIComponent` algorithm. A
+  polyglot deployment sharing one Redis MUST use exactly this (Java: a custom RFC-3986 encoder, not
+  `URLEncoder`; Go: `url.QueryEscape` is also wrong — hand-roll or post-process). Pin this, not a
+  vague "URL-encoded".
 
 ## Consequences
 
