@@ -52,11 +52,51 @@ def _cmd(binary: str, subcommand: str) -> str:
     return rf"{_BIN}{binary}{_OPTS}\s+(?:{subcommand})\b"
 
 
+# Commands whose leading binary only READS: a high-risk token in their arguments (a search
+# pattern, an echoed string) is text, not an executed action — so don't flag it. This fixes
+# false positives like `grep 'git push' <file>` while still flagging a real action in a later
+# segment (`cat x && git push`). Command substitution under a read-only leader is still checked
+# (`echo $(git push)` executes the push), see `_command_is_risky`.
+_READ_ONLY_LEADERS = frozenset(
+    {
+        "grep", "egrep", "fgrep", "rg", "ag", "ack",
+        "echo", "printf", "cat", "head", "tail", "less", "more",
+        "awk", "sort", "uniq", "wc", "ls", "find", "tree", "diff", "comm", "cut", "tr", "column",
+    }
+)
+_SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\||\n")
+_CMD_SUBST = re.compile(r"\$\(|`")
+
+
+def _leading_token(segment: str) -> str:
+    """The bare command name of a segment (skips `VAR=val` prefixes and any path)."""
+    for tok in segment.strip().split():
+        if "=" in tok and not tok.startswith("-") and "/" not in tok.split("=", 1)[0]:
+            continue  # leading environment assignment (FOO=bar cmd …)
+        return tok.rsplit("/", 1)[-1]
+    return ""
+
+
+def _command_is_risky(command: str) -> bool:
+    """True if any *executed* shell segment is a high-risk action or flag write."""
+    for segment in _SEGMENT_SPLIT.split(command):
+        seg = segment.strip()
+        if not seg:
+            continue
+        # A read-only inspector's arguments are not executed — unless they contain command
+        # substitution, which runs regardless of the outer command.
+        if _leading_token(seg) in _READ_ONLY_LEADERS and not _CMD_SUBST.search(seg):
+            continue
+        if HIGH_RISK_CMD.search(seg) or FLAG_WRITE_CMD.search(seg):
+            return True
+    return False
+
+
 HIGH_RISK_CMD = re.compile(
     "|".join(
         (
             _cmd("git", r"push"),
-            _cmd("gh", r"pr\s+merge|release\s+create"),
+            _cmd("gh", r"pr\s+merge|pr\s+create|pr\s+ready|release\s+create"),
             _cmd("helm", r"upgrade|install|rollback"),
             _cmd("kubectl", r"apply|delete|rollout"),
             _cmd("make", r"deploy|rollback"),
@@ -84,7 +124,7 @@ SENSITIVE_PATH = re.compile(
 
 _EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 
-_CMD_LABEL = "push / merge / release / deploy / rollback / flag-change"
+_CMD_LABEL = "push / PR-create / PR-merge / release / deploy / rollback / flag-change"
 _PATH_LABEL = "edit to a governance-controlled path (guardrails / HITL / feature flags)"
 
 
@@ -102,7 +142,7 @@ def _is_risky(payload: dict) -> tuple[bool, str]:
 
         if tool_name == "Bash":
             command = _as_str(tool_input.get("command"))
-            if HIGH_RISK_CMD.search(command) or FLAG_WRITE_CMD.search(command):
+            if _command_is_risky(command):
                 return True, _CMD_LABEL
         elif tool_name in _EDIT_TOOLS:
             path = _as_str(tool_input.get("file_path")) or _as_str(tool_input.get("notebook_path"))
