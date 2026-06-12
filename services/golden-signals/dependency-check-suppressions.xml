@@ -10,4 +10,20 @@
       <cve>CVE-XXXX-YYYYY</cve>
     </suppress>
   -->
+  <suppress>
+    <notes><![CDATA[
+      FALSE POSITIVE (verified 2026-06-11; pending Security-Lead confirmation).
+      CVE-2026-42154 is an unauthenticated DoS in the PROMETHEUS SERVER's remote-read
+      endpoint (/api/v1/read) — the Go project github.com/prometheus/prometheus, fixed in
+      Prometheus 3.5.3 / 3.11.3 (ref: nvd.nist.gov/vuln/detail/CVE-2026-42154). This service
+      depends on io.micrometer:micrometer-registry-prometheus, the Java metrics-EXPOSITION
+      client that serves /actuator/prometheus for scraping. It implements NO remote-read
+      endpoint and contains none of the vulnerable Prometheus-server code. dependency-check
+      mis-attributes the server CVE to the similarly-named client via fuzzy CPE matching;
+      no micrometer release (incl. latest 1.17.0) will ever "fix" a Prometheus-server CVE.
+      Scoped to this package + CVE only.
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.micrometer/micrometer-registry-prometheus@.*$</packageUrl>
+    <cve>CVE-2026-42154</cve>
+  </suppress>
 </suppressions>
