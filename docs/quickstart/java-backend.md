@@ -80,7 +80,8 @@ Expected output: all tests pass, no lint violations.
 ```bash
 make test-java SERVICE=<svc>       # unit + integration tests with coverage
 make test-unit-java SERVICE=<svc>  # unit only (fast, no Docker required)
-make lint-java SERVICE=<svc>       # checkstyle + SpotBugs + OWASP dependency-check
+make lint-java SERVICE=<svc>       # checkstyle + SpotBugs (fast, no network)
+make lint-java-sca SERVICE=<svc>   # OWASP dependency-check only (slow — downloads NVD; CI runs this)
 make format-java SERVICE=<svc>     # google-java-format
 make run-java SERVICE=<svc>        # start Spring Boot dev server
 ```

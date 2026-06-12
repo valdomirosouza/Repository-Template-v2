@@ -10,7 +10,7 @@ APP         ?= frontend
         test test-unit test-security lint format build \
         test-python test-unit-python test-security-python lint-python format-python build-python run run-python \
         guard-SERVICE \
-        test-java test-unit-java lint-java format-java build-java run-java \
+        test-java test-unit-java lint-java lint-java-sca format-java build-java run-java \
         test-go test-unit-go lint-go format-go build-go run-go \
         test-frontend test-unit-frontend lint-frontend format-frontend build-frontend run-frontend \
         gen-proto-go gen-proto-python gen-sources-java gen-api-client-ts gen-api-client-python \
@@ -139,8 +139,15 @@ test-java: guard-SERVICE ## Java: full test suite with JaCoCo coverage (SERVICE=
 test-unit-java: guard-SERVICE ## Java: unit tests only — no Testcontainers (SERVICE=<name>)
 	cd services/$(SERVICE) && mvn test -Dsurefire.failIfNoSpecifiedTests=false
 
-lint-java: guard-SERVICE ## Java: Checkstyle + SpotBugs + OWASP dependency-check (SERVICE=<name>)
-	cd services/$(SERVICE) && mvn checkstyle:check spotbugs:check dependency-check:check
+lint-java: guard-SERVICE ## Java: Checkstyle + SpotBugs — fast, no network (SERVICE=<name>)
+	cd services/$(SERVICE) && mvn checkstyle:check spotbugs:check
+
+# Split out of lint-java (W1-6 — bound agent actions). OWASP dependency-check downloads the full
+# NVD feed: slow, and it can hang for tens of minutes or rate-limit (it once stalled a delivery
+# agent ~50 min). Keep it OUT of the inner-loop / agent path. CI runs SCA as its own gate
+# (.github/workflows/ci-java.yml); run this explicitly when you need a local SCA pass.
+lint-java-sca: guard-SERVICE ## Java: OWASP dependency-check SCA only — slow, downloads NVD (SERVICE=<name>)
+	cd services/$(SERVICE) && mvn dependency-check:check
 
 format-java: guard-SERVICE ## Java: apply google-java-format via Maven plugin (SERVICE=<name>)
 	cd services/$(SERVICE) && mvn fmt:format
