@@ -8,4 +8,14 @@
   <Match>
     <Source name="~.*Test\.java"/>
   </Match>
+  <!--
+    Spring constructor injection of a framework-managed singleton (KafkaTemplate) into a final
+    field. EI_EXPOSE_REP2 cannot be satisfied by a defensive copy here — the whole point of DI is
+    to store the shared, thread-safe bean reference. Standard SpotBugs false positive for DI;
+    scoped to the Kafka producer so unrelated exposures are still caught.
+  -->
+  <Match>
+    <Class name="com.yourorg.domainservice.infra.kafka.DomainEventProducer"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
 </FindBugsFilter>

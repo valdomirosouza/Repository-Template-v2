@@ -151,6 +151,16 @@ for a throwaway research artifact but loses the shared 15-phase guarantees.
 | NFR-07 | Real-time read performance suitable for incident-time queries (document the latency budget for `GET /analytics`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | NFR-08 | Dependency versions pinned (no ranges); `dependency-manifest.yaml` + SBOM produced (per documentation-standards).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
+> **Clarification — concurrency is a _property_, not a _mechanism_ (NFR-02 / FR-04 / FR-05).**
+> The binding requirement is the **property**: ingestion is decoupled from processing via a
+> **bounded in-process queue** with a **non-blocking producer**, an **asynchronous consumer**, and
+> **flush-on-shutdown**. The concrete **mechanism** (Python asyncio task, Java virtual-thread
+> blocking worker, Node event-loop drain pump…) is an implementation detail that MUST live in the
+> per-language ADR, exactly as ADR-0066 moved the language choice out of the core spec — it must
+> **not** be re-asserted as a core NFR. Re-deriving this pipeline in a third language (Python → Java
+> → Node) showed the thread-based phrasing in NFR-02/ADR-0069 does not port to a single-threaded
+> event loop, while the property survives all three.
+
 ---
 
 ## 7. Architecture
@@ -202,9 +212,14 @@ align it with **ADR-0003 (async strategy)** and record any deviation as a new AD
 
 ### 9.1 Inbound log entry (validated at ingestion)
 
-Fields: `timestamp` (ISO-8601), `path`, `method`, `status_code` (int),
+Fields: `timestamp` (**epoch milliseconds, integer**), `path`, `method`, `status_code` (int),
 `response_time_ms` (float), `bytes_sent` (int), `client_ip` (masked on entry),
 `backend_name` (optional).
+
+> **Clarification (was "ISO-8601").** The reference implementations validate `timestamp` as an
+> integer epoch-millisecond value, not an ISO-8601 string. The original "ISO-8601" wording
+> contradicted the implementation and is corrected here; pick **one** representation — epoch-millis —
+> and document any accepted coercion explicitly rather than leaving the contract ambiguous.
 
 ### 9.2 Store key convention _(define once; processor and analytics must agree)_
 
@@ -218,10 +233,32 @@ both services read/write identically.
 Configurable per window; defaults `1m → 2h`, `5m → 24h`. Note the historical-depth
 limitation in §13.
 
+> **Clarification — retention clock origin.** Retention horizons are measured **relative to the
+> most recent ingested bucket timestamp**, not server wall-clock. This makes historical log replay
+> reproducible and prevents a literal wall-clock prune from silently evicting seeded/replayed data
+> (the §12 acceptance fixtures are dated in the past). A production Redis backend MAY _additionally_
+> apply wall-clock TTLs for live ingestion. (Surfaced by a comparative re-implementation that broke
+> on the unstated assumption.)
+
 ### 9.4 `_governance` response block
 
-`{ data_classification, pii_sanitized, retention_policy, audit_trail,
-recommended_action_mode (HITL|HOTL), human_approval_required }`.
+Fields: `{ data_classification, pii_sanitized, retention_policy, audit_trail,
+recommended_action_mode (HITL|HOTL), human_approval_required }`. Concrete example (exact wire
+names and value encodings, so a second implementation need not reverse-engineer them):
+
+```json
+{
+  "data_classification": "telemetry-L2",
+  "pii_sanitized": true,
+  "retention_policy": "1m:2h,5m:24h",
+  "audit_trail": "/audit",
+  "recommended_action_mode": "HOTL",
+  "human_approval_required": false
+}
+```
+
+When a threshold breaches (FR-13), `recommended_action_mode` becomes `"HITL"` and
+`human_approval_required` becomes `true`.
 
 ---
 
@@ -238,6 +275,17 @@ Percentile rationale: averages hide tail latency; P95/P99 are the SLO-relevant
 indicators for critical services (tail-at-scale). Define this system's own SLOs in
 `docs/sre/slo/slo.yaml` (e.g. availability of `/analytics`, freshness lag of
 aggregates) and the threshold values in FR-13 that flip a response to HITL.
+
+> **Clarification — percentile method (FR-07).** "Rank-based interpolation" alone is ambiguous
+> (nearest-rank, lower, higher, linear, `PERCENTILE.EXC`… all differ). The required method is
+> **linear interpolation between closest ranks**, rank `h = (n − 1) · p / 100` over the ascending
+> sorted samples (equivalent to NumPy's default and Excel `PERCENTILE.INC`). Edge cases: **empty
+> sample set ⇒ `null`**; **single sample ⇒ that value**. Naming the method is what lets two
+> independent, conformant implementations agree on P95 byte-for-byte.
+
+> **Clarification — boundary conventions.** The spec mixes three: saturation `bytes_sent >=`
+> threshold, error `status_code >= 400`, and the FR-13 HITL flip uses **strict** `>`. These are
+> intentional but easy to mis-port — they are pinned here so a reimplementation reproduces them.
 
 ---
 
