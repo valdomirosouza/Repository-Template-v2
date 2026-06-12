@@ -21,14 +21,20 @@ jobs:
     name: Ruleset drift audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Compare live rulesets to versioned source
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
         run: |
           set -euo pipefail
+          # On a pull_request the source may not be applied live yet (e.g. the PR that first
+          # introduces the rulesets), so a MISSING live ruleset is a warning, not a failure.
+          # Drift against an *applied* ruleset still fails on any event. Scheduled/dispatch runs
+          # treat MISSING as a hard failure (it means someone deleted an enforced ruleset).
+          is_pr=0; [ "$EVENT" = "pull_request" ] && is_pr=1
           # Compare only the governance-meaningful fields (enforcement, target, the SET of
           # required status-check contexts, and the set of rule types) — not byte-equality, since
           # the API normalises/reorders and adds server-side defaults.
@@ -44,6 +50,10 @@ jobs:
             name="$(jq -r '.name' "$f")"
             live="$(gh api "repos/$REPO/rulesets" --jq ".[] | select(.name==\"$name\") | .id" || true)"
             if [ -z "$live" ]; then
+              if [ "$is_pr" = 1 ]; then
+                echo "::warning::Ruleset '$name' is versioned but not applied live yet — run scripts/governance/apply_branch_protection.sh after merge (human admin step)."
+                continue
+              fi
               echo "::error::Ruleset '$name' is versioned but NOT present live — apply scripts/governance/apply_branch_protection.sh"
               fail=1; continue
             fi
