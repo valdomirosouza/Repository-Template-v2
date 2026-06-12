@@ -124,6 +124,27 @@
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>${jacoco.version}</version>
+        <!-- Rules at PLUGIN level (not inside the <execution>) so they apply to BOTH the
+             lifecycle-bound `check` execution AND a standalone `mvn jacoco:check` — which is how
+             ci-java.yml invokes the gate. Execution-scoped rules are invisible to the CLI goal,
+             which silently no-op'd coverage enforcement. -->
+        <configuration>
+          <rules>
+            <rule>
+              <element>BUNDLE</element>
+              <limits>
+                <limit>
+                  <counter>LINE</counter>
+                  <value>COVEREDRATIO</value>
+                  <minimum>0.80</minimum>
+                </limit>
+              </limits>
+              <excludes>
+                <exclude>com.yourorg.domainservice.DomainServiceApplication</exclude>
+              </excludes>
+            </rule>
+          </rules>
+        </configuration>
         <executions>
           <execution>
             <id>prepare-agent</id>
@@ -137,20 +158,6 @@
           <execution>
             <id>check</id>
             <goals><goal>check</goal></goals>
-            <configuration>
-              <rules>
-                <rule>
-                  <element>BUNDLE</element>
-                  <limits>
-                    <limit>
-                      <counter>LINE</counter>
-                      <value>COVEREDRATIO</value>
-                      <minimum>0.80</minimum>
-                    </limit>
-                  </limits>
-                </rule>
-              </rules>
-            </configuration>
           </execution>
         </executions>
       </plugin>

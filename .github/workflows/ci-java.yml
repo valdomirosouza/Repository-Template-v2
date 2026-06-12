@@ -217,7 +217,10 @@ jobs:
           find services -name pom.xml -not -path '*/target/*' -maxdepth 2 | while read pom; do
             service=$(dirname "$pom" | xargs basename)
             echo "Building image for $service..."
-            mvn spring-boot:build-image -pl "services/$service" \
+            # cd into the service (no root reactor pom, so `-pl services/<name>` from root fails
+            # with "Could not find the selected project in the reactor") — matches every other
+            # step in this workflow and `make build-java`.
+            (cd "services/$service" && mvn spring-boot:build-image \
               -Dspring-boot.build-image.imageName=ghcr.io/${{ github.repository_owner }}/${service}:${{ github.sha }} \
-              -DskipTests
+              -DskipTests)
           done
