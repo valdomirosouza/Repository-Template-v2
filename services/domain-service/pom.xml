@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.4.5</version>
+    <version>3.5.15</version>
     <relativePath/>
   </parent>
 
@@ -24,6 +24,10 @@
     <maven-checkstyle-plugin.version>3.4.0</maven-checkstyle-plugin.version>
     <dependency-check-maven.version>10.0.3</dependency-check-maven.version>
     <testcontainers.version>1.20.3</testcontainers.version>
+    <!-- Override Spring-Boot-managed transitive versions to clear residual CVE-2026-* (CVSS 7.5):
+         log4j-api (bridge-only; Logback is the impl) and micrometer. See ADR-0029. -->
+    <log4j2.version>2.26.0</log4j2.version>
+    <micrometer.version>1.17.0</micrometer.version>
   </properties>
 
   <dependencyManagement>
@@ -186,6 +190,10 @@
           <failBuildOnCVSS>7</failBuildOnCVSS>
           <suppressionFile>dependency-check-suppressions.xml</suppressionFile>
           <formats>HTML,JSON</formats>
+          <!-- OSS Index disabled: its anonymous tier 401/rate-limits on shared CI, making the
+               gate flaky. NVD (authoritative) remains the CVE source. Re-enable only with
+               ossIndex credentials in CI secrets. (Strengthening plan W1-3.) -->
+          <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
         </configuration>
       </plugin>
     </plugins>
