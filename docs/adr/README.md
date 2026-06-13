@@ -135,6 +135,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0072](ADR-0072-versioned-security-control-matrices.md)                | Versioned security control matrices (OWASP ASVS v5.0.0 + GenAI/LLM)                      | Accepted   | 2026-06-12 |
 | [ADR-0073](ADR-0073-slo-driven-canary-thresholds.md)                       | SLO-driven canary thresholds (per-service config, no hard-coded gates)                   | Accepted   | 2026-06-12 |
 | [ADR-0074](ADR-0074-automated-dependency-digest-policy.md)                 | Automated dependency & digest update policy (Renovate)                                   | Accepted   | 2026-06-12 |
+| [ADR-0075](ADR-0075-resilience-fallback-policy.md)                         | Resilience fallback policy (degrade-open vs fail-closed)                                 | Accepted   | 2026-06-13 |
 
 ### AI Agents Module _(opt-in)_
 

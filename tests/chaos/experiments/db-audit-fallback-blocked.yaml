@@ -1,0 +1,109 @@
+---
+# Chaos Toolkit experiment: take the database down in a PRODUCTION-configured deployment and verify
+# the audit log FAILS CLOSED — the service refuses to use InMemoryAuditStorage (records would be
+# lost on pod restart) and blocks any action it cannot durably audit. The "fail-closed" class.
+# Spec: CLAUDE.md §0.1 (Infrastructure Fallback Pattern) — "DB down → InMemoryAuditStorage
+#       (blocked in app_env=production)". Block: src/api/rest/main.py.
+# ADR:  ADR-0075 (Resilience Fallback Policy)
+#
+# IMPORTANT: run this against a deployment configured with app_env=production (CHAOS_APP_ENV).
+# Prerequisites: Chaos Toolkit + chaostoolkit-kubernetes installed.
+# Run: chaos run tests/chaos/experiments/db-audit-fallback-blocked.yaml
+
+version: "1.0.0"
+title: "DB outage in production — verify audit fallback is refused (fail-closed)"
+description: >
+  In a production-configured deployment, scales PostgreSQL to zero. Asserts that the service does
+  NOT silently degrade to InMemoryAuditStorage: an action that requires a durable audit record is
+  BLOCKED (non-2xx), because losing audit records in production is an integrity/compliance failure
+  (SOX/ISO). This is the fail-closed class in ADR-0075 — integrity is preserved over availability.
+  Contrast with redis-fallback-activation.yaml (degrade-open).
+
+tags:
+  - resilience
+  - fallback
+  - audit
+  - database
+  - fail-closed
+  - compliance
+
+configuration:
+  app_namespace:
+    type: env
+    key: CHAOS_NAMESPACE
+    default: staging
+  service_url:
+    type: env
+    key: CHAOS_SERVICE_URL
+    default: "http://localhost:8000"
+  app_env:
+    type: env
+    key: CHAOS_APP_ENV
+    default: production
+
+steady-state-hypothesis:
+  title: "Service healthy with the database available"
+  probes:
+    - type: probe
+      name: "health-endpoint-returns-200"
+      tolerance: 200
+      provider:
+        type: http
+        url: "${service_url}/health"
+        timeout: 3
+
+method:
+  - type: action
+    name: "scale-postgres-to-zero"
+    provider:
+      type: python
+      module: chaosk8s.statefulset.actions
+      func: scale_statefulset
+      arguments:
+        name: postgres
+        replicas: 0
+        ns: "${app_namespace}"
+    pauses:
+      after: 30
+
+  - type: probe
+    name: "audited-action-is-blocked-not-silently-buffered"
+    # Fail-closed: with no durable audit store in production, an audited action MUST be rejected.
+    # A 2xx here would mean the action proceeded without a durable audit record — a control failure.
+    tolerance: [500, 502, 503]
+    provider:
+      type: http
+      method: POST
+      url: "${service_url}/v1/requests"
+      headers:
+        Content-Type: "application/json"
+      arguments:
+        action_type: "read_document"
+        payload:
+          doc: "audit-fallback-probe"
+      timeout: 5
+
+  - type: action
+    name: "restore-postgres"
+    provider:
+      type: python
+      module: chaosk8s.statefulset.actions
+      func: scale_statefulset
+      arguments:
+        name: postgres
+        replicas: 1
+        ns: "${app_namespace}"
+    pauses:
+      after: 60
+
+rollbacks:
+  - type: action
+    name: "ensure-postgres-running"
+    provider:
+      type: python
+      module: chaosk8s.statefulset.actions
+      func: scale_statefulset
+      arguments:
+        name: postgres
+        replicas: 1
+        ns: "${app_namespace}"
