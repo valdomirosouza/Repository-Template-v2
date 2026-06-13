@@ -9,12 +9,14 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/yourorg/monorepo/services/event-worker/internal/config"
 	"github.com/yourorg/monorepo/services/event-worker/internal/handler"
 	"github.com/yourorg/monorepo/services/event-worker/internal/health"
 	kafkainfra "github.com/yourorg/monorepo/services/event-worker/internal/infra/kafka"
+	"github.com/yourorg/monorepo/services/event-worker/internal/observability"
 )
 
 func main() {
@@ -22,6 +24,16 @@ func main() {
 	slog.SetDefault(logger)
 
 	cfg := config.Load()
+
+	// W2-11: OTel tracing (no-op when OTEL_EXPORTER_OTLP_ENDPOINT is unset). Flushed on shutdown.
+	shutdownTracer, err := observability.InitTracer(
+		context.Background(), cfg.OTLPEndpoint, cfg.ServiceName, cfg.AppEnv,
+	)
+	if err != nil {
+		logger.Error("tracer init failed; continuing without tracing", slog.String("error", err.Error()))
+	} else {
+		defer func() { _ = shutdownTracer(context.Background()) }()
+	}
 
 	// Health server on dedicated port — serves /healthz (liveness) and /readyz (readiness).
 	// Starts before Kafka so the startupProbe can verify the process is alive immediately.
@@ -51,7 +63,8 @@ func main() {
 		})
 		addr := fmt.Sprintf(":%d", cfg.PrometheusPort)
 		logger.Info("metrics server listening", slog.String("addr", addr))
-		if err := http.ListenAndServe(addr, mux); err != nil {
+		srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+		if err := srv.ListenAndServe(); err != nil {
 			logger.Error("metrics server failed", slog.String("error", err.Error()))
 		}
 	}()

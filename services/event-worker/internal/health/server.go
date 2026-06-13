@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync/atomic"
+	"time"
 )
 
 // Server holds the ready state for the /readyz probe.
@@ -44,7 +45,7 @@ func (s *Server) Handler() http.Handler {
 // It never blocks; errors are swallowed after the goroutine exits.
 func (s *Server) Start(port int) {
 	addr := fmt.Sprintf(":%d", port)
-	srv := &http.Server{Addr: addr, Handler: s.Handler()}
+	srv := &http.Server{Addr: addr, Handler: s.Handler(), ReadHeaderTimeout: 5 * time.Second}
 	go func() { _ = srv.ListenAndServe() }()
 }
 
