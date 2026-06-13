@@ -1,0 +1,105 @@
+---
+# Chaos Toolkit experiment: take Redis down and verify the in-memory fallback activates
+# (HITL + request stores) so the service keeps serving — the "degrade-open" resilience class.
+# Spec: CLAUDE.md §0.1 (Infrastructure Fallback Pattern)
+# ADR:  ADR-0075 (Resilience Fallback Policy)
+#
+# Prerequisites: Chaos Toolkit + chaostoolkit-kubernetes installed; service running in staging.
+# Run: chaos run tests/chaos/experiments/redis-fallback-activation.yaml
+
+version: "1.0.0"
+title: "Redis outage — verify in-memory fallback keeps the service serving"
+description: >
+  Scales the Redis deployment to zero, simulating a cache/store outage. Asserts that the service
+  degrades open: /health stays 200, a new request can still be created (served from
+  InMemoryRequestStore / InMemoryHITLStore), and the service recovers when Redis returns. This is
+  the degrade-open class in ADR-0075 — availability is preserved over the dependency.
+
+tags:
+  - resilience
+  - fallback
+  - redis
+  - degrade-open
+
+configuration:
+  app_namespace:
+    type: env
+    key: CHAOS_NAMESPACE
+    default: staging
+  service_url:
+    type: env
+    key: CHAOS_SERVICE_URL
+    default: "http://localhost:8000"
+
+steady-state-hypothesis:
+  title: "Service healthy before and during the Redis outage"
+  probes:
+    - type: probe
+      name: "health-endpoint-returns-200"
+      tolerance: 200
+      provider:
+        type: http
+        url: "${service_url}/health"
+        timeout: 3
+
+method:
+  - type: action
+    name: "scale-redis-to-zero"
+    provider:
+      type: python
+      module: chaosk8s.deployment.actions
+      func: scale_deployment
+      arguments:
+        name: redis
+        replicas: 0
+        ns: "${app_namespace}"
+    pauses:
+      after: 30
+
+  - type: probe
+    name: "service-still-alive-on-fallback"
+    tolerance: 200
+    provider:
+      type: http
+      url: "${service_url}/health"
+      timeout: 3
+
+  - type: probe
+    name: "request-can-still-be-created-via-in-memory-store"
+    tolerance: [200, 201, 202]
+    provider:
+      type: http
+      method: POST
+      url: "${service_url}/v1/requests"
+      headers:
+        Content-Type: "application/json"
+      arguments:
+        action_type: "read_document"
+        payload:
+          doc: "chaos-probe"
+      timeout: 5
+
+  - type: action
+    name: "restore-redis"
+    provider:
+      type: python
+      module: chaosk8s.deployment.actions
+      func: scale_deployment
+      arguments:
+        name: redis
+        replicas: 1
+        ns: "${app_namespace}"
+    pauses:
+      after: 45
+
+rollbacks:
+  - type: action
+    name: "ensure-redis-running"
+    provider:
+      type: python
+      module: chaosk8s.deployment.actions
+      func: scale_deployment
+      arguments:
+        name: redis
+        replicas: 1
+        ns: "${app_namespace}"
