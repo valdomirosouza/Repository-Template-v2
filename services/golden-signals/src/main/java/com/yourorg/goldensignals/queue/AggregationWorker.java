@@ -5,6 +5,7 @@ import com.yourorg.goldensignals.domain.SignalEvent;
 import com.yourorg.goldensignals.domain.Window;
 import com.yourorg.goldensignals.domain.WindowBucketer;
 import com.yourorg.goldensignals.infra.MetricStore;
+import com.yourorg.goldensignals.observability.SignalMetrics;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ public class AggregationWorker {
 
     private final IngestQueue queue;
     private final MetricStore store;
+    private final SignalMetrics metrics;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private volatile boolean running = true;
 
@@ -42,9 +44,11 @@ public class AggregationWorker {
     private final Map<String, Aggregate> open = new HashMap<>();
     private volatile long lastFlush = System.currentTimeMillis();
 
-    public AggregationWorker(final IngestQueue queue, final MetricStore store) {
+    public AggregationWorker(
+            final IngestQueue queue, final MetricStore store, final SignalMetrics metrics) {
         this.queue = queue;
         this.store = store;
+        this.metrics = metrics;
     }
 
     /** Start the drain loop on a virtual thread (ADR-0069 §3). */
@@ -92,10 +96,13 @@ public class AggregationWorker {
      * deterministic test invocation.
      */
     synchronized void flushAll() {
-        for (final Aggregate agg : open.values()) {
-            store.persist(agg.toBucket());
+        if (!open.isEmpty()) {
+            for (final Aggregate agg : open.values()) {
+                store.persist(agg.toBucket());
+            }
+            open.clear();
+            metrics.recordFlush();
         }
-        open.clear();
         lastFlush = System.currentTimeMillis();
     }
 
