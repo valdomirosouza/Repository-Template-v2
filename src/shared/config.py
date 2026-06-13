@@ -137,6 +137,12 @@ class Settings(BaseSettings):
     allowed_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000"]
     rate_limit_requests_per_minute: int = 60
 
+    # Outbound SSRF allow-list (OWASP A10). Host(s) that server-side outbound requests may target,
+    # validated by src/shared/url_allowlist.py. Empty (default) = no host restriction, but
+    # cloud-metadata / link-local endpoints and non-http(s) schemes are blocked regardless.
+    # Entries match a host exactly or as a dot-suffix (e.g. ".internal.example.com").
+    outbound_url_allowlist: Annotated[list[str], NoDecode] = []
+
     # ── Database Encryption at Rest (ADR-0018) ────────────────────────────────
     # 64 hex characters = 32 bytes = AES-256 key.
     # Generate: python -c "import secrets; print(secrets.token_hex(32))"
@@ -173,7 +179,7 @@ class Settings(BaseSettings):
     llm_monthly_token_budget: int = 1_000_000
     cost_alert_threshold_usd: float = 100.0
 
-    @field_validator("allowed_origins", mode="before")
+    @field_validator("allowed_origins", "outbound_url_allowlist", mode="before")
     @classmethod
     def _parse_allowed_origins(cls, v: object) -> object:
         """Accept a comma-separated string (as documented in .env.example) or a JSON list.

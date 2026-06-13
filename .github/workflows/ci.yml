@@ -206,6 +206,11 @@ jobs:
       - name: SLO-driven canary threshold lint (ADR-0073)
         run: python3 scripts/governance/check_slo_thresholds.py
 
+      # BLOCKING from introduction: deterministic SSRF gate (OWASP A10). An outbound-HTTP boundary
+      # without the allow-list helper is unambiguous; escape via a '# ssrf-ok:' waiver.
+      - name: Outbound URL SSRF allow-list lint (OWASP A10)
+        run: python3 scripts/governance/check_outbound_urls.py
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
