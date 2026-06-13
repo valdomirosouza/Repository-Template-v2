@@ -176,6 +176,26 @@ jobs:
             --certificate-identity-regexp "${COSIGN_IDENTITY_REGEXP}" \
             "${IMAGE_REPOSITORY}@${{ steps.resolve.outputs.digest }}"
 
+      # W2-T3: gate promotion on the authenticated staging DAST having passed for THIS image
+      # (the attestation produced by staging-dast.yml). REPORT MODE during burn-in (ADR-0070): a
+      # missing/invalid attestation warns but does NOT yet block — flip to blocking by removing
+      # `continue-on-error` once the burn-in in docs/governance/gate-lifecycle.md is met (HITL).
+      - name: Verify staging DAST attestation (report mode)
+        continue-on-error: true
+        env:
+          DAST_PREDICATE_TYPE: https://github.com/valdomirosouza/Repository-Template-v2/attestations/zap-dast/v1
+        run: |
+          set -euo pipefail
+          if cosign verify-attestation --type "${DAST_PREDICATE_TYPE}" \
+            --certificate-oidc-issuer "${COSIGN_OIDC_ISSUER}" \
+            --certificate-identity-regexp "${COSIGN_IDENTITY_REGEXP}" \
+            "${IMAGE_REPOSITORY}@${{ steps.resolve.outputs.digest }}" > /dev/null 2>&1; then
+            echo "Staging DAST attestation verified for this image."
+          else
+            echo "::warning::No valid staging DAST attestation for ${IMAGE_REPOSITORY}@${{ steps.resolve.outputs.digest }} (report mode, ADR-0070 burn-in). Run the authenticated staging DAST before promotion."
+            exit 1
+          fi
+
   deploy-canary:
     name: Canary — 5%
     runs-on: ubuntu-latest

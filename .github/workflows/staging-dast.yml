@@ -1,0 +1,124 @@
+name: Staging DAST (Authenticated ZAP Full Scan)
+
+# Reusable authenticated DAST gate (W2-T3). Runs an authenticated OWASP ZAP FULL scan against the
+# deployed staging environment and publishes SIGNED evidence:
+#   - the HTML report as a workflow artifact (the release evidence bundle), and
+#   - a keyless cosign ATTESTATION of the DAST result on the deployed image digest, which
+#     cd-production verifies before promotion. The cosign pattern mirrors the SBOM / SLSA
+#     attestations already verified in cd-production's `verify-artifact` job.
+#
+# The PR-CI ZAP *baseline* (shift-left, ci.yml "DAST (OWASP ZAP baseline)") is unchanged — this is
+# the heavier authenticated full scan against a live deployment, positioned at the staging stage.
+#
+# HUMAN-OWNED PRECONDITION (HITL — secrets): staging credentials are provisioned by a human, not
+# this workflow — `secrets.ZAP_API_TOKEN`, `vars.STAGING_BASE_URL`, and `vars.IMAGE_REPOSITORY`.
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Git SHA / image tag to scan"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  dast:
+    name: Authenticated ZAP Full Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # archive the HTML report into the repo (existing behavior)
+      id-token: write # keyless cosign attestation
+      packages: write # attach the DAST attestation to the image
+      security-events: write
+    env:
+      IMAGE_REPOSITORY: ${{ vars.IMAGE_REPOSITORY || format('ghcr.io/{0}', github.repository) }}
+      # Custom in-toto predicate type for the DAST attestation; cd-production verifies the same URI.
+      DAST_PREDICATE_TYPE: https://github.com/valdomirosouza/Repository-Template-v2/attestations/zap-dast/v1
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.sha }}
+
+      - name: Install cosign + crane (pinned)
+        run: |
+          set -euo pipefail
+          COSIGN_VERSION="v2.4.1"
+          CRANE_VERSION="v0.20.2"
+          curl -sSfL "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64" \
+            -o /usr/local/bin/cosign
+          chmod +x /usr/local/bin/cosign
+          curl -sSfL "https://github.com/google/go-containerregistry/releases/download/${CRANE_VERSION}/go-containerregistry_Linux_x86_64.tar.gz" \
+            | tar -xz -C /usr/local/bin crane
+          cosign version && crane version
+
+      - name: Resolve immutable image digest
+        id: resolve
+        run: |
+          set -euo pipefail
+          DIGEST=$(crane digest "${IMAGE_REPOSITORY}:${{ inputs.sha }}")
+          echo "Resolved ${IMAGE_REPOSITORY}:${{ inputs.sha }} -> ${DIGEST}"
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+
+      - name: OWASP ZAP Full Scan (authenticated)
+        uses: zaproxy/action-full-scan@d2a07475d467566c9a3e3c700f31f47724aa1060 # v0.10.0
+        with:
+          target: ${{ vars.STAGING_BASE_URL }}/api
+          rules_file_name: ".zap/rules.tsv"
+          cmd_options: "-I"
+          report_html: zap-report.html
+        env:
+          ZAP_AUTH_HEADER: "Authorization"
+          ZAP_AUTH_HEADER_VALUE: ${{ secrets.ZAP_API_TOKEN }}
+
+      # If the scan failed on a FAIL-threshold (high-severity) finding, the step above already
+      # failed the job and we never reach the evidence steps — so no attestation is produced and
+      # cd-production's DAST check finds nothing to verify. Evidence is created only on a pass.
+
+      - name: Upload signed DAST report (evidence bundle)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: zap-dast-report-${{ inputs.sha }}
+          path: zap-report.html
+          if-no-files-found: warn
+
+      - name: Archive ZAP report into the repo
+        if: always()
+        run: |
+          set -euo pipefail
+          [ -f zap-report.html ] || { echo "No report to archive."; exit 0; }
+          DATE=$(date -u +%Y-%m-%d)
+          mkdir -p docs/security/zap-reports
+          cp zap-report.html "docs/security/zap-reports/${DATE}.html"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "docs/security/zap-reports/${DATE}.html"
+          git diff --cached --quiet || git commit -m "chore(security): add ZAP report ${DATE} [skip ci]"
+          git push
+
+      - name: Attest DAST pass on the image digest (keyless cosign)
+        run: |
+          set -euo pipefail
+          cat > dast-predicate.json <<JSON
+          {
+            "scan": "owasp-zap-full-scan",
+            "result": "pass",
+            "sha": "${{ inputs.sha }}",
+            "image": "${IMAGE_REPOSITORY}@${{ steps.resolve.outputs.digest }}",
+            "run_id": "${{ github.run_id }}",
+            "workflow": "staging-dast.yml"
+          }
+          JSON
+          cosign attest --yes \
+            --type "${DAST_PREDICATE_TYPE}" \
+            --predicate dast-predicate.json \
+            "${IMAGE_REPOSITORY}@${{ steps.resolve.outputs.digest }}"
+          echo "DAST attestation attached to ${IMAGE_REPOSITORY}@${{ steps.resolve.outputs.digest }}"
