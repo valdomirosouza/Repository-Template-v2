@@ -10,6 +10,7 @@ ADR:  ADR-0012 (PII Masking Strategy)
 
 from __future__ import annotations
 
+import ipaddress
 import re
 from dataclasses import dataclass
 from enum import Enum
@@ -96,6 +97,42 @@ class PIIFilter:
             "[UUID]",
         ),
     ]
+
+    # Sub-field IP masking: how many low-order bits to zero. IPv4 = last octet (8 bits);
+    # IPv6 = last 80 bits, retaining the /48 routing prefix (ADR-0012; SPEC-LGS-001 FR-02).
+    _IPV6_MASKED_HOST_BITS: ClassVar[int] = 80
+    INVALID_IP: ClassVar[str] = "invalid"
+
+    @staticmethod
+    def mask_ip(raw: str | None) -> str:
+        """Mask a single client IP, retaining the network prefix.
+
+        IPv4 → last octet zeroed (``203.0.113.42`` → ``203.0.113.0``); IPv6 → last
+        80 bits zeroed, keeping the /48 prefix. A ``None``, blank, or malformed value
+        returns the :attr:`INVALID_IP` sentinel — the raw input is never echoed back,
+        so a bad value cannot leak. Idempotent: masking an already-masked address is a
+        no-op.
+
+        This is for callers holding a *discrete* IP field (e.g. an access-log client
+        IP) that must keep the network prefix for aggregation while removing host
+        identity (SPEC-LGS-001 FR-02). It does **not** change free-text masking:
+        :meth:`mask_text` still fully tokenises any embedded IP to ``[IP]`` (the
+        strongest redaction), so this method only ever adds capability, never weakens
+        the default path.
+        """
+        if raw is None:
+            return PIIFilter.INVALID_IP
+        candidate = raw.strip()
+        if not candidate:
+            return PIIFilter.INVALID_IP
+        try:
+            addr = ipaddress.ip_address(candidate)
+        except ValueError:
+            return PIIFilter.INVALID_IP
+        if addr.version == 4:
+            return str(ipaddress.IPv4Address(int(addr) & 0xFFFFFF00))
+        host_mask = ((1 << 128) - 1) << PIIFilter._IPV6_MASKED_HOST_BITS
+        return str(ipaddress.IPv6Address(int(addr) & host_mask))
 
     def detect(self, text: str) -> list[PIIMatch]:
         """Return all PII matches found, without masking."""
@@ -190,3 +227,8 @@ def mask_dict(
     min_level: PIILevel = PIILevel.L2_SENSITIVE,
 ) -> dict[str, Any]:
     return pii_filter.mask_dict(data, min_level)
+
+
+def mask_ip(raw: str | None) -> str:
+    """Mask a single IP (IPv4 last octet / IPv6 last 80 bits). See :meth:`PIIFilter.mask_ip`."""
+    return PIIFilter.mask_ip(raw)
