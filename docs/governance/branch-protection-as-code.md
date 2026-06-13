@@ -45,8 +45,8 @@ the governance and security gates):
 
 ```
 Governance Checks · Conventional PR title · GitHub Issue referenced · Spec reference ·
-Version consistency · Lint · Unit Tests · Security Tests · CodeQL — Python ·
-Contract Drift Check · Generate SBOM · DAST (OWASP ZAP baseline)
+Version consistency · High-risk Action Guard (F7) · Lint · Unit Tests · Security Tests ·
+CodeQL — Python · Contract Drift Check · Generate SBOM · DAST (OWASP ZAP baseline)
 ```
 
 **Language-specific CIs (Java / Go / Frontend) are deliberately _not_ in the required set.** They

@@ -141,3 +141,16 @@ jobs:
           else
             echo "no version files changed — skip"
           fi
+
+  f7-hook-guard:
+    name: High-risk Action Guard (F7)
+    runs-on: ubuntu-latest
+    # Regression gate for the F7 high-risk-action guard (issue #133, ADR-0034). A PR that
+    # weakens the guard's decision logic or unwires it from settings.json fails here and
+    # cannot merge (W1-T3). The 38/38 decision baseline is the floor — never lower it.
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Verify high-risk-action guard (decision logic + settings.json wiring)
+        run: make verify-f7-hook
