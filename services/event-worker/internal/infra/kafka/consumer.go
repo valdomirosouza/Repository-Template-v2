@@ -8,6 +8,9 @@ import (
 	"time"
 
 	"github.com/segmentio/kafka-go"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+
 	"github.com/yourorg/monorepo/services/event-worker/internal/domain"
 	"github.com/yourorg/monorepo/services/event-worker/internal/handler"
 )
@@ -50,7 +53,10 @@ func (c *Consumer) Run(ctx context.Context) error {
 			continue
 		}
 
-		if err := c.handler.Handle(ctx, event); err != nil {
+		// W2-11: continue the producer's trace across the Kafka boundary by extracting W3C
+		// trace context from the message headers (no-op when no traceparent header is present).
+		msgCtx := otel.GetTextMapPropagator().Extract(ctx, kafkaHeaderCarrier(msg.Headers))
+		if err := c.handler.Handle(msgCtx, event); err != nil {
 			c.logger.Error("handler error",
 				slog.String("entity_id", event.EntityID),
 				slog.String("error", err.Error()),
@@ -65,6 +71,15 @@ func (c *Consumer) Run(ctx context.Context) error {
 
 func (c *Consumer) Close() error {
 	return c.reader.Close()
+}
+
+// kafkaHeaderCarrier adapts Kafka message headers to an OTel TextMapCarrier for trace extraction.
+func kafkaHeaderCarrier(headers []kafka.Header) propagation.MapCarrier {
+	carrier := make(propagation.MapCarrier, len(headers))
+	for _, h := range headers {
+		carrier[h.Key] = string(h.Value)
+	}
+	return carrier
 }
 
 type rawEvent struct {
