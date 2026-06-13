@@ -13,11 +13,52 @@ on:
         type: choice
         options: [canary]
         default: canary
+      service:
+        description: "Service being deployed (resolves docs/sre/slo/<service>.yaml — ADR-0073)"
+        required: false
+        type: string
+        default: api-gateway
 
 permissions:
   contents: read
 
 jobs:
+  load-slo:
+    name: Load SLO thresholds
+    runs-on: ubuntu-latest
+    # SLO-driven canary thresholds (ADR-0073): resolve the service's SLO file and expose its canary
+    # thresholds to the gate jobs. A deployed service WITHOUT an SLO file fails here — no silent
+    # default to a baked-in number.
+    outputs:
+      error_rate_max: ${{ steps.read.outputs.error_rate_max }}
+      p99_max: ${{ steps.read.outputs.p99_max }}
+      budget_min: ${{ steps.read.outputs.budget_min }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Resolve and read the service SLO file (no silent default)
+        id: read
+        env:
+          SERVICE: ${{ inputs.service }}
+        run: |
+          set -euo pipefail
+          SLO="docs/sre/slo/${SERVICE}.yaml"
+          if [ ! -f "$SLO" ]; then
+            echo "::error::No SLO file for service '${SERVICE}' at ${SLO} — canary thresholds must be defined (ADR-0073). Pipeline blocked."
+            exit 1
+          fi
+          for key in error_rate_max p99_latency_seconds_max error_budget_min_ratio; do
+            val="$(yq ".canary.${key}" "$SLO")"
+            if [ "$val" = "null" ] || [ -z "$val" ]; then
+              echo "::error::${SLO} is missing canary.${key} (ADR-0073)."; exit 1
+            fi
+          done
+          {
+            echo "error_rate_max=$(yq '.canary.error_rate_max' "$SLO")"
+            echo "p99_max=$(yq '.canary.p99_latency_seconds_max' "$SLO")"
+            echo "budget_min=$(yq '.canary.error_budget_min_ratio' "$SLO")"
+          } >> "$GITHUB_OUTPUT"
+          echo "Loaded canary thresholds for ${SERVICE} from ${SLO}."
+
   cab-check:
     name: CAB Approval Check
     runs-on: ubuntu-latest
@@ -93,15 +134,21 @@ jobs:
   check-error-budget:
     name: Check Error Budget
     runs-on: ubuntu-latest
+    # Threshold comes from the service SLO (ADR-0073), never hard-coded here.
+    needs: load-slo
     steps:
       - name: Query remaining error budget
+        env:
+          SERVICE: ${{ inputs.service }}
+          BUDGET_MIN: ${{ needs.load-slo.outputs.budget_min }}
         run: |
+          set -euo pipefail
           BUDGET=$(curl -sf "${{ vars.PROMETHEUS_URL }}/api/v1/query" \
-            --data-urlencode 'query=slo:error_budget_remaining:ratio{service="api-gateway"}' \
+            --data-urlencode "query=slo:error_budget_remaining:ratio{service=\"${SERVICE}\"}" \
             | jq -r '.data.result[0].value[1]')
-          echo "Remaining budget: $BUDGET"
-          python3 -c "import sys; sys.exit(0 if float('$BUDGET') >= 0.10 else 1)" || {
-            echo "ERROR: Error budget < 10%. Deploy blocked."
+          echo "Remaining budget: $BUDGET (minimum: $BUDGET_MIN)"
+          python3 -c "import sys; sys.exit(0 if float('$BUDGET') > float('$BUDGET_MIN') else 1)" || {
+            echo "::error::Remaining error budget at or below the SLO minimum — deploy blocked (ADR-0073)."
             exit 1
           }
 
@@ -201,7 +248,7 @@ jobs:
     runs-on: ubuntu-latest
     # P0-5: CAB approval AND error budget AND artifact integrity must all pass
     # before any production traffic is shifted.
-    needs: [cab-check, check-error-budget, verify-artifact]
+    needs: [load-slo, cab-check, check-error-budget, verify-artifact]
     environment: production
     if: ${{ inputs.strategy == 'canary' }}
     steps:
@@ -226,6 +273,10 @@ jobs:
             --values infrastructure/helm/api-gateway/values-production.yaml
 
       - name: Wait and check Golden Signals (5%)
+        # Thresholds resolved from the service SLO (ADR-0073) — no literals here.
+        env:
+          ERROR_RATE_MAX: ${{ needs.load-slo.outputs.error_rate_max }}
+          P99_MAX: ${{ needs.load-slo.outputs.p99_max }}
         run: |
           echo "Waiting 15 minutes to observe canary metrics..."
           sleep 900
@@ -235,12 +286,12 @@ jobs:
           P99=$(curl -sf "${{ vars.PROMETHEUS_URL }}/api/v1/query" \
             --data-urlencode 'query=histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))' \
             | jq -r '.data.result[0].value[1]')
-          echo "Error rate: $ERROR_RATE | p99 latency: $P99s"
+          echo "Error rate: $ERROR_RATE | p99 latency: ${P99}s | SLO max: er=$ERROR_RATE_MAX p99=${P99_MAX}s"
           python3 -c "
           import sys
           er = float('$ERROR_RATE')
           p99 = float('$P99')
-          if er > 0.01 or p99 > 0.5:
+          if er > float('$ERROR_RATE_MAX') or p99 > float('$P99_MAX'):
               print(f'Golden Signals gate FAILED at 5% canary: error_rate={er:.4f}, p99={p99:.3f}s')
               sys.exit(1)
           "
@@ -248,7 +299,8 @@ jobs:
   promote-canary-25:
     name: Canary — 25%
     runs-on: ubuntu-latest
-    needs: deploy-canary
+    # load-slo provides the SLO-driven Golden Signals thresholds (ADR-0073).
+    needs: [load-slo, deploy-canary]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -294,6 +346,10 @@ jobs:
             --wait --timeout 5m
 
       - name: Wait and check Golden Signals (25%)
+        # Thresholds resolved from the service SLO (ADR-0073) — no literals here.
+        env:
+          ERROR_RATE_MAX: ${{ needs.load-slo.outputs.error_rate_max }}
+          P99_MAX: ${{ needs.load-slo.outputs.p99_max }}
         run: |
           echo "Waiting 15 minutes..."
           sleep 900
@@ -303,11 +359,12 @@ jobs:
           P99=$(curl -sf "${{ vars.PROMETHEUS_URL }}/api/v1/query" \
             --data-urlencode 'query=histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))' \
             | jq -r '.data.result[0].value[1]')
+          echo "Error rate: $ERROR_RATE | p99 latency: ${P99}s | SLO max: er=$ERROR_RATE_MAX p99=${P99_MAX}s"
           python3 -c "
           import sys
           er = float('$ERROR_RATE')
           p99 = float('$P99')
-          if er > 0.01 or p99 > 0.5:
+          if er > float('$ERROR_RATE_MAX') or p99 > float('$P99_MAX'):
               print(f'Golden Signals gate FAILED at 25% canary: error_rate={er:.4f}, p99={p99:.3f}s')
               sys.exit(1)
           "

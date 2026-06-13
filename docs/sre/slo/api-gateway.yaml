@@ -1,0 +1,20 @@
+# Per-service SLO — api-gateway (ADR-0073).
+#
+# The `canary` block is read at runtime by cd-production.yml (via yq) at the 5% / 25% promotion
+# steps and the error-budget gate. NO canary threshold may be hard-coded in workflow YAML — that
+# is enforced by scripts/governance/check_slo_thresholds.py. A deployed service WITHOUT this file
+# fails the pipeline (no silent default).
+#
+# Schema: schema/service-slo.schema.json. Long-term 30d SLO objectives for this service live in
+# slo.yaml; the values below are the canary-gate thresholds (intentionally more permissive than the
+# 30d SLO during a rollout).
+
+service: api-gateway
+
+canary:
+  # Fail canary promotion if the observed 5xx error ratio exceeds this (fraction of requests).
+  error_rate_max: 0.01
+  # Fail canary promotion if the observed p99 request latency exceeds this (seconds).
+  p99_latency_seconds_max: 0.5
+  # Block promotion if the remaining error budget is at or below this ratio (burn-aware gate).
+  error_budget_min_ratio: 0.10

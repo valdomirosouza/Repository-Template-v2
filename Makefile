@@ -231,6 +231,9 @@ burn-in-status: ## Report a report-mode gate's burn-in progress toward blocking 
 check-control-matrix: ## Validate the security control matrices — paths/CI jobs exist, n/a justified (ADR-0072)
 	@uv run python scripts/governance/check_control_matrix.py
 
+check-slo-thresholds: ## Fail if canary/error-budget thresholds are hard-coded in workflow YAML (ADR-0073)
+	@uv run python scripts/governance/check_slo_thresholds.py
+
 verify-f7-hook: ## Verify the F7 high-risk-action guard hook (decision logic + settings.json wiring; issue #133)
 	@python3 .claude/hooks/verify-high-risk-guard.py
 
