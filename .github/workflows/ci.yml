@@ -144,16 +144,37 @@ jobs:
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
           BASE_REF: ${{ github.base_ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           python3 -m pip install --quiet pyyaml
           git fetch --quiet origin "$BASE_REF"
           git diff --name-only "origin/$BASE_REF...HEAD" > /tmp/cb_files.txt
           git diff "origin/$BASE_REF...HEAD" > /tmp/cb_diff.txt
           printf '%s' "$PR_BODY" > /tmp/cb_declared.txt
-          python3 scripts/governance/check_control_bindings.py \
-            --changed-files /tmp/cb_files.txt \
-            --diff /tmp/cb_diff.txt \
-            --declared /tmp/cb_declared.txt
+          # Report mode (ADR-0070 burn-in): capture the verdict, still surface a red-X on FAIL.
+          if python3 scripts/governance/check_control_bindings.py \
+               --changed-files /tmp/cb_files.txt \
+               --diff /tmp/cb_diff.txt \
+               --declared /tmp/cb_declared.txt; then
+            verdict=PASS; rc=0
+          else
+            verdict=FAIL; rc=1
+          fi
+          # Emit an objective burn-in row for the ADR-0070 lifecycle log. A maintainer copies it
+          # into docs/governance/gate-lifecycle.md and classifies `False positive?` only on FAIL.
+          today="$(date -u +%Y-%m-%d)"
+          if [ "$verdict" = FAIL ]; then fp='? (classify)'; else fp='no'; fi
+          {
+            echo "### Control-binding gate — burn-in row (ADR-0070)"
+            echo ""
+            echo "Report-mode verdict (does **not** block). Copy into \`docs/governance/gate-lifecycle.md\`:"
+            echo ""
+            echo "| Date (UTC) | PR | Verdict | False positive? | Notes |"
+            echo "| ---------- | --- | ------- | --------------- | ----- |"
+            echo "| ${today} | #${PR_NUMBER} | ${verdict} | ${fp} | report-mode |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$rc" = 0 ] || echo "::warning::Control-binding gate reported violations (report mode, ADR-0070 burn-in) — see job summary for the burn-in row."
+          exit "$rc"
 
       - name: Validate GitHub Actions are SHA-pinned (RFC-0015)
         run: bash scripts/governance/check_action_pins.sh

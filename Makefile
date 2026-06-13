@@ -225,6 +225,9 @@ check-control-bindings: ## Control-binding gate (ADR-0061). BASE=main DECLARED=<
 check-action-pins: ## Fail if any GitHub Actions `uses:` is not SHA-pinned (RFC-0015)
 	@bash scripts/governance/check_action_pins.sh
 
+burn-in-status: ## Report a report-mode gate's burn-in progress toward blocking (ADR-0070). GATE=<target>
+	@python3 scripts/governance/burn_in_status.py $${GATE:+--gate "$$GATE"}
+
 verify-f7-hook: ## Verify the F7 high-risk-action guard hook (decision logic + settings.json wiring; issue #133)
 	@python3 .claude/hooks/verify-high-risk-guard.py
 
