@@ -179,6 +179,13 @@ jobs:
       - name: Validate GitHub Actions are SHA-pinned (RFC-0015)
         run: bash scripts/governance/check_action_pins.sh
 
+      # BLOCKING from introduction (ADR-0070): this is a deterministic gate — dead references and
+      # unjustified n/a entries are unambiguous, so there is no false-positive burn-in to serve.
+      - name: Security control matrix validation (ADR-0072)
+        run: |
+          python3 -m pip install --quiet pyyaml
+          python3 scripts/governance/check_control_matrix.py
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
