@@ -38,14 +38,15 @@ streak; a `yes` row resets it.
 
 ## Gate registry
 
-| Gate                                                  | Workflow / step                                         | Mode         | Burn-in                                              | Notes                                                             |
-| ----------------------------------------------------- | ------------------------------------------------------- | ------------ | ---------------------------------------------------- | ----------------------------------------------------------------- |
-| Control-binding (ADR-0061)                            | `ci.yml` → _Control-binding governance gate_            | **report**   | in progress (below)                                  | First gate through the ADR-0070 lifecycle                         |
-| Staging DAST attestation (W2-T3)                      | `cd-production.yml` → _Verify staging DAST attestation_ | **report**   | in progress (below)                                  | Promotion gate; report-mode so it cannot brick prod deploys       |
-| Change-type label / CAB (W1-2)                        | `pr-governance.yml` → _Change-type label (CAB)_         | **report**   | in progress (below)                                  | PR-time CAB; report-mode while the labeling convention is adopted |
-| High-risk Action Guard (F7)                           | `pr-governance.yml` → _High-risk Action Guard (F7)_     | **blocking** | n/a (introduced blocking, deterministic 38/38 suite) | W1-T3                                                             |
-| Conventional PR title / Spec / Issue / Version        | `pr-governance.yml`                                     | **blocking** | past lifecycle                                       | Pre-existing                                                      |
-| detect-secrets · Bandit · CodeQL · Trivy · ZAP (DAST) | `ci.yml` / `codeql.yml` / `secret-scanning.yml`         | **blocking** | past lifecycle (ADR-0070 §Neutral)                   | Pre-existing                                                      |
+| Gate                                                  | Workflow / step                                         | Mode         | Burn-in                                                | Notes                                                             |
+| ----------------------------------------------------- | ------------------------------------------------------- | ------------ | ------------------------------------------------------ | ----------------------------------------------------------------- |
+| Control-binding (ADR-0061)                            | `ci.yml` → _Control-binding governance gate_            | **report**   | in progress (below)                                    | First gate through the ADR-0070 lifecycle                         |
+| Staging DAST attestation (W2-T3)                      | `cd-production.yml` → _Verify staging DAST attestation_ | **report**   | in progress (below)                                    | Promotion gate; report-mode so it cannot brick prod deploys       |
+| Change-type label / CAB (W1-2)                        | `pr-governance.yml` → _Change-type label (CAB)_         | **report**   | in progress (below)                                    | PR-time CAB; report-mode while the labeling convention is adopted |
+| High-risk Action Guard (F7)                           | `pr-governance.yml` → _High-risk Action Guard (F7)_     | **blocking** | n/a (introduced blocking, deterministic 38/38 suite)   | W1-T3                                                             |
+| Chaos Smoke (W2-10)                                   | `chaos-smoke.yml` → _Chaos Smoke (resilience)_          | **blocking** | n/a (deterministic; path-filtered to resilience paths) | Single-fault resilience smoke on PRs touching workers/hitl/retry  |
+| Conventional PR title / Spec / Issue / Version        | `pr-governance.yml`                                     | **blocking** | past lifecycle                                         | Pre-existing                                                      |
+| detect-secrets · Bandit · CodeQL · Trivy · ZAP (DAST) | `ci.yml` / `codeql.yml` / `secret-scanning.yml`         | **blocking** | past lifecycle (ADR-0070 §Neutral)                     | Pre-existing                                                      |
 
 ---
 
