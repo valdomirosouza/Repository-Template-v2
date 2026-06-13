@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Version:** 2.7.0 | **Last updated:** 2026-06-08
+> **Version:** 2.8.0 | **Last updated:** 2026-06-13
 > This file is the authoritative behavioral contract for Claude Code in this repository.
 > Read it at the start of every session and follow all rules without exception. It overrides any default behavior.
 
@@ -63,6 +63,14 @@ make new-service NAME=foo LANG=python|java|go
 make sbom            # CycloneDX SBOM
 make doctor          # first-run diagnostics
 make sync-develop    # fast-forward develop to origin/main and push (ff-only; refuses if diverged)
+
+# Governance gates (run in CI; deterministic ones block)
+make check-control-bindings   # control-binding declarations (ADR-0061; report-mode, ADR-0070)
+make check-control-matrix     # OWASP ASVS/GenAI matrices — paths/CI jobs exist, n/a justified (ADR-0072)
+make check-slo-thresholds     # no hard-coded canary thresholds in workflow YAML (ADR-0073)
+make check-outbound-urls      # SSRF: every outbound-HTTP boundary uses the allow-list (OWASP A10)
+make verify-f7-hook           # F7 high-risk-action guard regression suite (issue #133, ADR-0034)
+make burn-in-status [GATE=<target>]  # report-mode gate burn-in progress toward blocking (ADR-0070)
 ```
 
 Pre-commit hooks (`.pre-commit-config.yaml`) run ruff, mypy, detect-secrets, bandit on every commit — install once with `uv run pre-commit install`; the same gates run in `harness/code-check.yml` in CI. After scaffolding a service, register it in `services.yaml` and add it to `.github/CODEOWNERS`.
@@ -99,7 +107,7 @@ RequestConsumer (asyncio task in lifespan) polls store for QUEUED requests
 | Worker        | `src/workers/request_consumer.py`         | Asyncio task driving the orchestrator                                                                                                                                              |
 | Orchestrator  | `src/agents/orchestrator/orchestrator.py` | Perception → Reason → Act loop                                                                                                                                                     |
 | Harness       | `src/agents/harness/`                     | Optional Planner→Generator→Evaluator (`harness_mode`)                                                                                                                              |
-| Guardrails    | `src/guardrails/`                         | PII filter, prompt injection guard, action limits, audit logger                                                                                                                    |
+| Guardrails    | `src/guardrails/`                         | PII filter, prompt injection guard, action limits, audit logger, output sanitizer (LLM02/LLM05 — strip control chars / escape markup / block code-exec sinks, ADR-0072)            |
 | HITL Gateway  | `src/agents/hitl_gateway.py`              | Approval store + decision routing; all real-world agent actions pass here                                                                                                          |
 | Feature Flags | `src/shared/feature_flags.py`             | OpenFeature/flagd autonomy levels (NONE → LOW_RISK → MEDIUM_RISK → FULL)                                                                                                           |
 | Config        | `src/shared/config.py`                    | Pydantic Settings; env vars with documented defaults                                                                                                                               |
@@ -107,7 +115,7 @@ RequestConsumer (asyncio task in lifespan) polls store for QUEUED requests
 | Memory        | `src/memory/`                             | Session memory, vector store, doc indexer, bug history (opt-in, ADR-0017)                                                                                                          |
 | Frontend      | `frontend/`                               | Next.js app; HITL operator approval UI                                                                                                                                             |
 | PR Gates      | `harness/`                                | Claude Code harness specs (code/doc/release/staging-check)                                                                                                                         |
-| ADRs          | `docs/adr/`                               | ADR-0001–ADR-0065, all binding. See `docs/adr/README.md` for the index                                                                                                             |
+| ADRs          | `docs/adr/`                               | ADR-0001–ADR-0075, all binding. See `docs/adr/README.md` for the index                                                                                                             |
 | Process       | `docs/process/`                           | WORKFLOW (15-phase 0–14; ADR-0058), RACI, HITL-GOVERNANCE, SPRINT-TRACKING, RETROSPECTIVE-GUIDE, DoR/DoD/DoR-Release. Canonical model: `docs/sdlc/agentic-spec-driven-delivery.md` |
 
 ### Infrastructure Fallback Pattern
@@ -168,7 +176,7 @@ Full 15-phase (0–14) lifecycle: `docs/process/WORKFLOW.md` (ADR-0052, ADR-0058
 5.  CHECK if DPIA/RIPD review is needed (any new PII processing) — see docs/privacy/.
 6.  IMPLEMENT following the spec. No gold-plating, no scope creep.
 7.  WRITE tests (unit ≥ 80% coverage, integration for service boundaries).
-8.  RUN guardrails: pii_filter, prompt_injection_guard, audit_logger.
+8.  RUN guardrails: pii_filter, prompt_injection_guard, output_sanitizer, audit_logger.
 9.  UPDATE docs/adr/ if a new architectural decision was made.
 10. UPDATE CHANGELOG.md under the correct category.
 ```
@@ -195,8 +203,8 @@ Full 15-phase (0–14) lifecycle: `docs/process/WORKFLOW.md` (ADR-0052, ADR-0058
 - **ALWAYS** encrypt L1/L2 PII columns at rest via `EncryptedField` (AES-256-GCM) before storing in PostgreSQL/Redis (ADR-0018, ADR-0019).
 - **NEVER** store unencrypted HITL request payloads in Redis in production — `HITLRedisStore` must receive an `EncryptedField`.
 - **ALWAYS** verify `DB_ENCRYPTION_KEY` and `REDIS_TLS_ENABLED` are set before production deploy (enforced by `Settings.reject_placeholder_secrets`).
-- **OWASP Top 10** enforced at every API boundary: A01 RBAC, no IDOR, ownership checks · A02 TLS 1.2+, AES-256-GCM, no MD5/SHA-1 · A03 parameterized queries, prompt injection guard always on · A04 threat model (`specs/security/threat-model.md`) updated each major release · A05 no default creds, Trivy blocks on CRITICAL · A06 SCA (dep-check/pip-audit) blocks on CRITICAL · A07 short-expiry JWT, refresh rotation, brute-force protection · A08 Cosign-signed artifacts, SLSA L3 target, SBOM per build · A09 every 4xx/5xx logged with `request_id`, no PII · A10 outbound allow-list, no user-controlled server-side URLs.
-- **OWASP LLM Top 10** (when `src/agents/` active): LLM01 `prompt_injection_guard.py` never disabled · LLM02 sanitize all LLM output before render/execute · LLM06 `pii_filter.py` before every LLM call and log write · LLM08 HITL gateway enforced, autonomy via feature flags only · LLM09 evaluator validates output, human review threshold ≥ 0.7 risk.
+- **OWASP Top 10** enforced at every API boundary: A01 RBAC, no IDOR, ownership checks · A02 TLS 1.2+, AES-256-GCM, no MD5/SHA-1 · A03 parameterized queries, prompt injection guard always on · A04 threat model (`specs/security/threat-model.md`) updated each major release · A05 no default creds, Trivy blocks on CRITICAL · A06 SCA (dep-check/pip-audit) blocks on CRITICAL · A07 short-expiry JWT, refresh rotation, brute-force protection · A08 Cosign-signed artifacts, SLSA L3 target, SBOM per build · A09 every 4xx/5xx logged with `request_id`, no PII · A10 outbound allow-list at every HTTP-client boundary via `src/shared/url_allowlist.py` (blocks metadata/link-local + non-http(s); `check_outbound_urls.py` CI gate), no user-controlled server-side URLs.
+- **OWASP LLM Top 10** (when `src/agents/` active): LLM01 `prompt_injection_guard.py` never disabled · LLM02/LLM05 `output_sanitizer.py` sanitizes all LLM output before render/execute (sinks → HITL) · LLM06 `pii_filter.py` before every LLM call and log write · LLM08 HITL gateway enforced, autonomy via feature flags only · LLM09 evaluator validates output, human review threshold ≥ 0.7 risk.
 - **Versioned control matrices** (ADR-0072) are the **authoritative, machine-verified** OWASP mapping; the two abbreviated lists above are a quick reference only. They pin the standard version and trace each control to code → test → gate: `specs/security/asvs-control-matrix.yaml` (**OWASP ASVS 5.0.0**) and `specs/security/owasp-genai-control-matrix.yaml` (**OWASP LLM Top 10 2025**). Schema-validated in CI by `scripts/governance/check_control_matrix.py` — a dead `implemented_by`/`verified_by` path or an unjustified `n/a` fails the build.
 - DAST (OWASP ZAP full scan) is a blocking gate in staging before every production promotion.
 - **ALWAYS** run `uv run pytest tests/abuse_cases/ -m abuse_case` before any PR touching `src/agents/` or `src/guardrails/`. Never reduce the abuse-case count (ADR-0050).
