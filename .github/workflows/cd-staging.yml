@@ -110,46 +110,16 @@ jobs:
 
   dast-scan:
     name: DAST — OWASP ZAP Full Scan
-    runs-on: ubuntu-latest
     needs: deploy-staging
+    # W2-T3: the authenticated full scan + signed report evidence + cosign attestation on the image
+    # digest now live in the reusable staging-dast.yml (single source of truth). cd-production
+    # verifies the attestation it produces before promotion.
+    uses: ./.github/workflows/staging-dast.yml
+    with:
+      sha: ${{ inputs.sha }}
+    secrets: inherit
     permissions:
       contents: write
+      id-token: write
+      packages: write
       security-events: write
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: OWASP ZAP Full Scan
-        uses: zaproxy/action-full-scan@d2a07475d467566c9a3e3c700f31f47724aa1060 # v0.10.0
-        with:
-          target: ${{ vars.STAGING_BASE_URL }}/api
-          rules_file_name: ".zap/rules.tsv"
-          cmd_options: "-I"
-          report_html: zap-report.html
-        env:
-          ZAP_AUTH_HEADER: "Authorization"
-          ZAP_AUTH_HEADER_VALUE: ${{ secrets.ZAP_API_TOKEN }}
-
-      - name: Archive ZAP report
-        if: always()
-        run: |
-          DATE=$(date -u +%Y-%m-%d)
-          mkdir -p docs/security/zap-reports
-          cp zap-report.html "docs/security/zap-reports/${DATE}.html"
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "docs/security/zap-reports/${DATE}.html"
-          git diff --cached --quiet || git commit -m "chore(security): add ZAP report ${DATE} [skip ci]"
-          git push
-
-      - name: Fail on CRITICAL findings
-        run: |
-          python3 - << 'EOF'
-          import json, sys, os
-          report_file = "zap-report.html"
-          if not os.path.exists(report_file):
-              print("ZAP report not found — scan may have failed entirely.")
-              sys.exit(1)
-          # ZAP action-full-scan exits non-zero on FAIL-level rules.
-          # If we reach here the scan passed its own thresholds.
-          print("DAST scan passed — no CRITICAL findings at FAIL threshold.")
-          EOF
