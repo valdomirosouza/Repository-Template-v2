@@ -1,6 +1,6 @@
 ---
 # Weekly scheduled chaos experiments run against staging.
-# Spec: specs/sre/game-day-playbook.md
+# Runbook: tests/chaos/runbooks/game-day-playbook.md
 # ADR:  ADR-0014 (Multi-Agent Harness Strategy)
 
 name: Chaos Schedule
