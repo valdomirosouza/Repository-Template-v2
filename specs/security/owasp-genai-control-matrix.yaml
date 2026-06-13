@@ -70,12 +70,14 @@ controls:
       (ADR-0051); training-data provenance/integrity is upstream of the template and out of scope.
 
   - id: LLM05:2025
-    control: LLM-generated actions/code are validated and sandboxed before any real-world effect.
+    control: LLM output is sanitized before render/execute; generated actions/code are validated and sandboxed.
     implemented_by:
+      - src/guardrails/output_sanitizer.py
       - src/agents/action_policy.py
       - src/agents/code_pre_flight.py
       - src/agents/sandbox_executor.py
     verified_by:
+      - tests/unit/guardrails/test_output_sanitizer.py
       - tests/unit/agents/test_action_policy.py
       - tests/unit/agents/test_sandbox_executor.py
       - tests/security/test_unregistered_tool_blocked.py

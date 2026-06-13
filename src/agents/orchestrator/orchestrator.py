@@ -33,6 +33,7 @@ from src.agents.spec_contract_enforcer import SpecContractEnforcer, SpecViolatio
 from src.agents.tool_executor import ToolExecutor
 from src.guardrails.action_limits import ActionLimiter
 from src.guardrails.audit_logger import AuditLogger, AuditWriteError
+from src.guardrails.output_sanitizer import sanitize_output
 from src.guardrails.pii_filter import mask_dict
 from src.guardrails.prompt_injection_guard import PromptInjectionGuard
 from src.observability.logger import get_logger
@@ -287,6 +288,31 @@ class AgentOrchestrator:
         import json
         import uuid
 
+        # Layer 5 — Output sanitization (OWASP LLM02/LLM05). Sanitize LLM-produced strings before
+        # they are stored for HITL render, logged, or reach an execution sink. escape=False: control
+        # chars are stripped and code-exec sinks detected (both safe on the execution path), but
+        # markup is NOT escaped here (that would corrupt executable parameter values — render
+        # consumers escape at display time). Detected sinks force HITL below. Strengthens, never
+        # replaces, the input-side prompt-injection guard.
+        sanitized_params, sani_report = sanitize_output(ctx.proposed_parameters)
+        ctx.proposed_parameters = sanitized_params
+        if sani_report.modified:
+            logger.warning(
+                "output_sanitizer.modified",
+                agent_id=ctx.agent_id,
+                control_chars_stripped=sani_report.control_chars_stripped,
+                fields_escaped=sani_report.fields_escaped,
+                sinks_detected=sani_report.sinks_detected,
+            )
+            span.set_attribute("act.output_sanitized", True)
+            span.set_attribute(
+                "act.output_control_chars_stripped", sani_report.control_chars_stripped
+            )
+            if sani_report.sinks_detected:
+                span.set_attribute(
+                    "act.output_sinks_detected", ",".join(sani_report.sinks_detected)
+                )
+
         if self._action_limiter is not None:
             await self._action_limiter.check(ctx.proposed_action or "", ctx.proposed_parameters)
 
@@ -344,6 +370,11 @@ class AgentOrchestrator:
         elif not ctx.schema_valid:
             route_to_hitl = True  # malformed agent_action_v1 output → human review
             oversight_mode = "HITL_SCHEMA_INVALID"
+        elif sani_report.sinks_detected:
+            # LLM02/LLM05: output containing a code-exec / active-content sink is never executed
+            # autonomously — a human reviews it (the safe "block").
+            route_to_hitl = True
+            oversight_mode = "HITL_OUTPUT_SINK"
         elif ctx.risk_score >= settings.hitl_risk_threshold:
             route_to_hitl = True
             oversight_mode = "HITL"

@@ -110,6 +110,38 @@ Note: `action_params_hash` is the SHA-256 of the masked params. Raw params are n
 
 ---
 
+### Layer 5 — Output Sanitizer (`src/guardrails/output_sanitizer.py`)
+
+The OUTPUT-side complement to the input-side Injection Guard (Layer 2). It sanitizes
+**LLM-generated output** before it is rendered (HITL operator UI, logs) or could reach an execution
+sink (OWASP **LLM02** / **LLM05**, CLAUDE.md §3.2). It **strengthens, never replaces**, Layer 2.
+
+**Three transforms:**
+
+- **Strip control characters** — remove C0/C1 control chars (except tab/newline/CR) that can spoof
+  terminals, corrupt logs, or hide content.
+- **Escape markup** — HTML-escape active markup. **Render contexts only.**
+- **Detect code-exec sinks** — flag active-content / code-execution patterns (`eval(`/`exec(`,
+  `__import__`, unsafe deserialization, `os.system`/`subprocess`, `<script>`, inline event
+  handlers, `javascript:` / `data:text/html` URIs, shell `$(...)`/backticks, `{{...}}`/`${...}`
+  template injection).
+
+**Render vs execute (invariant):** markup-escaping is correct for _render_ but would **corrupt**
+values that are later _executed_. So on the execution path the sanitizer strips control chars and
+detects sinks but does **not** escape (`escape=False`); render consumers escape at display time
+(`escape=True`). Escaping an executable parameter value is a defect.
+
+**Where it runs:** the orchestrator **Act** step (`_act_inner`), on the proposed action's parameters,
+before action-limit checks, audit write, or execution. Telemetry: `act.output_sanitized`,
+`act.output_control_chars_stripped`, `act.output_sinks_detected` span attributes + an
+`output_sanitizer.modified` structured log.
+
+**Sink → HITL (the safe "block"):** if the LLM output contains a code-exec / active-content sink,
+the action is **never executed autonomously** — it is routed to HITL (`oversight_mode =
+HITL_OUTPUT_SINK`), regardless of risk score or autonomy ceiling.
+
+---
+
 ## Guardrail Execution Order
 
 ```
