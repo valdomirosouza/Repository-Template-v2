@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/valdomirosouza/Repository-Template-v2/docs/sre/slo/schema/service-slo.schema.json",
+  "title": "Per-service SLO (canary gate)",
+  "description": "Per-service SLO file consumed by cd-production.yml for SLO-driven canary thresholds (ADR-0073). The `canary` block is read via yq at the 5%/25% promotion steps and the error-budget gate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["service", "canary"],
+  "properties": {
+    "service": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Service name; must match docs/sre/slo/<service>.yaml and the deploy target."
+    },
+    "canary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "error_rate_max",
+        "p99_latency_seconds_max",
+        "error_budget_min_ratio"
+      ],
+      "properties": {
+        "error_rate_max": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "description": "Max acceptable 5xx error ratio during canary (fraction, not percent)."
+        },
+        "p99_latency_seconds_max": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Max acceptable p99 request latency during canary, in seconds."
+        },
+        "error_budget_min_ratio": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "description": "Promotion is blocked if remaining error budget is at or below this ratio."
+        }
+      }
+    }
+  }
+}

@@ -186,6 +186,11 @@ jobs:
           python3 -m pip install --quiet pyyaml
           python3 scripts/governance/check_control_matrix.py
 
+      # BLOCKING from introduction (ADR-0073): deterministic — a hard-coded canary threshold in a
+      # workflow is unambiguous. Keeps SLO-driven thresholds from regressing back into the YAML.
+      - name: SLO-driven canary threshold lint (ADR-0073)
+        run: python3 scripts/governance/check_slo_thresholds.py
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
