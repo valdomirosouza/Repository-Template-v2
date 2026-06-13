@@ -9,7 +9,7 @@ export default function HomePage() {
       </p>
       <nav style={{ marginTop: "2rem", display: "flex", gap: "1rem" }}>
         <Link href="/hitl">HITL Approval Queue</Link>
-        <Link href="/requests">Requests</Link>
+        {/* "/requests" route not implemented yet — dead typedRoutes link broke `next build`. */}
       </nav>
     </main>
   );
