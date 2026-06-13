@@ -22,6 +22,7 @@ from src.observability.metrics import (
     FEEDBACK_REJECTION_RATE,
 )
 from src.shared.config import settings
+from src.shared.url_allowlist import validate_outbound_url
 
 logger = get_logger("feedback_loop")
 
@@ -159,8 +160,11 @@ class FeedbackLoop:
 
     async def _query(self, client: httpx.AsyncClient, metric: str) -> list[dict[str, Any]]:
         """Run an instant PromQL query and return the result list."""
+        # A10/SSRF: validate the outbound target before the request (config-derived here, but the
+        # allow-list is enforced at every HTTP-client boundary as a matter of policy).
+        target = validate_outbound_url(f"{self._prometheus_url}/api/v1/query")
         resp = await client.get(
-            f"{self._prometheus_url}/api/v1/query",
+            target,
             params={"query": f"sum by (action_type) ({metric})"},
         )
         resp.raise_for_status()

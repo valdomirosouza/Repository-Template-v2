@@ -234,6 +234,9 @@ check-control-matrix: ## Validate the security control matrices — paths/CI job
 check-slo-thresholds: ## Fail if canary/error-budget thresholds are hard-coded in workflow YAML (ADR-0073)
 	@uv run python scripts/governance/check_slo_thresholds.py
 
+check-outbound-urls: ## Fail if an outbound-HTTP boundary skips the SSRF allow-list (OWASP A10)
+	@uv run python scripts/governance/check_outbound_urls.py
+
 verify-f7-hook: ## Verify the F7 high-risk-action guard hook (decision logic + settings.json wiring; issue #133)
 	@python3 .claude/hooks/verify-high-risk-guard.py
 
