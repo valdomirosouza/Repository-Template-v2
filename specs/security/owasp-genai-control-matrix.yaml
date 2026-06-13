@@ -46,8 +46,10 @@ controls:
     implemented_by:
       - docs/dependency-manifest.yaml
     verified_by:
+      - tests/security/test_owasp_llm_top10.py
       - tests/model_contract/test_pii_non_leakage.py
       - "ci:Generate SBOM"
+      - "ci:Security Tests"
     gate: ["Generate SBOM"]
     owner: DevSecOps Lead
     status: partial
@@ -60,8 +62,10 @@ controls:
     implemented_by:
       - docs/dependency-manifest.yaml
     verified_by:
+      - tests/security/test_owasp_llm_top10.py
       - tests/model_contract/test_pii_non_leakage.py
       - "ci:Model Behavioral Contract (ML1 / ADR-0051)"
+      - "ci:Security Tests"
     gate: ["Model Behavioral Contract (ML1 / ADR-0051)"]
     owner: AI Governance Lead
     status: partial
@@ -150,9 +154,11 @@ controls:
       - src/api/rest/_limiter.py
       - src/guardrails/action_limits.py
     verified_by:
+      - tests/security/test_owasp_llm_top10.py
       - tests/unit/api/test_requests_semaphore.py
       - tests/unit/guardrails/test_action_limits.py
       - "ci:Unit Tests"
+      - "ci:Security Tests"
     gate: ["Unit Tests"]
     owner: SRE Lead
     status: partial
