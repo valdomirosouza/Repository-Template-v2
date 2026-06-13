@@ -33,6 +33,7 @@
           { "context": "GitHub Issue referenced" },
           { "context": "Spec reference" },
           { "context": "Version consistency" },
+          { "context": "High-risk Action Guard (F7)" },
           { "context": "Lint" },
           { "context": "Unit Tests" },
           { "context": "Security Tests" },
