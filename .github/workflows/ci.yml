@@ -114,26 +114,41 @@ jobs:
           else:
               print(f"All {len(fields)} Settings fields are documented in .env.example.")
           EOF
-      - name: Validate CODEOWNERS has no @org/ placeholder teams (REM-009)
+      - name: Validate CODEOWNERS has no placeholder teams (REM-009)
         if: steps.setup_status.outputs.ready == 'true'
-        # Fails if any @org/ patterns remain — these are unresolved template placeholders
-        # that won't resolve on GitHub, silently breaking reviewer auto-assignment.
-        # See docs/governance/owner-onboarding.md for how to assign real owners.
-        # ISO 5.2/5.31, SOC 2 CC5.2.
+        # Fails if any @org/ or @your-org/ placeholders remain on an initialized repo — these
+        # don't resolve on GitHub, silently breaking reviewer auto-assignment.
+        # See docs/governance/owner-onboarding.md. ISO 5.2/5.31, SOC 2 CC5.2.
         run: |
-          # Exclude comment lines (lines starting with #) so that documentation
-          # references to the old @org/* pattern don't trigger a false positive.
-          if grep -v '^#' .github/CODEOWNERS | grep -qE '@org/'; then
-            echo "::error file=.github/CODEOWNERS::CODEOWNERS contains unresolved @org/ placeholder teams."
+          # Exclude comment lines so the CODEOWNERS header's placeholder examples don't false-positive.
+          if grep -v '^#' .github/CODEOWNERS | grep -qE '@(your-)?org/'; then
+            echo "::error file=.github/CODEOWNERS::CODEOWNERS contains unresolved @org/ or @your-org/ placeholder teams."
             echo "These patterns silently fail GitHub reviewer auto-assignment."
-            echo "Replace each @org/<role> with a real GitHub username or @your-org/team-name."
+            echo "Replace each placeholder with a real GitHub username or @<your-org>/<team> handle."
             echo "See docs/governance/owner-onboarding.md for the step-by-step guide."
-            grep -v '^#' .github/CODEOWNERS | grep -nE '@org/' | while read -r line; do
+            grep -v '^#' .github/CODEOWNERS | grep -nE '@(your-)?org/' | while read -r line; do
               echo "  $line"
             done
             exit 1
           fi
-          echo "CODEOWNERS: no @org/ placeholder teams found in non-comment lines."
+          echo "CODEOWNERS: no placeholder teams found in non-comment lines."
+
+      - name: Reject partial CODEOWNERS initialization (REM-009)
+        # A template ships an all-placeholder CODEOWNERS (day-zero OK); a fully adopted repo has all
+        # real owners. A MIX — some real @handles, some leftover @your-org/ / @org/ placeholders —
+        # means initialization was half-done and reviewer auto-assignment silently fails on the
+        # placeholder paths. Deterministic, so blocking from introduction (ADR-0070).
+        run: |
+          set -euo pipefail
+          owners="$(grep -vE '^[[:space:]]*#' .github/CODEOWNERS | grep -E '@' || true)"
+          placeholders="$(printf '%s\n' "$owners" | grep -cE '@(your-)?org/' || true)"
+          real="$(printf '%s\n' "$owners" | grep -E '@[A-Za-z0-9_-]' | grep -cvE '@(your-)?org/' || true)"
+          echo "CODEOWNERS owner lines — placeholders: ${placeholders:-0}, real handles: ${real:-0}"
+          if [ "${placeholders:-0}" -gt 0 ] && [ "${real:-0}" -gt 0 ]; then
+            echo "::error file=.github/CODEOWNERS::Partial CODEOWNERS initialization — real owners and @your-org//@org/ placeholders are mixed. Replace ALL placeholders (docs/governance/owner-onboarding.md)."
+            exit 1
+          fi
+          echo "CODEOWNERS is consistent (all placeholders, or all real owners)."
 
       - name: Control-binding governance gate (ADR-0061)
         if: github.event_name == 'pull_request'
