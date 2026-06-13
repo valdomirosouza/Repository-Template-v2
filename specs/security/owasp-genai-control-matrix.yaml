@@ -1,0 +1,160 @@
+# OWASP Top 10 for LLM Applications (2025) Control Matrix (ADR-0072)
+#
+# Maps the pinned 2025 GenAI/LLM risk taxonomy to the code that defends each risk, the tests/CI
+# jobs that verify it, and the gate that enforces it. Same schema + validator as the ASVS matrix
+# (schemas/control-matrix.schema.json, scripts/governance/check_control_matrix.py):
+#   - every implemented_by / verified_by path MUST exist (anti-rot);
+#   - every `ci:` job id and gate name MUST be a real CI job (anti-rot);
+#   - every `n/a` entry MUST carry a justification (anti-fabrication, CLAUDE.md §3.6).
+#
+# Risk IDs and names are the OWASP Top 10 for LLM Applications **2025** taxonomy (genai.owasp.org).
+# Statuses are honest: `partial` entries name what is and isn't yet covered, rather than inflating
+# to `implemented`. This is a STARTING evidence set for the template (ADR-0072 §Neutral).
+
+standard: OWASP Top 10 for LLM Applications
+version: "2025"
+source: https://genai.owasp.org/llm-top-10/
+
+controls:
+  - id: LLM01:2025
+    control: Prompt injection is detected/blocked before the model call; the guard is never disabled.
+    implemented_by:
+      - src/guardrails/prompt_injection_guard.py
+    verified_by:
+      - tests/unit/guardrails/test_prompt_injection_guard.py
+      - tests/security/test_owasp_llm_top10.py
+      - tests/abuse_cases/test_jailbreak_attempts.py
+      - "ci:Security Tests"
+    gate: ["Security Tests"]
+    owner: Security Lead
+    status: implemented
+
+  - id: LLM02:2025
+    control: Sensitive data is masked before every LLM call and log write to prevent disclosure.
+    implemented_by:
+      - src/guardrails/pii_filter.py
+    verified_by:
+      - tests/security/test_pii_leakage.py
+      - tests/model_contract/test_pii_non_leakage.py
+      - "ci:Security Tests"
+    gate: ["Security Tests"]
+    owner: DPO
+    status: implemented
+
+  - id: LLM03:2025
+    control: Model and dependency supply chain is pinned and inventoried (SBOM / SCA).
+    implemented_by:
+      - docs/dependency-manifest.yaml
+    verified_by:
+      - tests/model_contract/test_pii_non_leakage.py
+      - "ci:Generate SBOM"
+    gate: ["Generate SBOM"]
+    owner: DevSecOps Lead
+    status: partial
+    justification: >-
+      Model + dependency versions are pinned (ADR-0051) and a CycloneDX SBOM is generated/signed
+      per build; full SLSA L3 provenance attestation is a roadmap target, not yet enforced.
+
+  - id: LLM04:2025
+    control: Model promotion is gated on a behavioral contract to catch poisoning/regression.
+    implemented_by:
+      - docs/dependency-manifest.yaml
+    verified_by:
+      - tests/model_contract/test_pii_non_leakage.py
+      - "ci:Model Behavioral Contract (ML1 / ADR-0051)"
+    gate: ["Model Behavioral Contract (ML1 / ADR-0051)"]
+    owner: AI Governance Lead
+    status: partial
+    justification: >-
+      A new model version cannot be promoted without passing the behavioral-contract suite
+      (ADR-0051); training-data provenance/integrity is upstream of the template and out of scope.
+
+  - id: LLM05:2025
+    control: LLM-generated actions/code are validated and sandboxed before any real-world effect.
+    implemented_by:
+      - src/agents/action_policy.py
+      - src/agents/code_pre_flight.py
+      - src/agents/sandbox_executor.py
+    verified_by:
+      - tests/unit/agents/test_action_policy.py
+      - tests/unit/agents/test_sandbox_executor.py
+      - tests/security/test_unregistered_tool_blocked.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests", "Security Tests"]
+    owner: Security Lead
+    status: implemented
+
+  - id: LLM06:2025
+    control: Real-world agent actions route through HITL; autonomy is feature-flag gated; high-risk dev actions are guarded.
+    implemented_by:
+      - src/agents/hitl_gateway.py
+      - src/shared/feature_flags.py
+      - src/guardrails/action_limits.py
+      - .claude/hooks/high-risk-action-guard.py
+    verified_by:
+      - tests/unit/agents/test_hitl_gateway.py
+      - tests/unit/shared/test_feature_flags.py
+      - tests/unit/guardrails/test_action_limits.py
+      - "ci:High-risk Action Guard (F7)"
+    gate: ["Unit Tests", "High-risk Action Guard (F7)"]
+    owner: AI Governance Lead
+    status: implemented
+
+  - id: LLM07:2025
+    control: System-prompt leakage is mitigated via the injection guard and output PII masking.
+    implemented_by:
+      - src/guardrails/prompt_injection_guard.py
+      - src/guardrails/pii_filter.py
+    verified_by:
+      - tests/security/test_owasp_llm_top10.py
+      - "ci:Security Tests"
+    gate: ["Security Tests"]
+    owner: Security Lead
+    status: partial
+    justification: >-
+      The injection guard and output masking reduce system-prompt extraction; a dedicated
+      system-prompt-leakage abuse-case suite is not yet present and is tracked for extension.
+
+  - id: LLM08:2025
+    control: Stored embeddings are encrypted at rest; vector store access is controlled.
+    implemented_by:
+      - src/memory/vector_store.py
+    verified_by:
+      - tests/unit/memory/test_vector_store.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: AI Governance Lead
+    status: partial
+    justification: >-
+      Vector store encrypts stored embeddings (ADR-0018); embedding-poisoning detection and
+      per-tenant partitioning are adopter-extended for multi-tenant deployments.
+
+  - id: LLM09:2025
+    control: Generated output is risk-scored and evaluated; high-risk output requires human review.
+    implemented_by:
+      - src/agents/risk_scorer.py
+      - src/agents/harness/evaluator.py
+    verified_by:
+      - tests/unit/agents/test_risk_scorer.py
+      - tests/unit/agents/harness/test_evaluator.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: AI Governance Lead
+    status: implemented
+
+  - id: LLM10:2025
+    control: Consumption is bounded by rate limiting, request concurrency caps, and action limits.
+    implemented_by:
+      - src/api/rest/_limiter.py
+      - src/guardrails/action_limits.py
+    verified_by:
+      - tests/unit/api/test_requests_semaphore.py
+      - tests/unit/guardrails/test_action_limits.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: SRE Lead
+    status: partial
+    justification: >-
+      Rate limiting, a request concurrency semaphore, and per-action limits cap consumption; a
+      dedicated per-token LLM cost budget is enforced separately (LLM Budget Circuit Breaker
+      workflow) and not yet wired into this control's gate.
