@@ -228,6 +228,9 @@ check-action-pins: ## Fail if any GitHub Actions `uses:` is not SHA-pinned (RFC-
 burn-in-status: ## Report a report-mode gate's burn-in progress toward blocking (ADR-0070). GATE=<target>
 	@python3 scripts/governance/burn_in_status.py $${GATE:+--gate "$$GATE"}
 
+check-control-matrix: ## Validate the security control matrices — paths/CI jobs exist, n/a justified (ADR-0072)
+	@uv run python scripts/governance/check_control_matrix.py
+
 verify-f7-hook: ## Verify the F7 high-risk-action guard hook (decision logic + settings.json wiring; issue #133)
 	@python3 .claude/hooks/verify-high-risk-guard.py
 

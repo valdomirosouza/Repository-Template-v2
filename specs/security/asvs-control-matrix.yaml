@@ -1,0 +1,199 @@
+# OWASP ASVS 5.0.0 Control Matrix (ADR-0072)
+#
+# Maps pinned ASVS 5.0.0 requirements to the code that implements them, the tests/CI jobs that
+# verify them, and the required gates that enforce them. Schema: schemas/control-matrix.schema.json.
+# Validated by scripts/governance/check_control_matrix.py in the governance gate:
+#   - every implemented_by / verified_by path MUST exist (anti-rot);
+#   - every `ci:` job id and gate name MUST be a real CI job (anti-rot);
+#   - every `n/a` entry MUST carry a justification (anti-fabrication, CLAUDE.md §3.6).
+#
+# This is a STARTING evidence set for the template (ADR-0072 §Neutral); adopters extend it.
+# Requirement IDs are from the OWASP ASVS v5.0.0 tag; `control` text is paraphrased.
+
+standard: OWASP ASVS
+version: 5.0.0
+source: https://owasp.org/www-project-application-security-verification-standard/
+
+controls:
+  # --- V2 Validation and Business Logic ---------------------------------------------------------
+  - id: V2.2.1
+    control: Input is validated with positive (allow-list) rules for values, patterns, and ranges.
+    implemented_by:
+      - src/api/rest/routers/requests.py
+      - src/api/rest/routers/hitl.py
+    verified_by:
+      - tests/unit/api/test_requests_router.py
+      - tests/unit/api/test_hitl_router.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: Tech Lead
+    status: implemented
+
+  - id: V2.2.2
+    control: Input validation is enforced at a trusted service layer, not relied on client-side.
+    implemented_by:
+      - src/api/rest/routers/requests.py
+      - src/api/rest/routers/hitl.py
+    verified_by:
+      - tests/unit/api/test_requests_router.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: Tech Lead
+    status: implemented
+
+  # --- V8 Authorization -------------------------------------------------------------------------
+  - id: V8.2.1
+    control: Function-level access is restricted to consumers with explicit permissions (role claim).
+    implemented_by:
+      - src/api/rest/auth.py
+    verified_by:
+      - tests/unit/api/test_hitl_router.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: Security Lead
+    status: implemented
+
+  - id: V8.2.2
+    control: Data-specific access is restricted to mitigate IDOR / broken object level authorization.
+    implemented_by:
+      - src/api/rest/auth.py
+      - src/agents/hitl_gateway.py
+    verified_by:
+      - tests/unit/api/test_hitl_router.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: Security Lead
+    status: partial
+    justification: >-
+      Function/role-level authorization is enforced in auth.py and the HITL gateway; centralized
+      per-object ownership checks are not yet generalized across all resources. Adopters must add
+      ownership enforcement for their own object types (tracked against ADR-0072).
+
+  - id: V8.3.1
+    control: Authorization rules are enforced at a trusted service layer, not via client-controllable input.
+    implemented_by:
+      - src/api/rest/auth.py
+    verified_by:
+      - tests/unit/api/test_hitl_router.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: Security Lead
+    status: implemented
+
+  # --- V11 Cryptography -------------------------------------------------------------------------
+  - id: V11.3.2
+    control: Only approved ciphers and modes such as AES with GCM are used.
+    implemented_by:
+      - src/shared/db_encryption.py
+    verified_by:
+      - tests/unit/shared/test_db_encryption.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: Security Lead
+    status: implemented
+
+  - id: V11.3.3
+    control: Encrypted data is protected against unauthorized modification via authenticated encryption.
+    implemented_by:
+      - src/shared/db_encryption.py
+    verified_by:
+      - tests/unit/shared/test_db_encryption.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: Security Lead
+    status: implemented
+
+  # --- V12 Secure Communication -----------------------------------------------------------------
+  - id: V12.1.1
+    control: Only current recommended TLS versions (TLS 1.2 / 1.3) are enabled for transport.
+    implemented_by:
+      - src/shared/config.py
+    verified_by:
+      - tests/unit/shared/test_config.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: SRE Lead
+    status: implemented
+    justification: >-
+      Production rejects non-TLS Redis (rediss:// / redis_tls_enabled enforced by
+      reject_placeholder_secrets, ADR-0019); external endpoint TLS termination is deployment-owned.
+
+  # --- V13 Configuration ------------------------------------------------------------------------
+  - id: V13.2.3
+    control: Service-authentication credentials are not default credentials (e.g. admin/admin).
+    implemented_by:
+      - src/shared/config.py
+    verified_by:
+      - tests/unit/shared/test_config.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: Security Lead
+    status: implemented
+    justification: >-
+      Settings.reject_placeholder_secrets refuses placeholder/default secrets in production
+      (DB_ENCRYPTION_KEY, secret_key); also covered by Detect Secrets.
+
+  - id: V13.3.1
+    control: A secrets-management solution (key vault) is used to store and control backend secrets.
+    implemented_by:
+      - src/shared/config.py
+    verified_by:
+      - tests/unit/shared/test_config.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: Security Lead
+    status: partial
+    justification: >-
+      Secrets are env-injected with placeholder rejection; an external key vault (e.g. Vault/KMS)
+      is an adopter integration the template documents but does not bundle.
+
+  # --- V14 Data Protection ----------------------------------------------------------------------
+  - id: V14.1.1
+    control: Sensitive data is identified and classified into protection levels.
+    implemented_by:
+      - docs/privacy/pii-inventory.md
+      - src/guardrails/pii_filter.py
+    verified_by:
+      - tests/unit/guardrails/test_pii_filter.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: DPO
+    status: implemented
+
+  - id: V14.2.4
+    control: Controls around sensitive data (encryption, masking) are implemented as documented.
+    implemented_by:
+      - src/guardrails/pii_filter.py
+      - src/shared/db_encryption.py
+    verified_by:
+      - tests/security/test_pii_leakage.py
+      - tests/integration/test_pii_filter_pipeline.py
+      - "ci:Security Tests"
+    gate: ["Security Tests"]
+    owner: DPO
+    status: implemented
+
+  # --- V16 Security Logging and Error Handling --------------------------------------------------
+  - id: V16.2.1
+    control: Each log entry includes when/where/who/what metadata for incident investigation.
+    implemented_by:
+      - src/guardrails/audit_logger.py
+      - src/observability/logger.py
+    verified_by:
+      - tests/unit/guardrails/test_audit_logger.py
+      - "ci:Unit Tests"
+    gate: ["Unit Tests"]
+    owner: SRE Lead
+    status: implemented
+
+  - id: V16.2.5
+    control: Sensitive data is masked or withheld when logging, per its protection level.
+    implemented_by:
+      - src/guardrails/pii_filter.py
+    verified_by:
+      - tests/security/test_pii_leakage.py
+      - tests/model_contract/test_pii_non_leakage.py
+      - "ci:Security Tests"
+    gate: ["Security Tests"]
+    owner: DPO
+    status: implemented
