@@ -38,13 +38,14 @@ streak; a `yes` row resets it.
 
 ## Gate registry
 
-| Gate                                                  | Workflow / step                                         | Mode         | Burn-in                                              | Notes                                                       |
-| ----------------------------------------------------- | ------------------------------------------------------- | ------------ | ---------------------------------------------------- | ----------------------------------------------------------- |
-| Control-binding (ADR-0061)                            | `ci.yml` → _Control-binding governance gate_            | **report**   | in progress (below)                                  | First gate through the ADR-0070 lifecycle                   |
-| Staging DAST attestation (W2-T3)                      | `cd-production.yml` → _Verify staging DAST attestation_ | **report**   | in progress (below)                                  | Promotion gate; report-mode so it cannot brick prod deploys |
-| High-risk Action Guard (F7)                           | `pr-governance.yml` → _High-risk Action Guard (F7)_     | **blocking** | n/a (introduced blocking, deterministic 38/38 suite) | W1-T3                                                       |
-| Conventional PR title / Spec / Issue / Version        | `pr-governance.yml`                                     | **blocking** | past lifecycle                                       | Pre-existing                                                |
-| detect-secrets · Bandit · CodeQL · Trivy · ZAP (DAST) | `ci.yml` / `codeql.yml` / `secret-scanning.yml`         | **blocking** | past lifecycle (ADR-0070 §Neutral)                   | Pre-existing                                                |
+| Gate                                                  | Workflow / step                                         | Mode         | Burn-in                                              | Notes                                                             |
+| ----------------------------------------------------- | ------------------------------------------------------- | ------------ | ---------------------------------------------------- | ----------------------------------------------------------------- |
+| Control-binding (ADR-0061)                            | `ci.yml` → _Control-binding governance gate_            | **report**   | in progress (below)                                  | First gate through the ADR-0070 lifecycle                         |
+| Staging DAST attestation (W2-T3)                      | `cd-production.yml` → _Verify staging DAST attestation_ | **report**   | in progress (below)                                  | Promotion gate; report-mode so it cannot brick prod deploys       |
+| Change-type label / CAB (W1-2)                        | `pr-governance.yml` → _Change-type label (CAB)_         | **report**   | in progress (below)                                  | PR-time CAB; report-mode while the labeling convention is adopted |
+| High-risk Action Guard (F7)                           | `pr-governance.yml` → _High-risk Action Guard (F7)_     | **blocking** | n/a (introduced blocking, deterministic 38/38 suite) | W1-T3                                                             |
+| Conventional PR title / Spec / Issue / Version        | `pr-governance.yml`                                     | **blocking** | past lifecycle                                       | Pre-existing                                                      |
+| detect-secrets · Bandit · CodeQL · Trivy · ZAP (DAST) | `ci.yml` / `codeql.yml` / `secret-scanning.yml`         | **blocking** | past lifecycle (ADR-0070 §Neutral)                   | Pre-existing                                                      |
 
 ---
 
@@ -101,6 +102,32 @@ Check progress: `make burn-in-status GATE=staging-dast-attestation`.
 Flip to blocking by **removing** `continue-on-error: true` from the _Verify staging DAST
 attestation_ step in `.github/workflows/cd-production.yml`, after this burn-in is MET and
 HITL-approved (`normal-change`). Until then a missing attestation cannot block a production deploy.
+
+---
+
+## Change-type label / CAB gate (W1-2) — burn-in log
+
+<!-- BURN-IN-START: 2026-06-12 -->
+<!-- BURN-IN-TARGET: change-type-label -->
+
+The `pr-governance.yml` _Change-type label (CAB)_ step runs in **report mode**: a PR missing a
+single `standard/normal/emergency-change` label (or `Refs: RFC-NNNN` for normal/emergency) warns
+but does not block, while contributors adopt the labeling convention. Docs-only PRs and bots are
+exempt. A `yes` in _False positive?_ (the PR legitimately needed no change-type, e.g. a release PR)
+resets the window.
+
+| Date (UTC) | PR  | Verdict | False positive? | Notes                                                                      |
+| ---------- | --- | ------- | --------------- | -------------------------------------------------------------------------- |
+| 2026-06-12 | —   | —       | —               | Burn-in started (ADR-0070, W1-2). Awaiting first PRs under the convention. |
+
+Check progress: `make burn-in-status GATE=change-type-label`.
+
+### The flip (prepared, NOT yet applied)
+
+Flip to blocking by **removing** `continue-on-error: true` from the _Require exactly one change-type
+label_ step in `.github/workflows/pr-governance.yml`, after this burn-in is MET and HITL-approved
+(`normal-change`), then add **Change-type label (CAB)** to the required checks in
+`.github/rulesets/main.json`.
 
 ---
 

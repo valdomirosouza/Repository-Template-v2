@@ -154,3 +154,67 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Verify high-risk-action guard (decision logic + settings.json wiring)
         run: make verify-f7-hook
+
+  change-type-label:
+    name: Change-type label (CAB)
+    runs-on: ubuntu-latest
+    # PR-time CAB / change-management gate (W1-2): shifts the deploy-time cab-check (cd-production)
+    # left to PR time — every change is classified before merge (ISO A.8.32, SOX change mgmt).
+    # Bots that open mechanical PRs are exempt.
+    if: >-
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      github.event.pull_request.user.login != 'github-actions[bot]'
+    env:
+      TITLE: ${{ github.event.pull_request.title }}
+      BODY: ${{ github.event.pull_request.body }}
+      LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Require exactly one change-type label (+ RFC for normal/emergency)
+        # REPORT MODE during burn-in (ADR-0070): a missing/ambiguous label warns but does not block
+        # (the step is continue-on-error). Flip to blocking by removing `continue-on-error` once the
+        # labeling convention is adopted — see docs/governance/gate-lifecycle.md.
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          verdict=PASS; reason="ok"
+          if printf '%s' "$TITLE" | grep -qE '^docs(\(|!|:)'; then
+            echo "docs-only PR — change-type label not required."
+          else
+            found=""
+            for ct in standard-change normal-change emergency-change; do
+              printf ',%s,' "$LABELS" | grep -q ",${ct}," && found="$found $ct"
+            done
+            count=$(printf '%s' "$found" | wc -w | tr -d ' ')
+            if [ "$count" -eq 0 ]; then
+              verdict=FAIL; reason="no change-type label"
+            elif [ "$count" -gt 1 ]; then
+              verdict=FAIL; reason="multiple change-type labels:$found"
+            else
+              ct=$(printf '%s' "$found" | tr -d ' ')
+              echo "Change type: $ct"
+              case "$ct" in
+                normal-change|emergency-change)
+                  if printf '%s' "$BODY" | grep -qiE 'Refs:[[:space:]]*RFC-[0-9]+'; then
+                    echo "RFC reference found for $ct."
+                  else
+                    verdict=FAIL; reason="$ct requires 'Refs: RFC-NNNN' in the PR body"
+                  fi ;;
+              esac
+            fi
+          fi
+          # Objective burn-in row for the ADR-0070 lifecycle log (copy into gate-lifecycle.md).
+          today="$(date -u +%Y-%m-%d)"
+          if [ "$verdict" = FAIL ]; then fp='? (classify)'; else fp='no'; fi
+          {
+            echo "### Change-type label gate — burn-in row (ADR-0070)"
+            echo ""
+            echo "| Date (UTC) | PR | Verdict | False positive? | Notes |"
+            echo "| ---------- | --- | ------- | --------------- | ----- |"
+            echo "| ${today} | #${PR_NUMBER} | ${verdict} | ${fp} | ${reason} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$verdict" = FAIL ]; then
+            echo "::warning::Change-type CAB gate: ${reason} (report mode, ADR-0070 burn-in). Add exactly one of standard-change / normal-change / emergency-change (normal/emergency also need 'Refs: RFC-NNNN'). ISO A.8.32 / SOX."
+            exit 1
+          fi
+          echo "Change-type CAB gate satisfied."
