@@ -185,8 +185,10 @@ def main(argv: list[str] | None = None) -> int:
             "zero new false positives"
         )
     else:
-        print("Next step      : open the flip-to-blocking PR (normal-change, HITL) — remove "
-              "`continue-on-error` from the control-binding step in ci.yml; record this evidence.")
+        print(
+            "Next step      : open the flip-to-blocking PR (normal-change, HITL) — remove "
+            "`continue-on-error` from the control-binding step in ci.yml; record this evidence."
+        )
 
     if args.require_met and not s["met"]:
         return 2
