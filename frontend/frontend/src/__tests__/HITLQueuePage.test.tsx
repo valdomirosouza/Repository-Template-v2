@@ -1,50 +1,56 @@
+const mockListPending = jest.fn();
+const mockSubmitDecision = jest.fn();
+
+jest.mock("@/lib/api", () => ({
+  HitlApi: jest.fn().mockImplementation(() => ({
+    listPendingRequests: mockListPending,
+    submitDecision: mockSubmitDecision,
+  })),
+  Configuration: jest.fn(),
+  DecisionInDecisionEnum: { Approved: "APPROVED", Rejected: "REJECTED" },
+  HITLRequestSummaryStatusEnum: { Pending: "PENDING" },
+}));
+
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import HITLQueuePage from "@/app/hitl/page";
-import { fetchPendingRequests, submitDecision } from "@/lib/api/hitl";
-import type { HITLRequest } from "@/lib/api/types";
+import type { HITLRequestSummary } from "@/lib/api";
 
-jest.mock("@/lib/api/hitl");
-
-const mockFetch = fetchPendingRequests as jest.MockedFunction<typeof fetchPendingRequests>;
-const mockSubmit = submitDecision as jest.MockedFunction<typeof submitDecision>;
-
-const req: HITLRequest = {
-  id: "req-1",
-  agent_id: "agent-x",
-  action_type: "write_file",
-  proposed_action: "do X",
-  risk_score: 0.5,
+const req: HITLRequestSummary = {
+  requestId: "req-1",
+  agentId: "agent-x",
+  actionType: "write_file",
+  contextSummary: "do X",
+  riskScore: 0.5,
   status: "PENDING",
-  created_at: "2026-01-01T00:00:00Z",
-  expires_at: "2026-01-01T01:00:00Z",
-  context: {},
+  createdAt: "2026-01-01T00:00:00Z",
+  expiresAt: "2026-01-01T01:00:00Z",
 };
 
 afterEach(() => jest.clearAllMocks());
 
 it("renders pending requests after the initial load", async () => {
-  mockFetch.mockResolvedValue([req]);
+  mockListPending.mockResolvedValue([req]);
   render(<HITLQueuePage />);
   expect(await screen.findByText("write_file")).toBeInTheDocument();
   expect(screen.getByText(/1 pending request/)).toBeInTheDocument();
 });
 
 it("shows the empty state when there are no requests", async () => {
-  mockFetch.mockResolvedValue([]);
+  mockListPending.mockResolvedValue([]);
   render(<HITLQueuePage />);
   expect(await screen.findByText("No pending requests.")).toBeInTheDocument();
 });
 
 it("shows an error state when the load fails", async () => {
-  mockFetch.mockRejectedValue(new Error("boom"));
+  mockListPending.mockRejectedValue(new Error("boom"));
   render(<HITLQueuePage />);
   expect(await screen.findByText(/Error: boom/)).toBeInTheDocument();
 });
 
-it("submits a decision and removes the resolved card", async () => {
-  mockFetch.mockResolvedValue([req]);
-  mockSubmit.mockResolvedValue();
+it("submits an APPROVED decision and removes the resolved card", async () => {
+  mockListPending.mockResolvedValue([req]);
+  mockSubmitDecision.mockResolvedValue({});
   render(<HITLQueuePage />);
   await screen.findByText("write_file");
 
@@ -54,7 +60,10 @@ it("submits a decision and removes the resolved card", async () => {
   fireEvent.click(screen.getByText("Approve"));
 
   await waitFor(() =>
-    expect(mockSubmit).toHaveBeenCalledWith("req-1", true, "approved by operator"),
+    expect(mockSubmitDecision).toHaveBeenCalledWith({
+      requestId: "req-1",
+      decisionIn: { decision: "APPROVED", rationale: "approved by operator" },
+    }),
   );
   await waitFor(() => expect(screen.queryByText("write_file")).not.toBeInTheDocument());
 });

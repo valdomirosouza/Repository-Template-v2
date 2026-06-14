@@ -67,6 +67,20 @@ class TestHITLRedisStorePlain:
         await store_plain.save(_make_request("r2"))
         assert await store_plain.pending_count() == 2
 
+    async def test_list_pending_returns_all_pending(self, store_plain: HITLRedisStore) -> None:
+        await store_plain.save(_make_request("r1"))
+        await store_plain.save(_make_request("r2"))
+        pending = await store_plain.list_pending()
+        assert {r.request_id for r in pending} == {"r1", "r2"}
+        assert all(r.status == HITLStatus.PENDING for r in pending)
+
+    async def test_list_pending_excludes_evicted(self, store_plain: HITLRedisStore) -> None:
+        await store_plain.save(_make_request("r1"))
+        await store_plain.save(_make_request("r2"))
+        await store_plain.evict("r1")
+        pending = await store_plain.list_pending()
+        assert {r.request_id for r in pending} == {"r2"}
+
     async def test_evict_removes_from_pending(self, store_plain: HITLRedisStore) -> None:
         req = _make_request()
         await store_plain.save(req)

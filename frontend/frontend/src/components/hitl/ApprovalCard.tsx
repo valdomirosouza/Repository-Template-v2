@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import type { HITLRequest } from "@/lib/api/types";
+import type { HITLRequestSummary } from "@/lib/api";
 
 interface Props {
-  request: HITLRequest;
+  request: HITLRequestSummary;
   onDecision: (id: string, approved: boolean, rationale: string) => Promise<void>;
 }
 
@@ -16,14 +16,14 @@ export function ApprovalCard({ request, onDecision }: Props) {
     if (!rationale.trim()) return;
     setSubmitting(true);
     try {
-      await onDecision(request.id, approved, rationale);
+      await onDecision(request.requestId, approved, rationale);
     } finally {
       setSubmitting(false);
     }
   };
 
   const riskColor =
-    request.risk_score >= 0.7 ? "red" : request.risk_score >= 0.4 ? "orange" : "green";
+    request.riskScore >= 0.7 ? "red" : request.riskScore >= 0.4 ? "orange" : "green";
 
   return (
     <article
@@ -38,13 +38,13 @@ export function ApprovalCard({ request, onDecision }: Props) {
         style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}
       >
         <div>
-          <strong>{request.action_type}</strong>
+          <strong>{request.actionType}</strong>
           <span style={{ marginLeft: "0.5rem", fontSize: "0.75rem", color: "#6b7280" }}>
-            {request.agent_id}
+            {request.agentId}
           </span>
         </div>
         <span style={{ color: riskColor, fontWeight: 600, fontSize: "0.875rem" }}>
-          risk {(request.risk_score * 100).toFixed(0)}%
+          risk {(request.riskScore * 100).toFixed(0)}%
         </span>
       </header>
 
@@ -59,11 +59,11 @@ export function ApprovalCard({ request, onDecision }: Props) {
           whiteSpace: "pre-wrap",
         }}
       >
-        {request.proposed_action}
+        {request.contextSummary}
       </pre>
 
       <p style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#9ca3af" }}>
-        Expires: {new Date(request.expires_at).toLocaleString()}
+        Expires: {new Date(request.expiresAt).toLocaleString()}
       </p>
 
       <div style={{ marginTop: "1rem" }}>

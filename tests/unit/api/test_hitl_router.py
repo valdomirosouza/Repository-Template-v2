@@ -89,6 +89,57 @@ class TestHITLStatus:
         assert response.status_code == 503
 
 
+# ── List-pending endpoint ──────────────────────────────────────────────────────
+
+
+class TestHITLListPending:
+    @pytest.mark.asyncio
+    async def test_rejects_missing_token(self):
+        app = _make_app()
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get("/hitl/requests")
+        assert response.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_rejects_non_operator_role(self):
+        app = _make_app()
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get("/hitl/requests", headers=_auth(role="viewer"))
+        assert response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_returns_empty_list_when_no_pending(self):
+        app = _make_app()
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get("/hitl/requests", headers=_auth())
+        assert response.status_code == 200
+        assert response.json() == []
+
+    @pytest.mark.asyncio
+    async def test_lists_pending_without_exposing_raw_parameters(self):
+        app = _make_app()
+        gateway: HITLGateway = app.state.hitl_gateway
+        req = _make_hitl_request()
+        req.action_parameters = {"secret": "should-not-leak"}
+        await gateway.submit_for_approval(req)
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get("/hitl/requests", headers=_auth())
+
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body) == 1
+        item = body[0]
+        assert item["request_id"] == req.request_id
+        assert item["action_type"] == "test_action"
+        assert item["context_summary"] == "synthetic context"
+        assert item["risk_score"] == 0.5
+        assert item["status"] == "PENDING"
+        # The raw action_parameters must never be serialised to the operator UI (§3.1).
+        assert "action_parameters" not in item
+        assert "should-not-leak" not in response.text
+
+
 # ── Decision endpoint — authentication & authorization (REM-001) ───────────────
 
 

@@ -10,6 +10,7 @@ info:
     name: Tech Lead
   license:
     name: Proprietary
+    identifier: LicenseRef-Proprietary # SPDX custom ref; required by OpenAPI 3.1 license object
 
 servers:
   - url: http://localhost:8000
@@ -118,6 +119,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/HITLStatusResponse"
 
+  /v1/hitl/requests:
+    get:
+      tags: [hitl]
+      operationId: listPendingRequests
+      summary: List pending HITL approval requests
+      description: >-
+        Returns the pending requests awaiting an operator decision. Requires an
+        operator JWT (role hitl-operator). Only the PII-masked context_summary is
+        exposed per request; raw action_parameters never leave the gateway.
+      responses:
+        "200":
+          description: Pending HITL requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HITLRequestSummary"
+
   /v1/hitl/requests/{request_id}/decision:
     post:
       tags: [hitl]
@@ -203,7 +223,9 @@ components:
 
     DecisionIn:
       type: object
-      required: [decision, rationale, approver_id]
+      # approver_id is intentionally NOT part of the contract: the approver identity is taken
+      # from the authenticated operator JWT subject, never the request body (REM-001).
+      required: [decision, rationale]
       properties:
         decision:
           type: string
@@ -212,8 +234,6 @@ components:
           type: string
           minLength: 10
           maxLength: 1000
-        approver_id:
-          type: string
 
     DecisionOut:
       type: object
@@ -227,3 +247,40 @@ components:
           enum: [APPROVED, REJECTED]
         message:
           type: string
+
+    HITLRequestSummary:
+      type: object
+      required:
+        [
+          request_id,
+          agent_id,
+          action_type,
+          context_summary,
+          risk_score,
+          status,
+          created_at,
+          expires_at,
+        ]
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+        action_type:
+          type: string
+        context_summary:
+          type: string
+          description: PII-masked summary shown to the reviewer (never raw action parameters).
+        risk_score:
+          type: number
+          format: float
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED, EXPIRED]
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
