@@ -1,47 +1,73 @@
 name: Governance Gate
 
+# Enforces CLAUDE.md §8 (dual-approval paths) / §14.1 / ADR-0015 via governance labels.
+# Runs on EVERY PR to main so the "Require governance council approval" check always reports —
+# a prerequisite for adding it to the required-status-checks ruleset (#241). It only *enforces*
+# labels when the PR actually touches a dual-approval path; otherwise it passes cleanly.
 on:
   pull_request:
     branches: [main]
-    paths:
-      - "infrastructure/feature-flags/flags/autonomous-mode*.yaml"
-      - "infrastructure/feature-flags/flags/autonomy-tier-ready.yaml"
-      - "src/agents/hitl_gateway.py"
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   governance-labels:
     name: Require governance council approval
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
     steps:
-      - name: Check required governance labels
+      - name: Require governance sign-off for dual-approval paths
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
+            // CLAUDE.md §8 dual-approval paths (Security + AI Governance) + §14.1 escalation set.
+            const isDualApproval = (p) =>
+              p.startsWith('src/guardrails/') ||
+              p === 'src/agents/hitl_gateway.py' ||
+              p === 'src/agents/hitl_store.py';
+            // Autonomy controls additionally require legal sign-off (ADR-0015).
+            const isAutonomy = (p) =>
+              /^infrastructure\/feature-flags\/flags\/autonomous-mode.*\.yaml$/.test(p) ||
+              p === 'infrastructure/feature-flags/flags/autonomy-tier-ready.yaml';
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              per_page: 100,
+            });
+            const paths = files.map((f) => f.filename);
+            const touched = paths.filter((p) => isDualApproval(p) || isAutonomy(p));
+
+            if (touched.length === 0) {
+              core.info('No dual-approval / autonomy paths changed — governance gate not required.');
+              return;
+            }
+
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number,
             });
-
-            const labels = pr.labels.map(l => l.name);
-            const hasCouncil = labels.includes('governance-council-approved');
-            const hasLegal   = labels.includes('legal-reviewed');
+            const labels = pr.labels.map((l) => l.name);
+            const needsLegal = paths.some(isAutonomy);
 
             const missing = [];
-            if (!hasCouncil) missing.push('`governance-council-approved`');
-            if (!hasLegal)   missing.push('`legal-reviewed`');
+            if (!labels.includes('governance-council-approved')) {
+              missing.push('`governance-council-approved` (Security + AI-Governance sign-off)');
+            }
+            if (needsLegal && !labels.includes('legal-reviewed')) {
+              missing.push('`legal-reviewed` (General Counsel — autonomy change, ADR-0015)');
+            }
 
             if (missing.length > 0) {
               core.setFailed(
-                `This PR modifies agent autonomy controls and requires cross-functional sign-off.\n\n` +
-                `Missing labels: ${missing.join(', ')}\n\n` +
-                `Required approvals:\n` +
-                `  [ ] governance-council-approved — set by COO/CISO after governance council review\n` +
-                `  [ ] legal-reviewed — set by General Counsel after compliance review\n\n` +
-                `See docs/governance/governance-labels.md for the approval process.`
+                'This PR changes a governance dual-approval path (CLAUDE.md §8 / §14.1):\n' +
+                  touched.map((p) => `  - ${p}`).join('\n') +
+                  `\n\nMissing label(s): ${missing.join(', ')}\n` +
+                  'See docs/governance/governance-labels.md for the approval process.',
               );
             } else {
-              core.info('Both governance labels present — gate passed.');
+              core.info('Required governance label(s) present — gate passed.');
             }
