@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/segmentio/kafka-go"
+
 	"github.com/yourorg/monorepo/services/event-worker/internal/domain"
 )
 

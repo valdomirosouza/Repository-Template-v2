@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
+
 	"github.com/yourorg/monorepo/services/event-worker/internal/domain"
 	"github.com/yourorg/monorepo/services/event-worker/internal/handler"
 	"github.com/yourorg/monorepo/services/event-worker/internal/observability"

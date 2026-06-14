@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/yourorg/monorepo/services/event-worker/internal/config"
 	"github.com/yourorg/monorepo/services/event-worker/internal/handler"
 	"github.com/yourorg/monorepo/services/event-worker/internal/health"
