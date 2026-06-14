@@ -211,6 +211,15 @@ jobs:
       - name: Outbound URL SSRF allow-list lint (OWASP A10)
         run: python3 scripts/governance/check_outbound_urls.py
 
+      # BLOCKING from introduction (Wave 1): deterministic — a service in services.yaml referencing
+      # a non-existent ADR/topic/schema/SLO/runbook is unambiguous. Keeps the catalog self-consistent.
+      - name: Service-catalog traceability gate (Wave 1)
+        run: |
+          python3 -m pip install --quiet pyyaml
+          python3 scripts/governance/check_traceability.py
+          python3 scripts/governance/check_service_slo_files.py
+          python3 scripts/governance/check_runbook_links.py
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
