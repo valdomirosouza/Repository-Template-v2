@@ -71,9 +71,18 @@ jobs:
           sudo apt-get install -y protobuf-compiler
           go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
           go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-          # Regenerate and check for diff
+          # Regenerate Go stubs (gen-proto-go emits to api/grpc/<pkg>/ per each proto's go_package).
           make gen-proto-go
-          git diff --exit-code api/ || (echo "::error::Generated gRPC stubs are out of date. Run 'make gen-proto-go' and commit." && exit 1)
+          # Only enforce drift when Go stubs are actually committed (i.e. a service consumes them).
+          # Until then there is nothing to verify — and a hardcoded path would `fatal` on a missing
+          # dir. Guard on tracked *.pb.go so the check activates automatically once stubs are added.
+          if git ls-files --error-unmatch 'api/**/*.pb.go' >/dev/null 2>&1; then
+            git diff --exit-code -- 'api/**/*.pb.go' \
+              || (echo "::error::Generated gRPC stubs are out of date. Run 'make gen-proto-go' and commit." && exit 1)
+          else
+            echo "No committed Go gRPC stubs yet (no consumer wired) — skipping stub-drift check."
+            git checkout -- . 2>/dev/null || true   # discard freshly generated, uncommitted stubs
+          fi
 
   test-go-unit:
     name: Go Unit Tests
