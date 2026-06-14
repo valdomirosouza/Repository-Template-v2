@@ -71,3 +71,19 @@ A fresh clone has **zero** rulesets applied until a human runs the bootstrap. Th
 ships _governable_ but not _self-locking_: an adopter chooses when to enforce, and against which
 of their own check names. This preserves the template's day-zero usability while making the
 intended protection one reviewed command away.
+
+## Approval count on a personal repo (`required_approving_review_count: 0`)
+
+`main-branch-protection` requires a PR but **0 approvals**, deliberately. On a **user-owned
+(personal) repo**, an author cannot approve their own PR and **no `bypass_actors` type can target
+the repo owner** (RFC-0014 §2a) — so any non-zero count would permanently block the solo owner from
+merging their own work, including release-please PRs. The dual-approval / SOX intent of CLAUDE.md
+§8/§10 is enforced two other ways instead:
+
+1. **Governance-council label gate** (`governance-gate.yml`, a _required_ status check) — guardrail
+   and agent paths (`src/guardrails/`, `src/agents/hitl_gateway.py`, `src/agents/hitl_store.py`) and
+   autonomy flags cannot merge without the `governance-council-approved` (and, for autonomy,
+   `legal-reviewed`) label. This works with 0 approvals and is the §8/§14.1 checkpoint here.
+2. **Adopter step** — on an **org** repo with real teams, raise `required_approving_review_count`
+   (≥ 2 for SOX) and set `require_code_owner_review: true` so the CODEOWNERS dual-reviewer rules
+   bind. Replace the `@your-org/*` placeholders first.
