@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.15.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.15.0...v2.15.1) (2026-06-14)
+
+
+### CI/CD
+
+* **governance:** expand governance-council gate to all dual-approval paths + require it ([#241](https://github.com/valdomirosouza/Repository-Template-v2/issues/241)) ([#245](https://github.com/valdomirosouza/Repository-Template-v2/issues/245)) ([4f7bfa9](https://github.com/valdomirosouza/Repository-Template-v2/commit/4f7bfa9f160299e1cf4db1cb6ea28e695346ce1c))
+
 ## [2.15.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.14.5...v2.15.0) (2026-06-14)
 
 
