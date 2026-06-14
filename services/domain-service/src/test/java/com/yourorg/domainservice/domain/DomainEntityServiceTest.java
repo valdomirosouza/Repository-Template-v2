@@ -7,6 +7,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.yourorg.domainservice.infra.kafka.DomainEventProducer;
+import com.yourorg.domainservice.observability.DomainEntityMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,11 +27,13 @@ class DomainEntityServiceTest {
     @Mock
     private DomainEventProducer eventProducer;
 
+    private SimpleMeterRegistry registry;
     private DomainEntityService service;
 
     @BeforeEach
     void setUp() {
-        service = new DomainEntityService(repository, eventProducer);
+        registry = new SimpleMeterRegistry();
+        service = new DomainEntityService(repository, eventProducer, new DomainEntityMetrics(registry));
     }
 
     @Test
@@ -41,6 +45,7 @@ class DomainEntityServiceTest {
 
         assertThat(result).isSameAs(saved);
         verify(eventProducer).publishCreated(saved.getId().toString(), "widget");
+        assertThat(registry.get("domain_entity_created_total").counter().count()).isEqualTo(1.0);
     }
 
     @Test
@@ -54,6 +59,7 @@ class DomainEntityServiceTest {
 
         assertThat(result.getStatus()).isEqualTo(EntityStatus.ACTIVE);
         verify(eventProducer).publishUpdated(id.toString(), "ACTIVE");
+        assertThat(registry.get("domain_entity_activated_total").counter().count()).isEqualTo(1.0);
     }
 
     @Test

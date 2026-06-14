@@ -83,6 +83,21 @@
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-registry-prometheus</artifactId>
     </dependency>
+    <!-- @Timed support (TimedAspect) — W2-11b, #229 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-aop</artifactId>
+    </dependency>
+    <!-- Distributed tracing: Micrometer Tracing → OTel, exported over OTLP (parity with
+         event-worker W2-11a / golden-signals). Versions managed by the Spring Boot 3.5 BOM. -->
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-tracing-bridge-otel</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-exporter-otlp</artifactId>
+    </dependency>
 
     <!-- Test -->
     <dependency>
