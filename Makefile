@@ -183,10 +183,13 @@ build-go: ## Go: build Docker image (SERVICE=<name>)
 run-go: ## Go: start service with air hot-reload (SERVICE=<name>)
 	air -c services/$(SERVICE)/.air.toml
 
-gen-proto-go: ## Go: regenerate gRPC stubs from proto files into api/grpc/
+gen-proto-go: ## Go: regenerate gRPC stubs into api/grpc/ (path derived from each proto's go_package)
+	# module= mode honours the proto `option go_package` (…/api/grpc/ai/v1) and strips the
+	# module prefix, so stubs land at api/grpc/ai/v1/ — matching the committed location the
+	# CI stub-drift check looks for. (paths=source_relative wrongly wrote to the repo root.)
 	find docs/api/grpc/proto -name "*.proto" | xargs \
-		protoc --go_out=. --go_opt=paths=source_relative \
-		       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		protoc --go_out=. --go_opt=module=github.com/yourorg/monorepo \
+		       --go-grpc_out=. --go-grpc_opt=module=github.com/yourorg/monorepo \
 		       -I docs/api/grpc/proto
 
 gen-proto-python: ## Python: regenerate gRPC stubs from proto files into src/shared/generated/grpc/
