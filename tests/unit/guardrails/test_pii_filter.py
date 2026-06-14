@@ -7,7 +7,9 @@ All test inputs use clearly synthetic, obviously fake data.
 No real personal data appears in this file.
 """
 
-from src.guardrails.pii_filter import PIILevel, mask_dict, mask_text
+import pytest
+
+from src.guardrails.pii_filter import PIIFilter, PIILevel, mask_dict, mask_ip, mask_text
 
 
 class TestPIIFilterEmail:
@@ -123,3 +125,43 @@ class TestMaskDict:
         long_text = "x" * 10_000
         result = mask_text(long_text)
         assert result == long_text  # no PII — unchanged
+
+
+class TestMaskIp:
+    """Granular sub-field IP masking (#232, SPEC-LGS-001 FR-02, ADR-0012).
+
+    Uses RFC 5737 (IPv4 TEST-NET) and RFC 3849 (IPv6 documentation) ranges only.
+    """
+
+    def test_ipv4_last_octet_zeroed(self):
+        assert mask_ip("203.0.113.42") == "203.0.113.0"
+
+    def test_ipv6_last_80_bits_zeroed_keeps_48_prefix(self):
+        assert mask_ip("2001:db8:dead:beef:1:2:3:4") == "2001:db8:dead::"
+
+    def test_compressed_ipv6_normalised_then_masked(self):
+        masked = mask_ip("2001:db8::dead:beef")
+        assert "dead:beef" not in masked
+        assert masked.startswith("2001:db8")
+
+    def test_masking_is_idempotent(self):
+        once = mask_ip("203.0.113.42")
+        assert mask_ip(once) == once
+
+    @pytest.mark.parametrize(
+        "bad",
+        [None, "", "   ", "not-an-ip", "999.999.1.1", "example.com", "203.0.113.42.7"],
+    )
+    def test_malformed_returns_invalid_sentinel(self, bad):
+        assert mask_ip(bad) == PIIFilter.INVALID_IP
+
+    def test_raw_value_never_echoed_on_malformed(self):
+        # A bad value must not leak back to the caller.
+        assert "secret-host" not in mask_ip("secret-host.internal")
+
+    def test_static_method_matches_module_function(self):
+        assert PIIFilter.mask_ip("203.0.113.42") == mask_ip("203.0.113.42")
+
+    def test_free_text_masking_still_fully_tokenises_ip(self):
+        # mask_ip is additive; the default free-text path is unchanged (not weakened).
+        assert mask_text("client 203.0.113.42 connected") == "client [IP] connected"
