@@ -12,9 +12,9 @@ const (
 
 // DomainEvent is the normalised representation of an incoming Kafka message.
 type DomainEvent struct {
-	EntityID  string
-	EventType EventType
-	Payload   string
+	EntityID   string
+	EventType  EventType
+	Payload    string
 	ReceivedAt time.Time
 }
 

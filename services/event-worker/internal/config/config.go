@@ -14,6 +14,8 @@ type Config struct {
 	PrometheusPort        int
 	HealthPort            int
 	AppEnv                string
+	OTLPEndpoint          string
+	ServiceName           string
 }
 
 func Load() Config {
@@ -26,6 +28,9 @@ func Load() Config {
 		PrometheusPort:        getEnvInt("PROMETHEUS_PORT", 9091),
 		HealthPort:            getEnvInt("HEALTH_PORT", 8081),
 		AppEnv:                getEnv("APP_ENV", "development"),
+		// Empty endpoint = tracing disabled (no-op) — the worker still runs and exports metrics.
+		OTLPEndpoint: getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", ""),
+		ServiceName:  getEnv("OTEL_SERVICE_NAME", "event-worker"),
 	}
 }
 
