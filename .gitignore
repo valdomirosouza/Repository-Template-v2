@@ -84,3 +84,7 @@ reports/
 
 # Java / Maven build output — services build per-service in services/<name>/ (ADR-0025; no root reactor pom)
 services/**/target/
+
+# OpenAPI-generator npx wrapper artifacts at repo root (the generator config is openapitools.json)
+/package.json
+/package-lock.json

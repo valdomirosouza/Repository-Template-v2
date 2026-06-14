@@ -294,7 +294,7 @@ gen-api-client-ts: ## Frontend: regenerate TypeScript API client from OpenAPI sp
 		-i docs/api/openapi/v1/openapi.yaml \
 		-g typescript-fetch \
 		-o frontend/$(APP)/src/lib/api \
-		--additional-properties=typescriptThreePlus=true,supportsES6=true
+		--additional-properties=typescriptThreePlus=true,supportsES6=true,withoutRuntimeChecks=true
 
 # ── Deploy ─────────────────────────────────────────────────────────────────
 

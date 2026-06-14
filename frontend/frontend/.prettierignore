@@ -1,0 +1,4 @@
+# Generated OpenAPI client — owned by the generator, not hand-formatted.
+src/lib/api/
+.next/
+coverage/

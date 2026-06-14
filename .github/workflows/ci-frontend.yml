@@ -45,7 +45,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend/${{ matrix.app }}
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile # lockfile is gitignored by template policy (.gitignore)
 
       - name: Verify TypeScript API client is up-to-date
         run: |
@@ -53,7 +53,7 @@ jobs:
             -i docs/api/openapi/v1/openapi.yaml \
             -g typescript-fetch \
             -o frontend/${{ matrix.app }}/src/lib/api \
-            --additional-properties=typescriptThreePlus=true,supportsES6=true
+            --additional-properties=typescriptThreePlus=true,supportsES6=true,withoutRuntimeChecks=true
           git diff --exit-code frontend/${{ matrix.app }}/src/lib/api/ || \
             (echo "::error::TypeScript API client is out of date. Run 'make gen-api-client-ts APP=${{ matrix.app }}' and commit." && exit 1)
 
@@ -74,7 +74,7 @@ jobs:
 
       - name: Prettier format check
         working-directory: frontend/${{ matrix.app }}
-        run: pnpm format --check
+        run: pnpm format:check
 
   test-frontend-unit:
     name: Frontend Unit Tests
@@ -96,7 +96,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend/${{ matrix.app }}
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile # lockfile is gitignored by template policy (.gitignore)
 
       - name: Jest unit tests with coverage
         working-directory: frontend/${{ matrix.app }}
@@ -139,7 +139,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend/${{ matrix.app }}
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile # lockfile is gitignored by template policy (.gitignore)
 
       - name: Install Playwright browsers
         working-directory: frontend/${{ matrix.app }}

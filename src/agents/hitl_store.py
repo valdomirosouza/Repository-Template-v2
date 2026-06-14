@@ -39,6 +39,9 @@ class InMemoryHITLStore:
     async def pending_count(self) -> int:
         return len(self._active)
 
+    async def list_pending(self) -> list[HITLRequest]:
+        return [req for req in self._active.values() if req.status == HITLStatus.PENDING]
+
     async def get_pending_expired(self, now: datetime) -> list[HITLRequest]:
         return [
             req
@@ -157,6 +160,19 @@ class HITLRedisStore:
 
     async def pending_count(self) -> int:
         return int(await self._r.zcard(self._pending_key))
+
+    async def list_pending(self) -> list[HITLRequest]:
+        # zrange returns ids ascending by score (expires_at) — soonest-expiring first.
+        ids: list[str] = await self._r.zrange(self._pending_key, 0, -1)
+        requests: list[HITLRequest] = []
+        for rid in ids:
+            data = await self._r.get(self._req_key(rid))
+            if data is None:
+                continue
+            req = self._from_redis(data)
+            if req.status == HITLStatus.PENDING:
+                requests.append(req)
+        return requests
 
     async def get_pending_expired(self, now: datetime) -> list[HITLRequest]:
         ids: list[str] = await self._r.zrangebyscore(self._pending_key, "-inf", now.timestamp())
