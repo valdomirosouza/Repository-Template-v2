@@ -10,7 +10,10 @@ A GitHub Issue may **not** enter a sprint until **ALL** of the following criteri
 
 ## DoR Checklist
 
-- [ ] **Problem statement written** — Issue body explains what user/business problem this solves (not just what to build)
+- [ ] **Problem statement written** — Issue body explains what user/business problem this solves (not just what to build). For product-facing features, a `docs/product/FEAT-{id}/problem-framing-canvas.md` is recommended (template: `docs/product/templates/problem-framing-canvas.md`)
+- [ ] **Personas & value hypothesis identified** _(product-facing features)_ — user vs buyer persona and a falsifiable value hypothesis captured (templates: `docs/product/templates/personas.md`, `value-hypothesis.md`), OR "N/A: internal-only" stated
+- [ ] **Success metrics defined** _(product-facing features)_ — north-star + guardrail metrics with named instruments (template: `docs/product/templates/success-metrics.md`), OR "N/A: no measurable user-facing outcome"
+- [ ] **GTM brief drafted** _(features intended as reusable products)_ — ICP, positioning, and adoption path captured (templates under `docs/gtm/templates/`), OR "N/A: internal-only"
 - [ ] **Discovery doc linked** — `docs/product/FEAT-{id}/discovery.md` exists and is linked in the Issue body, OR an explicit "N/A: no discovery phase needed" note is present (spike and chore Issues are exempt)
 - [ ] **NFR doc approved** — `docs/product/FEAT-{id}/nfr.md` exists and has been approved by the Security Lead, OR "N/A: no new PII surface or security threat" is explicitly stated and confirmed by Tech Lead
 - [ ] **Acceptance criteria written** — Gherkin-format `Given / When / Then` scenarios in the Issue body, reviewed by Product Owner
@@ -50,4 +53,4 @@ DoR is checked by the **Tech Lead** during the Grooming Ceremony (Phase 3, Step 
 - `docs/process/DEFINITION_OF_DONE.md` — criteria for completing a story
 - `docs/process/DEFINITION_OF_RELEASE.md` — criteria for promoting to production
 - `docs/process/RACI.md` — who owns each gate
-- `docs/process/WORKFLOW.md` — full 13-phase lifecycle
+- `docs/process/WORKFLOW.md` — full 15-phase (0–14) lifecycle

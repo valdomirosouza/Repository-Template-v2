@@ -1,0 +1,20 @@
+# Per-service SLO — domain-service (ADR-0073).
+#
+# The `canary` block is read at runtime by cd-production.yml (via yq) at the 5% / 25% promotion
+# steps and the error-budget gate. A deployed service WITHOUT this file fails the pipeline (no
+# silent default) — see scripts/governance/check_service_slo_files.py.
+#
+# Schema: schema/service-slo.schema.json. These are starter TEMPLATE defaults (mirroring
+# api-gateway.yaml) because domain-service has no measured 30-day SLO yet. All values are
+# [CONFIRM] — replace with measured baselines and obtain SRE-Lead sign-off before relying on
+# them to gate a production rollout.
+
+service: domain-service
+
+canary:
+  # Fail canary promotion if the observed 5xx error ratio exceeds this (fraction of requests).
+  error_rate_max: 0.01 # [CONFIRM] — template default
+  # Fail canary promotion if the observed p99 request latency exceeds this (seconds).
+  p99_latency_seconds_max: 0.5 # [CONFIRM] — template default
+  # Block promotion if the remaining error budget is at or below this ratio (burn-aware gate).
+  error_budget_min_ratio: 0.10 # [CONFIRM] — template default

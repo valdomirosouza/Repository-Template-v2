@@ -240,6 +240,11 @@ check-slo-thresholds: ## Fail if canary/error-budget thresholds are hard-coded i
 check-outbound-urls: ## Fail if an outbound-HTTP boundary skips the SSRF allow-list (OWASP A10)
 	@uv run python scripts/governance/check_outbound_urls.py
 
+verify-traceability: ## Verify service→ADR→topic→schema→SLO→runbook traceability chain (Wave 1)
+	@uv run python scripts/governance/check_traceability.py
+	@uv run python scripts/governance/check_service_slo_files.py
+	@uv run python scripts/governance/check_runbook_links.py
+
 verify-f7-hook: ## Verify the F7 high-risk-action guard hook (decision logic + settings.json wiring; issue #133)
 	@python3 .claude/hooks/verify-high-risk-guard.py
 
