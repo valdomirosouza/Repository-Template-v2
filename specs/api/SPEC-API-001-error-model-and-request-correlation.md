@@ -5,7 +5,7 @@
 id: SPEC-API-001
 title: Structured API error model and request correlation (X-Request-ID)
 version: 0.1.0
-status: draft # draft | in-review | approved | implemented | superseded
+status: approved # draft | in-review | approved | implemented | superseded
 owner: valdomirosouza
 created: 2026-06-14
 source: Improvement plan Wave 3/4 — docs/api/error-model.md "Target"; issue #251
