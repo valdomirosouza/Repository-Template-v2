@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file, which adher
 
 ### CI/CD
 
+* **governance:** align main ruleset to RFC-0014 — 0 approvals on personal repo ([#241](https://github.com/valdomirosouza/Repository-Template-v2/issues/241)) ([#247](https://github.com/valdomirosouza/Repository-Template-v2/issues/247)) ([77dca2c](https://github.com/valdomirosouza/Repository-Template-v2/commit/77dca2c2d0fc1ac5dcd81eee9f31dde8fb757054))
 * **governance:** expand governance-council gate to all dual-approval paths + require it ([#241](https://github.com/valdomirosouza/Repository-Template-v2/issues/241)) ([#245](https://github.com/valdomirosouza/Repository-Template-v2/issues/245)) ([4f7bfa9](https://github.com/valdomirosouza/Repository-Template-v2/commit/4f7bfa9f160299e1cf4db1cb6ea28e695346ce1c))
 
 ## [2.15.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.14.5...v2.15.0) (2026-06-14)
