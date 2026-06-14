@@ -27,6 +27,12 @@ Proposed → Accepted → Deprecated → Superseded
 
 ## ADR Template
 
+Copy [`ADR-TEMPLATE.md`](ADR-TEMPLATE.md) to `docs/adr/ADR-NNNN-<kebab-title>.md`, fill it in, and
+add a row to the master index below. Before moving an ADR `Proposed → Accepted`, run through
+[`adr-review-checklist.md`](adr-review-checklist.md).
+
+The minimal skeleton (the template adds an optional Compliance & Risk section and guidance):
+
 ```markdown
 # ADR-NNNN — Title
 
@@ -56,6 +62,9 @@ What does this decision cost or constrain?
 
 What other options were evaluated and why were they rejected?
 ```
+
+> ADRs are **append-only and immutable** (ADR-0059): supersede a decision with a new ADR and mark the
+> old one `Superseded by ADR-NNNN` in place — never delete, move, or rewrite an accepted ADR.
 
 ---
 
