@@ -83,6 +83,8 @@ class HITLStore(Protocol):
 
     async def pending_count(self) -> int: ...
 
+    async def list_pending(self) -> list[HITLRequest]: ...
+
     async def get_pending_expired(self, now: datetime) -> list[HITLRequest]: ...
 
     async def evict(self, request_id: str) -> None: ...
@@ -316,6 +318,14 @@ class HITLGateway:
     async def get_request(self, request_id: str) -> HITLRequest | None:
         async with self._lock:
             return await self._store.get(request_id)
+
+    async def list_pending(self) -> list[HITLRequest]:
+        """Return all currently PENDING requests for the reviewer queue (read-only).
+
+        Does not mutate state or alter approval logic — purely a read for the operator UI.
+        """
+        async with self._lock:
+            return await self._store.list_pending()
 
     async def expire_stale_requests(self) -> list[str]:
         """Mark all PENDING requests past their expires_at as EXPIRED and archive them.

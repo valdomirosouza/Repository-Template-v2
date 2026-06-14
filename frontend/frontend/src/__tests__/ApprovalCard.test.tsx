@@ -1,17 +1,16 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ApprovalCard } from "@/components/hitl/ApprovalCard";
-import type { HITLRequest } from "@/lib/api/types";
+import { type HITLRequestSummary, HITLRequestSummaryStatusEnum } from "@/lib/api";
 
-const mockRequest: HITLRequest = {
-  id: "req-001",
-  agent_id: "agent-abc",
-  action_type: "write_file",
-  proposed_action: 'Write to /etc/config: {"key":"value"}',
-  risk_score: 0.6,
-  status: "PENDING",
-  created_at: "2026-05-28T10:00:00Z",
-  expires_at: "2026-05-28T11:00:00Z",
-  context: {},
+const mockRequest: HITLRequestSummary = {
+  requestId: "req-001",
+  agentId: "agent-abc",
+  actionType: "write_file",
+  contextSummary: 'Write to /etc/config: {"key":"value"}',
+  riskScore: 0.6,
+  status: HITLRequestSummaryStatusEnum.Pending,
+  createdAt: "2026-05-28T10:00:00Z",
+  expiresAt: "2026-05-28T11:00:00Z",
 };
 
 describe("ApprovalCard", () => {

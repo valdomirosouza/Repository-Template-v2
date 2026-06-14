@@ -1,36 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
 import { ApprovalCard } from "@/components/hitl/ApprovalCard";
-import type { HITLRequest } from "@/lib/api/types";
-import { fetchPendingRequests, submitDecision } from "@/lib/api/hitl";
+import { Configuration, DecisionInDecisionEnum, HitlApi, type HITLRequestSummary } from "@/lib/api";
+
+const api = new HitlApi(new Configuration({ basePath: process.env.NEXT_PUBLIC_API_BASE_URL }));
 
 export default function HITLQueuePage() {
-  const [requests, setRequests] = useState<HITLRequest[]>([]);
+  const [requests, setRequests] = useState<HITLRequestSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await fetchPendingRequests();
+      const data = await api.listPendingRequests();
       setRequests(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load requests");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     load();
     const interval = setInterval(load, 15_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [load]);
 
   const handleDecision = async (id: string, approved: boolean, rationale: string) => {
-    await submitDecision(id, approved, rationale);
-    setRequests((prev) => prev.filter((r) => r.id !== id));
+    await api.submitDecision({
+      requestId: id,
+      decisionIn: {
+        decision: approved ? DecisionInDecisionEnum.Approved : DecisionInDecisionEnum.Rejected,
+        rationale,
+      },
+    });
+    setRequests((prev) => prev.filter((r) => r.requestId !== id));
   };
 
   if (loading && requests.length === 0) {
@@ -52,7 +60,7 @@ export default function HITLQueuePage() {
           <p style={{ color: "#6b7280" }}>No pending requests.</p>
         ) : (
           requests.map((req) => (
-            <ApprovalCard key={req.id} request={req} onDecision={handleDecision} />
+            <ApprovalCard key={req.requestId} request={req} onDecision={handleDecision} />
           ))
         )}
       </div>

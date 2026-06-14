@@ -66,6 +66,20 @@ class DecisionOut(BaseModel):
     message: str
 
 
+class HITLRequestSummary(BaseModel):
+    """A pending request as shown in the reviewer queue. Only the PII-masked
+    ``context_summary`` is exposed — never the raw ``action_parameters`` (§3.1)."""
+
+    request_id: str
+    agent_id: str
+    action_type: str
+    context_summary: str
+    risk_score: float
+    status: str
+    created_at: datetime
+    expires_at: datetime
+
+
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 
@@ -80,6 +94,37 @@ async def hitl_status(
         pending_count=pending,
         message="HITL gateway is operational.",
     )
+
+
+@router.get(
+    "/requests",
+    response_model=list[HITLRequestSummary],
+    summary="List pending HITL approval requests",
+)
+async def list_pending_requests(
+    gateway: HITLGateway = Depends(get_hitl_gateway),
+    operator: Principal = Depends(require_hitl_operator),
+) -> list[HITLRequestSummary]:
+    """Return the pending HITL requests awaiting an operator decision.
+
+    Requires a valid operator JWT (role ``hitl-operator``), the same control as the decision
+    endpoint. Only the PII-masked ``context_summary`` is returned per request — the raw
+    ``action_parameters`` never leave the gateway (REM-001, CLAUDE.md §3.1).
+    """
+    pending = await gateway.list_pending()
+    return [
+        HITLRequestSummary(
+            request_id=r.request_id,
+            agent_id=r.agent_id,
+            action_type=r.action_type,
+            context_summary=r.context_summary,
+            risk_score=r.risk_score,
+            status=r.status.value,
+            created_at=r.created_at,
+            expires_at=r.expires_at,
+        )
+        for r in pending
+    ]
 
 
 @router.post(
