@@ -12,6 +12,66 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.15.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.14.5...v2.15.0) (2026-06-14)
+
+
+### Features
+
+* **golden-signals:** log-based Golden Signals ingestion & analytics service (SPEC-LGS-001) ([#200](https://github.com/valdomirosouza/Repository-Template-v2/issues/200)) ([bf32eea](https://github.com/valdomirosouza/Repository-Template-v2/commit/bf32eeae2d9864a53940d6819dbf2b47609e66ce))
+* **guardrails:** add granular IP masking (mask_ip) to pii_filter ([#235](https://github.com/valdomirosouza/Repository-Template-v2/issues/235)) ([5ec5499](https://github.com/valdomirosouza/Repository-Template-v2/commit/5ec54994a01c97d7eaf0387df28c441a3224df67)), closes [#232](https://github.com/valdomirosouza/Repository-Template-v2/issues/232)
+* **hitl:** add list-pending endpoint + reconcile generated OpenAPI client ([#240](https://github.com/valdomirosouza/Repository-Template-v2/issues/240)) ([916b3ac](https://github.com/valdomirosouza/Repository-Template-v2/commit/916b3acf72b6d846897b843682d1e368799ce660))
+* **observability:** @vercel/otel instrumentation + Web Vitals for HITL UI (W3-5) ([#237](https://github.com/valdomirosouza/Repository-Template-v2/issues/237)) ([5fd52aa](https://github.com/valdomirosouza/Repository-Template-v2/commit/5fd52aae6999f5306cdc87b14edeb8e70adefc60))
+* **observability:** export the four Golden Signals as Prometheus metrics (golden-signals) ([#234](https://github.com/valdomirosouza/Repository-Template-v2/issues/234)) ([7770e62](https://github.com/valdomirosouza/Repository-Template-v2/commit/7770e62d60e1d3064927907abed1bf6cb4a6a57d))
+* **observability:** Micrometer metrics + OTel tracing for domain-service (W2-11b) ([#236](https://github.com/valdomirosouza/Repository-Template-v2/issues/236)) ([6dfd239](https://github.com/valdomirosouza/Repository-Template-v2/commit/6dfd2394893759e665e9db2ae3b0e699db242c9c))
+* **observability:** OTel tracing + business metrics for Go event-worker (W2-11a) ([#223](https://github.com/valdomirosouza/Repository-Template-v2/issues/223)) ([68f7292](https://github.com/valdomirosouza/Repository-Template-v2/commit/68f7292dd35191e8512ce9e894ed104b9240b5eb))
+* **security:** add LLM02/LLM05 output sanitization guardrail (W2-1) ([#217](https://github.com/valdomirosouza/Repository-Template-v2/issues/217)) ([e04227a](https://github.com/valdomirosouza/Repository-Template-v2/commit/e04227a12a62b3b5f50b828e97f0c235a17b6993))
+* **security:** add OWASP ASVS 5.0.0 control matrix + validator (W2-T1) ([#211](https://github.com/valdomirosouza/Repository-Template-v2/issues/211)) ([4b30c24](https://github.com/valdomirosouza/Repository-Template-v2/commit/4b30c243aee7f19cdc66f233d3bcbba7d7460ddc))
+* **security:** add OWASP LLM Top 10 (2025) control matrix (W2-T2) ([#212](https://github.com/valdomirosouza/Repository-Template-v2/issues/212)) ([ab87e2b](https://github.com/valdomirosouza/Repository-Template-v2/commit/ab87e2bd397d0a4f3799b162fba954fc76d45e56))
+* **security:** outbound URL SSRF allow-list at HTTP boundaries (W2-5) ([#219](https://github.com/valdomirosouza/Repository-Template-v2/issues/219)) ([7db8a97](https://github.com/valdomirosouza/Repository-Template-v2/commit/7db8a97ea91367b2f453692454cefe421c876b58))
+
+
+### Bug Fixes
+
+* **hooks:** close high-risk-guard holes — add gh pr create, stop read-only false positives (W1-5) ([#205](https://github.com/valdomirosouza/Repository-Template-v2/issues/205)) ([78d2148](https://github.com/valdomirosouza/Repository-Template-v2/commit/78d2148e611b3b738761cf198dbd9cbf8292ab45))
+* **observability:** drop unbounded request_id label from llm_tokens_total (W1-4) ([#204](https://github.com/valdomirosouza/Repository-Template-v2/issues/204)) ([d296b68](https://github.com/valdomirosouza/Repository-Template-v2/commit/d296b68310d950cb9527d7474443941c60d1c120))
+
+
+### Security
+
+* **frontend:** upgrade Next.js 15.2.4 → 15.5.19 (clears critical RCE + HIGH DoS) ([#242](https://github.com/valdomirosouza/Repository-Template-v2/issues/242)) ([aa50355](https://github.com/valdomirosouza/Repository-Template-v2/commit/aa50355f309f99ab68da6b102a36a993e6615067)), closes [#238](https://github.com/valdomirosouza/Repository-Template-v2/issues/238)
+
+
+### CI/CD
+
+* **agent:** bound agent actions — split Java SCA out of the inner-loop lint (W1-6) ([#206](https://github.com/valdomirosouza/Repository-Template-v2/issues/206)) ([744cc63](https://github.com/valdomirosouza/Repository-Template-v2/commit/744cc634b466c01943a51d06407438d80cad3c51))
+* **chaos:** gate PRs with a single-fault resilience smoke (W2-10) ([#221](https://github.com/valdomirosouza/Repository-Template-v2/issues/221)) ([597ea51](https://github.com/valdomirosouza/Repository-Template-v2/commit/597ea51018ac300b8873a16277d02244ccf7d872))
+* **go:** guard proto-stub-drift check + align gen-proto-go with go_package ([#243](https://github.com/valdomirosouza/Repository-Template-v2/issues/243)) ([#244](https://github.com/valdomirosouza/Repository-Template-v2/issues/244)) ([47396cc](https://github.com/valdomirosouza/Repository-Template-v2/commit/47396cccf8ba866ee83c0a72fdc9f1954faf914e))
+* **governance:** add PR-time CAB change-type gate (report mode, W1-2) ([#216](https://github.com/valdomirosouza/Repository-Template-v2/issues/216)) ([21907fe](https://github.com/valdomirosouza/Repository-Template-v2/commit/21907fe29010646c8b1cf8cdc47f1d5fbcaed55b))
+* **governance:** codify branch protection as code (ADR-0071) ([#208](https://github.com/valdomirosouza/Repository-Template-v2/issues/208)) ([dcfc27f](https://github.com/valdomirosouza/Repository-Template-v2/commit/dcfc27f954d88cbd1d7b86efec8176159e72603c))
+* **governance:** correct false ISO A.5.2 claim; strengthen CODEOWNERS gate (W1-1) ([#215](https://github.com/valdomirosouza/Repository-Template-v2/issues/215)) ([afce00c](https://github.com/valdomirosouza/Repository-Template-v2/commit/afce00cf3e18ed217b6fa0ed6193d0913f926bbb))
+* **governance:** prepare control-binding gate burn-in tracking (W1-T2) ([#210](https://github.com/valdomirosouza/Repository-Template-v2/issues/210)) ([27e296a](https://github.com/valdomirosouza/Repository-Template-v2/commit/27e296a7c29b1f2d4a8d311a80d8f23f3da75a68))
+* **governance:** require F7 high-risk-action guard in CI (W1-T3) ([#209](https://github.com/valdomirosouza/Repository-Template-v2/issues/209)) ([6838cbf](https://github.com/valdomirosouza/Repository-Template-v2/commit/6838cbf56e888cefc375d8680e7d12a89ef4c3c0))
+* **java:** make the JaCoCo coverage gate enforceable + fail-loud SERVICE guard ([#203](https://github.com/valdomirosouza/Repository-Template-v2/issues/203)) ([63dc995](https://github.com/valdomirosouza/Repository-Template-v2/commit/63dc995ca93014f75973d382b8a858bc4f16869c))
+* **security:** authenticated staging DAST gate with signed evidence (W2-T3) ([#213](https://github.com/valdomirosouza/Repository-Template-v2/issues/213)) ([c919258](https://github.com/valdomirosouza/Repository-Template-v2/commit/c9192581a17e0f38cf98534d55acd5c38102b213))
+* **sre:** externalize canary thresholds into per-service SLO config (W2-T4) ([#214](https://github.com/valdomirosouza/Repository-Template-v2/issues/214)) ([8998a23](https://github.com/valdomirosouza/Repository-Template-v2/commit/8998a23533a42c65c99dc13f507ac3732fb814d7))
+
+
+### Build & Dependencies
+
+* **domain-service:** bump Spring Boot 3.4.5 -&gt; 3.5.15 (security CVEs) ([#202](https://github.com/valdomirosouza/Repository-Template-v2/issues/202)) ([4e03b39](https://github.com/valdomirosouza/Repository-Template-v2/commit/4e03b3911f9b3fa4d8660a8b0069f4907edfdf83))
+
+
+### Documentation
+
+* **adr:** governance-enforcement ADRs 0070-0074 (Track A, milestone v2.16.0) ([#207](https://github.com/valdomirosouza/Repository-Template-v2/issues/207)) ([1934b24](https://github.com/valdomirosouza/Repository-Template-v2/commit/1934b2442799736b7703814a1bfccdbe5ca3c6d7))
+* **adr:** resilience fallback policy + chaos experiments (W2-9) ([#220](https://github.com/valdomirosouza/Repository-Template-v2/issues/220)) ([4ddf78d](https://github.com/valdomirosouza/Repository-Template-v2/commit/4ddf78d356e00dab8b535f6fc81650de034d2927))
+* **ci:** fix broken runbook link in chaos-schedule.yml (W3-7) ([#222](https://github.com/valdomirosouza/Repository-Template-v2/issues/222)) ([66ba781](https://github.com/valdomirosouza/Repository-Template-v2/commit/66ba7818bcb7cd173ce4cff76153813fb8f2ca40))
+* **claude:** refresh CLAUDE.md for this session's governance changes ([#224](https://github.com/valdomirosouza/Repository-Template-v2/issues/224)) ([fa54f59](https://github.com/valdomirosouza/Repository-Template-v2/commit/fa54f599d5847daff615907a957e2a9cc6683ae7))
+* fix stale references and broken runbook links ([#196](https://github.com/valdomirosouza/Repository-Template-v2/issues/196)) ([8eae1fd](https://github.com/valdomirosouza/Repository-Template-v2/commit/8eae1fd79f0c85da52ebc4841bdbe55d7df75b4d))
+* namespace SRE operational runbooks as RB-SRE-* ([#195](https://github.com/valdomirosouza/Repository-Template-v2/issues/195)) ([#197](https://github.com/valdomirosouza/Repository-Template-v2/issues/197)) ([7772a4b](https://github.com/valdomirosouza/Repository-Template-v2/commit/7772a4b07a1890b4f8bcf12fcd82c75368135238))
+* **spec:** clarify SPEC-LGS-001 ambiguities surfaced by multi-language re-implementation ([#201](https://github.com/valdomirosouza/Repository-Template-v2/issues/201)) ([81d756e](https://github.com/valdomirosouza/Repository-Template-v2/commit/81d756ee37639464f20d91f2cec324d4f70a35f8))
+* **spec:** reconcile SPEC-LGS-001 NFR-02 Spring Boot version (3.4.5 → 3.5.15) ([#233](https://github.com/valdomirosouza/Repository-Template-v2/issues/233)) ([5ad063b](https://github.com/valdomirosouza/Repository-Template-v2/commit/5ad063b69579fc0a446f2cf53716b6265ea41351))
+
 ## [2.14.5](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.14.4...v2.14.5) (2026-06-11)
 
 
