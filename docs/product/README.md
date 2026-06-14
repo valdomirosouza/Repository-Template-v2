@@ -24,6 +24,23 @@ docs/product/
 
 ---
 
+## Discovery Templates
+
+Reusable templates live under `docs/product/templates/`. Copy the relevant ones into
+`docs/product/FEAT-{id}/` for product-facing features (see the Definition of Ready). Go-to-market
+templates for features intended as reusable products live under `docs/gtm/` (see
+`docs/gtm/GTM-README.md`).
+
+| Template                              | Purpose                                            |
+| ------------------------------------- | -------------------------------------------------- |
+| `templates/problem-framing-canvas.md` | Evidence the problem before specifying a solution  |
+| `templates/personas.md`               | User persona vs buyer persona                      |
+| `templates/user-story-map.md`         | Story map + AC → test → observability mapping      |
+| `templates/value-hypothesis.md`       | Falsifiable value bet with kill criteria           |
+| `templates/success-metrics.md`        | North-star, leading/lagging, and guardrail metrics |
+
+---
+
 ## Agent-Disclosure Header
 
 Every agent-generated document in this directory **must** include the following header block immediately after the title:
