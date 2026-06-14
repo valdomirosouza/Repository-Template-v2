@@ -2,6 +2,7 @@ package com.yourorg.goldensignals.domain;
 
 import com.yourorg.goldensignals.api.dto.IngestionResponse;
 import com.yourorg.goldensignals.api.dto.LogEntryDto;
+import com.yourorg.goldensignals.observability.SignalMetrics;
 import com.yourorg.goldensignals.queue.IngestQueue;
 import java.time.Instant;
 import java.util.List;
@@ -24,14 +25,17 @@ public class IngestionService {
     private final IpMaskingService ipMasking;
     private final GoldenSignalExtractor extractor;
     private final IngestQueue queue;
+    private final SignalMetrics metrics;
 
     public IngestionService(
             final IpMaskingService ipMasking,
             final GoldenSignalExtractor extractor,
-            final IngestQueue queue) {
+            final IngestQueue queue,
+            final SignalMetrics metrics) {
         this.ipMasking = ipMasking;
         this.extractor = extractor;
         this.queue = queue;
+        this.metrics = metrics;
     }
 
     /**
@@ -57,6 +61,7 @@ public class IngestionService {
             final SignalEvent event = extractor.extract(entry);
             if (queue.offer(event)) {
                 accepted++;
+                metrics.recordEvent(event); // Golden Signals: traffic/latency/errors/saturation
             } else {
                 rejected++; // queue full ⇒ dropped (ADR-0069 §2), still 202
             }

@@ -2,6 +2,7 @@ package com.yourorg.goldensignals.queue;
 
 import com.yourorg.goldensignals.domain.SignalEvent;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -29,6 +30,10 @@ public class IngestQueue {
         this.queue = new ArrayBlockingQueue<>(capacity);
         this.droppedCounter = Counter.builder("gs_queue_dropped_total")
                 .description("Signal events dropped because the ingest queue was full")
+                .register(meterRegistry);
+        // Golden Signal — saturation: live queue depth (bounded by capacity, no user-input label).
+        Gauge.builder("gs_queue_depth", queue, java.util.concurrent.BlockingQueue::size)
+                .description("Current ingest-queue depth (pipeline saturation indicator)")
                 .register(meterRegistry);
     }
 

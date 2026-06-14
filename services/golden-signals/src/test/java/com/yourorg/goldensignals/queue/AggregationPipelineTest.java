@@ -6,6 +6,7 @@ import com.yourorg.goldensignals.domain.Bucket;
 import com.yourorg.goldensignals.domain.SignalEvent;
 import com.yourorg.goldensignals.domain.Window;
 import com.yourorg.goldensignals.infra.InMemoryMetricStore;
+import com.yourorg.goldensignals.observability.SignalMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Instant;
 import java.util.List;
@@ -26,8 +27,9 @@ class AggregationPipelineTest {
     @DisplayName("one event updates both its 1m and 5m bucket exactly once (E7)")
     void fansIntoBothWindows() {
         final InMemoryMetricStore store = new InMemoryMetricStore();
+        final SimpleMeterRegistry registry = new SimpleMeterRegistry();
         final AggregationWorker worker = new AggregationWorker(
-                new IngestQueue(10, new SimpleMeterRegistry()), store);
+                new IngestQueue(10, registry), store, new SignalMetrics(registry));
 
         worker.accumulate(event(97, 10.0, false)); // 1m bucket 60, 5m bucket 0
         worker.flushAll();
@@ -46,8 +48,9 @@ class AggregationPipelineTest {
     @DisplayName("events in distinct 1m buckets stay separated (E3 boundary)")
     void separatesBuckets() {
         final InMemoryMetricStore store = new InMemoryMetricStore();
+        final SimpleMeterRegistry registry = new SimpleMeterRegistry();
         final AggregationWorker worker = new AggregationWorker(
-                new IngestQueue(10, new SimpleMeterRegistry()), store);
+                new IngestQueue(10, registry), store, new SignalMetrics(registry));
 
         worker.accumulate(event(119, 5.0, false));  // bucket [60,120)
         worker.accumulate(event(120, 7.0, true));   // bucket [120,180) — RIGHT-open boundary
@@ -66,6 +69,7 @@ class AggregationPipelineTest {
         final SimpleMeterRegistry registry = new SimpleMeterRegistry();
         final IngestQueue queue = new IngestQueue(1, registry);
         assertThat(queue.offer(event(0, 1.0, false))).isTrue();
+        assertThat(registry.get("gs_queue_depth").gauge().value()).isEqualTo(1.0); // saturation gauge
         assertThat(queue.offer(event(0, 1.0, false))).isFalse(); // full
         assertThat(registry.get("gs_queue_dropped_total").counter().count()).isEqualTo(1.0);
     }
