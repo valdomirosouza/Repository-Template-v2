@@ -41,4 +41,21 @@
     <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/angus-activation@.*$</packageUrl>
     <cve>CVE-2025-7962</cve>
   </suppress>
+  <suppress>
+    <notes><![CDATA[
+      LIKELY FALSE POSITIVE (CPE fuzzy match — PENDING Security-Lead confirmation).
+      CVE-2026-39883 (CVSS 7.0) and CVE-2026-39882 are attributed by dependency-check to
+      io.opentelemetry.semconv:opentelemetry-semconv via the broad product CPE
+      cpe:2.3:a:opentelemetry:opentelemetry. opentelemetry-semconv is a CONSTANTS-ONLY
+      artifact — generated semantic-convention attribute keys (e.g. "http.request.method"),
+      with no runtime, network, parsing, or deserialization code — so it has no exploitable
+      surface for a CVSS-7 vulnerability; this is the same fuzzy-CPE mis-attribution pattern
+      as the micrometer/angus entries above. It is pulled transitively by
+      micrometer-tracing-bridge-otel (Spring-Boot-BOM-managed). Scoped to this package + these
+      CVEs only. ACTION: Security Lead to verify the CVE details against NVD and confirm/revoke.
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
+    <cve>CVE-2026-39883</cve>
+    <cve>CVE-2026-39882</cve>
+  </suppress>
 </suppressions>

@@ -52,6 +52,15 @@ management:
     export:
       prometheus:
         enabled: true
+  # Distributed tracing → OTel exported over OTLP/HTTP (W2-11b, #229). Sampling defaults to
+  # full locally; set OTEL_TRACES_SAMPLER_ARG (e.g. 0.1) to sub-sample in shared environments.
+  # service.name on the spans is taken from spring.application.name above.
+  tracing:
+    sampling:
+      probability: ${OTEL_TRACES_SAMPLER_ARG:1.0}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
 
 app:
   kafka:
