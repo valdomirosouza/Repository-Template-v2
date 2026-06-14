@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import { WebVitals } from "@/components/observability/WebVitals";
 
 export const metadata: Metadata = {
   title: "Enterprise Platform",
@@ -10,7 +11,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <WebVitals />
+        {children}
+      </body>
     </html>
   );
 }
