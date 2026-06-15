@@ -69,6 +69,25 @@ export type DecisionOutDecisionEnum = typeof DecisionOutDecisionEnum[keyof typeo
 /**
  * 
  * @export
+ * @interface FieldError
+ */
+export interface FieldError {
+    /**
+     * 
+     * @type {string}
+     * @memberof FieldError
+     */
+    field: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FieldError
+     */
+    message: string;
+}
+/**
+ * 
+ * @export
  * @interface HITLRequestSummary
  */
 export interface HITLRequestSummary {
@@ -178,6 +197,73 @@ export interface HealthResponse {
      */
     version: string;
 }
+/**
+ * 
+ * @export
+ * @interface ModelError
+ */
+export interface ModelError {
+    /**
+     * Mirrors the HTTP status code.
+     * @type {number}
+     * @memberof ModelError
+     */
+    status: number;
+    /**
+     * Stable, screaming-snake error code clients branch on (adding is non-breaking).
+     * @type {ModelErrorCodeEnum}
+     * @memberof ModelError
+     */
+    code: ModelErrorCodeEnum;
+    /**
+     * Short, human-readable, stable for a given code.
+     * @type {string}
+     * @memberof ModelError
+     */
+    title: string;
+    /**
+     * Instance-specific message; PII-masked.
+     * @type {string}
+     * @memberof ModelError
+     */
+    detail?: string;
+    /**
+     * Correlation id; echoed in the X-Request-ID response header.
+     * @type {string}
+     * @memberof ModelError
+     */
+    requestId: string;
+    /**
+     * OpenTelemetry trace id for support correlation.
+     * @type {string}
+     * @memberof ModelError
+     */
+    traceId?: string;
+    /**
+     * Field-level validation problems (422).
+     * @type {Array<FieldError>}
+     * @memberof ModelError
+     */
+    errors?: Array<FieldError>;
+}
+
+
+/**
+ * @export
+ */
+export const ModelErrorCodeEnum = {
+    ValidationError: 'VALIDATION_ERROR',
+    BadRequest: 'BAD_REQUEST',
+    Unauthorized: 'UNAUTHORIZED',
+    Forbidden: 'FORBIDDEN',
+    NotFound: 'NOT_FOUND',
+    Conflict: 'CONFLICT',
+    RateLimited: 'RATE_LIMITED',
+    Unavailable: 'UNAVAILABLE',
+    InternalError: 'INTERNAL_ERROR'
+} as const;
+export type ModelErrorCodeEnum = typeof ModelErrorCodeEnum[keyof typeof ModelErrorCodeEnum];
+
 /**
  * 
  * @export
