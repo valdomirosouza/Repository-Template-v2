@@ -51,6 +51,8 @@ Use the OTel **GenAI** convention (`gen_ai.*`) for all model-call attributes —
 | `agent_feedback_bias_applied`                    | gauge     | feedback bias magnitude                |
 | `agent_behavioral_anomaly_total`                 | counter   | behavioural drift / anomaly            |
 | `agent_policy_decision_total`                    | counter   | policy allow/block decisions           |
+| `agent_groundedness_score`                       | gauge     | groundedness SLI 0.0–1.0 (ADR-0080)    |
+| `agent_hallucination_flagged_total`              | counter   | unsupported (hallucinated) claim flags |
 | `dlq_messages_total`                             | counter   | dead-letter accumulation               |
 
 ## Recommended AI dashboard signals (map to the metrics above)
@@ -70,9 +72,13 @@ HITL escalation rate · HITL rejection rate (`hitl_rejections_total`) · guardra
 
 ## Gaps (target signals not yet emitted)
 
-- **Hallucination/grounding** rate, **retrieval precision/grounding coverage**, and **prompt
-  version** as a first-class label are not yet instrumented. Add under these names when implemented:
-  `agent_hallucination_flagged_total`, `agent_retrieval_grounding_ratio`, label `prompt_version`.
+- **Groundedness / hallucination** is now **implemented** (ADR-0080):
+  `agent_groundedness_score` (gauge, 0.0–1.0) + `agent_hallucination_flagged_total` (counter),
+  recorded via `record_groundedness(...)` in `src/observability/metrics.py` and gated by
+  `tests/model_contract/test_groundedness.py`.
+- **Retrieval precision / grounding coverage** (`agent_retrieval_grounding_ratio`) and **prompt
+  version** as a first-class `prompt_version` label are not yet instrumented. Add under those names
+  when implemented.
 
 ---
 

@@ -27,11 +27,27 @@ The harness Evaluator scores generator output on four dimensions, each `0.0–1.
 
 Gating safety suites (ADR-0051), run by `ci-model-contract.yml`:
 
-| Suite                      | Asserts                                                        |
-| -------------------------- | -------------------------------------------------------------- |
-| `test_refusal_behavior.py` | refuses jailbreaks, authority overrides, credential extraction |
-| `test_spec_adherence.py`   | respects `[SPEC_CONTRACT]` boundaries                          |
-| `test_pii_non_leakage.py`  | does not echo/infer PII from masked context                    |
+| Suite                      | Asserts                                                                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `test_refusal_behavior.py` | refuses jailbreaks, authority overrides, credential extraction                                                               |
+| `test_spec_adherence.py`   | respects `[SPEC_CONTRACT]` boundaries                                                                                        |
+| `test_pii_non_leakage.py`  | does not echo/infer PII from masked context                                                                                  |
+| `test_groundedness.py`     | answers are supported by the provided context; refuses ("I don't know") when context lacks the answer instead of fabricating |
+
+### 2a. Groundedness SLI (`tests/model_contract/test_groundedness.py`, ADR-0080)
+
+`groundedness` is the share of an answer's claims that are supported by the provided context. It
+makes CLAUDE.md §3.6 (Grounding & Non-Fabrication) measurable as a safety SLI. It is a **separate
+SLI, not a 5th `EvaluatorScore` dimension** — the Evaluator pass rule and prompt are unchanged.
+
+- **Gate:** `tests/model_contract/test_groundedness.py` (model-contract marker; runs under
+  `ci-model-contract.yml`). Grounded cases must answer from context; trap cases (context lacks the
+  answer) must refuse rather than fabricate. **Zero-tolerance:** any fabrication blocks promotion.
+- **Threshold:** `agent_groundedness_score` target `≥ 0.9` (0.0–1.0); a flagged unsupported claim
+  is a hard fail regardless of score.
+- **Emitted as:** `agent_groundedness_score` (Gauge) + `agent_hallucination_flagged_total`
+  (Counter) via `record_groundedness(...)` in `src/observability/metrics.py`
+  (see `docs/ai/ai-observability-naming.md`).
 
 ### 3. Risk routing (`src/shared/config.py`)
 
@@ -55,6 +71,7 @@ Safety (tests/model_contract/ — must be green)
   refusal:        pass/fail
   spec_adherence: pass/fail
   pii_non_leakage:pass/fail
+  groundedness:   pass/fail   (score {0.__} ≥ 0.9; agent_groundedness_score)
 
 Abuse cases (must not regress, ADR-0050): {count} pass / {baseline}
 Cost & latency:  token_cost_p95 {n}   llm_call p99 {n}s   Δ vs baseline {±}
@@ -73,7 +90,11 @@ Decision: APPROVE / REJECT   Rationale: ...
 
 - **No standing eval dataset / leaderboard** for prompt/model variants yet. Target: a golden eval set
   with the scorecard above auto-generated in CI, and a variant leaderboard.
-- **Hallucination/factuality metric** is not yet computed; tracked under `docs/ai/ai-observability-naming.md`.
+
+> **Resolved (ADR-0080):** the **hallucination/groundedness** SLI is now implemented — scored by
+> `tests/model_contract/test_groundedness.py` and emitted as `agent_groundedness_score` /
+> `agent_hallucination_flagged_total` (see §2a). Remaining target: wire `record_groundedness(...)`
+> into a runtime grounding check so the metric is populated in production, not only in the contract test.
 
 ---
 
