@@ -26,6 +26,12 @@ Provide agents with recall across sessions via three complementary layers:
 2. Agent retrieves similar past HITL rejections before repeating a risky action
 3. Harness coordinator stores current sprint context for context-reset continuity
 
+> **Retrieval pipeline.** This spec defines the storage/recall primitives. The end-to-end
+> retrieval pipeline that composes them (chunk → embed → retrieve → rerank → cite → eval) is
+> specified as a reference pattern in `specs/ai/rag-pipeline.md` (SPEC-AI-002, ADR-0081). That
+> spec reuses the protocols below unchanged and does not redefine retention/TTL/encryption,
+> which remain governed by `docs/ai/memory-governance.md`.
+
 ---
 
 ## 2. PII Constraints (mandatory)

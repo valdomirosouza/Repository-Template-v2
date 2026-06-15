@@ -162,3 +162,4 @@ See `docs/optional-extensions/ai-agents/README.md` for the activation checklist.
 | [ADR-0016](ADR-0016-agent-sandbox-execution-policy.md) | Agent Sandbox Execution Policy  | Accepted | 2026-05-25 |
 | [ADR-0017](ADR-0017-agent-memory-architecture.md)      | Agent Memory Architecture       | Accepted | 2026-05-27 |
 | [ADR-0021](ADR-0021-agent-communication-protocol.md)   | Agent Communication Protocol    | Accepted | 2026-05-28 |
+| [ADR-0081](ADR-0081-rag-reference-pipeline.md)         | RAG Reference Pipeline          | Proposed | 2026-06-15 |

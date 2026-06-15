@@ -77,8 +77,14 @@ a target metric.
 
 ## Gaps & target state (not yet implemented)
 
+> The end-to-end retrieval pipeline that closes these gaps (chunk → embed → retrieve → rerank →
+> cite → eval, with a versioned golden query set and an embedder-change eval gate) is specified as
+> a reference pattern in **`specs/ai/rag-pipeline.md`** (SPEC-AI-002, ADR-0081). This standard
+> remains the quality bar; that spec is the automated-eval contract it feeds.
+
 - **No standing golden query set or RAG leaderboard** yet — the scorecard above is filled by hand.
   Target: a golden set + the scorecard auto-generated in CI, sibling to the eval-scorecard target.
+  Contract: `specs/ai/rag-pipeline.md` §8 / FR-08.
 - **Faithfulness is not yet auto-scored** — tracked under `docs/ai/ai-observability-naming.md`.
 - **Production vector store is pluggable** — only `InMemoryVectorStore` ships; a real backend must
   re-verify the mask-before-embed and provenance guarantees above before promotion.
@@ -87,8 +93,9 @@ a target metric.
 
 ## Related
 
+- `specs/ai/rag-pipeline.md` (SPEC-AI-002) — retrieval pipeline reference pattern + automated-eval contract
 - `src/memory/` — `vector_store.py`, `document_indexer.py`, `session_memory.py`, `bug_history_store.py`
-- ADR-0017 (agent memory architecture) · ADR-0038 (Learn-stage feedback loop)
+- ADR-0017 (agent memory architecture) · ADR-0038 (Learn-stage feedback loop) · ADR-0081 (RAG reference pipeline)
 - `docs/ai/eval-scorecard.md` · `docs/ai/memory-governance.md` · `docs/ai/ai-observability-naming.md`
 - `src/guardrails/pii_filter.py` · `src/guardrails/prompt_injection_guard.py`
 - CLAUDE.md §3.1 (privacy), §3.2 (LLM01/06/09), §3.6 (grounding & non-fabrication)
