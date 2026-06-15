@@ -364,3 +364,38 @@ AGENT_POLICY_DECISION_COUNTER = Counter(
     "Runtime policy gateway decisions by policy name and decision",
     ["policy_name", "decision"],  # decision: ALLOW | REQUIRE_HITL | BLOCK
 )
+
+# ── Groundedness SLI metrics (Issue #270 — ADR-0080) ─────────────────────────
+# Spec: docs/ai/eval-scorecard.md · docs/ai/ai-observability-naming.md
+# Groundedness is a separate safety SLI scored by tests/model_contract/test_groundedness.py,
+# NOT a 5th EvaluatorScore dimension. It makes CLAUDE.md §3.6 (grounding / non-fabrication)
+# measurable: the score is the share of an answer's claims supported by provided context, and a
+# flag fires when an unsupported (hallucinated) claim is detected.
+
+AGENT_GROUNDEDNESS_SCORE = Gauge(
+    "agent_groundedness_score",
+    "Latest groundedness score (0.0-1.0): share of an answer's claims supported by context",
+    ["agent_id", "sprint_id"],
+)
+
+AGENT_HALLUCINATION_FLAGGED_COUNTER = Counter(
+    "agent_hallucination_flagged_total",
+    "Times an answer was flagged as containing an unsupported (hallucinated) claim",
+    ["agent_id", "sprint_id"],
+)
+
+
+def record_groundedness(
+    score: float,
+    flagged: bool,
+    agent_id: str = "unknown",
+    sprint_id: str = "unknown",
+) -> None:
+    """Record a groundedness SLI sample.
+
+    Sets the groundedness score gauge (0.0-1.0) and increments the hallucination
+    counter when the answer was flagged as containing an unsupported claim.
+    """
+    AGENT_GROUNDEDNESS_SCORE.labels(agent_id, sprint_id).set(score)
+    if flagged:
+        AGENT_HALLUCINATION_FLAGGED_COUNTER.labels(agent_id, sprint_id).inc()
