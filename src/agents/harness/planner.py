@@ -22,6 +22,7 @@ import uuid
 from typing import Any
 
 from src.agents.harness.models import ProductSpec, SprintContract, TaskBrief
+from src.agents.prompt_loader import load_prompt
 from src.guardrails.audit_logger import AuditLogger, AuditWriteError
 from src.guardrails.pii_filter import mask_dict
 from src.guardrails.prompt_injection_guard import PromptInjectionGuard
@@ -30,31 +31,9 @@ from src.shared.models import AuditEvent
 
 logger = get_logger("harness.planner")
 
-_SYSTEM_PROMPT = """\
-You are a product planning agent. Your task is to convert a brief user description
-into a structured product specification and a prioritised list of sprint contracts.
-
-Rules:
-- Focus on what the user will experience, not on implementation details.
-- Each sprint contract must contain objectives (non-technical) and success_criteria
-  (independently testable, binary — pass or fail, no "mostly works").
-- Surface AI feature opportunities explicitly.
-- Do NOT pre-select technology choices unless the brief explicitly requires them.
-- Scope should be ambitious but achievable in the described context.
-
-Respond with valid JSON matching this schema:
-{
-  "detailed_description": "<expanded product description>",
-  "sprint_contracts": [
-    {
-      "sprint_id": "<uuid>",
-      "objectives": ["<what user experiences>"],
-      "success_criteria": ["<testable binary criterion>"]
-    }
-  ],
-  "ai_feature_opportunities": ["<optional AI-powered enhancement>"]
-}
-"""
+# Externalised to prompts/harness/planner.v1.md (ADR-0079). Loaded byte-for-byte;
+# behaviour is unchanged vs the previously-inline constant.
+_SYSTEM_PROMPT = load_prompt("harness.planner")
 
 
 class PlannerAgent:

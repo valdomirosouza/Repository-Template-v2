@@ -27,6 +27,7 @@ from src.agents.compensation_registry import CompensationRegistry
 from src.agents.feedback_learner import FeedbackLearner, default_feedback_learner
 from src.agents.hitl_gateway import HITLGateway, HITLRequest, HITLStatus
 from src.agents.hotl_monitor import HOTLMonitor
+from src.agents.prompt_loader import load_prompt
 from src.agents.risk_scorer import RiskScorer
 from src.agents.schemas import parse_agent_action
 from src.agents.spec_contract_enforcer import SpecContractEnforcer, SpecViolationError
@@ -204,21 +205,10 @@ class AgentOrchestrator:
             )
             precedents_injected = bool(precedents_block)
 
-            system_prompt = (
-                "You are an AI agent. Analyse the provided context and respond with a JSON object "
-                "matching schema_version 'agent_action_v1'. Required fields:\n"
-                '{"schema_version": "agent_action_v1", "intent": "<why>", '
-                '"action_type": "<action>", '
-                '"tool_name": "<registered_tool_name>", "target_system": "<system>", '
-                '"target_environment": "local|dev|staging|production", '
-                '"operation": "read|create|update|delete|execute|deploy|notify", '
-                '"parameters": {}, "data_classification": "none|L1|L2|L3|L4", '
-                '"external_effect": false, "reversible": true, "compensating_action": null, '
-                '"agent_confidence": 0.0, "requires_human_reason": ""}\n'
-                "Do NOT include a risk_score — the system scorer owns the final score. "
-                "agent_confidence is advisory only. "
-                "The context has already been PII-masked — never request raw personal data."
-            )
+            # Static base externalised to prompts/agent-orchestrator/reason.v1.md
+            # (ADR-0079), loaded byte-for-byte. The dynamic precedents and spec-contract
+            # boundary below are injected at runtime and remain in code.
+            system_prompt = load_prompt("orchestrator.reason")
             if precedents_block:
                 system_prompt = f"{system_prompt}\n\n{precedents_block}"
             # Inject spec contract boundary so LLM is aware of its permission scope (SD1).

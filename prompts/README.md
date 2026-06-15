@@ -1,10 +1,10 @@
 # Prompts
 
-> **Owner:** AI Governance Lead | **Status:** Target structure (scaffold)
-> This directory defines the **target** on-disk home for versioned LLM prompts. Today the prompts
-> are still inline in Python (see `docs/ai/prompt-registry.md` for the authoritative registry and
-> the source-of-truth locations). This README establishes the convention and the migration path; it
-> does not change runtime behaviour.
+> **Owner:** AI Governance Lead | **Status:** Active (partial)
+> This directory is the on-disk home for versioned LLM prompts. The harness planner/evaluator and
+> the orchestrator Reason base are externalised here and loaded byte-for-byte by
+> `src/agents/prompt_loader.py` (ADR-0079); the remaining prompts are still inline in Python. See
+> `docs/ai/prompt-registry.md` for the authoritative registry and per-prompt source-of-truth.
 
 ## Why externalise prompts
 
@@ -18,12 +18,15 @@ version, and an evaluation gate — the same controls we already apply to code a
 prompts/
 ├── README.md                 ← this file
 ├── agent-orchestrator/
-│   └── reason.vN.md          ← orchestrator Reason-phase prompt (currently dynamic, in code)
-└── evaluator/
-    └── evaluate.vN.md        ← evaluator scoring prompt (currently evaluator.py:_SYSTEM_PROMPT)
+│   └── reason.v1.md          ← orchestrator Reason-phase static base (dynamic parts stay in code)
+└── harness/
+    ├── planner.v1.md         ← harness PlannerAgent system prompt
+    └── evaluator.v1.md       ← harness EvaluatorAgent scoring prompt
 ```
 
-Each prompt file carries front-matter:
+Each prompt file carries front-matter, then the prompt body inside a single fenced code block
+(the fence keeps the Markdown formatter from reflowing indentation/blank lines, so the body is
+preserved byte-for-byte; the loader strips the front-matter and the fence):
 
 ```yaml
 ---

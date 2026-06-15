@@ -25,6 +25,7 @@ import json
 from typing import Any
 
 from src.agents.harness.models import EvaluatorScore, GeneratorArtifact, SprintContract
+from src.agents.prompt_loader import load_prompt
 from src.guardrails.audit_logger import AuditLogger, AuditWriteError
 from src.observability.logger import get_logger
 from src.shared.config import settings
@@ -32,38 +33,10 @@ from src.shared.models import AuditEvent
 
 logger = get_logger("harness.evaluator")
 
-_SYSTEM_PROMPT = """\
-You are a skeptical senior engineer performing a rigorous quality review.
-
-Your DEFAULT assumption is that the implementation is INCOMPLETE or has DEFECTS.
-Override this assumption only when you have actively confirmed correctness.
-
-For each success criterion in the sprint contract:
-  - Test it independently. Do not infer from reading code alone.
-  - "This looks correct" is NOT sufficient. "I verified this works by X" is.
-  - If you cannot confirm a criterion, it FAILS.
-
-Score the implementation on four dimensions (0.0 to 1.0 each):
-  - quality:       Functional coherence and completeness against the spec.
-  - originality:   Evidence of deliberate design choices vs. template defaults.
-  - craft:         Technical execution: error handling, edge cases, structure.
-  - functionality: Every success criterion met independently and verifiably.
-
-Passing threshold: all four dimensions must meet or exceed {threshold}.
-A score of exactly {threshold} on any dimension is passing; below is not.
-
-Respond with valid JSON:
-{{
-  "quality": <float 0.0-1.0>,
-  "originality": <float 0.0-1.0>,
-  "craft": <float 0.0-1.0>,
-  "functionality": <float 0.0-1.0>,
-  "feedback": "<specific, actionable feedback — what failed and why>",
-  "criteria_results": {{
-    "<criterion text>": true|false
-  }}
-}}
-"""
+# Externalised to prompts/harness/evaluator.v1.md (ADR-0079). Loaded byte-for-byte
+# (including the doubled {{ }} braces consumed by str.format below); behaviour is
+# unchanged vs the previously-inline constant.
+_SYSTEM_PROMPT = load_prompt("harness.evaluator")
 
 
 class EvaluatorAgent:
