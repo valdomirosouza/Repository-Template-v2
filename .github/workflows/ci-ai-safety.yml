@@ -49,3 +49,5 @@ jobs:
           test -f infrastructure/agent-tools/tools.yaml \
             || { echo "::error::tool registry missing"; exit 1; }
           echo "Tool registry present — review new tools' risk/HITL/reversibility metadata."
+      - name: No inline LLM system prompts (ADR-0079)
+        run: uv run python scripts/governance/check_inline_prompts.py
