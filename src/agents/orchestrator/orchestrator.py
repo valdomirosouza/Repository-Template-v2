@@ -27,6 +27,7 @@ from src.agents.compensation_registry import CompensationRegistry
 from src.agents.feedback_learner import FeedbackLearner, default_feedback_learner
 from src.agents.hitl_gateway import HITLGateway, HITLRequest, HITLStatus
 from src.agents.hotl_monitor import HOTLMonitor
+from src.agents.prompts import load_prompt
 from src.agents.risk_scorer import RiskScorer
 from src.agents.schemas import parse_agent_action
 from src.agents.spec_contract_enforcer import SpecContractEnforcer, SpecViolationError
@@ -50,6 +51,12 @@ from src.shared.llm_client import LLMClient
 from src.shared.models import AuditEvent
 
 logger = get_logger("orchestrator")
+
+# Externalised, versioned base Reason-phase prompt (ADR-0079). Byte-identical to the
+# former inline constant; the dynamic precedents + spec-contract blocks are still
+# assembled in `_reason` below. strip_trailing_newline keeps it equal to the old
+# string (which had no trailing newline) before those blocks are appended.
+_REASON_BASE_SYSTEM_PROMPT = load_prompt("orchestrator.reason", strip_trailing_newline=True)
 
 
 class AgentPhase(StrEnum):
@@ -204,21 +211,7 @@ class AgentOrchestrator:
             )
             precedents_injected = bool(precedents_block)
 
-            system_prompt = (
-                "You are an AI agent. Analyse the provided context and respond with a JSON object "
-                "matching schema_version 'agent_action_v1'. Required fields:\n"
-                '{"schema_version": "agent_action_v1", "intent": "<why>", '
-                '"action_type": "<action>", '
-                '"tool_name": "<registered_tool_name>", "target_system": "<system>", '
-                '"target_environment": "local|dev|staging|production", '
-                '"operation": "read|create|update|delete|execute|deploy|notify", '
-                '"parameters": {}, "data_classification": "none|L1|L2|L3|L4", '
-                '"external_effect": false, "reversible": true, "compensating_action": null, '
-                '"agent_confidence": 0.0, "requires_human_reason": ""}\n'
-                "Do NOT include a risk_score — the system scorer owns the final score. "
-                "agent_confidence is advisory only. "
-                "The context has already been PII-masked — never request raw personal data."
-            )
+            system_prompt = _REASON_BASE_SYSTEM_PROMPT
             if precedents_block:
                 system_prompt = f"{system_prompt}\n\n{precedents_block}"
             # Inject spec contract boundary so LLM is aware of its permission scope (SD1).

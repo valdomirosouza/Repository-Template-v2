@@ -13,12 +13,12 @@ not edit a prompt without following the change protocol below — a prompt chang
 
 ## Registry
 
-| Prompt ID             | Location (source of truth)                                            | Purpose                                                              | Model linkage        | Eval dataset                                  | Owner              | Ver |
-| --------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------- | --------------------------------------------- | ------------------ | --- |
-| `harness.planner`     | `src/agents/harness/planner.py` (`_SYSTEM_PROMPT`)                    | TaskBrief → ProductSpec + sprint decomposition                       | `settings.llm_model` | _none yet — see Gaps_                         | AI Governance Lead | 1.0 |
-| `harness.evaluator`   | `src/agents/harness/evaluator.py` (`_SYSTEM_PROMPT`)                  | Score generator output (quality/originality/craft/functionality)     | `settings.llm_model` | `tests/model_contract/` (indirect)            | AI Governance Lead | 1.0 |
-| `subagent.<role>`     | `src/agents/harness/sub_agent_registry.py` (`system_prompt_template`) | Per-role specialised sub-agent (e.g. security-reviewer)              | `settings.llm_model` | _none yet_                                    | AI Governance Lead | 1.0 |
-| `orchestrator.reason` | `src/agents/orchestrator/orchestrator.py` (dynamic)                   | Reason phase — context injected at runtime (no static system prompt) | `settings.llm_model` | `tests/model_contract/test_spec_adherence.py` | AI Governance Lead | n/a |
+| Prompt ID             | Location (source of truth)                                                                                   | Purpose                                                                                        | Model linkage        | Eval dataset                                  | Owner              | Ver |
+| --------------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | -------------------- | --------------------------------------------- | ------------------ | --- |
+| `harness.planner`     | `src/agents/harness/planner.py` (`_SYSTEM_PROMPT`)                                                           | TaskBrief → ProductSpec + sprint decomposition                                                 | `settings.llm_model` | _none yet — see Gaps_                         | AI Governance Lead | 1.0 |
+| `harness.evaluator`   | `prompts/evaluator/evaluate.v1.md` (loaded via `src/agents/prompts`)                                         | Score generator output (quality/originality/craft/functionality)                               | `settings.llm_model` | `tests/model_contract/` (indirect)            | AI Governance Lead | 1.0 |
+| `subagent.<role>`     | `src/agents/harness/sub_agent_registry.py` (`system_prompt_template`)                                        | Per-role specialised sub-agent (e.g. security-reviewer)                                        | `settings.llm_model` | _none yet_                                    | AI Governance Lead | 1.0 |
+| `orchestrator.reason` | `prompts/agent-orchestrator/reason.v1.md` (static base; dynamic blocks still assembled in `orchestrator.py`) | Reason phase — static base prompt externalised; precedents + spec-contract injected at runtime | `settings.llm_model` | `tests/model_contract/test_spec_adherence.py` | AI Governance Lead | 1.0 |
 
 Model id is resolved from `src/shared/config.py` (`llm_model`, default `claude-sonnet-4-6`; backup
 `claude-haiku-4-5-20251001` in `docs/dependency-manifest.yaml`). A prompt is only valid against the
@@ -49,7 +49,12 @@ Every registered prompt must declare:
 
 - **No per-prompt eval dataset** for planner/sub-agents yet. Target: a small golden dataset per
   prompt with pass thresholds, wired like `tests/model_contract/`.
-- **Prompts not yet externalised.** Target structure + migration path: `prompts/README.md`.
+- **Prompts partially externalised (ADR-0079).** Migrated: `harness.evaluator`,
+  `orchestrator.reason` (static base) — loaded via `src/agents/prompts`. Still inline (phased):
+  `harness.planner`, `subagent.<role>`, `harness.coordinator`, `context_manager` restore template,
+  and the `spec_contract_enforcer` boundary assembly. Target structure: `prompts/README.md`.
+- **`make check-inline-prompts`** (`scripts/governance/check_inline_prompts.py`, ADR-0079) blocks a
+  NEW inline system prompt — or the two migrated ones reappearing — in `src/agents/**`.
 - **No automated prompt-version ↔ model-version pin check.** Target: a governance gate.
 
 ---
