@@ -17,13 +17,13 @@ import redis.asyncio as redis_async
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import make_asgi_app
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from src.agents.hitl_gateway import HITLGateway
 from src.agents.hitl_store import HITLRedisStore, InMemoryHITLStore
 from src.api.rest._limiter import limiter
+from src.api.rest.errors import install_error_handlers
+from src.api.rest.request_context import RequestContextMiddleware
 from src.api.rest.routers import health, hitl, requests
 from src.api.rest.security_headers import SecurityHeadersMiddleware
 from src.guardrails.audit_logger import AuditLogger, InMemoryAuditStorage, PostgresAuditStorage
@@ -190,8 +190,11 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 app.add_middleware(SlowAPIMiddleware)
+
+# Structured error envelope for every non-2xx response, incl. rate-limit (429) and
+# validation (422) — replaces FastAPI defaults (ADR-0076 / SPEC-API-001).
+install_error_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -203,6 +206,9 @@ app.add_middleware(
 # Security headers on every response (X-Content-Type-Options, X-Frame-Options,
 # CSP, Referrer-Policy, Permissions-Policy; HSTS in production only).
 app.add_middleware(SecurityHeadersMiddleware)
+# Request correlation — added last so it is the OUTERMOST middleware: binds X-Request-ID
+# before any handler logs and sets it on every response (ADR-0076).
+app.add_middleware(RequestContextMiddleware)
 
 # Prometheus metrics scrape endpoint — required for Golden Signals alert rules
 app.mount("/metrics", make_asgi_app())

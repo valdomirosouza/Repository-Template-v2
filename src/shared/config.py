@@ -137,6 +137,12 @@ class Settings(BaseSettings):
     allowed_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000"]
     rate_limit_requests_per_minute: int = 60
 
+    # ── Request correlation (X-Request-ID, ADR-0076 / SPEC-API-001) ───────────
+    # Header name carrying the per-request correlation id. Accepted inbound (validated) and echoed
+    # on every response; also included as `request_id` in the structured error envelope.
+    request_id_header: str = "X-Request-ID"
+    request_id_max_length: int = 128  # printable-ASCII tokens longer than this are replaced
+
     # Outbound SSRF allow-list (OWASP A10). Host(s) that server-side outbound requests may target,
     # validated by src/shared/url_allowlist.py. Empty (default) = no host restriction, but
     # cloud-metadata / link-local endpoints and non-http(s) schemes are blocked regardless.
