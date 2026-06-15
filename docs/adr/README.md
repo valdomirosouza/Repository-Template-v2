@@ -150,6 +150,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0078](ADR-0078-api-pagination-standard.md)                            | List-endpoint pagination standard (offset/limit + X-Total-Count/Link headers)            | Accepted   | 2026-06-14 |
 | [ADR-0079](ADR-0079-prompt-externalization-and-no-inline-prompt-gate.md)   | Prompt externalisation (evaluator + orchestrator base) + no-inline-prompt CI gate        | Accepted   | 2026-06-15 |
 | [ADR-0080](ADR-0080-groundedness-scoring-as-an-sli.md)                     | Groundedness scoring as an SLI (model-contract test + OTel metric, not a 5th eval dim)   | Accepted   | 2026-06-15 |
+| [ADR-0081](ADR-0081-rag-reference-pipeline.md)                             | RAG reference pipeline (chunk→embed→retrieve→rerank→cite→eval; opt-in; controls)         | Accepted   | 2026-06-15 |
 
 ### AI Agents Module _(opt-in)_
 
