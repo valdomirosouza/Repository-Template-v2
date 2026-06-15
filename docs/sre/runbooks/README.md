@@ -37,3 +37,15 @@ Topic-named operational runbooks in this directory:
 - [kafka-consumer-lag.md](kafka-consumer-lag.md)
 - [redis-connection-failure.md](redis-connection-failure.md)
 - [redis-ha.md](redis-ha.md)
+
+---
+
+## Restore drills & DR
+
+Disaster recovery is operated from `docs/runbooks/disaster-recovery.md` (RB-002). Restore steps
+are now backed by parameterised scripts in [`scripts/restore/`](../../../scripts/restore/) — Aurora
+PITR, Redis, and Kafka, all **dry-run by default**. `scripts/restore/run_restore_drill.sh`
+orchestrates a drill and writes evidence to
+[`docs/resilience/restore-drills/`](../../resilience/restore-drills/README.md), per the monthly
+verification convention in `docs/resilience/backup-restore-policy.md`. Design: **ADR-0082** (the
+scheduled monthly CI drill is deferred to an RFC — ADR-0082 §Follow-up).

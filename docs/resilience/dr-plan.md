@@ -47,6 +47,10 @@ never executes actions it cannot record (ADR-0075, ADR-0026).
 - **DR drills:** quarterly, rotating the five scenarios (RB-002); chaos game-days exercise the
   mechanisms weekly/quarterly (`tests/chaos/runbooks/game-day-playbook.md`).
 - **Restore verification:** monthly restore-to-test + integrity check (see backup-restore policy).
+  Tooling: `scripts/restore/` (Aurora PITR, Redis, Kafka — parameterised, dry-run by default) and
+  `scripts/restore/run_restore_drill.sh`, which orchestrates a drill and writes evidence to
+  `docs/resilience/restore-drills/` (ADR-0082). The **scheduled** monthly CI drill is deferred to
+  an RFC (ADR-0082 §Follow-up); until then drills are run manually with this tooling.
 - **Review cadence:** this plan + RB-002 reviewed each quarter and after any real incident; RTO/RPO
   re-validated against the SLO. Record drill outcomes as evidence (`docs/resilience/backup-restore-policy.md`
   → drill-evidence convention) and link post-mortems in `docs/postmortems/`.
@@ -58,5 +62,6 @@ never executes actions it cannot record (ADR-0075, ADR-0026).
 
 - `docs/runbooks/disaster-recovery.md` (RB-002) — **authoritative procedure**
 - `docs/resilience/backup-restore-policy.md` · `docs/resilience/chaos-experiment-catalog.md`
+- `scripts/restore/` · `docs/resilience/restore-drills/` · ADR-0082 (automated restore-drill verification)
 - ADR-0062 (Aurora HA) · ADR-0075 (fallback policy) · ADR-0026 (audit immutability)
 - `docs/sre/slo/slo.yaml` — RTO/MTTR target
