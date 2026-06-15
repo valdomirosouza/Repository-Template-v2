@@ -20,6 +20,11 @@ import type {
     HITLStatusResponse,
 } from '../models/index';
 
+export interface ListPendingRequestsRequest {
+    limit?: number;
+    offset?: number;
+}
+
 export interface SubmitDecisionRequest {
     requestId: string;
     decisionIn: DecisionIn;
@@ -70,8 +75,16 @@ export class HitlApi extends runtime.BaseAPI {
     /**
      * Creates request options for listPendingRequests without sending the request
      */
-    async listPendingRequestsRequestOpts(): Promise<runtime.RequestOpts> {
+    async listPendingRequestsRequestOpts(requestParameters: ListPendingRequestsRequest): Promise<runtime.RequestOpts> {
         const queryParameters: any = {};
+
+        if (requestParameters['limit'] != null) {
+            queryParameters['limit'] = requestParameters['limit'];
+        }
+
+        if (requestParameters['offset'] != null) {
+            queryParameters['offset'] = requestParameters['offset'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -87,22 +100,22 @@ export class HitlApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns the pending requests awaiting an operator decision. Requires an operator JWT (role hitl-operator). Only the PII-masked context_summary is exposed per request; raw action_parameters never leave the gateway.
+     * Returns the pending requests awaiting an operator decision. Requires an operator JWT (role hitl-operator). Only the PII-masked context_summary is exposed per request; raw action_parameters never leave the gateway. Paginated (SPEC-API-003): optional limit/offset; X-Total-Count and an RFC-5988 Link header are always set. The body remains an array (backward-compatible).
      * List pending HITL approval requests
      */
-    async listPendingRequestsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<HITLRequestSummary>>> {
-        const requestOptions = await this.listPendingRequestsRequestOpts();
+    async listPendingRequestsRaw(requestParameters: ListPendingRequestsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<HITLRequestSummary>>> {
+        const requestOptions = await this.listPendingRequestsRequestOpts(requestParameters);
         const response = await this.request(requestOptions, initOverrides);
 
         return new runtime.JSONApiResponse(response);
     }
 
     /**
-     * Returns the pending requests awaiting an operator decision. Requires an operator JWT (role hitl-operator). Only the PII-masked context_summary is exposed per request; raw action_parameters never leave the gateway.
+     * Returns the pending requests awaiting an operator decision. Requires an operator JWT (role hitl-operator). Only the PII-masked context_summary is exposed per request; raw action_parameters never leave the gateway. Paginated (SPEC-API-003): optional limit/offset; X-Total-Count and an RFC-5988 Link header are always set. The body remains an array (backward-compatible).
      * List pending HITL approval requests
      */
-    async listPendingRequests(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<HITLRequestSummary>> {
-        const response = await this.listPendingRequestsRaw(initOverrides);
+    async listPendingRequests(requestParameters: ListPendingRequestsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<HITLRequestSummary>> {
+        const response = await this.listPendingRequestsRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
