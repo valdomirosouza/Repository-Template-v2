@@ -145,6 +145,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0073](ADR-0073-slo-driven-canary-thresholds.md)                       | SLO-driven canary thresholds (per-service config, no hard-coded gates)                   | Accepted   | 2026-06-12 |
 | [ADR-0074](ADR-0074-automated-dependency-digest-policy.md)                 | Automated dependency & digest update policy (Renovate)                                   | Accepted   | 2026-06-12 |
 | [ADR-0075](ADR-0075-resilience-fallback-policy.md)                         | Resilience fallback policy (degrade-open vs fail-closed)                                 | Accepted   | 2026-06-13 |
+| [ADR-0076](ADR-0076-api-structured-error-model-and-correlation.md)         | Structured API error model (problem+json flavour) + X-Request-ID correlation             | Accepted   | 2026-06-14 |
 
 ### AI Agents Module _(opt-in)_
 

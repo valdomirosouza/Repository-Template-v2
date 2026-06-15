@@ -58,6 +58,10 @@ paths:
                 $ref: "#/components/schemas/HealthResponse"
         "503":
           description: Service not ready (dependency unavailable)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /v1/requests:
     post:
@@ -83,6 +87,10 @@ paths:
                 $ref: "#/components/schemas/RequestOut"
         "422":
           description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /v1/requests/{request_id}:
     get:
@@ -105,6 +113,10 @@ paths:
                 $ref: "#/components/schemas/RequestOut"
         "404":
           description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /v1/hitl/status:
     get:
@@ -165,8 +177,16 @@ paths:
                 $ref: "#/components/schemas/DecisionOut"
         "404":
           description: Request not found or no longer pending
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "422":
           description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
 components:
   schemas:
@@ -284,3 +304,66 @@ components:
         expires_at:
           type: string
           format: date-time
+
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+
+    Error:
+      # The single error envelope returned by every non-2xx response (ADR-0076 / SPEC-API-001).
+      type: object
+      required: [status, code, title, request_id]
+      properties:
+        status:
+          type: integer
+          description: Mirrors the HTTP status code.
+        code:
+          type: string
+          description: Stable, screaming-snake error code clients branch on (adding is non-breaking).
+          enum:
+            [
+              VALIDATION_ERROR,
+              BAD_REQUEST,
+              UNAUTHORIZED,
+              FORBIDDEN,
+              NOT_FOUND,
+              CONFLICT,
+              RATE_LIMITED,
+              UNAVAILABLE,
+              INTERNAL_ERROR,
+            ]
+        title:
+          type: string
+          description: Short, human-readable, stable for a given code.
+        detail:
+          type: string
+          description: Instance-specific message; PII-masked.
+        request_id:
+          type: string
+          description: Correlation id; echoed in the X-Request-ID response header.
+        trace_id:
+          type: string
+          description: OpenTelemetry trace id for support correlation.
+        errors:
+          type: array
+          description: Field-level validation problems (422).
+          items:
+            $ref: "#/components/schemas/FieldError"
+      example:
+        status: 404
+        code: NOT_FOUND
+        title: Not Found
+        detail: Request 550e8400-… not found.
+        request_id: 0af7-1c80-4e2a-9f12
+        trace_id: 0af7651916cd43dd8448eb211c80319c
+
+  headers:
+    XRequestId:
+      description: Correlation id, set on every response (accepted inbound, else generated). ADR-0076.
+      schema:
+        type: string
