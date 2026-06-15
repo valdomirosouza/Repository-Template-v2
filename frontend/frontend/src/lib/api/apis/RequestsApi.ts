@@ -24,6 +24,7 @@ export interface GetRequestStatusRequest {
 
 export interface SubmitRequestRequest {
     requestIn: RequestIn;
+    idempotencyKey?: string;
 }
 
 /**
@@ -93,6 +94,10 @@ export class RequestsApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+        if (requestParameters['idempotencyKey'] != null) {
+            headerParameters['Idempotency-Key'] = String(requestParameters['idempotencyKey']);
+        }
+
 
         let urlPath = `/v1/requests`;
 
@@ -106,7 +111,7 @@ export class RequestsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Accepts a request and publishes it to the async pipeline. Returns 202 immediately. Poll GET /v1/requests/{request_id} for the result. PII in the request body is masked before the event is published. 
+     * Accepts a request and publishes it to the async pipeline. Returns 202 immediately. Poll GET /v1/requests/{request_id} for the result. PII in the request body is masked before the event is published. Send an optional `Idempotency-Key` header to make retries safe (SPEC-API-002): a repeat with the same body replays the original 202; a repeat with a different body returns 422 `IDEMPOTENCY_KEY_REUSED`. 
      * Submit a domain request for async processing
      */
     async submitRequestRaw(requestParameters: SubmitRequestRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RequestOut>> {
@@ -117,7 +122,7 @@ export class RequestsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Accepts a request and publishes it to the async pipeline. Returns 202 immediately. Poll GET /v1/requests/{request_id} for the result. PII in the request body is masked before the event is published. 
+     * Accepts a request and publishes it to the async pipeline. Returns 202 immediately. Poll GET /v1/requests/{request_id} for the result. PII in the request body is masked before the event is published. Send an optional `Idempotency-Key` header to make retries safe (SPEC-API-002): a repeat with the same body replays the original 202; a repeat with a different body returns 422 `IDEMPOTENCY_KEY_REUSED`. 
      * Submit a domain request for async processing
      */
     async submitRequest(requestParameters: SubmitRequestRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RequestOut> {

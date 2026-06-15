@@ -260,7 +260,8 @@ export const ModelErrorCodeEnum = {
     Conflict: 'CONFLICT',
     RateLimited: 'RATE_LIMITED',
     Unavailable: 'UNAVAILABLE',
-    InternalError: 'INTERNAL_ERROR'
+    InternalError: 'INTERNAL_ERROR',
+    IdempotencyKeyReused: 'IDEMPOTENCY_KEY_REUSED'
 } as const;
 export type ModelErrorCodeEnum = typeof ModelErrorCodeEnum[keyof typeof ModelErrorCodeEnum];
 

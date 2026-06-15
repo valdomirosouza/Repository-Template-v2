@@ -143,6 +143,12 @@ class Settings(BaseSettings):
     request_id_header: str = "X-Request-ID"
     request_id_max_length: int = 128  # printable-ASCII tokens longer than this are replaced
 
+    # ── Idempotency (Idempotency-Key, ADR-0077 / SPEC-API-002) ────────────────
+    idempotency_redis_key_prefix: str = "idempotency"
+    idempotency_ttl_hours: int = 24  # how long a key de-dups a submission (aligns with result TTL)
+    # Salt mixed into the request fingerprint so stored hashes aren't a portable body identifier.
+    idempotency_fingerprint_salt: str = "template-idempotency-v1"
+
     # Outbound SSRF allow-list (OWASP A10). Host(s) that server-side outbound requests may target,
     # validated by src/shared/url_allowlist.py. Empty (default) = no host restriction, but
     # cloud-metadata / link-local endpoints and non-http(s) schemes are blocked regardless.

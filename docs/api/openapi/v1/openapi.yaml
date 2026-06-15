@@ -72,6 +72,18 @@ paths:
         Accepts a request and publishes it to the async pipeline.
         Returns 202 immediately. Poll GET /v1/requests/{request_id} for the result.
         PII in the request body is masked before the event is published.
+        Send an optional `Idempotency-Key` header to make retries safe (SPEC-API-002): a repeat
+        with the same body replays the original 202; a repeat with a different body returns 422
+        `IDEMPOTENCY_KEY_REUSED`.
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: false
+          description: Opaque client key (printable ASCII, 8–200 chars) to de-duplicate retried submissions.
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 200
       requestBody:
         required: true
         content:
@@ -336,6 +348,7 @@ components:
               RATE_LIMITED,
               UNAVAILABLE,
               INTERNAL_ERROR,
+              IDEMPOTENCY_KEY_REUSED,
             ]
         title:
           type: string
