@@ -108,7 +108,7 @@ otherwise                          → HITL
   `hitl.decision.recorded` audit event** (outcome = the decision, with `wait_duration_seconds`) and
   publishes the outcome to the broker. An expired request becomes `EXPIRED` (never auto-approved).
 
-The operator UI that calls this is `frontend/frontend/src/app/hitl/page.tsx` (`ApprovalCard`).
+The operator UI that calls this is `frontend/web/src/app/hitl/page.tsx` (`ApprovalCard`).
 
 ## 7. Audit — immutable, write-before-execute
 

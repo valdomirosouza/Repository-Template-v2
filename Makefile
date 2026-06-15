@@ -2,7 +2,7 @@ IMAGE_NAME  ?= template-service
 VERSION     ?= $(shell cat version.txt 2>/dev/null || echo "0.1.0")
 REGISTRY    ?= ghcr.io/org
 SERVICE     ?= api-gateway
-APP         ?= frontend
+APP         ?= web
 
 .PHONY: setup setup-minimal setup-core setup-observability setup-full \
         infra-up infra-down infra-down-core infra-down-full infra-reset smoke \

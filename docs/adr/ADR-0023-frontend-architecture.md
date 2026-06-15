@@ -6,6 +6,11 @@
 **Spec:** N/A — architectural decision record for the frontend scaffold
 **Supersedes:** None | **Superseded by:** None
 
+> **Update (2026-06-15, [ADR-0083](ADR-0083-frontend-app-directory-rename.md)):** the app directory
+> was renamed `frontend/frontend/` → `frontend/web/` to remove the duplicated path. The
+> multi-app `frontend/<app>/` container pattern and the architecture decision below are unchanged;
+> read references to `frontend/frontend/` in the text below as `frontend/web/`.
+
 ---
 
 ## Context
