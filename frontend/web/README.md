@@ -10,12 +10,12 @@ Customer-facing UI and HITL operator approval interface. Calls the API Gateway a
 
 ```bash
 # First time only — generate lock file:
-cd frontend/frontend && pnpm install
+cd frontend/web && pnpm install
 
 # From the monorepo root:
-make run-frontend APP=frontend      # Next.js dev server on :3000
-make test-unit-frontend APP=frontend
-make lint-frontend APP=frontend
+make run-frontend APP=web      # Next.js dev server on :3000
+make test-unit-frontend APP=web
+make lint-frontend APP=web
 ```
 
 ## Environment variables
@@ -39,5 +39,5 @@ make lint-frontend APP=frontend
 in `docs/api/openapi/v1/openapi.yaml`. Regenerate after spec changes:
 
 ```bash
-make gen-api-client-ts APP=frontend
+make gen-api-client-ts APP=web
 ```

@@ -152,6 +152,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0080](ADR-0080-groundedness-scoring-as-an-sli.md)                     | Groundedness scoring as an SLI (model-contract test + OTel metric, not a 5th eval dim)   | Accepted   | 2026-06-15 |
 | [ADR-0081](ADR-0081-rag-reference-pipeline.md)                             | RAG reference pipeline (chunk→embed→retrieve→rerank→cite→eval; opt-in; controls)         | Accepted   | 2026-06-15 |
 | [ADR-0082](ADR-0082-backup-rpo-rto-and-restore-drill-verification.md)      | Consolidated backup RPO/RTO + scheduled, evidenced restore-drill verification            | Accepted   | 2026-06-15 |
+| [ADR-0083](ADR-0083-frontend-app-directory-rename.md)                      | Rename `frontend/frontend` → `frontend/web` (refines ADR-0023 path; pattern unchanged)   | Accepted   | 2026-06-15 |
 
 ### AI Agents Module _(opt-in)_
 
