@@ -211,6 +211,12 @@ jobs:
       - name: Outbound URL SSRF allow-list lint (OWASP A10)
         run: python3 scripts/governance/check_outbound_urls.py
 
+      # BLOCKING from introduction (ADR-0079): deterministic — a prompt-shaped constant
+      # reappearing in src/agents/ outside prompt_loader.py is unambiguous. Keeps externalised
+      # agent system prompts from drifting back inline.
+      - name: No-inline-prompt gate (ADR-0079)
+        run: python3 scripts/governance/check_no_inline_prompts.py
+
       # BLOCKING from introduction (Wave 1): deterministic — a service in services.yaml referencing
       # a non-existent ADR/topic/schema/SLO/runbook is unambiguous. Keeps the catalog self-consistent.
       - name: Service-catalog traceability gate (Wave 1)

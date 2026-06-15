@@ -71,6 +71,7 @@ make check-control-bindings   # control-binding declarations (ADR-0061; report-m
 make check-control-matrix     # OWASP ASVS/GenAI matrices — paths/CI jobs exist, n/a justified (ADR-0072)
 make check-slo-thresholds     # no hard-coded canary thresholds in workflow YAML (ADR-0073)
 make check-outbound-urls      # SSRF: every outbound-HTTP boundary uses the allow-list (OWASP A10)
+make check-no-inline-prompts  # no new inline agent system prompt in src/agents/ (ADR-0079)
 make verify-f7-hook           # F7 high-risk-action guard regression suite (issue #133, ADR-0034)
 make burn-in-status [GATE=<target>]  # report-mode gate burn-in progress toward blocking (ADR-0070)
 ```

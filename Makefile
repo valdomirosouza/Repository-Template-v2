@@ -15,6 +15,7 @@ APP         ?= frontend
         test-frontend test-unit-frontend lint-frontend format-frontend build-frontend run-frontend \
         gen-proto-go gen-proto-python gen-sources-java gen-api-client-ts gen-api-client-python \
         gen-context-graph check-version check-versions check-placeholders doctor version \
+        check-no-inline-prompts \
         verify-f7-hook sync-develop \
         template-init init \
         new-service \
@@ -239,6 +240,9 @@ check-slo-thresholds: ## Fail if canary/error-budget thresholds are hard-coded i
 
 check-outbound-urls: ## Fail if an outbound-HTTP boundary skips the SSRF allow-list (OWASP A10)
 	@uv run python scripts/governance/check_outbound_urls.py
+
+check-no-inline-prompts: ## Fail if a new inline agent system prompt reappears in src/agents/ (ADR-0079)
+	@uv run python scripts/governance/check_no_inline_prompts.py
 
 verify-traceability: ## Verify service→ADR→topic→schema→SLO→runbook traceability chain (Wave 1)
 	@uv run python scripts/governance/check_traceability.py
