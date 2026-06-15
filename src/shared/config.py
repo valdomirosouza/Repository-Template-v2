@@ -143,6 +143,9 @@ class Settings(BaseSettings):
     request_id_header: str = "X-Request-ID"
     request_id_max_length: int = 128  # printable-ASCII tokens longer than this are replaced
 
+    # ── Pagination (list endpoints, ADR-0078 / SPEC-API-003) ──────────────────
+    pagination_max_limit: int = 200  # hard cap on a page size, regardless of requested limit
+
     # Outbound SSRF allow-list (OWASP A10). Host(s) that server-side outbound requests may target,
     # validated by src/shared/url_allowlist.py. Empty (default) = no host restriction, but
     # cloud-metadata / link-local endpoints and non-http(s) schemes are blocked regardless.

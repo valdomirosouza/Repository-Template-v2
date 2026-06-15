@@ -140,15 +140,49 @@ paths:
         Returns the pending requests awaiting an operator decision. Requires an
         operator JWT (role hitl-operator). Only the PII-masked context_summary is
         exposed per request; raw action_parameters never leave the gateway.
+        Paginated (SPEC-API-003): optional limit/offset; X-Total-Count and an RFC-5988
+        Link header are always set. The body remains an array (backward-compatible).
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          description: Page size (1–200). Defaults to the full queue.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+        - in: query
+          name: offset
+          required: false
+          description: Zero-based index of the first item to return.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
       responses:
         "200":
-          description: Pending HITL requests
+          description: Pending HITL requests (a page)
+          headers:
+            X-Total-Count:
+              description: Total number of pending requests (before paging).
+              schema:
+                type: integer
+            Link:
+              description: RFC-5988 pagination links (rel="next"/"prev"), when further pages exist.
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/HITLRequestSummary"
+        "422":
+          description: Invalid pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /v1/hitl/requests/{request_id}/decision:
     post:
