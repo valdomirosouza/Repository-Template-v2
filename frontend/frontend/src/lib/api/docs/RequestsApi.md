@@ -77,11 +77,11 @@ No authorization required
 
 ## submitRequest
 
-> RequestOut submitRequest(requestIn)
+> RequestOut submitRequest(requestIn, idempotencyKey)
 
 Submit a domain request for async processing
 
-Accepts a request and publishes it to the async pipeline. Returns 202 immediately. Poll GET /v1/requests/{request_id} for the result. PII in the request body is masked before the event is published. 
+Accepts a request and publishes it to the async pipeline. Returns 202 immediately. Poll GET /v1/requests/{request_id} for the result. PII in the request body is masked before the event is published. Send an optional &#x60;Idempotency-Key&#x60; header to make retries safe (SPEC-API-002): a repeat with the same body replays the original 202; a repeat with a different body returns 422 &#x60;IDEMPOTENCY_KEY_REUSED&#x60;. 
 
 ### Example
 
@@ -99,6 +99,8 @@ async function example() {
   const body = {
     // RequestIn
     requestIn: ...,
+    // string | Opaque client key (printable ASCII, 8–200 chars) to de-duplicate retried submissions. (optional)
+    idempotencyKey: idempotencyKey_example,
   } satisfies SubmitRequestRequest;
 
   try {
@@ -119,6 +121,7 @@ example().catch(console.error);
 | Name | Type | Description  | Notes |
 |------------- | ------------- | ------------- | -------------|
 | **requestIn** | [RequestIn](RequestIn.md) |  | |
+| **idempotencyKey** | `string` | Opaque client key (printable ASCII, 8–200 chars) to de-duplicate retried submissions. | [Optional] [Defaults to `undefined`] |
 
 ### Return type
 

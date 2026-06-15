@@ -120,6 +120,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     else:
         app.state.request_store = InMemoryRequestStore()
 
+    # Idempotency-key store — same Redis/in-memory selection as the request store (ADR-0077).
+    from src.agents.idempotency_store import (
+        InMemoryIdempotencyStore,
+        RedisIdempotencyStore,
+    )
+
+    if app.state.redis is not None:
+        app.state.idempotency_store = RedisIdempotencyStore(client=app.state.redis)
+    else:
+        app.state.idempotency_store = InMemoryIdempotencyStore()
+
     # HITL gateway — Redis-backed when available; in-memory fallback for local dev.
     # Production pods must always have Redis available (see RB-003-hitl-recovery.md).
     # Payloads are AES-256-GCM encrypted at rest when db_encryption_enabled=True (ADR-0019).

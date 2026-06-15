@@ -9,15 +9,22 @@ ADR:  ADR-0002 (Technology Stack), ADR-0003 (Async API Strategy)
 
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 
+from src.agents.idempotency_store import (
+    IdempotencyRecord,
+    IdempotencyStoreProtocol,
+    fingerprint_body,
+)
 from src.agents.request_store import RequestState, RequestStoreProtocol
 from src.api.rest._limiter import limiter
+from src.api.rest.errors import AppError
 from src.guardrails.pii_filter import mask_dict
 from src.observability.logger import get_logger
 from src.observability.metrics import AGENT_SEMAPHORE_WAITING
@@ -78,6 +85,25 @@ def get_event_broker(request: Request) -> EventBrokerProtocol:
     return broker
 
 
+def get_idempotency_store(request: Request) -> IdempotencyStoreProtocol:
+    """FastAPI dependency: resolves the idempotency-key store from app.state (ADR-0077).
+
+    Degrade-open (ADR-0075): if no store was wired (Redis down, or a minimal app), fall back to a
+    per-app in-memory store so submissions still work — correctness is then per-instance.
+    """
+    store: IdempotencyStoreProtocol | None = getattr(request.app.state, "idempotency_store", None)
+    if store is None:
+        from src.agents.idempotency_store import InMemoryIdempotencyStore
+
+        store = InMemoryIdempotencyStore()
+        request.app.state.idempotency_store = store
+    return store
+
+
+# Idempotency-Key: opaque, printable-ASCII, bounded (SPEC-API-002 FR-04).
+_IDEMPOTENCY_KEY = re.compile(r"^[\x20-\x7e]{8,200}$")
+
+
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 
@@ -91,17 +117,60 @@ def get_event_broker(request: Request) -> EventBrokerProtocol:
 async def submit_request(
     request: Request,
     body: RequestIn,
+    response: Response,
     store: RequestStoreProtocol = Depends(get_request_store),
     broker: EventBrokerProtocol = Depends(get_event_broker),
+    idempotency: IdempotencyStoreProtocol = Depends(get_idempotency_store),
 ) -> RequestOut:
     """Accept a request, persist initial state, and publish to the async pipeline.
 
     Returns 202 Accepted immediately. Poll GET /v1/requests/{id} for the result.
     PII in the request text is masked before the event is published.
     Returns 503 with Retry-After header when all agent slots are occupied.
+
+    An optional ``Idempotency-Key`` header de-duplicates retried submissions (SPEC-API-002):
+    a repeated key with the same body replays the original 202; with a different body it is a
+    422 ``IDEMPOTENCY_KEY_REUSED``.
     """
+    # Idempotency claim (before the capacity gate, so a replay is not blocked by 503).
+    idem_key = request.headers.get("Idempotency-Key")
+    request_id = str(uuid.uuid4())
+    if idem_key is not None:
+        if not _IDEMPOTENCY_KEY.match(idem_key):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Invalid Idempotency-Key - printable ASCII, 8-200 chars.",
+            )
+        content_fp = fingerprint_body(
+            mask_dict({"request_text": body.request_text, "priority": body.priority})
+        )
+        record, created = await idempotency.claim(
+            idem_key,
+            IdempotencyRecord(
+                request_id=request_id, fingerprint=content_fp, created_at=datetime.now(UTC)
+            ),
+        )
+        if not created:
+            if record.fingerprint != content_fp:
+                raise AppError(
+                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    "IDEMPOTENCY_KEY_REUSED",
+                    "Idempotency-Key already used with a different request body.",
+                )
+            prior = await store.get(record.request_id)
+            response.headers["Idempotency-Replayed"] = "true"
+            logger.info("Idempotent replay", request_id=record.request_id)
+            return RequestOut(
+                request_id=record.request_id,
+                status=prior.status if prior else "queued",
+                created_at=prior.created_at if prior else datetime.now(UTC),
+                message=f"Idempotent replay. Poll /v1/requests/{record.request_id} for status.",
+            )
+
     sem: Any = getattr(request.app.state, "agent_semaphore", None)
     if sem is not None and sem._value == 0:
+        if idem_key is not None:
+            await idempotency.release(idem_key)  # roll back the claim so a retry can proceed
         AGENT_SEMAPHORE_WAITING.labels(settings.service_name).inc()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -109,7 +178,6 @@ async def submit_request(
             headers={"Retry-After": "5"},
         )
 
-    request_id = str(uuid.uuid4())
     now = datetime.now(UTC)
 
     await store.save(

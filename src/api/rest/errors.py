@@ -92,12 +92,14 @@ def _build(
     detail: str | None = None,
     errors: list[FieldError] | None = None,
     headers: dict[str, str] | None = None,
+    code: str | None = None,
+    title: str | None = None,
 ) -> JSONResponse:
     rid = _request_id(request)
     envelope = ErrorResponse(
         status=status_code,
-        code=_code_for(status_code),
-        title=_title_for(status_code),
+        code=code or _code_for(status_code),
+        title=title or _title_for(status_code),
         detail=_mask(detail),
         request_id=rid,
         trace_id=_trace_id(),
@@ -111,6 +113,42 @@ def _build(
     # Guarantee correlation on the error path regardless of middleware ordering.
     response.headers[settings.request_id_header] = rid
     return response
+
+
+class AppError(Exception):
+    """A typed domain error that maps directly to the envelope with an explicit, stable `code`.
+
+    Use when the HTTP status alone does not determine the code (e.g. a 422 that is specifically
+    ``IDEMPOTENCY_KEY_REUSED`` rather than a generic ``VALIDATION_ERROR``). ADR-0076/0077.
+    """
+
+    def __init__(
+        self,
+        status_code: int,
+        code: str,
+        detail: str | None = None,
+        *,
+        title: str | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        super().__init__(detail or code)
+        self.status_code = status_code
+        self.code = code
+        self.detail = detail
+        self.title = title
+        self.headers = headers
+
+
+async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+    """Map a typed AppError to the envelope, honouring its explicit code/title (ADR-0076)."""
+    return _build(
+        request,
+        exc.status_code,
+        detail=exc.detail,
+        code=exc.code,
+        title=exc.title,
+        headers=dict(exc.headers or {}),
+    )
 
 
 async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
@@ -155,10 +193,11 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 def install_error_handlers(app: FastAPI) -> None:
     """Register all structured-error handlers on the app (call from main.py)."""
+    app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type]
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)  # type: ignore[arg-type]
     app.add_exception_handler(RequestValidationError, validation_exception_handler)  # type: ignore[arg-type]
     app.add_exception_handler(RateLimitExceeded, rate_limit_handler)  # type: ignore[arg-type]
     app.add_exception_handler(Exception, unhandled_exception_handler)
 
 
-__all__ = ["ErrorResponse", "FieldError", "install_error_handlers"]
+__all__ = ["AppError", "ErrorResponse", "FieldError", "install_error_handlers"]

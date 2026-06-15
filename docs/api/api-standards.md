@@ -76,10 +76,13 @@ list (unchanged body). Implemented for `GET /v1/hitl/requests`; reusable helper:
 - Document the limit/window per endpoint in OpenAPI and guarantee `X-RateLimit-Limit`,
   `X-RateLimit-Remaining`, and `Retry-After` on every throttled response (see `docs/api/error-model.md`).
 
-## 7. Idempotency — **Target**
+## 7. Idempotency — **Current** (ADR-0077)
 
-- `POST` endpoints that create work should accept an `Idempotency-Key` header and de-duplicate
-  retried submissions within a TTL window. Not implemented yet; adopt for `/v1/requests` first.
+- `POST /v1/requests` accepts an optional `Idempotency-Key` header (printable ASCII, 8–200 chars) and
+  de-duplicates retried submissions within a TTL window (`idempotency_ttl_hours`, default 24h): a
+  repeat with the same body replays the original `202`; a repeat with a different body returns `422`
+  `IDEMPOTENCY_KEY_REUSED`. Backed by `src/agents/idempotency_store.py` (Redis `SET NX`, in-memory
+  fallback — degrade-open, ADR-0075). See `specs/api/SPEC-API-002-idempotency-keys.md`.
 
 ## 8. PII & security at the boundary — **Current**
 
