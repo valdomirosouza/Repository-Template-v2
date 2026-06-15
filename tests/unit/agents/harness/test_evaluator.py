@@ -25,6 +25,8 @@ def _make_llm_response(
     craft: float = 0.8,
     functionality: float = 0.9,
     feedback: str = "Looks good.",
+    groundedness: float = 1.0,
+    unsupported_claims: list[str] | None = None,
 ) -> str:
     return json.dumps(
         {
@@ -32,7 +34,9 @@ def _make_llm_response(
             "originality": originality,
             "craft": craft,
             "functionality": functionality,
+            "groundedness": groundedness,
             "feedback": feedback,
+            "unsupported_claims": unsupported_claims or [],
             "criteria_results": {},
         }
     )
@@ -84,12 +88,14 @@ class TestEvaluatorPassingScore:
 
     @pytest.mark.asyncio
     async def test_average_computed_correctly(self) -> None:
-        llm = StubLLMClient(_make_llm_response(1.0, 0.8, 0.6, 0.8))
+        # Five dimensions now (groundedness added under ADR-0080):
+        # (1.0 + 0.8 + 0.6 + 0.8 + 1.0) / 5 == 0.84
+        llm = StubLLMClient(_make_llm_response(1.0, 0.8, 0.6, 0.8, groundedness=1.0))
         evaluator = EvaluatorAgent(audit_logger=_make_audit_logger(), llm_client=llm)
 
         score = await evaluator.evaluate(_make_contract(), _make_artifact())
 
-        assert abs(score.average - 0.8) < 1e-9
+        assert abs(score.average - 0.84) < 1e-9
 
     @pytest.mark.asyncio
     async def test_audit_log_called_on_pass(self) -> None:
@@ -116,6 +122,51 @@ class TestEvaluatorFailingScore:
 
         assert score.passed is False
         assert score.retry_required is True
+
+    @pytest.mark.asyncio
+    async def test_failed_when_groundedness_below_threshold(self) -> None:
+        # All other dims pass; only groundedness is below threshold (ADR-0080).
+        llm = StubLLMClient(
+            _make_llm_response(
+                0.95,
+                0.9,
+                0.9,
+                0.95,
+                groundedness=0.4,
+                unsupported_claims=["fabricated API call foo.bar()"],
+            )
+        )
+        evaluator = EvaluatorAgent(audit_logger=_make_audit_logger(), llm_client=llm)
+
+        score = await evaluator.evaluate(_make_contract(), _make_artifact())
+
+        assert score.groundedness == 0.4
+        assert score.passed is False
+        assert score.retry_required is True
+        assert score.unsupported_claims == ["fabricated API call foo.bar()"]
+
+    @pytest.mark.asyncio
+    async def test_groundedness_defaults_when_absent(self) -> None:
+        # A legacy response without the groundedness field must default to 1.0.
+        legacy = json.dumps(
+            {
+                "quality": 0.9,
+                "originality": 0.9,
+                "craft": 0.9,
+                "functionality": 0.9,
+                "feedback": "ok",
+                "criteria_results": {},
+            }
+        )
+        evaluator = EvaluatorAgent(
+            audit_logger=_make_audit_logger(), llm_client=StubLLMClient(legacy)
+        )
+
+        score = await evaluator.evaluate(_make_contract(), _make_artifact())
+
+        assert score.groundedness == 1.0
+        assert score.unsupported_claims == []
+        assert score.passed is True
 
     @pytest.mark.asyncio
     async def test_failed_when_all_dims_zero(self) -> None:

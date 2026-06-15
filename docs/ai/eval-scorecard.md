@@ -11,17 +11,39 @@
 
 ### 1. Evaluator quality dimensions (`src/agents/harness/evaluator.py`)
 
-The harness Evaluator scores generator output on four dimensions, each `0.0–1.0`:
+The harness Evaluator scores generator output on five dimensions, each `0.0–1.0`:
 
-| Dimension       | Meaning                                |
-| --------------- | -------------------------------------- |
-| `quality`       | functional coherence vs the spec       |
-| `originality`   | deliberate design vs template defaults |
-| `craft`         | error handling, edge cases, structure  |
-| `functionality` | all success criteria met               |
+| Dimension       | Meaning                                                        |
+| --------------- | -------------------------------------------------------------- |
+| `quality`       | functional coherence vs the spec                               |
+| `originality`   | deliberate design vs template defaults                         |
+| `craft`         | error handling, edge cases, structure                          |
+| `functionality` | all success criteria met                                       |
+| `groundedness`  | every factual/API claim traces to a provided source (ADR-0080) |
 
 **Pass rule:** every dimension must meet `settings.harness_evaluator_pass_threshold` (default
 `0.75`); any dimension below threshold = FAIL. Each evaluation is audit-logged before returning.
+
+#### `groundedness` rubric (0.0–1.0, ADR-0080)
+
+Groundedness makes hallucination/factuality **measurable** rather than a policy aspiration. A claim
+is _grounded_ when it traces to the provided sprint contract, artifacts, or success criteria; a
+confidently-stated claim with no supporting source — or one that contradicts the sources — is _not_
+grounded. Explicitly-hedged statements ("uncertain — verify") are acceptable and do not lower the
+score.
+
+| Score       | Meaning                                                                           |
+| ----------- | --------------------------------------------------------------------------------- |
+| `1.0`       | every factual/API claim is supported by a provided source; no fabrication         |
+| `0.75`      | pass floor — all material claims supported; minor unsupported detail at most      |
+| `0.50–0.74` | at least one consequential claim is unsupported or hedged where it should be firm |
+| `< 0.50`    | a claim is fabricated or contradicts the provided sources                         |
+
+Same pass floor as the other dimensions (default `0.75`): a `groundedness` score below the threshold
+FAILS the evaluation and triggers a retry. It is emitted as an SLI via
+`agent_retrieval_grounding_ratio` (gauge) and `agent_hallucination_flagged_total` (counter), both
+labelled by `prompt_version` (`docs/ai/ai-observability-naming.md`). The evaluator also returns the
+list of `unsupported_claims` for the feedback loop.
 
 ### 2. Safety contract (`tests/model_contract/`)
 
@@ -73,7 +95,9 @@ Decision: APPROVE / REJECT   Rationale: ...
 
 - **No standing eval dataset / leaderboard** for prompt/model variants yet. Target: a golden eval set
   with the scorecard above auto-generated in CI, and a variant leaderboard.
-- **Hallucination/factuality metric** is not yet computed; tracked under `docs/ai/ai-observability-naming.md`.
+- **Hallucination/factuality** is now scored via the `groundedness` dimension and emitted as an SLI
+  (`agent_retrieval_grounding_ratio`, `agent_hallucination_flagged_total`; ADR-0080). A standing
+  golden eval dataset that gates the score in CI is still a gap (see above).
 
 ---
 

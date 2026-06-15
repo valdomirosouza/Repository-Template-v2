@@ -100,9 +100,12 @@ _ORCHESTRATOR_INLINE = (
     "The context has already been PII-masked — never request raw personal data."
 )
 
+# NOTE: harness.evaluator was bumped to v2 under ADR-0080 (adds the gated
+# `groundedness` dimension), so it is no longer byte-for-byte equal to the
+# original inline constant. Its content is pinned separately below; the inline
+# constant is retained as a historical reference only.
 _ROUND_TRIP = [
     ("harness.planner", _PLANNER_INLINE),
-    ("harness.evaluator", _EVALUATOR_INLINE),
     ("orchestrator.reason", _ORCHESTRATOR_INLINE),
 ]
 
@@ -112,6 +115,19 @@ _ROUND_TRIP = [
 def test_load_prompt_round_trips_inline_constant(prompt_id: str, expected: str) -> None:
     """Each externalised prompt equals its previously-inline constant, byte-for-byte."""
     assert load_prompt(prompt_id) == expected
+
+
+@pytest.mark.unit
+def test_evaluator_v2_adds_groundedness_dimension() -> None:
+    """The active evaluator prompt (v2, ADR-0080) gates a `groundedness` score
+    that the original inline v1 constant did not have."""
+    body = load_prompt("harness.evaluator")
+    assert "groundedness" not in _EVALUATOR_INLINE  # v1 had no such dimension
+    assert "groundedness" in body  # v2 does
+    assert "five dimensions" in body
+    # The original four dimensions are still scored.
+    for dim in ("quality", "originality", "craft", "functionality"):
+        assert dim in body
 
 
 @pytest.mark.unit

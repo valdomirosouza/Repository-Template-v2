@@ -15,7 +15,8 @@ Skepticism rules (enforced via system prompt):
   - Score below harness_evaluator_pass_threshold on ANY dimension → passed = False.
 
 Safety gates:
-  - audit_logger.log_event() with all four scores before returning.
+  - audit_logger.log_event() with all five scores before returning.
+  - record_groundedness_score() emits the groundedness SLI (ADR-0080).
   - OTel span evaluator.completed.
 """
 
@@ -28,15 +29,20 @@ from src.agents.harness.models import EvaluatorScore, GeneratorArtifact, SprintC
 from src.agents.prompt_loader import load_prompt
 from src.guardrails.audit_logger import AuditLogger, AuditWriteError
 from src.observability.logger import get_logger
+from src.observability.metrics import record_groundedness_score
 from src.shared.config import settings
 from src.shared.models import AuditEvent
 
 logger = get_logger("harness.evaluator")
 
-# Externalised to prompts/harness/evaluator.v1.md (ADR-0079). Loaded byte-for-byte
-# (including the doubled {{ }} braces consumed by str.format below); behaviour is
-# unchanged vs the previously-inline constant.
+# Externalised to prompts/harness/evaluator.v2.md (ADR-0079, bumped under ADR-0080).
+# Loaded byte-for-byte (including the doubled {{ }} braces consumed by str.format
+# below). v2 adds the gated `groundedness` dimension.
 _SYSTEM_PROMPT = load_prompt("harness.evaluator")
+
+# Prompt revision that produced the scores below — used as the reserved
+# `prompt_version` metric label (docs/ai/ai-observability-naming.md, ADR-0080).
+_PROMPT_VERSION = "harness.evaluator@2.0"
 
 
 class EvaluatorAgent:
@@ -79,7 +85,23 @@ class EvaluatorAgent:
 
         score = self._parse_response(contract.sprint_id, response_text, iteration)
 
-        # Audit log with all four dimension scores — before returning
+        # Emit the groundedness SLI (ADR-0080). A score below the pass threshold
+        # means a claim could not be traced to a provided source — a hallucination
+        # signal. Metric emission must never block the evaluation result.
+        try:
+            record_groundedness_score(
+                agent_id="evaluator",
+                prompt_version=_PROMPT_VERSION,
+                grounding_ratio=score.groundedness,
+                flagged=score.groundedness < self._threshold or bool(score.unsupported_claims),
+            )
+        except Exception:  # pragma: no cover - telemetry must not break scoring
+            logger.warning(
+                "Failed to record groundedness metric",
+                sprint_id=contract.sprint_id,
+            )
+
+        # Audit log with all five dimension scores — before returning
         try:
             await self._audit.log_event(
                 AuditEvent(
@@ -95,6 +117,8 @@ class EvaluatorAgent:
                         "score_originality": score.originality,
                         "score_craft": score.craft,
                         "score_functionality": score.functionality,
+                        "score_groundedness": score.groundedness,
+                        "unsupported_claims": score.unsupported_claims,
                         "average": score.average,
                     },
                 )
@@ -153,8 +177,15 @@ class EvaluatorAgent:
         originality = float(data.get("originality", 0.0))
         craft = float(data.get("craft", 0.0))
         functionality = float(data.get("functionality", 0.0))
+        # groundedness (ADR-0080) is a gated dimension as of evaluator prompt v2.
+        # Default 1.0 keeps pre-v2 responses (which omit the field) passing.
+        groundedness = float(data.get("groundedness", 1.0))
+        unsupported_claims = [str(c) for c in data.get("unsupported_claims", [])]
 
-        passed = all(dim >= self._threshold for dim in (quality, originality, craft, functionality))
+        passed = all(
+            dim >= self._threshold
+            for dim in (quality, originality, craft, functionality, groundedness)
+        )
 
         return EvaluatorScore(
             sprint_id=sprint_id,
@@ -166,4 +197,6 @@ class EvaluatorAgent:
             feedback=data.get("feedback", ""),
             retry_required=not passed,
             iteration=iteration,
+            groundedness=groundedness,
+            unsupported_claims=unsupported_claims,
         )

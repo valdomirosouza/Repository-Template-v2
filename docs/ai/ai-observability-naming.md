@@ -68,11 +68,17 @@ HITL escalation rate · HITL rejection rate (`hitl_rejections_total`) · guardra
   `llm.response` span events before export (`specs/observability/otel-agentic-observability.md`).
 - Tail sampling keeps 100% of errors, HITL rejections, and guardrail violations.
 
+## Implemented signals
+
+- **Groundedness / hallucination** (ADR-0080): the harness evaluator scores a `groundedness`
+  dimension and emits `agent_retrieval_grounding_ratio` (gauge) and
+  `agent_hallucination_flagged_total` (counter), both carrying the first-class `prompt_version`
+  label. Defined in `src/observability/metrics.py` (`record_groundedness_score`).
+
 ## Gaps (target signals not yet emitted)
 
-- **Hallucination/grounding** rate, **retrieval precision/grounding coverage**, and **prompt
-  version** as a first-class label are not yet instrumented. Add under these names when implemented:
-  `agent_hallucination_flagged_total`, `agent_retrieval_grounding_ratio`, label `prompt_version`.
+- **Retrieval precision / grounding coverage** for RAG paths is not yet instrumented (the
+  groundedness ratio above measures evaluator claim-support, not retriever recall/precision).
 
 ---
 

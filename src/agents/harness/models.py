@@ -86,10 +86,17 @@ class EvaluatorScore:
     feedback: str
     retry_required: bool
     iteration: int = 1
+    # groundedness (ADR-0080): every factual/API claim must trace to a provided
+    # source. Gated alongside the other dimensions. Defaults to 1.0 so callers /
+    # fixtures predating v2 of the evaluator prompt remain backward-compatible.
+    groundedness: float = 1.0
+    unsupported_claims: list[str] = field(default_factory=list)
 
     @property
     def average(self) -> float:
-        return (self.quality + self.originality + self.craft + self.functionality) / 4
+        return (
+            self.quality + self.originality + self.craft + self.functionality + self.groundedness
+        ) / 5
 
 
 @dataclass

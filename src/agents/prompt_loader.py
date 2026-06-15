@@ -35,7 +35,9 @@ _PROMPTS_DIR = Path(__file__).resolve().parents[2] / "prompts"
 # means registering it here and in docs/ai/prompt-registry.md.
 _PROMPT_FILES: dict[str, str] = {
     "harness.planner": "harness/planner.v1.md",
-    "harness.evaluator": "harness/evaluator.v1.md",
+    # evaluator bumped to v2 (ADR-0080): adds the gated `groundedness` dimension.
+    # evaluator.v1.md is retained on disk for rollback history only.
+    "harness.evaluator": "harness/evaluator.v2.md",
     "orchestrator.reason": "agent-orchestrator/reason.v1.md",
 }
 

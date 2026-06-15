@@ -364,3 +364,47 @@ AGENT_POLICY_DECISION_COUNTER = Counter(
     "Runtime policy gateway decisions by policy name and decision",
     ["policy_name", "decision"],  # decision: ALLOW | REQUIRE_HITL | BLOCK
 )
+
+
+# ── Groundedness / hallucination metrics (ADR-0080) ──────────────────────────
+# Reserved names from docs/ai/ai-observability-naming.md §Gaps. Makes the
+# evaluator's groundedness score (factual support / no fabrication) a first-class
+# SLI. `prompt_version` is the reserved first-class label tying a score to the
+# prompt revision that produced it (e.g. "harness.evaluator@2.0").
+
+AGENT_RETRIEVAL_GROUNDING_RATIO = Gauge(
+    "agent_retrieval_grounding_ratio",
+    "Fraction of agent/evaluator claims that trace to a provided source "
+    "(1.0 = fully grounded, 0.0 = unsupported). Higher is better.",
+    ["agent_id", "prompt_version"],
+)
+
+AGENT_HALLUCINATION_FLAGGED_COUNTER = Counter(
+    "agent_hallucination_flagged_total",
+    "Count of evaluations where one or more claims could not be traced to a "
+    "provided source (groundedness below the pass threshold).",
+    ["agent_id", "prompt_version"],
+)
+
+
+def record_groundedness_score(
+    agent_id: str,
+    prompt_version: str,
+    grounding_ratio: float,
+    flagged: bool,
+) -> None:
+    """Record a groundedness SLI sample (ADR-0080).
+
+    Args:
+        agent_id: emitting agent (e.g. "evaluator").
+        prompt_version: prompt revision that produced the score, e.g.
+            "harness.evaluator@2.0".
+        grounding_ratio: fraction of claims traceable to a provided source,
+            clamped to [0.0, 1.0].
+        flagged: True when the evaluation flagged an unsupported/hallucinated
+            claim (groundedness below the pass threshold).
+    """
+    clamped = max(0.0, min(1.0, grounding_ratio))
+    AGENT_RETRIEVAL_GROUNDING_RATIO.labels(agent_id, prompt_version).set(clamped)
+    if flagged:
+        AGENT_HALLUCINATION_FLAGGED_COUNTER.labels(agent_id, prompt_version).inc()
