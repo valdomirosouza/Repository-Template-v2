@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Version:** 2.8.0 | **Last updated:** 2026-06-13
+> **Version:** 2.8.0 | **Last updated:** 2026-06-14
 > This file is the authoritative behavioral contract for Claude Code in this repository.
 > Read it at the start of every session and follow all rules without exception. It overrides any default behavior.
 
@@ -62,7 +62,9 @@ make rollback                                # rollback last staging deploy
 make new-service NAME=foo LANG=python|java|go
 make sbom            # CycloneDX SBOM
 make doctor          # first-run diagnostics
-make sync-develop    # fast-forward develop to origin/main and push (ff-only; refuses if diverged)
+make sync-develop    # local ff of develop to origin/main; the push is now REJECTED by the develop
+                     # branch ruleset (6 required status checks). To sync, open a PR base=develop
+                     # head=main and merge on green — direct pushes to develop are blocked.
 
 # Governance gates (run in CI; deterministic ones block)
 make check-control-bindings   # control-binding declarations (ADR-0061; report-mode, ADR-0070)
