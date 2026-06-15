@@ -147,6 +147,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0075](ADR-0075-resilience-fallback-policy.md)                         | Resilience fallback policy (degrade-open vs fail-closed)                                 | Accepted   | 2026-06-13 |
 | [ADR-0076](ADR-0076-api-structured-error-model-and-correlation.md)         | Structured API error model (problem+json flavour) + X-Request-ID correlation             | Accepted   | 2026-06-14 |
 | [ADR-0077](ADR-0077-api-idempotency-keys.md)                               | Idempotency keys for write endpoints (Idempotency-Key header, degrade-open store)        | Accepted   | 2026-06-14 |
+| [ADR-0078](ADR-0078-api-pagination-standard.md)                            | List-endpoint pagination standard (offset/limit + X-Total-Count/Link headers)            | Accepted   | 2026-06-14 |
 
 ### AI Agents Module _(opt-in)_
 

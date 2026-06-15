@@ -54,11 +54,14 @@ Status-code table and router layout are detailed in `skills/api/rest-api-design.
 - Per-endpoint auth requirements belong in the OpenAPI `security` blocks. Enforce OWASP A01 at every
   boundary (ownership/RBAC checks) — see CLAUDE.md §3.2 and `skills/devsecops/owasp-top10.md`.
 
-## 5. Pagination — **Target**
+## 5. Pagination — **Current** (ADR-0078)
 
-List endpoints should use cursor or limit/offset pagination with a stable sort and return
-`{ "items": [...], "next_cursor": "..." }`. No multi-item list endpoint requires this yet; adopt
-when the first one ships and record the choice in an ADR.
+List endpoints use **offset/limit** pagination with a **backward-compatible array body**: optional
+`limit` (1–200) and `offset` (≥0) query params slice the list, and `X-Total-Count` plus an RFC-5988
+`Link` header (`rel="next"`/`"prev"`) disclose the total and further pages. No params returns the full
+list (unchanged body). Implemented for `GET /v1/hitl/requests`; reusable helper:
+`src/api/rest/pagination.py`. Cursor/keyset pagination is the future upgrade for unbounded lists
+(`specs/api/SPEC-API-003-pagination.md`).
 
 ## 6. Rate limiting — **Current**
 

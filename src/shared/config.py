@@ -143,6 +143,9 @@ class Settings(BaseSettings):
     request_id_header: str = "X-Request-ID"
     request_id_max_length: int = 128  # printable-ASCII tokens longer than this are replaced
 
+    # ── Pagination (list endpoints, ADR-0078 / SPEC-API-003) ──────────────────
+    pagination_max_limit: int = 200  # hard cap on a page size, regardless of requested limit
+
     # ── Idempotency (Idempotency-Key, ADR-0077 / SPEC-API-002) ────────────────
     idempotency_redis_key_prefix: str = "idempotency"
     idempotency_ttl_hours: int = 24  # how long a key de-dups a submission (aligns with result TTL)

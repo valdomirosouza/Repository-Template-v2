@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel, Field
 
 from src.agents.hitl_gateway import (
@@ -23,7 +23,9 @@ from src.agents.hitl_gateway import (
     HITLStatus,
 )
 from src.api.rest.auth import Principal, require_hitl_operator
+from src.api.rest.pagination import effective_limit, paginate
 from src.observability.logger import get_logger
+from src.shared.config import settings
 
 logger = get_logger("api.hitl")
 router = APIRouter(tags=["hitl"])
@@ -102,17 +104,24 @@ async def hitl_status(
     summary="List pending HITL approval requests",
 )
 async def list_pending_requests(
+    request: Request,
+    response: Response,
     gateway: HITLGateway = Depends(get_hitl_gateway),
     operator: Principal = Depends(require_hitl_operator),
+    limit: int | None = Query(default=None, ge=1, le=settings.pagination_max_limit),
+    offset: int = Query(default=0, ge=0),
 ) -> list[HITLRequestSummary]:
     """Return the pending HITL requests awaiting an operator decision.
 
     Requires a valid operator JWT (role ``hitl-operator``), the same control as the decision
     endpoint. Only the PII-masked ``context_summary`` is returned per request — the raw
     ``action_parameters`` never leave the gateway (REM-001, CLAUDE.md §3.1).
+
+    Paginated (SPEC-API-003): optional ``limit``/``offset`` slice the queue; ``X-Total-Count`` and
+    an RFC-5988 ``Link`` header are always set. No params means the full queue (unchanged body).
     """
     pending = await gateway.list_pending()
-    return [
+    summaries = [
         HITLRequestSummary(
             request_id=r.request_id,
             agent_id=r.agent_id,
@@ -125,6 +134,8 @@ async def list_pending_requests(
         )
         for r in pending
     ]
+    page_size = effective_limit(limit, default=settings.hitl_max_pending_requests)
+    return paginate(summaries, limit=page_size, offset=offset, request=request, response=response)
 
 
 @router.post(
