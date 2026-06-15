@@ -12,6 +12,36 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.16.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.15.1...v2.16.0) (2026-06-15)
+
+
+### Features
+
+* **api:** idempotency keys for POST /v1/requests (SPEC-API-002) ([#259](https://github.com/valdomirosouza/Repository-Template-v2/issues/259)) ([5035ff6](https://github.com/valdomirosouza/Repository-Template-v2/commit/5035ff69a2633307eae83d2436c5b9ad07ae3a79)), closes [#251](https://github.com/valdomirosouza/Repository-Template-v2/issues/251)
+* **api:** offset/limit pagination for GET /v1/hitl/requests (SPEC-API-003) ([#260](https://github.com/valdomirosouza/Repository-Template-v2/issues/260)) ([1107e7b](https://github.com/valdomirosouza/Repository-Template-v2/commit/1107e7b9b287990d44370de3bdfc2f6d87d08c61)), closes [#251](https://github.com/valdomirosouza/Repository-Template-v2/issues/251)
+* **api:** structured error model + X-Request-ID correlation (SPEC-API-001) ([#258](https://github.com/valdomirosouza/Repository-Template-v2/issues/258)) ([15a9415](https://github.com/valdomirosouza/Repository-Template-v2/commit/15a9415456fb3c3c891c85cf2c3fb82b8863eeb7))
+
+
+### CI/CD
+
+* **governance:** add Wave-1 service-catalog traceability gates and per-service SLO files ([#249](https://github.com/valdomirosouza/Repository-Template-v2/issues/249)) ([ad8b1a8](https://github.com/valdomirosouza/Repository-Template-v2/commit/ad8b1a87378ae2e767cc8957e498a37b82dc9aad))
+
+
+### Build & Dependencies
+
+* set PYTHONPATH=. on Python pytest targets + sync uv.lock root version ([#264](https://github.com/valdomirosouza/Repository-Template-v2/issues/264)) ([ed7dd8c](https://github.com/valdomirosouza/Repository-Template-v2/commit/ed7dd8c53c84b12566f6858fd3694d19b0a0b7c3))
+
+
+### Documentation
+
+* **ai:** add AI-native production governance assets (improvement plan Wave 11) ([#254](https://github.com/valdomirosouza/Repository-Template-v2/issues/254)) ([87fc208](https://github.com/valdomirosouza/Repository-Template-v2/commit/87fc208ecef93e8e38cd0ee1d03f4aee89b0a69c)), closes [#251](https://github.com/valdomirosouza/Repository-Template-v2/issues/251)
+* **architecture:** add ADR template, API standards, and data catalog (improvement plan Wave 3) ([#252](https://github.com/valdomirosouza/Repository-Template-v2/issues/252)) ([c5e1cc9](https://github.com/valdomirosouza/Repository-Template-v2/commit/c5e1cc979b57869cd3590a7bc833dda59870e0d3)), closes [#251](https://github.com/valdomirosouza/Repository-Template-v2/issues/251)
+* **governance:** add release-evidence package, RBAC matrix, and RAG-quality standard ([#261](https://github.com/valdomirosouza/Repository-Template-v2/issues/261)) ([d5037e2](https://github.com/valdomirosouza/Repository-Template-v2/commit/d5037e225efb72220f832742439a46cbeeb60b38))
+* **product:** add Product & GTM discovery templates (improvement plan Wave 2) ([#250](https://github.com/valdomirosouza/Repository-Template-v2/issues/250)) ([f5aa2a8](https://github.com/valdomirosouza/Repository-Template-v2/commit/f5aa2a87494905f83beea821a6a33abea3ae6e8f))
+* **reference:** add request-lifecycle walkthrough, migrations guide, ERD, Redis standards (improvement plan Wave 4) ([#256](https://github.com/valdomirosouza/Repository-Template-v2/issues/256)) ([9aa9a24](https://github.com/valdomirosouza/Repository-Template-v2/commit/9aa9a244308d6341225bf1bb2c1f7b7e79db9036)), closes [#251](https://github.com/valdomirosouza/Repository-Template-v2/issues/251)
+* **resilience:** consolidate DR, backup, and chaos governance (improvement plan Wave 9) ([#255](https://github.com/valdomirosouza/Repository-Template-v2/issues/255)) ([04d1d01](https://github.com/valdomirosouza/Repository-Template-v2/commit/04d1d01956956a65f702aa6178c922100240efb7)), closes [#251](https://github.com/valdomirosouza/Repository-Template-v2/issues/251)
+* **spec:** add SPEC-API-001 — structured error model + X-Request-ID correlation (draft) ([#257](https://github.com/valdomirosouza/Repository-Template-v2/issues/257)) ([a30fe14](https://github.com/valdomirosouza/Repository-Template-v2/commit/a30fe1489208c204cb7bbca6bb6c4347cfee3643))
+
 ## [2.15.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.15.0...v2.15.1) (2026-06-14)
 
 
