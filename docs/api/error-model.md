@@ -1,18 +1,19 @@
 # API Error Model
 
 > **Owner:** Platform / Tech Lead | **Scope:** synchronous REST error responses
-> **Status:** **Current** = the shape the reference service returns today; **Target** = the agreed
-> standard with an adoption path. Do not document a Target field as if clients can rely on it yet
-> (CLAUDE.md §3.6).
+> **Status:** **Implemented** (ADR-0076 / SPEC-API-001). The structured envelope below is what the
+> reference service now returns for every non-2xx response, with `X-Request-ID` on every response.
+> The pre-ADR-0076 "Legacy default shape" section is kept only to explain the migration.
 
 See `docs/api/api-standards.md` for the broader conventions and `skills/api/rest-api-design.md` for
-status-code guidance.
+status-code guidance. Schema: `docs/api/openapi/v1/openapi.yaml` (`components/schemas/Error`);
+implementation: `src/api/rest/errors.py` + `src/api/rest/request_context.py`.
 
 ---
 
-## Current error shape
+## Legacy default shape (pre-ADR-0076 — for migration context only)
 
-The reference FastAPI service returns the framework defaults — there is no custom error envelope.
+Before ADR-0076 the service returned the FastAPI framework defaults (no envelope).
 
 **Application/HTTP errors** (`HTTPException`) — single `detail` string:
 
@@ -65,10 +66,10 @@ Emitted by, e.g., `src/api/rest/routers/requests.py` (404) and `src/api/rest/aut
 
 ---
 
-## Target error model
+## Error model (implemented — ADR-0076)
 
-A single, machine-parseable envelope across all non-2xx responses (RFC 9457 _problem+json_ flavour),
-so clients branch on a stable `code` rather than on prose:
+A single, machine-parseable envelope across all non-2xx responses (RFC 9457 _problem+json_ flavour,
+served as `application/json`), so clients branch on a stable `code` rather than on prose:
 
 ```json
 {
@@ -92,17 +93,18 @@ so clients branch on a stable `code` rather than on prose:
 | `type`     | no       | URI categorising the error                                           |
 | `errors[]` | no       | field-level validation problems (replaces the raw 422 `detail` list) |
 
-### Adoption path
+The envelope also includes `request_id` (the `X-Request-ID` correlation id) — required.
 
-1. Add an app-wide exception handler that maps `HTTPException` and `RequestValidationError` to the
-   envelope above and injects the current `trace_id`.
-2. Define `components/schemas/Error` in `docs/api/openapi/v1/openapi.yaml` and reference it from every
-   non-2xx response, with examples.
-3. Add a guard/test asserting no error `detail` contains unmasked PII (extends `pii_filter`).
-4. Publish the `code` enumeration as part of the API contract; treat additions as backward-compatible
-   and removals/renames as breaking (→ new API version).
+### How it is implemented (ADR-0076)
 
-Until step 1 ships, **clients must treat the Current shape as the contract.**
+1. ✅ App-wide exception handlers map `HTTPException`, `RequestValidationError`, `RateLimitExceeded`,
+   and a catch-all `Exception` to the envelope, injecting `request_id`/`trace_id`
+   (`src/api/rest/errors.py`).
+2. ✅ `components/schemas/Error` is defined in `docs/api/openapi/v1/openapi.yaml` and referenced from
+   the documented non-2xx responses, with an example and the published `code` enum.
+3. ✅ Error `detail`/`errors[]` are PII-masked (`pii_filter`); covered by `tests/unit/api/test_error_model.py`.
+4. ✅ The `code` enumeration is part of the contract; additions are backward-compatible, removals/renames
+   are breaking (→ new API version, ADR-0024).
 
 ---
 

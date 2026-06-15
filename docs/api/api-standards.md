@@ -36,14 +36,16 @@ Status-code table and router layout are detailed in `skills/api/rest-api-design.
 - Correlation is carried by **OpenTelemetry**: every request is auto-instrumented
   (`FastAPIInstrumentor`, `src/api/rest/main.py`) and logs include `trace_id` / `span_id`
   (`src/observability/logger.py`).
-- There is **no `X-Request-ID` header** contract today; `request_id` in HITL routes is a domain
-  resource id (the HITL request), **not** a transport correlation id.
+- `X-Request-ID` is set on every response and accepted inbound (see Correlation below, ADR-0076).
+  Note `request_id` in HITL **routes** is a domain resource id (the HITL request), distinct from the
+  transport correlation `request_id` in the error envelope / `X-Request-ID` header.
 
-### Correlation — **Target**
+### Correlation — **Current** (ADR-0076)
 
-- Accept an inbound `X-Request-ID` (or generate one), echo it on the response, and bind it into the
-  log/trace context so external callers can correlate without reading trace headers.
-- Adoption: add one ASGI middleware + a logging field; track under the AI-observability naming work.
+- `RequestContextMiddleware` (`src/api/rest/request_context.py`) accepts an inbound `X-Request-ID`
+  (validated to printable ASCII ≤128 chars) or generates a UUIDv4, sets it on **every** response, and
+  binds it into the log/trace context (`src/observability/request_context.py`). The same value appears
+  as `request_id` in the error envelope (`docs/api/error-model.md`).
 
 ## 4. Authentication & authorization — **Current**
 

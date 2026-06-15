@@ -14,6 +14,7 @@ from typing import Any
 
 from opentelemetry import trace
 
+from src.observability.request_context import get_request_id
 from src.shared.config import settings
 
 # pii_filter is created in prompt 010; import is forward-declared here.
@@ -60,6 +61,7 @@ class StructuredLogger:
             "message": message,
             "trace_id": format(span_ctx.trace_id, "032x") if span_ctx.is_valid else None,
             "span_id": format(span_ctx.span_id, "016x") if span_ctx.is_valid else None,
+            "request_id": get_request_id(),
             **safe_context,
         }
 
