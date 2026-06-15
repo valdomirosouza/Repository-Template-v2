@@ -79,13 +79,13 @@ test-infra-down: ## Stop integration-test infrastructure and wipe test volumes
 # ── Python ─────────────────────────────────────────────────────────────────
 
 test-python: ## Python: full test suite with coverage (unit + integration)
-	uv run pytest tests/ --cov=src --cov-report=term-missing -q
+	PYTHONPATH=. uv run pytest tests/ --cov=src --cov-report=term-missing -q
 
 test-unit-python: ## Python: unit tests only (no Docker required)
-	uv run pytest tests/unit/ -q
+	PYTHONPATH=. uv run pytest tests/unit/ -q
 
 test-security-python: ## Python: guardrail + PII leakage + OWASP-LLM checks
-	uv run pytest tests/security/ -q
+	PYTHONPATH=. uv run pytest tests/security/ -q
 
 lint-python: ## Python: ruff lint + format-check (repo-wide, matches CI) + mypy + secret scan
 	uv run ruff check .

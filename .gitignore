@@ -88,3 +88,7 @@ services/**/target/
 # OpenAPI-generator npx wrapper artifacts at repo root (the generator config is openapitools.json)
 /package.json
 /package-lock.json
+
+# Local developer tooling — not part of the repo
+.serena/
+headroom.sh
