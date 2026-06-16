@@ -27,6 +27,10 @@ tags:
     description: Domain request submission and status polling
   - name: hitl
     description: HITL approval queue management
+  - name: runs
+    description: Read-only per-request execution traces for the operator UI run view
+  - name: governance
+    description: Read-only SLO targets and error-budget status for the operator UI panel
 
 paths:
   /health:
@@ -234,7 +238,84 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /v1/runs/{request_id}:
+    get:
+      tags: [runs]
+      operationId: getRunTrace
+      summary: Get a request's execution trace
+      description: >-
+        Returns the execution trace for a single submitted request: its state plus a timeline of
+        audit events that can be REALLY associated with it. Requires a bearer JWT (read access).
+        timeline_association names the strategy that built the timeline — the audit store is not
+        indexed by the domain request_id, so an exact trace is only available when an event's
+        metadata.request_id matches; otherwise timeline is empty and timeline_association is "none"
+        (SPEC-API-004 §9.1, CLAUDE.md §3.6 — no fabricated linkage).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Request execution trace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunTraceResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Run not found (unknown request_id or expired)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/governance/slo-status:
+    get:
+      tags: [governance]
+      operationId: getSloStatus
+      summary: SLO targets and honest observed status
+      description: >-
+        Returns every SLO defined in docs/sre/slo/slo.yaml with an honest observed block.
+        Requires a bearer JWT (read access). target/target_ms/target_max and window are the real
+        configured SLO definitions. observed.data_available is true only where a real in-process
+        sample exists (api-gateway availability/error-rate, scoped as a process-lifetime sample);
+        everywhere else it is false with a note — no observed number is ever fabricated (computing
+        30-day SLO compliance / burn-rate needs a metrics-query layer the service lacks).
+        SPEC-API-004, CLAUDE.md §3.6.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: SLO targets and honest observed status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SLOStatusResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Operator JWT verified by src/api/rest/auth.py (read access for these endpoints).
+
   schemas:
     HealthResponse:
       type: object
@@ -350,6 +431,153 @@ components:
         expires_at:
           type: string
           format: date-time
+
+    TraceEvent:
+      type: object
+      description: One audit event taken verbatim from the immutable audit trail.
+      required: [event_type, action, outcome, occurred_at]
+      properties:
+        event_type:
+          type: string
+        action:
+          type: string
+        outcome:
+          type: string
+        risk_score:
+          type: number
+          format: float
+          nullable: true
+        trace_id:
+          type: string
+          nullable: true
+        occurred_at:
+          type: string
+          format: date-time
+
+    RunTraceResponse:
+      type: object
+      required:
+        [
+          request_id,
+          status,
+          created_at,
+          updated_at,
+          timeline,
+          timeline_association,
+        ]
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, processing, completed, failed]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        result:
+          type: object
+          nullable: true
+          additionalProperties: true
+        error:
+          type: string
+          nullable: true
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/TraceEvent"
+        timeline_association:
+          type: string
+          description: >-
+            Which real strategy built the timeline. metadata_request_id = exact
+            metadata.request_id match; time_window_approximate = reserved (off by default);
+            none = no event could be honestly associated (SPEC-API-004 §9.1).
+          enum: [metadata_request_id, time_window_approximate, none]
+
+    SLOObserved:
+      type: object
+      description: >-
+        Honest observed block. When a real value cannot be computed, data_available is false and
+        note explains why — a number is never fabricated (CLAUDE.md §3.6).
+      required: [data_available]
+      properties:
+        data_available:
+          type: boolean
+        value:
+          type: number
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        source:
+          type: string
+          nullable: true
+        scope:
+          type: string
+          nullable: true
+          description: e.g. "process_lifetime" — NOT the 30-day SLO window.
+        note:
+          type: string
+          nullable: true
+
+    SLOItemStatus:
+      type: object
+      required: [name, sli_type, observed]
+      properties:
+        name:
+          type: string
+        sli_type:
+          type: string
+        description:
+          type: string
+          nullable: true
+        target:
+          type: number
+          nullable: true
+        target_ms:
+          type: number
+          nullable: true
+        target_max:
+          type: number
+          nullable: true
+        window:
+          type: string
+          nullable: true
+        observed:
+          $ref: "#/components/schemas/SLOObserved"
+
+    SLOServiceStatus:
+      type: object
+      required: [name, slos]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        slos:
+          type: array
+          items:
+            $ref: "#/components/schemas/SLOItemStatus"
+
+    SLOStatusResponse:
+      type: object
+      required: [generated_at, services]
+      properties:
+        source_version:
+          type: string
+          nullable: true
+          description: Top-level version from docs/sre/slo/slo.yaml.
+        generated_at:
+          type: string
+          format: date-time
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/SLOServiceStatus"
 
     FieldError:
       type: object

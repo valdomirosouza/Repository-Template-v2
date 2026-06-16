@@ -1,3 +1,7 @@
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
+
 import { render, screen } from "@testing-library/react";
 
 import HomePage from "@/app/page";
@@ -8,6 +12,17 @@ describe("HomePage", () => {
     render(<HomePage />);
     const link = screen.getByRole("link", { name: "HITL Approval Queue" });
     expect(link).toHaveAttribute("href", "/hitl");
+  });
+
+  it("renders the SLO & Error Budget navigation link", () => {
+    render(<HomePage />);
+    const link = screen.getByRole("link", { name: "SLO & Error Budget" });
+    expect(link).toHaveAttribute("href", "/governance");
+  });
+
+  it("renders the run-lookup form", () => {
+    render(<HomePage />);
+    expect(screen.getByRole("button", { name: "View trace" })).toBeInTheDocument();
   });
 });
 
