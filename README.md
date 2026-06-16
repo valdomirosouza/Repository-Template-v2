@@ -432,6 +432,8 @@ Every feature starts as a spec (no code without a spec — CLAUDE.md §2). Use t
 
 > A well-filled `§12 Acceptance Criteria` is what gives `/deliver` real material to validate — each criterion becomes a row in the FINAL-REPORT traceability table.
 
+> **🚀 See it end to end:** the **[worked walkthrough](docs/walkthrough.md)** narrates one real feature — the Log-Based Golden Signals service (SPEC-LGS-001) — through every phase (discovery → spec → ADR → code → eval → canary → SLO), with a link to each genuine artefact it produced. This is the canonical worked example.
+
 ---
 
 ## AI Governance
