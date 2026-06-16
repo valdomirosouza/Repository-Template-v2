@@ -19,6 +19,7 @@ All runbooks follow the same **blameless format** described in
 | ---------- | ------------------------------------------------------------------------------ | ---------- |
 | RB-SRE-004 | [RB-SRE-004-canary-probe-validation.md](RB-SRE-004-canary-probe-validation.md) | ADR-0042   |
 | RB-SRE-005 | [RB-SRE-005-agent-session-recovery.md](RB-SRE-005-agent-session-recovery.md)   | ADR-0033   |
+| RB-SRE-006 | [RB-SRE-006-restore-drill.md](RB-SRE-006-restore-drill.md)                     | ADR-0082   |
 
 > Numbering note: the `004`/`005` digits are retained from before the namespace split
 > (no renumber) to preserve continuity with prior references and the changelog.

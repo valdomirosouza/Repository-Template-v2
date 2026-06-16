@@ -319,7 +319,7 @@ CI runs a diff check to ensure generated files match the current contract:
 - name: Check generated code is up to date
   run: |
     make gen-proto-go gen-api-client-ts
-    git diff --exit-code api/ frontend/frontend/src/lib/api/
+    git diff --exit-code api/ frontend/web/src/lib/api/
 ```
 
 If this step fails, someone changed a contract without regenerating. Regenerate and push.

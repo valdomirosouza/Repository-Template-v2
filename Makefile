@@ -2,7 +2,7 @@ IMAGE_NAME  ?= template-service
 VERSION     ?= $(shell cat version.txt 2>/dev/null || echo "0.1.0")
 REGISTRY    ?= ghcr.io/org
 SERVICE     ?= api-gateway
-APP         ?= frontend
+APP         ?= web
 
 .PHONY: setup setup-minimal setup-core setup-observability setup-full \
         infra-up infra-down infra-down-core infra-down-full infra-reset smoke \
@@ -239,6 +239,9 @@ check-slo-thresholds: ## Fail if canary/error-budget thresholds are hard-coded i
 
 check-outbound-urls: ## Fail if an outbound-HTTP boundary skips the SSRF allow-list (OWASP A10)
 	@uv run python scripts/governance/check_outbound_urls.py
+
+check-inline-prompts: ## Fail if a NEW inline LLM system prompt appears in src/agents/ (ADR-0079)
+	@uv run python scripts/governance/check_inline_prompts.py
 
 verify-traceability: ## Verify service→ADR→topic→schema→SLO→runbook traceability chain (Wave 1)
 	@uv run python scripts/governance/check_traceability.py

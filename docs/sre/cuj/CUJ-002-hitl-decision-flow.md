@@ -26,7 +26,7 @@
 ## Step-by-Step Happy Path
 
 ```
-1. Operator opens HITL approval UI (frontend/frontend/)
+1. Operator opens HITL approval UI (frontend/web/)
    → Operator authenticates with OIDC/JWT
    → Frontend polls GET /v1/hitl/status (5 s interval)
    → Pending queue displayed with oldest requests first

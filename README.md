@@ -1,7 +1,7 @@
 # Enterprise Monorepo Template
 
 > Production-ready monorepo template for enterprise software systems. AI/agent capabilities are optional opt-in extensions.
-> **Version:** 2.16.0 | **Status:** Active | **License:** MIT
+> **Version:** 2.17.0 | **Status:** Active | **License:** MIT
 
 [![CI](https://github.com/valdomirosouza/Repository-Template-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/valdomirosouza/Repository-Template-v2/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/valdomirosouza/Repository-Template-v2)](https://github.com/valdomirosouza/Repository-Template-v2/releases/latest)
@@ -188,7 +188,7 @@ A production-ready scaffold for enterprise teams. Everything is wired together f
 | Layer                    | What's included                                                                                                                                                                                                                                                              |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Languages**            | Python 3.13 · Java 21 · Go 1.24 · Node 22 / Next.js 15                                                                                                                                                                                                                       |
-| **Service scaffolds**    | `services/domain-service/` (Spring Boot) · `services/event-worker/` (Go) · `frontend/frontend/`                                                                                                                                                                              |
+| **Service scaffolds**    | `services/domain-service/` (Spring Boot) · `services/event-worker/` (Go) · `frontend/web/`                                                                                                                                                                                   |
 | **Infrastructure**       | PostgreSQL · Redis · Kafka (KRaft) · Schema Registry · flagd                                                                                                                                                                                                                 |
 | **IaC**                  | Helm chart for Kubernetes · Terraform modules for VPC, EKS, and ElastiCache Redis                                                                                                                                                                                            |
 | **Observability**        | OpenTelemetry · Prometheus · Grafana (Golden Signals + CUJ) · Jaeger (with sampling policy)                                                                                                                                                                                  |
@@ -431,6 +431,8 @@ Every feature starts as a spec (no code without a spec — CLAUDE.md §2). Use t
    The skill never invents a spec. **Full guide:** [`docs/quickstart/delivering-a-spec.md`](docs/quickstart/delivering-a-spec.md) · skill source: [`.claude/skills/deliver/SKILL.md`](.claude/skills/deliver/SKILL.md).
 
 > A well-filled `§12 Acceptance Criteria` is what gives `/deliver` real material to validate — each criterion becomes a row in the FINAL-REPORT traceability table.
+
+> **🚀 See it end to end:** the **[worked walkthrough](docs/walkthrough.md)** narrates one real feature — the Log-Based Golden Signals service (SPEC-LGS-001) — through every phase (discovery → spec → ADR → code → eval → canary → SLO), with a link to each genuine artefact it produced. This is the canonical worked example.
 
 ---
 

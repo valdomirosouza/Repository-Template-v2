@@ -12,6 +12,32 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.17.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.16.0...v2.17.0) (2026-06-16)
+
+
+### Features
+
+* **agents:** externalize evaluator + orchestrator prompts with no-inline-prompt CI gate ([#290](https://github.com/valdomirosouza/Repository-Template-v2/issues/290)) ([504a96f](https://github.com/valdomirosouza/Repository-Template-v2/commit/504a96f92ae4b3cba4ddfec9b6660c42e68357b5))
+* **observability:** groundedness SLI — eval dimension, model-contract test, OTel metric ([#297](https://github.com/valdomirosouza/Repository-Template-v2/issues/297)) ([179a3a6](https://github.com/valdomirosouza/Repository-Template-v2/commit/179a3a698d6bb0173446da0bf61978896633fd74))
+
+
+### Security
+
+* **deps:** bump cryptography 48.0.0-&gt;49.0.0 and starlette 1.1.0-&gt;1.3.1 ([#300](https://github.com/valdomirosouza/Repository-Template-v2/issues/300)) ([a81abae](https://github.com/valdomirosouza/Repository-Template-v2/commit/a81abae8a64cf5799c1a1d8cae7c82a61caa8f52))
+
+
+### Refactoring
+
+* **frontend:** rename frontend/frontend -&gt; frontend/web (ADR-0083) ([#301](https://github.com/valdomirosouza/Repository-Template-v2/issues/301)) ([d6a171f](https://github.com/valdomirosouza/Repository-Template-v2/commit/d6a171fd9192284613010e5589d0f09c6853537e))
+
+
+### Documentation
+
+* FEAT-001 worked walkthrough (README hero, SPEC-LGS-001) ([#294](https://github.com/valdomirosouza/Repository-Template-v2/issues/294)) ([c3faf21](https://github.com/valdomirosouza/Repository-Template-v2/commit/c3faf2182183ef9514d0b754cb44f3e13a257aa3)), closes [#286](https://github.com/valdomirosouza/Repository-Template-v2/issues/286)
+* **product:** consolidated NFR taxonomy + Gherkin AC standard ([#303](https://github.com/valdomirosouza/Repository-Template-v2/issues/303)) ([28c52df](https://github.com/valdomirosouza/Repository-Template-v2/commit/28c52df80baaf771fc923e0b9b5fb4b43912b1c7)), closes [#275](https://github.com/valdomirosouza/Repository-Template-v2/issues/275)
+* **spec:** RAG reference pipeline spec + ADR-0081 ([#298](https://github.com/valdomirosouza/Repository-Template-v2/issues/298)) ([cea409c](https://github.com/valdomirosouza/Repository-Template-v2/commit/cea409c394c50376c3cd51421727b3322b7608f1))
+* **sre:** consolidated backup & recovery + restore-drill verification (ADR-0082) ([#299](https://github.com/valdomirosouza/Repository-Template-v2/issues/299)) ([60c01bb](https://github.com/valdomirosouza/Repository-Template-v2/commit/60c01bb7d150fa48b7a8953a3255ed975937985e))
+
 ## [2.16.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.15.1...v2.16.0) (2026-06-15)
 
 
