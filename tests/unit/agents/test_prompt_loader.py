@@ -22,7 +22,10 @@ from src.agents.prompts.loader import _PROMPT_PATHS
 
 # ── Frozen copies of the former inline prompts (byte-identical expectation) ──────
 
-# Former src/agents/harness/evaluator.py::_SYSTEM_PROMPT (kept trailing newline).
+# Live src/agents/harness/evaluator.py::_SYSTEM_PROMPT — now evaluate.v2.md (ADR-0080):
+# v1 body PLUS the separate `groundedness` SLI field. Pinned byte-identically so a
+# stray reformat of the prompt file fails CI. The four scored dimensions and the
+# `{threshold}` pass rule are unchanged from v1.
 _EXPECTED_EVALUATOR = """\
 You are a skeptical senior engineer performing a rigorous quality review.
 
@@ -43,12 +46,21 @@ Score the implementation on four dimensions (0.0 to 1.0 each):
 Passing threshold: all four dimensions must meet or exceed {threshold}.
 A score of exactly {threshold} on any dimension is passing; below is not.
 
+Also report a separate groundedness signal (0.0 to 1.0). This is NOT one of the
+four scored dimensions and does NOT affect pass/fail — it is a safety metric:
+  - groundedness: The fraction of the implementation's claims that trace back to
+    the provided sprint objectives and success criteria. 1.0 = every claim is
+    fully grounded in the provided spec/success-criteria; lower = the
+    implementation asserts invented, unsupported, or out-of-scope behaviour that
+    is not traceable to what was asked.
+
 Respond with valid JSON:
 {{
   "quality": <float 0.0-1.0>,
   "originality": <float 0.0-1.0>,
   "craft": <float 0.0-1.0>,
   "functionality": <float 0.0-1.0>,
+  "groundedness": <float 0.0-1.0>,
   "feedback": "<specific, actionable feedback — what failed and why>",
   "criteria_results": {{
     "<criterion text>": true|false
@@ -119,11 +131,17 @@ def test_definition_front_matter_valid(prompt_id: str):
     defn = load_prompt_definition(prompt_id)
     assert isinstance(defn, PromptDefinition)
     assert defn.id == prompt_id
-    assert defn.version == "1.0"
+    assert defn.version  # version pin present (e.g. "1.0", or "2.0" for evaluator v2)
     assert defn.owner == "AI Governance Lead"
     assert defn.model  # model pin present
     assert defn.eval_dataset == "tests/model_contract/"
-    assert defn.supersedes is None
+    if prompt_id == "harness.evaluator":
+        # evaluate.v2.md supersedes v1 (ADR-0080 — groundedness SLI added).
+        assert defn.version == "2.0"
+        assert defn.supersedes == "evaluator/evaluate.v1.md"
+    else:
+        assert defn.version == "1.0"
+        assert defn.supersedes is None
 
 
 @pytest.mark.parametrize("prompt_id", _REGISTERED_IDS)

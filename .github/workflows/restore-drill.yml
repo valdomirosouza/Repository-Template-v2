@@ -1,0 +1,55 @@
+name: Restore Drill (scheduled)
+
+# Closes the "scheduled restore-drill" loop of ADR-0082: the per-store restore drill
+# (scripts/backup/restore_drill.sh) now runs on a cadence, not just on demand. It runs in
+# --dry-run mode (inert: no infrastructure calls, no writes) until the scaffold is wired to
+# real backups — at which point --execute is implemented and this workflow flips to real drills.
+# Until then this proves the drill scaffold stays runnable and keeps the cadence visible.
+#
+# Runbook: docs/sre/runbooks/RB-SRE-006-restore-drill.md
+# Doc:     docs/sre/backup-recovery.md  ·  Evidence: docs/resilience/restore-drills/
+
+on:
+  schedule:
+    - cron: "23 6 * * 1" # weekly, Monday 06:23 UTC
+  workflow_dispatch:
+    inputs:
+      store:
+        description: "Which store to drill (default: all)"
+        required: false
+        type: choice
+        options: [all, postgres, redis-session, redis-timeseries]
+        default: all
+  pull_request:
+    paths:
+      - "scripts/backup/restore_drill.sh"
+      - ".github/workflows/restore-drill.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  restore-drill:
+    name: Restore drill (dry-run)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        store: [postgres, redis-session, redis-timeseries]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run restore drill (dry-run, inert)
+        # On workflow_dispatch with a specific store, only that store's matrix leg runs the drill;
+        # the others no-op. Scheduled/PR runs drill all three. --dry-run is the script default and
+        # makes no infrastructure calls; --execute is refused by the script (ADR-0082 guard).
+        run: |
+          want="${{ github.event.inputs.store || 'all' }}"
+          if [ "$want" != "all" ] && [ "$want" != "${{ matrix.store }}" ]; then
+            echo "Skipping ${{ matrix.store }} (dispatch requested: $want)"
+            exit 0
+          fi
+          echo "## Restore drill (dry-run) — ${{ matrix.store }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          bash scripts/backup/restore_drill.sh --store "${{ matrix.store }}" --dry-run | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

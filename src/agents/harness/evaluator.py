@@ -28,6 +28,7 @@ from src.agents.harness.models import EvaluatorScore, GeneratorArtifact, SprintC
 from src.agents.prompts import load_prompt
 from src.guardrails.audit_logger import AuditLogger, AuditWriteError
 from src.observability.logger import get_logger
+from src.observability.metrics import record_groundedness
 from src.shared.config import settings
 from src.shared.models import AuditEvent
 
@@ -78,6 +79,13 @@ class EvaluatorAgent:
 
         score = self._parse_response(contract.sprint_id, response_text, iteration)
 
+        # Groundedness SLI (ADR-0080): reuse this SAME LLM call's JSON — no extra
+        # model call. Emitted as a SEPARATE metric, never a 5th EvaluatorScore
+        # dimension and never part of the `passed` rule. Backward-compatible: if
+        # the field is absent or non-numeric (e.g. v1 prompt), recording is
+        # skipped rather than fabricated.
+        groundedness = self._emit_groundedness(contract.sprint_id, response_text)
+
         # Audit log with all four dimension scores — before returning
         try:
             await self._audit.log_event(
@@ -95,6 +103,8 @@ class EvaluatorAgent:
                         "score_craft": score.craft,
                         "score_functionality": score.functionality,
                         "average": score.average,
+                        # Side-metric (ADR-0080); None when the LLM omitted it.
+                        "groundedness": groundedness,
                     },
                 )
             )
@@ -166,3 +176,33 @@ class EvaluatorAgent:
             retry_required=not passed,
             iteration=iteration,
         )
+
+    def _emit_groundedness(self, sprint_id: str, response_text: str) -> float | None:
+        """Emit the groundedness SLI from the evaluator's own LLM response (ADR-0080).
+
+        Groundedness is a separate safety metric — the LLM-judged share of the
+        implementation's claims that trace to the provided spec/success-criteria.
+        It is NOT an ``EvaluatorScore`` dimension and does not affect ``passed``.
+
+        Backward-compatible by design: if the field is missing or non-numeric
+        (e.g. the v1 prompt, or a malformed value), recording is skipped — never
+        fabricated with a placeholder/constant. ``response_text`` has already
+        parsed as JSON in ``_parse_response`` by the time this is called.
+        """
+        try:
+            data = json.loads(response_text)
+        except json.JSONDecodeError:
+            return None
+
+        raw = data.get("groundedness")
+        if not isinstance(raw, (int, float)) or isinstance(raw, bool):
+            return None
+
+        groundedness = float(raw)
+        record_groundedness(
+            score=groundedness,
+            flagged=groundedness < self._threshold,
+            agent_id="evaluator",
+            sprint_id=sprint_id,
+        )
+        return groundedness
