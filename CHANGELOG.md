@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.18.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.18.0...v2.18.1) (2026-06-16)
+
+
+### Bug Fixes
+
+* **ci:** repair frontend Docker build + Playwright e2e jobs ([#302](https://github.com/valdomirosouza/Repository-Template-v2/issues/302)) ([#311](https://github.com/valdomirosouza/Repository-Template-v2/issues/311)) ([cb950db](https://github.com/valdomirosouza/Repository-Template-v2/commit/cb950db4d60a35c769cd960ddc49fc73a705c87c))
+
 ## [2.18.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.17.0...v2.18.0) (2026-06-16)
 
 
