@@ -93,8 +93,18 @@ Decision: APPROVE / REJECT   Rationale: ...
 
 > **Resolved (ADR-0080):** the **hallucination/groundedness** SLI is now implemented — scored by
 > `tests/model_contract/test_groundedness.py` and emitted as `agent_groundedness_score` /
-> `agent_hallucination_flagged_total` (see §2a). Remaining target: wire `record_groundedness(...)`
-> into a runtime grounding check so the metric is populated in production, not only in the contract test.
+> `agent_hallucination_flagged_total` (see §2a).
+>
+> **Runtime wiring — DONE (2026-06-16):** `record_groundedness(...)` is now called in runtime code by
+> the harness Evaluator (`src/agents/harness/evaluator.py`). The Evaluator's existing single LLM call
+> (prompt `evaluate.v2.md`) now also returns an LLM-judged `groundedness` (0.0–1.0) — the share of the
+> implementation's claims that trace to the provided spec/success-criteria — which is emitted as
+> `agent_groundedness_score{agent_id="evaluator"}` with `agent_hallucination_flagged_total` incremented
+> when the score is below the evaluator pass threshold. No extra model call is made. It remains a
+> **separate metric, not a 5th `EvaluatorScore` dimension**, and does not change the `passed` rule.
+> **Scope (honest):** the gauge is populated only when the harness Evaluator runs (harness-mode
+> evaluation cycles); non-harness request paths do not emit it. If the LLM omits/garbles the field
+> (e.g. the v1 prompt), recording is skipped — never fabricated.
 
 ---
 

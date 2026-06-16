@@ -32,7 +32,7 @@ _PROMPTS_DIR: Final[Path] = Path(__file__).resolve().parents[3] / "prompts"
 
 # id → path under ``prompts/``. Adding a prompt is a one-line registration here.
 _PROMPT_PATHS: Final[dict[str, str]] = {
-    "harness.evaluator": "evaluator/evaluate.v1.md",
+    "harness.evaluator": "evaluator/evaluate.v2.md",
     "orchestrator.reason": "agent-orchestrator/reason.v1.md",
 }
 
