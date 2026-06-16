@@ -24,7 +24,7 @@ from src.agents.hitl_store import HITLRedisStore, InMemoryHITLStore
 from src.api.rest._limiter import limiter
 from src.api.rest.errors import install_error_handlers
 from src.api.rest.request_context import RequestContextMiddleware
-from src.api.rest.routers import health, hitl, requests
+from src.api.rest.routers import governance, health, hitl, requests, runs
 from src.api.rest.security_headers import SecurityHeadersMiddleware
 from src.guardrails.audit_logger import AuditLogger, InMemoryAuditStorage, PostgresAuditStorage
 from src.observability.metrics import init_budget_gauge
@@ -226,5 +226,8 @@ app.mount("/metrics", make_asgi_app())
 
 app.include_router(health.router)
 app.include_router(requests.router, prefix="/v1")
+# Read-only operator-UI views: per-request execution trace + SLO/error-budget panel (SPEC-API-004)
+app.include_router(runs.router, prefix="/v1")
+app.include_router(governance.router, prefix="/v1/governance")
 # AI Agents Module — remove this router if src/agents/ is deleted
 app.include_router(hitl.router, prefix="/v1/hitl")

@@ -1,10 +1,13 @@
+apis/GovernanceApi.ts
 apis/HealthApi.ts
 apis/HitlApi.ts
 apis/RequestsApi.ts
+apis/RunsApi.ts
 apis/index.ts
 docs/DecisionIn.md
 docs/DecisionOut.md
 docs/FieldError.md
+docs/GovernanceApi.md
 docs/HITLRequestSummary.md
 docs/HITLStatusResponse.md
 docs/HealthApi.md
@@ -14,6 +17,13 @@ docs/ModelError.md
 docs/RequestIn.md
 docs/RequestOut.md
 docs/RequestsApi.md
+docs/RunTraceResponse.md
+docs/RunsApi.md
+docs/SLOItemStatus.md
+docs/SLOObserved.md
+docs/SLOServiceStatus.md
+docs/SLOStatusResponse.md
+docs/TraceEvent.md
 index.ts
 models/index.ts
 runtime.ts
