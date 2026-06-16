@@ -116,16 +116,13 @@ jobs:
     strategy:
       matrix:
         app: [web]
-    services:
-      api-gateway:
-        image: ghcr.io/${{ github.repository_owner }}/api-gateway:latest
-        ports:
-          - 8000:8000
-        options: >-
-          --health-cmd "curl -sf http://localhost:8000/health"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
+    # No `services: api-gateway` container: that image is not published to GHCR
+    # (it would fail at job init with "manifest unknown"), and the Playwright
+    # tests target the Next.js app on :3000 via `baseURL` — not the backend.
+    # The app is built and served in-job below, so the suite is self-contained.
+    # If/when e2e tests need a live backend, start it in a step here (e.g.
+    # `uv run uvicorn src.api.rest.main:app --port 8000` with in-memory fallbacks)
+    # rather than reintroducing an unpublished service-container image.
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -151,9 +148,23 @@ jobs:
         env:
           NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
 
+      - name: Start Next.js app and wait for it to be ready
+        working-directory: frontend/${{ matrix.app }}
+        # playwright.config.ts disables its own `webServer` under CI, so the app
+        # must be served here for Playwright's baseURL (http://localhost:3000) to resolve.
+        run: |
+          pnpm start &
+          echo "APP_PID=$!" >> "$GITHUB_ENV"
+          npx --yes wait-on http://localhost:3000 --timeout 60000
+        env:
+          NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+
       - name: Run Playwright E2E tests
         working-directory: frontend/${{ matrix.app }}
-        run: pnpm e2e
+        # --pass-with-no-tests: the e2e suite (src/__tests__/e2e) is intentionally
+        # empty for now; without this flag `playwright test` exits 1 on "No tests found",
+        # turning a clean run red. Remove the flag once the first e2e spec lands.
+        run: pnpm e2e --pass-with-no-tests
         env:
           BASE_URL: http://localhost:3000
           NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
