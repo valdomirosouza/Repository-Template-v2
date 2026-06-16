@@ -12,6 +12,18 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.19.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.18.1...v2.19.0) (2026-06-16)
+
+
+### Features
+
+* **eval:** wire groundedness metric into the harness Evaluator (closes ADR-0080 gap) ([#317](https://github.com/valdomirosouza/Repository-Template-v2/issues/317)) ([507cc51](https://github.com/valdomirosouza/Repository-Template-v2/commit/507cc518c3fe5cc0adeff4bc96da8e4daefa4bef))
+
+
+### CI/CD
+
+* schedule the restore drill (closes the ADR-0082 "scheduled" gap) ([#315](https://github.com/valdomirosouza/Repository-Template-v2/issues/315)) ([5fc768a](https://github.com/valdomirosouza/Repository-Template-v2/commit/5fc768aaf7cb2dbdd7ac5cb6306419eaa9dbbcf6))
+
 ## [2.18.1](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.18.0...v2.18.1) (2026-06-16)
 
 
