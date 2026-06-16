@@ -7,6 +7,12 @@
 **Supersedes:** None | **Superseded by:** None
 **Relates to:** [ADR-0062](ADR-0062-aurora-postgresql-platform-rdbms.md), [ADR-0067](ADR-0067-redis-as-timeseries-store.md), [ADR-0017](ADR-0017-agent-memory-architecture.md), [ADR-0075](ADR-0075-resilience-fallback-policy.md), [ADR-0026](ADR-0026-sox-audit-log-immutability.md)
 
+> **Update (2026-06-16):** the "scheduled" half of this decision is now wired —
+> `.github/workflows/restore-drill.yml` runs the drill weekly (Monday 06:23 UTC) for all three
+> stores in `--dry-run` mode (also `workflow_dispatch` + on PRs touching the script). The decision
+> below is unchanged; the drill stays inert (`--execute` still refused) until wired to real backups —
+> the schedule keeps it runnable and the cadence visible.
+
 > Copy this file to `docs/adr/ADR-NNNN-<kebab-title>.md`, fill every field, then add a row to the
 > master index in `docs/adr/README.md`. ADRs are **append-only and immutable** (ADR-0059).
 

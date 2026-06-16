@@ -66,6 +66,10 @@ For the full per-component DR table (api-gateway, agent-service, event-consumer,
 - **How to run it:** runbook `docs/sre/runbooks/RB-SRE-006-restore-drill.md`, driven by the
   automation scaffold `scripts/backup/restore_drill.sh` (a `--dry-run`-by-default, non-destructive
   stub until wired to real backups — ADR-0082).
+- **Schedule (wired):** the drill runs on a cadence via `.github/workflows/restore-drill.yml`
+  (weekly, Monday 06:23 UTC; also `workflow_dispatch` + on PRs touching the script) across all
+  three stores in `--dry-run` mode — keeping the drill runnable and the cadence visible. It flips
+  to real drills once `--execute` is implemented and the script's safety guard is removed.
 
 ### Backup freshness alert — `backup_last_success_timestamp`
 
