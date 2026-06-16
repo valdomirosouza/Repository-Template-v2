@@ -92,6 +92,22 @@ independently of generator-quality scoring.
 
 ---
 
+## Update — 2026-06-16 (runtime wiring)
+
+The follow-up flagged under _Consequences → Negative_ ("wiring `record_groundedness` into runtime
+grounding checks is follow-up work") is now done. The harness Evaluator
+(`src/agents/harness/evaluator.py`, prompt `prompts/evaluator/evaluate.v2.md`) reuses its **existing
+single LLM call** to also return an LLM-judged `groundedness` (0.0–1.0) and emits it via
+`record_groundedness(score=..., flagged=(score < threshold), agent_id="evaluator", sprint_id=...)`.
+
+The decision is **unchanged**: groundedness stays a **separate metric, not a 5th `EvaluatorScore`
+dimension**, and the Evaluator `passed` rule (all four quality dimensions ≥ threshold) is untouched.
+The field is optional and backward-compatible — a missing or non-numeric value is skipped, never
+fabricated. Scope: the metric is populated when the Evaluator runs (harness-mode evaluation cycles).
+No new LLM call is added.
+
+---
+
 ## Related
 
 - `docs/adr/README.md` — master index & lifecycle definition
