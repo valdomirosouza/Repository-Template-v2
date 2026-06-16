@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [frontend] # add more apps here as they are created
+        app: [web] # add more apps here as they are created
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -82,7 +82,7 @@ jobs:
     needs: lint-frontend
     strategy:
       matrix:
-        app: [frontend]
+        app: [web]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -115,7 +115,7 @@ jobs:
     needs: test-frontend-unit
     strategy:
       matrix:
-        app: [frontend]
+        app: [web]
     services:
       api-gateway:
         image: ghcr.io/${{ github.repository_owner }}/api-gateway:latest
@@ -172,7 +172,7 @@ jobs:
     needs: [test-frontend-unit]
     strategy:
       matrix:
-        app: [frontend]
+        app: [web]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
