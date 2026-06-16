@@ -340,3 +340,272 @@ export const RequestOutStatusEnum = {
 } as const;
 export type RequestOutStatusEnum = typeof RequestOutStatusEnum[keyof typeof RequestOutStatusEnum];
 
+/**
+ * 
+ * @export
+ * @interface RunTraceResponse
+ */
+export interface RunTraceResponse {
+    /**
+     * 
+     * @type {string}
+     * @memberof RunTraceResponse
+     */
+    requestId: string;
+    /**
+     * 
+     * @type {RunTraceResponseStatusEnum}
+     * @memberof RunTraceResponse
+     */
+    status: RunTraceResponseStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof RunTraceResponse
+     */
+    createdAt: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof RunTraceResponse
+     */
+    updatedAt: string;
+    /**
+     * 
+     * @type {{ [key: string]: any; }}
+     * @memberof RunTraceResponse
+     */
+    result?: { [key: string]: any; };
+    /**
+     * 
+     * @type {string}
+     * @memberof RunTraceResponse
+     */
+    error?: string;
+    /**
+     * 
+     * @type {Array<TraceEvent>}
+     * @memberof RunTraceResponse
+     */
+    timeline: Array<TraceEvent>;
+    /**
+     * Which real strategy built the timeline. metadata_request_id = exact metadata.request_id match; time_window_approximate = reserved (off by default); none = no event could be honestly associated (SPEC-API-004 §9.1).
+     * @type {RunTraceResponseTimelineAssociationEnum}
+     * @memberof RunTraceResponse
+     */
+    timelineAssociation: RunTraceResponseTimelineAssociationEnum;
+}
+
+
+/**
+ * @export
+ */
+export const RunTraceResponseStatusEnum = {
+    Queued: 'queued',
+    Processing: 'processing',
+    Completed: 'completed',
+    Failed: 'failed'
+} as const;
+export type RunTraceResponseStatusEnum = typeof RunTraceResponseStatusEnum[keyof typeof RunTraceResponseStatusEnum];
+
+/**
+ * @export
+ */
+export const RunTraceResponseTimelineAssociationEnum = {
+    MetadataRequestId: 'metadata_request_id',
+    TimeWindowApproximate: 'time_window_approximate',
+    None: 'none'
+} as const;
+export type RunTraceResponseTimelineAssociationEnum = typeof RunTraceResponseTimelineAssociationEnum[keyof typeof RunTraceResponseTimelineAssociationEnum];
+
+/**
+ * 
+ * @export
+ * @interface SLOItemStatus
+ */
+export interface SLOItemStatus {
+    /**
+     * 
+     * @type {string}
+     * @memberof SLOItemStatus
+     */
+    name: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof SLOItemStatus
+     */
+    sliType: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof SLOItemStatus
+     */
+    description?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof SLOItemStatus
+     */
+    target?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof SLOItemStatus
+     */
+    targetMs?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof SLOItemStatus
+     */
+    targetMax?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof SLOItemStatus
+     */
+    window?: string;
+    /**
+     * 
+     * @type {SLOObserved}
+     * @memberof SLOItemStatus
+     */
+    observed: SLOObserved;
+}
+/**
+ * Honest observed block. When a real value cannot be computed, data_available is false and note explains why — a number is never fabricated (CLAUDE.md §3.6).
+ * @export
+ * @interface SLOObserved
+ */
+export interface SLOObserved {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof SLOObserved
+     */
+    dataAvailable: boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof SLOObserved
+     */
+    value?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof SLOObserved
+     */
+    unit?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof SLOObserved
+     */
+    source?: string;
+    /**
+     * e.g. "process_lifetime" — NOT the 30-day SLO window.
+     * @type {string}
+     * @memberof SLOObserved
+     */
+    scope?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof SLOObserved
+     */
+    note?: string;
+}
+/**
+ * 
+ * @export
+ * @interface SLOServiceStatus
+ */
+export interface SLOServiceStatus {
+    /**
+     * 
+     * @type {string}
+     * @memberof SLOServiceStatus
+     */
+    name: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof SLOServiceStatus
+     */
+    description?: string;
+    /**
+     * 
+     * @type {Array<SLOItemStatus>}
+     * @memberof SLOServiceStatus
+     */
+    slos: Array<SLOItemStatus>;
+}
+/**
+ * 
+ * @export
+ * @interface SLOStatusResponse
+ */
+export interface SLOStatusResponse {
+    /**
+     * Top-level version from docs/sre/slo/slo.yaml.
+     * @type {string}
+     * @memberof SLOStatusResponse
+     */
+    sourceVersion?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof SLOStatusResponse
+     */
+    generatedAt: string;
+    /**
+     * 
+     * @type {Array<SLOServiceStatus>}
+     * @memberof SLOStatusResponse
+     */
+    services: Array<SLOServiceStatus>;
+}
+/**
+ * One audit event taken verbatim from the immutable audit trail.
+ * @export
+ * @interface TraceEvent
+ */
+export interface TraceEvent {
+    /**
+     * 
+     * @type {string}
+     * @memberof TraceEvent
+     */
+    eventType: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof TraceEvent
+     */
+    action: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof TraceEvent
+     */
+    outcome: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof TraceEvent
+     */
+    riskScore?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof TraceEvent
+     */
+    traceId?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof TraceEvent
+     */
+    occurredAt: string;
+}
