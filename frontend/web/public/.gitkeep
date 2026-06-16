@@ -1,0 +1,4 @@
+# Keeps the Next.js public/ directory present in git and the Docker build context.
+# The runner stage of the Dockerfile does `COPY --from=builder /app/public ./public`;
+# Next.js standalone output does not create public/ on its own, so an empty tracked
+# directory is required for the image build to succeed (issue #302).

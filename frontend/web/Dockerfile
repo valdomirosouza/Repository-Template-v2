@@ -3,8 +3,11 @@ RUN corepack enable && corepack prepare pnpm@9 --activate
 
 FROM base AS deps
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+# pnpm-lock.yaml is gitignored by template policy (see .gitignore — excluded to avoid
+# secret-scanner false positives), so it is absent from the build context. Install
+# without the frozen-lockfile constraint, consistent with ci-frontend.yml.
+COPY package.json ./
+RUN pnpm install --no-frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
