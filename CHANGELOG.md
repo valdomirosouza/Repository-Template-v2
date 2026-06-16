@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.18.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.17.0...v2.18.0) (2026-06-16)
+
+
+### Features
+
+* **api:** runs-trace + governance/slo-status endpoints (SPEC-API-004, [#273](https://github.com/valdomirosouza/Repository-Template-v2/issues/273) 5b) ([#306](https://github.com/valdomirosouza/Repository-Template-v2/issues/306)) ([f9c39fd](https://github.com/valdomirosouza/Repository-Template-v2/commit/f9c39fdca8ecb4ad332bf6bd448d2e35e26577b2))
+* **frontend:** agent-run trace view + SLO/error-budget panel ([#273](https://github.com/valdomirosouza/Repository-Template-v2/issues/273) 5b) ([#308](https://github.com/valdomirosouza/Repository-Template-v2/issues/308)) ([106a73c](https://github.com/valdomirosouza/Repository-Template-v2/commit/106a73c133669b8fa20f6bd266eed78af6a707bb))
+
 ## [2.17.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.16.0...v2.17.0) (2026-06-16)
 
 
