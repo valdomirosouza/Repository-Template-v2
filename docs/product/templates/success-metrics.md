@@ -44,4 +44,5 @@
 
 - `docs/product/templates/value-hypothesis.md`
 - `docs/product/templates/user-story-map.md` — AC → test → evidence mapping
+- `docs/product/nfr-taxonomy.md` — classify guardrail metrics by NFR category + evidence/gate
 - `skills/sre/golden-signals.md` · `specs/observability/dora-metrics.md`

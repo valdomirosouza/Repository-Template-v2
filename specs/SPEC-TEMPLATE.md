@@ -95,11 +95,15 @@ slo_ref: docs/sre/slo/slo.yaml # where this feature's SLOs are/were recorded
 ## 6. Non-Functional Requirements
 
 <!-- Cover: containerisation, runtime, logging/trace, config-via-env, coverage ≥80% (CLAUDE.md §3.5),
-     error handling, performance budget, pinned deps + SBOM. Flag any PII field here. -->
+     error handling, performance budget, pinned deps + SBOM. Flag any PII field here.
+     Classify each NFR by the taxonomy in docs/product/nfr-taxonomy.md (category + evidence/gate). -->
 
 | ID     | Requirement |
 | ------ | ----------- |
 | NFR-01 |             |
+
+> Classify each NFR by the taxonomy in `docs/product/nfr-taxonomy.md` — pick a category and point
+> at the evidence/gate it maps to (SLO, control matrix, PII classification, coverage, …).
 
 ## 7. Architecture
 
@@ -162,6 +166,11 @@ record any deviation as a new ADR in `new_adrs_required`.>
 > **Requirement coverage footer (gate).** _N_ FRs total · _M_ mapped to ≥ 1 AC · **_K_ unmapped ⚠️**.
 > Every FR in §5 MUST map to at least one AC above; any unmapped FR (`K > 0`) **blocks Definition of
 > Ready / Done** until covered or explicitly moved to §3 Non-Goals. Fill the counts before review.
+
+> The table above is the **canonical, machine-traceable** AC form. A Gherkin
+> (Feature / Given-When-Then) companion is an **optional** human-readable form — see
+> `docs/product/acceptance-criteria-standard.md`; each `Scenario` tags an `AC-NN`, the table stays
+> authoritative.
 
 ## 13. Risks & Limitations
 
