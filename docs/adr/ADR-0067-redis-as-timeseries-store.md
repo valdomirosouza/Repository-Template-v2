@@ -58,9 +58,11 @@ epoch_bucket)` aggregate fields in a Redis hash, plus a per-bucket **sorted set*
    disabled** (`--save "" --appendonly no`, no data volume). Reusing the shared persistent Redis is
    explicitly rejected: it would couple unrelated workloads onto one instance, expose a second Redis
    on the host, and persist ephemeral telemetry past its TTL horizon — making the "no durability
-   guarantee" trade-off below accidental rather than intentional. (This records the topology
-   decision the implementation already made; earlier delivery notes that read "reuse existing Redis"
-   are superseded by this point.)
+   guarantee" trade-off below accidental rather than intentional. (This records the **prescribed
+   target topology**; earlier delivery notes that read "reuse existing Redis" are superseded by this
+   point. **Not yet wired into Compose:** the `golden-signals` service has no `docker-compose.yml`
+   entry today, so this dedicated instance is a deployment requirement to satisfy when the service is
+   added — tracked as a follow-up, not an as-built description.)
 
 ## Consequences
 
