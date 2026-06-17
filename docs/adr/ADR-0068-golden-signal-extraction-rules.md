@@ -1,6 +1,6 @@
 # ADR-0068 — Golden-Signal Extraction Rules, Window Semantics & Key Grammar
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-06-11
 **Authors:** Valdomiro Souza
 **Reviewers:** Tech Lead

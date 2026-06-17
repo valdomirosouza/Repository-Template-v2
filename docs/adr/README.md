@@ -82,7 +82,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0004](ADR-0004-observability-stack.md)                                | Observability Stack                                                                      | Accepted   | 2026-05-24 |
 | [ADR-0005](ADR-0005-message-broker-selection.md)                           | Message Broker Selection                                                                 | Accepted   | 2026-05-24 |
 | [ADR-0006](ADR-0006-deployment-strategy.md)                                | Deployment Strategy                                                                      | Accepted   | 2026-05-24 |
-| [ADR-0007](ADR-0007-service-mesh.md)                                       | Service Mesh                                                                             | Proposed   | 2026-05-24 |
+| [ADR-0007](ADR-0007-service-mesh.md)                                       | Service Mesh                                                                             | Accepted   | 2026-05-29 |
 | [ADR-0008](ADR-0008-secrets-management.md)                                 | Secrets Management                                                                       | Accepted   | 2026-05-24 |
 | [ADR-0009](ADR-0009-caching-strategy.md)                                   | Caching Strategy                                                                         | Accepted   | 2026-05-24 |
 | [ADR-0012](ADR-0012-pii-masking-strategy.md)                               | PII Masking Strategy                                                                     | Accepted   | 2026-05-24 |

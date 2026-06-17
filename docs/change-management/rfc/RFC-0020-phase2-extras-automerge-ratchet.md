@@ -1,6 +1,6 @@
 # RFC-0020 — Phase 2 extras: Dependabot patch/minor auto-merge + coverage ratchet
 
-> **Status:** Under Review
+> **Status:** Implemented (verified shipped — audit 2026-06-16)
 > **Date:** 2026-06-07
 > **Author(s):** @valdomirosouza
 > **Reviewers:** DevOps Lead, Tech Lead

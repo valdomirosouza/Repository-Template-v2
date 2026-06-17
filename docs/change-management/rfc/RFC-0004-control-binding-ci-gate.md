@@ -1,6 +1,6 @@
 # RFC-0004 — Enforce control-binding declarations as a CI governance gate
 
-> **Status:** Under Review
+> **Status:** Implemented (verified shipped — audit 2026-06-16)
 > **Date:** 2026-06-07
 > **Author(s):** @valdomirosouza
 > **Reviewers:** DevOps Lead (owner of `.github/workflows/`), Security Lead, Tech Lead
