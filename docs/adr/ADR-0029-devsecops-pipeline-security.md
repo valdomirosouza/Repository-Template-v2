@@ -5,6 +5,13 @@
 **Authors:** Security Lead, DevOps Lead
 **Reviewers:** Tech Lead, SRE Lead
 
+> **⚠️ Correction (2026-06-16, audit):** This ADR states Checkov (IaC scan) and Gitleaks (secret
+> scan) were "added to `ci.yml` as a blocking gate". Neither runs in any `.github/workflows/` file
+> today (verified: no checkov/gitleaks job). Secret scanning **is** covered by detect-secrets
+> (`secret-scanning.yml`); the **Checkov IaC scan and a dedicated Gitleaks job are NOT
+> implemented** — treat them as planned until the jobs exist. The §2 DAST control did ship, but via
+> the reusable `staging-dast.yml` called from `cd-staging.yml`, not an inline job.
+
 ---
 
 ## Context
