@@ -240,6 +240,14 @@ check-slo-thresholds: ## Fail if canary/error-budget thresholds are hard-coded i
 check-outbound-urls: ## Fail if an outbound-HTTP boundary skips the SSRF allow-list (OWASP A10)
 	@uv run python scripts/governance/check_outbound_urls.py
 
+check-adr-index-status: ## Fail if an ADR file's Status disagrees with the ADR index (audit follow-up)
+	@uv run python scripts/governance/check_adr_index_status.py
+
+check-doc-references: ## Fail if an ADR/RFC cross-reference link is dangling (audit follow-up)
+	@uv run python scripts/governance/check_doc_references.py
+
+check-adr-consistency: check-adr-index-status check-doc-references ## Run both ADR/RFC consistency gates
+
 check-inline-prompts: ## Fail if a NEW inline LLM system prompt appears in src/agents/ (ADR-0079)
 	@uv run python scripts/governance/check_inline_prompts.py
 
