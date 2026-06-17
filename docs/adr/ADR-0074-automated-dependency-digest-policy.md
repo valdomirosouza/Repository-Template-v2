@@ -6,6 +6,13 @@
 **Milestone:** v2.16.0 — Governance Enforcement Hardening (Track C)
 **Relates to:** [ADR-0029](ADR-0029-devsecops-pipeline-security.md) (DevSecOps / SCA), [ADR-0072](ADR-0072-versioned-security-control-matrices.md) (control matrices)
 
+> **⚠️ Correction (2026-06-16, audit):** This ADR's decision rests on a `renovate.json` at repo root
+> as "the template default". That file does **not** exist today, and the active dependency-update
+> tool is **Dependabot** (`.github/dependabot.yml`, per RFC-0015, which explicitly kept Renovate out
+> of scope). This ADR is therefore **target-state**: either add `renovate.json` and migrate off
+> Dependabot, or supersede this ADR to ratify Dependabot as the chosen tool. The Renovate-vs-
+> Dependabot conflict with RFC-0015 needs an explicit resolution.
+
 ---
 
 ## Context
