@@ -33,6 +33,7 @@ def _write(path: Path, text: str) -> None:
 
 # --- check_adr_index_status ------------------------------------------------------------------
 
+
 def _make_adr_repo(tmp_path: Path, *, file_status: str, index_status: str) -> Path:
     adr = tmp_path / "docs" / "adr"
     _write(adr / "ADR-0001-thing.md", f"# ADR-0001 — Thing\n\n**Status:** {file_status}\n")
@@ -59,7 +60,9 @@ def test_index_status_mismatch_detected(tmp_path: Path) -> None:
 def test_index_status_handles_table_header_and_qualifier(tmp_path: Path) -> None:
     """Table-format header (| **Status** | ... |) and a trailing qualifier both normalise."""
     adr = tmp_path / "docs" / "adr"
-    _write(adr / "ADR-0002-t.md", "# ADR-0002\n\n| **Status** | Accepted (extended by ADR-0009) |\n")
+    _write(
+        adr / "ADR-0002-t.md", "# ADR-0002\n\n| **Status** | Accepted (extended by ADR-0009) |\n"
+    )
     _write(
         adr / "README.md",
         "| ADR | Status |\n| --- | --- |\n| [ADR-0002](ADR-0002-t.md) | Accepted |\n",
@@ -76,6 +79,7 @@ def test_index_missing_row(tmp_path: Path) -> None:
 
 
 # --- check_doc_references --------------------------------------------------------------------
+
 
 def test_reference_valid_link(tmp_path: Path) -> None:
     adr = tmp_path / "docs" / "adr"
