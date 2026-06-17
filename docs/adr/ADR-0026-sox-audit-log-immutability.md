@@ -5,6 +5,13 @@
 **Authors:** Tech Lead, Security Lead
 **Reviewers:** AI Governance Lead, DevOps Lead
 
+> **⚠️ Correction (2026-06-16, audit):** This ADR names the audit table `audit_log` and specifies an
+> INSERT-only **trigger** for immutability. The implemented table is **`audit_events`**, made
+> immutable via **`REVOKE UPDATE, DELETE`** (not a trigger) in
+> `alembic/versions/0001_create_audit_events.py`. No `audit_log` table or trigger exists anywhere.
+> The immutability guarantee holds; only the table name and enforcement mechanism differ from the
+> text below.
+
 > **APPLICABILITY NOTICE**
 > This ADR is relevant ONLY for organizations publicly listed on U.S. stock exchanges
 > (NYSE, NASDAQ) or otherwise subject to SEC reporting obligations under the

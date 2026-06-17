@@ -1,6 +1,6 @@
 # RFC-0003 — Exclude governance/contract artifacts from auto-merge eligibility
 
-> **Status:** Under Review
+> **Status:** Implemented (verified shipped — audit 2026-06-16)
 > **Date:** 2026-06-07
 > **Author(s):** @valdomirosouza
 > **Reviewers:** DevOps Lead (owner of `.github/workflows/`), Tech Lead
