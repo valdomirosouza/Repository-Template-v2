@@ -4,6 +4,12 @@
 **Date:** 2026-05-24
 **Authors:** AI Lead, Security Lead
 
+> **⚠️ Correction (2026-06-16, audit):** This ADR describes the HITL approval REST surface as
+> `/v1/hitl/requests/{id}/approve` and `/reject`. The implemented API is a **single** endpoint
+> `POST /v1/hitl/requests/{request_id}/decision` (`src/api/rest/routers/hitl.py:142`, mounted at
+> prefix `/v1/hitl`); no `/approve` or `/reject` route exists. The oversight model below is
+> unchanged — only the route shape was corrected during implementation.
+
 ---
 
 ## Context

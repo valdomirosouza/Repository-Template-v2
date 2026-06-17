@@ -6,6 +6,13 @@
 **Spec:** `specs/api/async-api-design.md`, `specs/system/async-event-flow.md`
 **Supersedes:** None | **Superseded by:** None
 
+> **⚠️ Correction (2026-06-16, audit):** This ADR cites committed gRPC stub directories
+> `src/shared/generated/grpc/` and `services/event-worker/api/grpc/`; neither exists — stubs are
+> generated on demand, not committed. The gRPC protos live in `infrastructure/proto/` while the
+> Makefile codegen reads `docs/api/grpc/proto/` (see ADR-0021's correction). Read "committed stub
+> dirs" as "generated on demand"; the proto-tree reconciliation is tracked as a follow-up. The
+> versioning strategy is unchanged.
+
 ---
 
 ## Context

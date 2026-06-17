@@ -6,6 +6,14 @@
 **Spec:** `specs/ai/harness-design.md §2, §9`
 **Supersedes:** None | **Superseded by:** None
 
+> **⚠️ Correction (2026-06-16, audit):** This ADR states `make gen-proto-python` / `gen-proto-go`
+> generate stubs from `infrastructure/proto/harness_state.proto` into a committed
+> `src/shared/generated/grpc/`. Today the Makefile codegen targets read protos from
+> `docs/api/grpc/proto/` (which holds only `ai_service.proto`) — the harness protos under
+> `infrastructure/proto/` are **not** wired into codegen, and `src/shared/generated/grpc/` is not
+> committed (stubs are generated on demand). The two proto trees need reconciling; tracked as a
+> follow-up. The protocol decision stands.
+
 ---
 
 ## Context
