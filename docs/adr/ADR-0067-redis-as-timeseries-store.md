@@ -1,6 +1,6 @@
 # ADR-0067 — Redis as the Golden-Signals Time-Series Store
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-06-11
 **Authors:** Valdomiro Souza
 **Reviewers:** Tech Lead
