@@ -1,6 +1,6 @@
 # RFC-NNNN — <Title>
 
-> **Status:** Draft | Under Review | Approved | Rejected | Withdrawn
+> **Status:** Draft | Under Review | Proposed | Approved | Accepted | Implemented | Rejected | Withdrawn | Superseded
 > **Date:** YYYY-MM-DD
 > **Author(s):** @github-handle
 > **Reviewers:** Tech Lead, Security Lead _(Normal)_ · TL + SecOps async _(Emergency)_

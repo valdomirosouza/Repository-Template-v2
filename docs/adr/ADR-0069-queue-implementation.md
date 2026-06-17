@@ -1,6 +1,6 @@
 # ADR-0069 — In-JVM Bounded Queue + Virtual-Thread Worker (Ingestion ↔ Processing Decoupling)
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-06-11
 **Authors:** Valdomiro Souza
 **Reviewers:** Tech Lead
@@ -16,7 +16,7 @@ decouples ingestion from processing, and FR-05 requires an async **worker** to d
 1m/5m aggregates. NFR-02 (as amended by ADR-0066) asks for asyncio-equivalent concurrency; ADR-0066
 §Decision-2 already names **Java 21 virtual threads (Project Loom)** as that equivalent. The source
 spec §15-Q1 leaves the concrete queue choice to the architecture phase, with a stated default of
-"in-JVM bounded executor, honouring ADR-0003; Redis Streams stays rejected *as a queue*." ADR-0003
+"in-JVM bounded executor, honouring ADR-0003; Redis Streams stays rejected _as a queue_." ADR-0003
 governs the platform async strategy and already rejects Redis Streams as a general-purpose queue.
 
 The initial scope is **single-node** (source-spec §3, §15-Q2), so a cross-process broker is not yet
@@ -39,7 +39,7 @@ single virtual-thread worker (Java 21 Loom).**
    bucketing/aggregation and flushing to the `MetricStore` (ADR-0067) on window roll-over and on a
    periodic timer. Virtual threads make a blocking `take()` cheap and are the Loom equivalent of the
    asyncio worker NFR-02 originally specified.
-4. **ADR-0003 alignment:** **Redis Streams remains rejected *as a queue*** (consistent with ADR-0003).
+4. **ADR-0003 alignment:** **Redis Streams remains rejected _as a queue_** (consistent with ADR-0003).
    Redis is used only as the time-series **store** (ADR-0067), never as the work queue.
 5. **Scale-out path (recorded):** when single-node throughput is exceeded or multi-instance/HA is
    required, replace `IngestQueue` with **Kafka** (the repo already runs Kafka via
@@ -49,6 +49,7 @@ single virtual-thread worker (Java 21 Loom).**
 ## Consequences
 
 ### Positive
+
 - **Zero new infra** for the queue — no broker to run/scan/operate in initial scope (ADR-0020).
 - **Real backpressure** — the bounded queue + non-blocking `offer()` make overload an explicit,
   observable `rejected`/`dropped` signal instead of an OOM (single-node DoS resilience; threat model D).
@@ -56,6 +57,7 @@ single virtual-thread worker (Java 21 Loom).**
 - **Clean scale-out** — the seam to Kafka is identified, not improvised later.
 
 ### Negative / Trade-offs
+
 - **No cross-process durability** — events in the in-JVM queue are lost on process crash. Acceptable:
   the data is ephemeral telemetry, short-window, re-derivable from the HAProxy logs (same rationale as
   ADR-0067's no-durability stance). Documented, not silent.
@@ -63,12 +65,14 @@ single virtual-thread worker (Java 21 Loom).**
 - **Drop-on-full** is a deliberate loss under flood; surfaced via metrics so it is observable, not hidden.
 
 ### Neutral
+
 - Single worker is sufficient for initial throughput; capacity can grow to N virtual-thread workers
   draining the same queue without an architecture change if profiling shows the worker is the bottleneck.
 
 ## Alternatives Considered
-- **Redis Streams as the queue** — rejected, consistent with ADR-0003 (Redis Streams rejected *as a
-  queue*); keeps Redis single-purpose (store only).
+
+- **Redis Streams as the queue** — rejected, consistent with ADR-0003 (Redis Streams rejected _as a
+  queue_); keeps Redis single-purpose (store only).
 - **Kafka / external broker from day one** — strongest durability and scale-out, but exceeds the
   single-node initial scope and the ADR-0020 cost envelope; retained as the explicit scale-out path.
 - **Unbounded `LinkedBlockingQueue`** — rejected: removes backpressure, invites OOM under flood; the
@@ -77,6 +81,7 @@ single virtual-thread worker (Java 21 Loom).**
   couples API latency to aggregation cost.
 
 ## References
+
 - `specs/system/SPEC-LGS-001-log-based-golden-signals.md` §5 (FR-04/05), §7, §15-Q1, §15-Q2
 - `reports/CODE-DELIVERY-SPEC-LGS-001/specs/feature-spec.md` §1.3, §3, §5 (E6)
 - ADR-0066 (virtual threads), ADR-0003 (async strategy / Redis Streams rejection), ADR-0067 (store)

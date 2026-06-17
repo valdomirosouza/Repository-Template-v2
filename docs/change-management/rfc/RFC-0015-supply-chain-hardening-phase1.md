@@ -1,6 +1,6 @@
 # RFC-0015 — Supply-chain hardening (Phase 1): SHA-pin all actions + full SCA
 
-> **Status:** Under Review
+> **Status:** Implemented (verified shipped — audit 2026-06-16)
 > **Date:** 2026-06-07
 > **Author(s):** @valdomirosouza
 > **Reviewers:** DevOps Lead (owner of `.github/workflows/`), Security Lead

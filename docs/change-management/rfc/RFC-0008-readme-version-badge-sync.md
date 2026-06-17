@@ -1,6 +1,6 @@
 # RFC-0008 — Sync the README **Version:** badge on release-please PRs
 
-> **Status:** Under Review
+> **Status:** Implemented (verified shipped — audit 2026-06-16)
 > **Date:** 2026-06-07
 > **Author(s):** @valdomirosouza
 > **Reviewers:** DevOps Lead (owner of `.github/workflows/`), Release Manager
