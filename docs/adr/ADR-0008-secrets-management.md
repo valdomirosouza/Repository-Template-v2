@@ -4,6 +4,15 @@
 **Date:** 2026-05-24
 **Authors:** Tech Lead, Security Lead
 
+> **⚠️ Correction (2026-06-18, audit):** This ADR names **HashiCorp Vault** (Agent sidecar injection,
+> dynamic short-lived DB creds, Vault audit log) as the primary secrets store. **No Vault exists in
+> the IaC** — the live stack uses **AWS KMS** for encryption at rest (`aws_kms_key` in the
+> database/cache/message-broker modules) plus repo/CI secrets, and application-layer field
+> encryption via `EncryptedField` (ADR-0018). The Vault-specific controls (dynamic credentials,
+> Vault audit trail) are therefore **not in force**. Either provision Vault or supersede this ADR to
+> ratify the KMS/secrets-manager reality as primary; do not credit Vault controls in an audit until
+> then.
+
 ---
 
 ## Context

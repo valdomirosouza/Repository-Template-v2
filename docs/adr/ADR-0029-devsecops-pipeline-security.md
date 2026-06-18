@@ -33,13 +33,13 @@ The OWASP Top 10 requires continuous DAST verification at the API layer; SLSA Le
 
 Enforce the following security hardening across the pipeline:
 
-**1. IaC Security Scan (Checkov)** — added to `ci.yml` as a blocking gate on `infrastructure/` changes. SARIF output uploaded to GitHub Security tab.
+**1. IaC Security Scan (Checkov)** — **[NOT IMPLEMENTED as of 2026-06-18 — see header correction]** — _intended:_ added to `ci.yml` as a blocking gate on `infrastructure/` changes, SARIF to the GitHub Security tab. No Checkov job exists in any workflow today.
 
 **2. DAST (OWASP ZAP Full Scan)** — added to `cd-staging.yml` as a blocking job after smoke tests. Zero CRITICAL findings required for production promotion. Reports archived in `docs/security/zap-reports/`.
 
 **3. SHA-pinned GitHub Actions** — all `uses:` references in `.github/workflows/` must use commit SHA, not version tag. Enforced by `harness/code-check.yml` DSEC-02 check (advisory initially, promoted to blocking after migration sprint).
 
-**4. Gitleaks CI scan** — added to `ci.yml` alongside existing detect-secrets. Covers git history, not just staged changes.
+**4. Gitleaks CI scan** — **[NOT IMPLEMENTED as of 2026-06-18 — see header correction]** — _intended:_ added to `ci.yml` alongside detect-secrets to cover git history, not just staged changes. Only the staged-change detect-secrets gate (`secret-scanning.yml`) exists today.
 
 **5. Container digest pinning** — Dockerfiles must use `FROM image@sha256:<digest>` for base images. Enforced by DSEC-01 harness check (advisory).
 

@@ -4,6 +4,13 @@
 **Date:** 2026-05-24
 **Authors:** Tech Lead
 
+> **⚠️ Correction (2026-06-18, audit):** Two items. (1) **Duplicity** — the broker _selection_
+> (Kafka, with the same RabbitMQ/Redis-Streams/SQS/NATS rejections) is already decided in ADR-0003;
+> treat this ADR as broker _configuration_ and defer the selection to ADR-0003. (2) The "self-hosted
+> on Kubernetes via Strimzi operator" decision is **not** implemented — there are no Strimzi
+> manifests; the live broker is **AWS-managed MSK** (`aws_msk_cluster`). Reconcile the runtime to MSK
+> (a superseding ADR is the cleaner fix).
+
 ---
 
 ## Context

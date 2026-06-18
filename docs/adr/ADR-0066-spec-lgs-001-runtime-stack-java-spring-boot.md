@@ -7,6 +7,11 @@
 **Relates to:** [ADR-0025](ADR-0025-language-selection.md) (Language Selection — override clause), [ADR-0003](ADR-0003-async-api-strategy.md) (async strategy), [ADR-0012](ADR-0012-pii-masking-strategy.md) (PII)
 **Scope:** `SPEC-LGS-001` (Log-Based Golden Signals) only — does **not** change the platform default.
 
+> **⚠️ Correction (2026-06-18, audit):** The body pins **Spring Boot 3.4.5** ("the version already
+> used by `services/domain-service`"), but both `services/domain-service/pom.xml` and
+> `services/golden-signals/pom.xml` are on **3.5.15** (a fail-forward bump for CVE overrides). The
+> Java 21 + Spring Boot decision stands; the pinned version is 3.5.x. Treat 3.5.15 as authoritative.
+
 ---
 
 ## Context
