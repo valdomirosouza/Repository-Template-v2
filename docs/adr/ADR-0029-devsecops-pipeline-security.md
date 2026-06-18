@@ -5,12 +5,12 @@
 **Authors:** Security Lead, DevOps Lead
 **Reviewers:** Tech Lead, SRE Lead
 
-> **⚠️ Correction (2026-06-16, audit):** This ADR states Checkov (IaC scan) and Gitleaks (secret
-> scan) were "added to `ci.yml` as a blocking gate". Neither runs in any `.github/workflows/` file
-> today (verified: no checkov/gitleaks job). Secret scanning **is** covered by detect-secrets
-> (`secret-scanning.yml`); the **Checkov IaC scan and a dedicated Gitleaks job are NOT
-> implemented** — treat them as planned until the jobs exist. The §2 DAST control did ship, but via
-> the reusable `staging-dast.yml` called from `cd-staging.yml`, not an inline job.
+> **⚠️ Update (2026-06-18, issue #337):** Checkov (§1) and Gitleaks (§4) are now **implemented in
+> report-mode** in `.github/workflows/iac-secret-scan.yml` (not `ci.yml`), per the ADR-0070
+> lifecycle — they surface findings without blocking during burn-in, then flip to blocking
+> (tracked in `docs/governance/gate-lifecycle.md`). The §2 DAST control ships via the reusable
+> `staging-dast.yml` called from `cd-staging.yml`, not an inline `ci.yml` job. (Supersedes the
+> earlier 2026-06-16 "NOT implemented" correction.)
 
 ---
 
@@ -33,13 +33,13 @@ The OWASP Top 10 requires continuous DAST verification at the API layer; SLSA Le
 
 Enforce the following security hardening across the pipeline:
 
-**1. IaC Security Scan (Checkov)** — **[NOT IMPLEMENTED as of 2026-06-18 — see header correction]** — _intended:_ added to `ci.yml` as a blocking gate on `infrastructure/` changes, SARIF to the GitHub Security tab. No Checkov job exists in any workflow today.
+**1. IaC Security Scan (Checkov)** — **[IMPLEMENTED report-mode 2026-06-18, #337]** in `iac-secret-scan.yml` (scans `infrastructure/`); report-mode during burn-in, flips to blocking per gate-lifecycle.md.
 
 **2. DAST (OWASP ZAP Full Scan)** — added to `cd-staging.yml` as a blocking job after smoke tests. Zero CRITICAL findings required for production promotion. Reports archived in `docs/security/zap-reports/`.
 
 **3. SHA-pinned GitHub Actions** — all `uses:` references in `.github/workflows/` must use commit SHA, not version tag. Enforced by `harness/code-check.yml` DSEC-02 check (advisory initially, promoted to blocking after migration sprint).
 
-**4. Gitleaks CI scan** — **[NOT IMPLEMENTED as of 2026-06-18 — see header correction]** — _intended:_ added to `ci.yml` alongside detect-secrets to cover git history, not just staged changes. Only the staged-change detect-secrets gate (`secret-scanning.yml`) exists today.
+**4. Gitleaks CI scan** — **[IMPLEMENTED report-mode 2026-06-18, #337]** in `iac-secret-scan.yml` (full git-history scan, complements staged detect-secrets); report-mode during burn-in, flips to blocking per gate-lifecycle.md.
 
 **5. Container digest pinning** — Dockerfiles must use `FROM image@sha256:<digest>` for base images. Enforced by DSEC-01 harness check (advisory).
 
