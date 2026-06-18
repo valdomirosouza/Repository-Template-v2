@@ -11,6 +11,14 @@
 > `alembic/versions/0001_create_audit_events.py`. No `audit_log` table or trigger exists anywhere.
 > The immutability guarantee holds; only the table name and enforcement mechanism differ from the
 > text below.
+>
+> **⚠️ Update (2026-06-18, issue #338):** Two further corrections to the body below. (1) The 0001
+> REVOKE only **warned** if the app role was missing, so a misconfigured production deploy could
+> leave `audit_events` mutable. `alembic/versions/0007_enforce_audit_immutability_prod.py` now
+> **hard-fails (`RAISE EXCEPTION`) in production** when the role is absent (warns elsewhere so
+> CI/dev migrations still run). (2) The "replicated to `audit_log` within the **same transaction**"
+> requirement below is not implementable as written (a Redis store cannot share a PostgreSQL
+> transaction); read it as **asynchronous/eventual** replication to `audit_events`.
 
 > **APPLICABILITY NOTICE**
 > This ADR is relevant ONLY for organizations publicly listed on U.S. stock exchanges
