@@ -12,6 +12,30 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.21.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.20.0...v2.21.0) (2026-06-18)
+
+
+### Features
+
+* **infra:** add dedicated ephemeral golden-signals Redis to Compose (closes [#339](https://github.com/valdomirosouza/Repository-Template-v2/issues/339)) ([#343](https://github.com/valdomirosouza/Repository-Template-v2/issues/343)) ([e8e0113](https://github.com/valdomirosouza/Repository-Template-v2/commit/e8e01135df81ec1d900972156ecdb87c599927af))
+* **security:** wire CV3 ActionSchemaValidator into HITL gateway (closes [#336](https://github.com/valdomirosouza/Repository-Template-v2/issues/336)) ([#345](https://github.com/valdomirosouza/Repository-Template-v2/issues/345)) ([29e841b](https://github.com/valdomirosouza/Repository-Template-v2/commit/29e841b8b5805bc7810a716f83b6b14a5ddcaa6a))
+
+
+### Bug Fixes
+
+* **sox:** hard-fail audit_events immutability in production (closes [#338](https://github.com/valdomirosouza/Repository-Template-v2/issues/338)) ([#344](https://github.com/valdomirosouza/Repository-Template-v2/issues/344)) ([2c1dfad](https://github.com/valdomirosouza/Repository-Template-v2/commit/2c1dfad7ede68cd17abb6def1357f67b5e0e04a1))
+
+
+### CI/CD
+
+* **security:** implement Checkov + Gitleaks scans, report-mode (closes [#337](https://github.com/valdomirosouza/Repository-Template-v2/issues/337)) ([#342](https://github.com/valdomirosouza/Repository-Template-v2/issues/342)) ([d5ca681](https://github.com/valdomirosouza/Repository-Template-v2/commit/d5ca681e9a30a629cf7af19f87600bde435b9da1))
+
+
+### Documentation
+
+* **adr:** reconcile ADR bodies to reality — audit C doc-accuracy fixes ([#335](https://github.com/valdomirosouza/Repository-Template-v2/issues/335)) ([49b0f05](https://github.com/valdomirosouza/Repository-Template-v2/commit/49b0f056052b31072852a268a88658a8c4977ec3))
+* **audit:** fix two self-inflicted errors from the prior audit (B) ([#334](https://github.com/valdomirosouza/Repository-Template-v2/issues/334)) ([f649684](https://github.com/valdomirosouza/Repository-Template-v2/commit/f649684b7f676186ca1389a506d5ed9844aff4fe))
+
 ## [2.20.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.19.0...v2.20.0) (2026-06-18)
 
 
