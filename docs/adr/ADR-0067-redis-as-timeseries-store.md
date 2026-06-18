@@ -60,9 +60,11 @@ epoch_bucket)` aggregate fields in a Redis hash, plus a per-bucket **sorted set*
    on the host, and persist ephemeral telemetry past its TTL horizon — making the "no durability
    guarantee" trade-off below accidental rather than intentional. (This records the **prescribed
    target topology**; earlier delivery notes that read "reuse existing Redis" are superseded by this
-   point. **Not yet wired into Compose:** the `golden-signals` service has no `docker-compose.yml`
-   entry today, so this dedicated instance is a deployment requirement to satisfy when the service is
-   added — tracked as a follow-up, not an as-built description.)
+   point. **Wired into Compose (2026-06-18, issue #339):** the `gs-redis` service in
+   `docker-compose.yml` (profile `golden-signals`/`full`) provides this dedicated instance —
+   internal-only (no host port; `expose: 6379`), persistence disabled (`--save "" --appendonly no`,
+   no volume). The `golden-signals` application service itself is still to be added, but its store
+   now exists and conforms.)
 
 ## Consequences
 
