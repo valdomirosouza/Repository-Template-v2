@@ -194,14 +194,16 @@ jobs:
       - name: Validate GitHub Actions are SHA-pinned (RFC-0015)
         run: bash scripts/governance/check_action_pins.sh
 
-      # REPORT-MODE (ADR-0070 burn-in): ADR/RFC consistency gates from the 2026-06-16 audit. Both
-      # are deterministic (a status/index disagreement or a dangling link is unambiguous), so they
-      # are slated to flip to BLOCKING once the audit-fix PRs land on main and the burn-in window in
-      # docs/governance/gate-lifecycle.md is met. Until then they warn, never block.
-      - name: ADR status/index consistency (report-mode)
-        run: python3 scripts/governance/check_adr_index_status.py --report
-      - name: ADR/RFC cross-reference link check (report-mode)
-        run: python3 scripts/governance/check_doc_references.py --report
+      # BLOCKING (ADR-0070): ADR/RFC consistency gates from the 2026-06-16 audit. Both are
+      # deterministic (a status/index disagreement or a dangling link is unambiguous), so they
+      # qualify for blocking-from-introduction under ADR-0070's deterministic carve-out (same basis
+      # as the F7 guard and Chaos Smoke). Flipped 2026-06-17 after the audit-fix PRs (#321–#324)
+      # landed green on main — `main` then verified clean (83/83 statuses agree, 172/172 links
+      # resolve). Day-zero safe: they validate committed template docs, not template-init placeholders.
+      - name: ADR status/index consistency
+        run: python3 scripts/governance/check_adr_index_status.py
+      - name: ADR/RFC cross-reference link check
+        run: python3 scripts/governance/check_doc_references.py
 
       # BLOCKING from introduction (ADR-0070): this is a deterministic gate — dead references and
       # unjustified n/a entries are unambiguous, so there is no false-positive burn-in to serve.
