@@ -4,7 +4,7 @@
 **Date:** 2026-06-11
 **Authors:** Valdomiro Souza
 **Reviewers:** Tech Lead
-**Relates to:** [ADR-0066](ADR-0066-spec-lgs-001-runtime-stack-java-spring-boot.md) (Java 21 runtime), [ADR-0003](ADR-0003-async-api-strategy.md) (async strategy), [ADR-0020](ADR-0020-cost-governance.md) (cost)
+**Relates to:** [ADR-0066](ADR-0066-spec-lgs-001-runtime-stack-java-spring-boot.md) (Java 21 runtime), [ADR-0003](ADR-0003-async-api-strategy.md) (async strategy), [ADR-0020](ADR-0020-finops-cost-allocation.md) (cost)
 **Scope:** `SPEC-LGS-001` only — **resolves source-spec §15-Q1** (queue implementation: in-JVM vs Redis stream vs broker).
 
 ---

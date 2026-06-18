@@ -3,7 +3,7 @@
 **Status:** Accepted
 **Date:** 2026-06-13
 **Authors:** Valdomiro Souza
-**Relates to:** [ADR-0011](ADR-0011-hitl-hotl-decision.md) (HITL/HOTL), [ADR-0018](ADR-0018-encryption-at-rest.md) (encryption at rest), [ADR-0028](ADR-0028-dora-metrics.md) (DORA / MTTR)
+**Relates to:** [ADR-0011](ADR-0011-hitl-hotl-model.md) (HITL/HOTL), [ADR-0018](ADR-0018-db-encryption-at-rest.md) (encryption at rest), [ADR-0028](ADR-0028-dora-metrics.md) (DORA / MTTR)
 
 ---
 

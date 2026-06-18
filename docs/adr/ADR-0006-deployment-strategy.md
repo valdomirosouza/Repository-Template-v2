@@ -4,6 +4,12 @@
 **Date:** 2026-05-24
 **Authors:** Tech Lead, DevOps Lead, SRE Lead
 
+> **⚠️ Correction (2026-06-16, audit):** This ADR cites deploy scripts at
+> `infrastructure/scripts/deploy/{deploy,smoke-test,rollback}.sh`. Those scripts do **not** exist.
+> Deployment is driven by the Makefile (`make deploy-staging`, `make rollback`) and the
+> `.github/workflows/cd-staging.yml` / `cd-production.yml` pipelines. Read the script paths as
+> illustrative — the real entrypoints are the make targets and CD workflows.
+
 ---
 
 ## Context

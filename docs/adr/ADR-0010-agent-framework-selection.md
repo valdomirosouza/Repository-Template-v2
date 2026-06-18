@@ -4,6 +4,11 @@
 **Date:** 2026-05-24
 **Authors:** AI Lead, Tech Lead
 
+> **⚠️ Correction (2026-06-16, audit):** This ADR refers to a `router.py` component for multi-agent
+> coordination. No such file exists. Coordination is handled by
+> `src/agents/orchestrator/orchestrator.py` (the Perception→Reason→Act loop) and
+> `src/agents/harness/coordinator.py`. Read "router.py" as that orchestrator/coordinator seam.
+
 ---
 
 ## Context

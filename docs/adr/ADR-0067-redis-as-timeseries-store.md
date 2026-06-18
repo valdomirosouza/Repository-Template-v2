@@ -4,7 +4,7 @@
 **Date:** 2026-06-11
 **Authors:** Valdomiro Souza
 **Reviewers:** Tech Lead
-**Relates to:** [ADR-0066](ADR-0066-spec-lgs-001-runtime-stack-java-spring-boot.md) (Java runtime), [ADR-0020](ADR-0020-cost-governance.md) (cost), [ADR-0019](ADR-0019-redis-tls-encryption.md) (Redis TLS), [ADR-0068](ADR-0068-golden-signal-extraction-rules.md) (key grammar)
+**Relates to:** [ADR-0066](ADR-0066-spec-lgs-001-runtime-stack-java-spring-boot.md) (Java runtime), [ADR-0020](ADR-0020-finops-cost-allocation.md) (cost), [ADR-0019](ADR-0019-redis-tls-value-encryption.md) (Redis TLS), [ADR-0068](ADR-0068-golden-signal-extraction-rules.md) (key grammar)
 **Scope:** `SPEC-LGS-001` (Log-Based Golden Signals) only — resolves source-spec §13 (Redis retention horizon) and §15-Q2 (single-node Redis).
 
 ---

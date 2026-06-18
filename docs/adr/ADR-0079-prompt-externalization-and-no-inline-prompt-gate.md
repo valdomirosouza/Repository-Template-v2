@@ -5,7 +5,7 @@
 **Authors:** Valdomiro Souza
 **Spec:** N/A — governed by `prompts/README.md` + `docs/ai/prompt-registry.md` (Issue #269)
 **Supersedes:** None | **Superseded by:** None
-**Relates to:** [ADR-0014](ADR-0014-multi-agent-harness-strategy.md) (harness), [ADR-0072](ADR-0072-versioned-control-matrices.md) (machine-verified governance), [ADR-0051](ADR-0051-model-contract-testing.md) (model-contract gate)
+**Relates to:** [ADR-0014](ADR-0014-multi-agent-harness-strategy.md) (harness), [ADR-0072](ADR-0072-versioned-security-control-matrices.md) (machine-verified governance), [ADR-0051](ADR-0051-model-behavioral-contracts.md) (model-contract gate)
 
 ## Context
 
