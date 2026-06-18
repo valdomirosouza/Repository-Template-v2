@@ -69,4 +69,6 @@ log statement and LLM call; gap is certain to appear in a growing codebase.
 **Tokenisation vault (replace PII with opaque tokens stored in a vault)**
 Considered for L1 data in a future ADR; deferred because vault infrastructure
 adds operational complexity that is not yet justified by the current data volume.
-Will be revisited as ADR-0014 when L1 tokenisation requirements are clearer.
+Will be revisited in a dedicated future ADR when L1 tokenisation requirements are clearer.
+(Corrected 2026-06-16, audit: the original text said "ADR-0014", but ADR-0014 is the
+Multi-Agent Harness Strategy — an unrelated decision; no tokenisation ADR is allocated yet.)

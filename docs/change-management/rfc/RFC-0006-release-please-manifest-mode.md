@@ -1,6 +1,6 @@
 # RFC-0006 — Migrate release-please to manifest mode (restore custom changelog sections)
 
-> **Status:** Under Review
+> **Status:** Implemented (verified shipped — audit 2026-06-16)
 > **Date:** 2026-06-07
 > **Author(s):** @valdomirosouza
 > **Reviewers:** DevOps Lead (owner of `.github/workflows/`), Release Manager, Tech Lead

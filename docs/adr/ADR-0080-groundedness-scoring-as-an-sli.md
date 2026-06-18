@@ -5,7 +5,7 @@
 **Authors:** AI Governance Lead
 **Spec:** N/A — operational policy (see `docs/ai/eval-scorecard.md`, `docs/ai/ai-observability-naming.md`)
 **Supersedes:** None | **Superseded by:** None
-**Relates to:** [ADR-0051](ADR-0051-model-contract-testing.md), [ADR-0079](ADR-0079-prompt-externalization-and-no-inline-prompt-gate.md)
+**Relates to:** [ADR-0051](ADR-0051-model-behavioral-contracts.md), [ADR-0079](ADR-0079-prompt-externalization-and-no-inline-prompt-gate.md)
 
 ---
 
