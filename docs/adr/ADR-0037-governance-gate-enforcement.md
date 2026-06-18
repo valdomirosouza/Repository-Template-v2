@@ -4,7 +4,13 @@
 **Date:** 2026-06-05
 **Author:** Valdomiro Souza
 **Issue:** #14
-**Related ADRs:** ADR-0011 (HITL/HOTL Model), ADR-0015 (Feature Flag Strategy), ADR-0034 (Agentic Escalation Protocol)
+**Related ADRs:** ADR-0011 (HITL/HOTL Model), ADR-0015 (Feature Flag Strategy), ADR-0034 (Agentic Escalation Protocol), [ADR-0070](ADR-0070-governance-gate-enforcement-lifecycle.md) (gate enforcement lifecycle)
+
+> **Note (2026-06-17, audit #328):** [ADR-0070](ADR-0070-governance-gate-enforcement-lifecycle.md)
+> is a _cross-cutting_ policy for how **every** gate graduates report-mode → blocking; it does
+> **not** supersede this ADR. This ADR defines one _specific_ gate (the council-approval
+> `governance-gate.yml`). The two are complementary: this gate's enforcement mode is tracked in
+> `docs/governance/gate-lifecycle.md` under ADR-0070's lifecycle.
 
 ---
 

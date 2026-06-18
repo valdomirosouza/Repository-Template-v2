@@ -4,7 +4,7 @@
 **Date:** 2026-06-12
 **Authors:** Valdomiro Souza
 **Milestone:** v2.16.0 — Governance Enforcement Hardening (Track A)
-**Relates to:** [ADR-0061](ADR-0061-control-binding-ci-gate.md) (control-binding CI gate), [ADR-0064](ADR-0064-delivery-right-sizing-tiers.md) (tiers), [ADR-0071](ADR-0071-repository-settings-as-code.md) (settings-as-code)
+**Relates to:** [ADR-0061](ADR-0061-control-binding-ci-gate.md) (control-binding CI gate), [ADR-0064](ADR-0064-delivery-right-sizing-tiers.md) (tiers), [ADR-0071](ADR-0071-repository-settings-as-code.md) (settings-as-code), [ADR-0037](ADR-0037-governance-gate-enforcement.md) (council-approval gate — one of the specific gates this lifecycle governs)
 
 ---
 
