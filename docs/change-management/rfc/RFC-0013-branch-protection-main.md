@@ -1,12 +1,18 @@
 # RFC-0013 — Branch protection for `main` (Balanced policy)
 
-> **Status:** Under Review
+> **Status:** Superseded by RFC-0021 (enforced ruleset ratified — see note)
 > **Date:** 2026-06-07
 > **Author(s):** @valdomirosouza
 > **Reviewers:** DevOps Lead, Tech Lead, Security Lead
 > **Related Issue:** #112
-> **Related RFC:** RFC-0001/0002 (branch hygiene), RFC-0003 (auto-merge review gating), RFC-0012 (CHANGELOG ownership)
+> **Related RFC:** RFC-0001/0002 (branch hygiene), RFC-0003 (auto-merge review gating), RFC-0012 (CHANGELOG ownership), RFC-0021 (ratified ruleset)
 > **Related ADR:** ADR-0027 (ISO 27001 change mgmt)
+>
+> **⚠️ Update (2026-06-17, RFC-0021, audit #326):** The enforced `main` ruleset diverged from this
+> RFC's 9-check "balanced" design — the live ruleset is `main-branch-protection` with **15** required
+> checks (this RFC's exclusion of DAST/SBOM/Integration was reversed once those jobs stabilised).
+> **RFC-0021** ratifies the enforced set and is the current source of truth; the design below is kept
+> for historical rationale.
 > **Change type:** Normal
 
 ---

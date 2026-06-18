@@ -7,6 +7,13 @@
 > **Related Issue:** #116
 > **Related RFC:** RFC-0013 (branch protection), RFC-0012 (CHANGELOG ownership), RFC-0006 (manifest mode)
 > **Related ADR:** ADR-0027 (ISO 27001 change mgmt), ADR-0057 (version SoT)
+> **Related RFC:** RFC-0013, RFC-0021 (ratified ruleset)
+>
+> **⚠️ Update (2026-06-17, RFC-0021, audit #326):** Two corrections. (1) The ruleset's canonical name
+> is **`main-branch-protection`** (live), not `main-protection` as written here. (2) The §2a "no bypass
+> actor" statement is correct and live; the §4 Implementation block's `bypass_actors` entry was an
+> internal contradiction and was never applied. **RFC-0021** ratifies the enforced 15-check set and is
+> the current source of truth.
 > **Change type:** Normal
 
 ---

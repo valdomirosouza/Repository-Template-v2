@@ -38,6 +38,7 @@
           { "context": "Lint" },
           { "context": "Unit Tests" },
           { "context": "Security Tests" },
+          { "context": "Detect Secrets" },
           { "context": "CodeQL — Python" },
           { "context": "Contract Drift Check" },
           { "context": "Generate SBOM" },

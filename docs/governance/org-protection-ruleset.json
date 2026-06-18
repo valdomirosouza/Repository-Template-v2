@@ -1,5 +1,5 @@
 {
-  "_comment": "Post-migration main branch ruleset (RFC-0018). Apply AFTER the repo is in an org and the 7 Teams exist: gh api -X POST repos/<ORG>/Repository-Template-v2/rulesets --input docs/governance/org-protection-ruleset.json . Differences vs the personal-repo ruleset (RFC-0013): require_code_owner_review=true, required_approving_review_count=1, and an OrganizationAdmin bypass so the release-please PR merges without --admin. For SOX financial paths, raise approvals to 2 via a path-targeted ruleset or team policy.",
+  "_comment": "Post-migration main branch ruleset (RFC-0018). Apply AFTER the repo is in an org and the 7 Teams exist: gh api -X POST repos/<ORG>/Repository-Template-v2/rulesets --input docs/governance/org-protection-ruleset.json . The required-status-checks set is kept IN SYNC with the live personal ruleset .github/rulesets/main.json (canonical 15-check set ratified by RFC-0021) so migrating to an org does not silently drop DAST/SBOM/CodeQL/F7/council gates. Differences vs the personal-repo ruleset (RFC-0013/RFC-0021): require_code_owner_review=true, required_approving_review_count=1, and an OrganizationAdmin bypass so the release-please PR merges without --admin. For SOX financial paths, raise approvals to 2 via a path-targeted ruleset or team policy.",
   "name": "main-protection",
   "target": "branch",
   "enforcement": "active",
@@ -32,14 +32,20 @@
         "strict_required_status_checks_policy": false,
         "required_status_checks": [
           { "context": "Governance Checks" },
+          { "context": "Require governance council approval" },
           { "context": "Lint" },
           { "context": "Unit Tests" },
+          { "context": "Security Tests" },
+          { "context": "Detect Secrets" },
+          { "context": "CodeQL — Python" },
           { "context": "Contract Drift Check" },
           { "context": "Conventional PR title" },
           { "context": "Spec reference" },
           { "context": "Version consistency" },
           { "context": "GitHub Issue referenced" },
-          { "context": "Detect Secrets" }
+          { "context": "High-risk Action Guard (F7)" },
+          { "context": "Generate SBOM" },
+          { "context": "DAST (OWASP ZAP baseline)" }
         ]
       }
     }
