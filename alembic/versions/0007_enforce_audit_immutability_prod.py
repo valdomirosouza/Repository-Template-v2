@@ -30,7 +30,7 @@ depends_on = None
 def upgrade() -> None:
     role = context.config.get_main_option("db_app_role", "app_user")
     # role comes from alembic.ini (a config file, not user input).
-    # Hard-fail only in production; warn elsewhere so CI/dev/test migrations (no app_user) still run.
+    # Hard-fail only in production; warn elsewhere so CI/dev migrations (no app_user) still run.
     is_production = os.environ.get("APP_ENV", "development").lower() == "production"
     on_missing = "RAISE EXCEPTION" if is_production else "RAISE WARNING"
     op.execute(
@@ -41,8 +41,8 @@ def upgrade() -> None:
             REVOKE UPDATE, DELETE ON audit_events FROM {role};
           ELSE
             {on_missing}
-              'DB role {role} not found — audit_events immutability NOT enforced.'
-              ' SOX audit trail would be mutable. Set db_app_role in alembic.ini and create the role.';
+              'DB role {role} not found — audit_events immutability NOT enforced;'
+              ' SOX audit trail would be mutable. Create the role / set db_app_role.';
           END IF;
         END
         $$"""
