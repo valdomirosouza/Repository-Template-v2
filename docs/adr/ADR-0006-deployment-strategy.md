@@ -4,11 +4,13 @@
 **Date:** 2026-05-24
 **Authors:** Tech Lead, DevOps Lead, SRE Lead
 
-> **⚠️ Correction (2026-06-16, audit):** This ADR cites deploy scripts at
-> `infrastructure/scripts/deploy/{deploy,smoke-test,rollback}.sh`. Those scripts do **not** exist.
-> Deployment is driven by the Makefile (`make deploy-staging`, `make rollback`) and the
-> `.github/workflows/cd-staging.yml` / `cd-production.yml` pipelines. Read the script paths as
-> illustrative — the real entrypoints are the make targets and CD workflows.
+> **⚠️ Correction (2026-06-18, audit — retraction):** A prior 2026-06-16 audit note here wrongly
+> claimed these deploy scripts do **not** exist. They **do** exist and ship with the template —
+> `infrastructure/scripts/deploy/{deploy,smoke-test,rollback}.sh` (present since the initial
+> scaffold) — and implement the canary/blue-green, smoke-test, and rollback logic described below.
+> They are invoked via the Makefile (`make deploy-staging`, `make rollback`) and the
+> `.github/workflows/cd-staging.yml` / `cd-production.yml` pipelines. The earlier "do not exist"
+> claim was a false negative and is retracted.
 
 ---
 
