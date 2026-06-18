@@ -143,7 +143,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0071](ADR-0071-repository-settings-as-code.md)                        | Repository settings as code (branch protection codified + drift-checked)                 | Accepted   | 2026-06-12 |
 | [ADR-0072](ADR-0072-versioned-security-control-matrices.md)                | Versioned security control matrices (OWASP ASVS v5.0.0 + GenAI/LLM)                      | Accepted   | 2026-06-12 |
 | [ADR-0073](ADR-0073-slo-driven-canary-thresholds.md)                       | SLO-driven canary thresholds (per-service config, no hard-coded gates)                   | Accepted   | 2026-06-12 |
-| [ADR-0074](ADR-0074-automated-dependency-digest-policy.md)                 | Automated dependency & digest update policy (Renovate)                                   | Accepted   | 2026-06-12 |
+| [ADR-0074](ADR-0074-automated-dependency-digest-policy.md)                 | Automated dependency & digest update policy (Renovate)                                   | Superseded | 2026-06-12 |
 | [ADR-0075](ADR-0075-resilience-fallback-policy.md)                         | Resilience fallback policy (degrade-open vs fail-closed)                                 | Accepted   | 2026-06-13 |
 | [ADR-0076](ADR-0076-api-structured-error-model-and-correlation.md)         | Structured API error model (problem+json flavour) + X-Request-ID correlation             | Accepted   | 2026-06-14 |
 | [ADR-0077](ADR-0077-api-idempotency-keys.md)                               | Idempotency keys for write endpoints (Idempotency-Key header, degrade-open store)        | Accepted   | 2026-06-14 |
@@ -153,6 +153,7 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0081](ADR-0081-rag-reference-pipeline.md)                             | RAG reference pipeline (chunk→embed→retrieve→rerank→cite→eval; opt-in; controls)         | Accepted   | 2026-06-15 |
 | [ADR-0082](ADR-0082-backup-rpo-rto-and-restore-drill-verification.md)      | Consolidated backup RPO/RTO + scheduled, evidenced restore-drill verification            | Accepted   | 2026-06-15 |
 | [ADR-0083](ADR-0083-frontend-app-directory-rename.md)                      | Rename `frontend/frontend` → `frontend/web` (refines ADR-0023 path; pattern unchanged)   | Accepted   | 2026-06-15 |
+| [ADR-0084](ADR-0084-dependency-updates-via-dependabot.md)                  | Dependency & digest updates via Dependabot (supersedes ADR-0074 Renovate)                | Accepted   | 2026-06-17 |
 
 ### AI Agents Module _(opt-in)_
 

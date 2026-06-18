@@ -1,6 +1,6 @@
 # ADR-0074 — Automated Dependency & Digest Update Policy (Renovate)
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0084](ADR-0084-dependency-updates-via-dependabot.md)
 **Date:** 2026-06-12
 **Authors:** Valdomiro Souza
 **Milestone:** v2.16.0 — Governance Enforcement Hardening (Track C)
