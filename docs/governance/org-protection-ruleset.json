@@ -1,6 +1,6 @@
 {
   "_comment": "Post-migration main branch ruleset (RFC-0018). Apply AFTER the repo is in an org and the 7 Teams exist: gh api -X POST repos/<ORG>/Repository-Template-v2/rulesets --input docs/governance/org-protection-ruleset.json . The required-status-checks set is kept IN SYNC with the live personal ruleset .github/rulesets/main.json (canonical 15-check set ratified by RFC-0021) so migrating to an org does not silently drop DAST/SBOM/CodeQL/F7/council gates. Differences vs the personal-repo ruleset (RFC-0013/RFC-0021): require_code_owner_review=true, required_approving_review_count=1, and an OrganizationAdmin bypass so the release-please PR merges without --admin. For SOX financial paths, raise approvals to 2 via a path-targeted ruleset or team policy.",
-  "name": "main-protection",
+  "name": "main-branch-protection",
   "target": "branch",
   "enforcement": "active",
   "bypass_actors": [
