@@ -12,6 +12,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from src.agents.action_schema_validator import ActionSchemaError, ActionSchemaValidator
 from src.agents.hitl_gateway import (
     HITLDecision,
     HITLGateway,
@@ -361,3 +362,69 @@ class TestHITLGatewayArchive:
         )
 
         assert await gw._store.pending_count() == 1
+
+
+# ── CV3: action-schema validation at the HITL choke-point (ADR-0050, issue #336) ──────────────
+
+
+def _schemad_request(action_type: str, action_parameters: dict) -> HITLRequest:
+    """A HITLRequest for a schema'd action type with caller-supplied parameters."""
+    now = datetime.now(UTC)
+    return HITLRequest(
+        request_id=str(uuid.uuid4()),
+        agent_id="agent-cv3",
+        action_type=action_type,
+        action_parameters=action_parameters,
+        risk_score=0.5,
+        context_summary="cv3 context",
+        created_at=now,
+        expires_at=now + timedelta(seconds=3600),
+    )
+
+
+class TestCV3SchemaValidation:
+    """The CV3 gate validates structural payloads before any state change."""
+
+    @pytest.mark.asyncio
+    async def test_rejects_malformed_payload_for_schemad_action(self):
+        # send-email requires to/subject/body; an empty payload must be rejected up front.
+        gw = _make_gateway()
+        req = _schemad_request("send-email", {})
+        with pytest.raises(ActionSchemaError):
+            await gw.submit_for_approval(req)
+        # Rejected before persistence — nothing stored.
+        assert await gw._store.pending_count() == 0
+
+    @pytest.mark.asyncio
+    async def test_accepts_conforming_payload(self):
+        gw = _make_gateway()
+        req = _schemad_request(
+            "send-email",
+            {"to": ["ops@example.com"], "subject": "deploy", "body": "done"},
+        )
+        result = await gw.submit_for_approval(req)
+        assert result.status == HITLStatus.PENDING
+
+    @pytest.mark.asyncio
+    async def test_underscore_action_type_maps_to_hyphen_schema(self):
+        # execute_code normalises to the execute-code schema (required: code, language).
+        gw = _make_gateway()
+        with pytest.raises(ActionSchemaError):
+            await gw.submit_for_approval(_schemad_request("execute_code", {"code": "x=1"}))
+
+    @pytest.mark.asyncio
+    async def test_permissive_for_unregistered_action_type(self):
+        # Action types without a schema pass through (permissive by design).
+        gw = _make_gateway()
+        result = await gw.submit_for_approval(_schemad_request("no_such_action", {"anything": 1}))
+        assert result.status == HITLStatus.PENDING
+
+    @pytest.mark.asyncio
+    async def test_validator_is_injectable(self):
+        # An injected validator overrides the default catalog-loaded one.
+        validator = ActionSchemaValidator.from_dict(
+            {"custom-act": {"required": ["must_have"], "properties": {}}}
+        )
+        gw = HITLGateway(audit_logger=MagicMock(log_event=AsyncMock()), validator=validator)
+        with pytest.raises(ActionSchemaError):
+            await gw.submit_for_approval(_schemad_request("custom-act", {}))
