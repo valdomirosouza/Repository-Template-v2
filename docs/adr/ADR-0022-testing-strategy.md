@@ -6,6 +6,10 @@
 **Spec:** `specs/sdlc/development-lifecycle.md`
 **Supersedes:** None | **Superseded by:** None
 
+> **⚠️ Correction (2026-06-18, audit):** The body states the line-coverage floor is **≥ 80%**, but the
+> live gate is **85%** — `pyproject.toml` `fail_under = 85` and `ci.yml --cov-fail-under=85` (ratcheted
+> per RFC-0020). Read the floor as 85% (the "why 80%" rationale is superseded by the RFC-0020 ratchet).
+
 ---
 
 ## Context

@@ -4,6 +4,13 @@
 **Date:** 2026-05-24
 **Authors:** Tech Lead
 
+> **⚠️ Correction (2026-06-18, audit):** This ADR frames Kafka as self-hosted and aligned with a
+> "multi-cloud / no vendor lock-in" posture. The live IaC provisions **AWS-managed MSK**
+> (`infrastructure/terraform/modules/message-broker/main.tf` — `aws_msk_cluster`), not a self-hosted
+> cluster, and the broader stack is AWS-committed (MSK, ElastiCache, Aurora, KMS). The Kafka +
+> AsyncAPI 2.6 + Avro decision stands; the deployment model is managed-AWS. A formal superseding ADR
+> (parallel to ADR-0062 adopting Aurora) is the cleaner long-term fix for the multi-cloud framing.
+
 ---
 
 ## Context

@@ -5,6 +5,15 @@
 **Deciders:** Security Lead, AI Governance Lead
 **Refs:** Issue #35, secure-by-design-agentic-ai-compliance-v2.md §Pillar 4 (CV1, CV2, CV3)
 
+> **⚠️ Correction (2026-06-18, audit):** Two items. (1) **Count** — the body says "58 abuse case
+> tests"; the suite has **34** (the pinned integrity baseline, `tests/.test-integrity-baseline.json`
+> `"abuse_case": 34`). Use 34; do not pad the suite to match prose. (2) **CV3 enforcement gap** — the
+> body says `ActionSchemaValidator.validate_or_raise()` is a blocking gate inside
+> `HITLGateway.submit_for_approval()`, but that validator is **not imported anywhere in `src/`** (only
+> tests). Runtime payload validation is actually done by `ToolExecutor` against `tool.endpoint_schema`
+> — a different mechanism. Either wire the validator in as stated (see tracked issue) or treat
+> `endpoint_schema` as the documented CV3 control.
+
 ---
 
 ## Context
