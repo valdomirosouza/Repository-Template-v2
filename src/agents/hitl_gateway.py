@@ -13,7 +13,8 @@ import asyncio
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
-from typing import Any, Protocol
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Protocol
 
 from opentelemetry import trace
 from opentelemetry.trace import Link, SpanContext, TraceFlags
@@ -28,6 +29,9 @@ from src.observability.metrics import (
 from src.observability.span_hierarchy import SPAN_TOOL_HITL_GATEWAY, tracer
 from src.shared.config import settings
 from src.shared.models import AuditEvent
+
+if TYPE_CHECKING:
+    from src.agents.action_schema_validator import ActionSchemaValidator
 
 logger = get_logger("hitl_gateway")
 
@@ -106,6 +110,7 @@ class HITLGateway:
         timeout_seconds: int | None = None,
         store: HITLStore | None = None,
         feedback_learner: FeedbackLearner | None = None,
+        validator: ActionSchemaValidator | None = None,
     ) -> None:
         self._audit = audit_logger
         self._broker = broker
@@ -118,12 +123,33 @@ class HITLGateway:
         self._store: HITLStore = store
         self._lock = asyncio.Lock()
         self._learner = feedback_learner or default_feedback_learner
+        # CV3 (ADR-0050): structural action-payload validation at the HITL choke-point. Loaded from
+        # the action-schemas catalog; permissive for action types without a registered schema, so
+        # only the schema'd types (write-db-record, send-email, execute-code) are enforced.
+        if validator is None:
+            # lazy import keeps the validator off cold import paths
+            from src.agents.action_schema_validator import ActionSchemaValidator
+
+            schema_dir = (
+                Path(__file__).resolve().parents[2]
+                / "infrastructure"
+                / "agent-tools"
+                / "action-schemas"
+            )
+            validator = ActionSchemaValidator.from_directory(schema_dir)
+        self._validator = validator
 
     async def submit_for_approval(self, request: HITLRequest) -> HITLRequest:
         """Persist the request and publish agent.action.proposed to the broker.
 
         Raises HITLGatewayError if the store has reached hitl_max_pending_requests.
+        Raises ActionSchemaError (CV3, ADR-0050) if the action payload fails structural
+        validation — checked first, before any state change or broker publish.
         """
+        # CV3 blocking gate: reject malformed / oversized / wrong-schema payloads up front.
+        # No-op for action types without a registered schema (permissive by design).
+        self._validator.validate_or_raise(request.action_type, request.action_parameters)
+
         now = datetime.now(UTC)
         request.created_at = now
         request.expires_at = now + timedelta(seconds=self._timeout)
