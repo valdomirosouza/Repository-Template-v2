@@ -12,6 +12,29 @@ All notable changes to this project will be documented in this file, which adher
 
 ---
 
+## [2.20.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.19.0...v2.20.0) (2026-06-18)
+
+
+### Features
+
+* **governance:** add ADR/RFC consistency gates (report-mode, ADR-0070) ([#325](https://github.com/valdomirosouza/Repository-Template-v2/issues/325)) ([a6a43b7](https://github.com/valdomirosouza/Repository-Template-v2/commit/a6a43b7f298f9da7ac06f0b1427b91a18a0a9ef8))
+
+
+### CI/CD
+
+* **governance:** flip ADR/RFC consistency gates to blocking (ADR-0070) ([#330](https://github.com/valdomirosouza/Repository-Template-v2/issues/330)) ([cf79802](https://github.com/valdomirosouza/Repository-Template-v2/commit/cf79802abf941552b94597940f9416745e2cbfe5))
+* **governance:** ratify enforced main ruleset via RFC-0021 (resolve [#326](https://github.com/valdomirosouza/Repository-Template-v2/issues/326)) ([#333](https://github.com/valdomirosouza/Repository-Template-v2/issues/333)) ([ee360a0](https://github.com/valdomirosouza/Repository-Template-v2/commit/ee360a064d89b57d0e639536c1f1fd7027c9339d))
+
+
+### Documentation
+
+* **adr:** add audit correction notes for HIGH text-vs-impl divergences ([#323](https://github.com/valdomirosouza/Repository-Template-v2/issues/323)) ([2bc2f8f](https://github.com/valdomirosouza/Repository-Template-v2/commit/2bc2f8f97c9382e1e4d17cb8d15e5ff4046e5338))
+* **adr:** ADR-0067 golden-signals Redis topology + status reconciliation ([#321](https://github.com/valdomirosouza/Repository-Template-v2/issues/321)) ([97cef4a](https://github.com/valdomirosouza/Repository-Template-v2/commit/97cef4a40901d9db3d8af3a0ef7d72792bcadf17))
+* **adr:** cross-link ADR-0037 and ADR-0070 (resolve audit [#328](https://github.com/valdomirosouza/Repository-Template-v2/issues/328)) ([#331](https://github.com/valdomirosouza/Repository-Template-v2/issues/331)) ([cc82a82](https://github.com/valdomirosouza/Repository-Template-v2/commit/cc82a828b797a55c3226212ceb200996987a3e89))
+* **adr:** fix broken cross-reference slugs and resolve external-input refs ([#324](https://github.com/valdomirosouza/Repository-Template-v2/issues/324)) ([7559669](https://github.com/valdomirosouza/Repository-Template-v2/commit/755966951f1aae39e0384ef402442a60015f5feb))
+* **adr:** ratify Dependabot via ADR-0084, supersede ADR-0074 (resolve [#327](https://github.com/valdomirosouza/Repository-Template-v2/issues/327)) ([#332](https://github.com/valdomirosouza/Repository-Template-v2/issues/332)) ([396bdd6](https://github.com/valdomirosouza/Repository-Template-v2/commit/396bdd6e1bf27d0676b3412e451f9f178d57d83d))
+* **governance:** reconcile ADR/RFC statuses and add an RFC index ([#322](https://github.com/valdomirosouza/Repository-Template-v2/issues/322)) ([efbf547](https://github.com/valdomirosouza/Repository-Template-v2/commit/efbf5478aa0dae5a74ae6985733ab9df5010c45c))
+
 ## [2.19.0](https://github.com/valdomirosouza/Repository-Template-v2/compare/v2.18.1...v2.19.0) (2026-06-16)
 
 
