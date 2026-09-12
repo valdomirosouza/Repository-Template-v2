@@ -1,0 +1,96 @@
+name: Reusable — image supply chain (scan · sign · attest)
+
+# W14-T5 (issue #380, ADR-0029 amendment): the api-gateway image was the only one scanned by
+# Trivy, signed with cosign and attested with provenance/SBOM. Java, Go and Node images shipped
+# unscanned and unsigned. This reusable workflow gives every language the same treatment.
+#
+# On pull requests the image is built locally (no push) and only scanned. On pushes to main the
+# caller pushes the image first and passes its digest; signing and attestation are keyless
+# (OIDC) and therefore need `id-token: write` in the caller.
+#
+# REPORT MODE during the ADR-0070 burn-in: `scan_blocking: false` makes a CRITICAL finding a
+# warning. Flip per language by passing `scan_blocking: true`.
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: "Full image reference (registry/name:tag) built by the caller"
+        required: true
+        type: string
+      digest:
+        description: "Image digest (sha256:…) when pushed; empty on PRs (no signing)"
+        required: false
+        type: string
+        default: ""
+      scan_blocking:
+        description: "Fail the job on CRITICAL vulnerabilities (report-mode when false)"
+        required: false
+        type: boolean
+        default: false
+      language:
+        description: "Label for the summary (java|go|node|python)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  security-events: write
+
+jobs:
+  supply-chain:
+    name: ${{ inputs.language }} · scan${{ inputs.digest != '' && ' · sign · attest' || '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Scan image for vulnerabilities (Trivy)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        continue-on-error: ${{ !inputs.scan_blocking }}
+        with:
+          image-ref: ${{ inputs.image }}
+          format: sarif
+          output: trivy-${{ inputs.language }}.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          trivyignores: .trivyignore
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@dd903d2e4f5405488e5ef1422510ee31c8b32357 # v3
+        continue-on-error: true
+        with:
+          sarif_file: trivy-${{ inputs.language }}.sarif
+          category: trivy-${{ inputs.language }}
+
+      - name: Install cosign (pinned)
+        if: inputs.digest != ''
+        uses: sigstore/cosign-installer@d58896d6a1865668819e1d91763c7751a165e159 # v3.9.2
+
+      - name: Sign image (keyless, OIDC)
+        if: inputs.digest != ''
+        env:
+          COSIGN_YES: "true"
+        run: cosign sign "${{ inputs.image }}@${{ inputs.digest }}"
+
+      - name: Attest build provenance
+        if: inputs.digest != ''
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        with:
+          subject-name: ${{ inputs.image }}
+          subject-digest: ${{ inputs.digest }}
+          push-to-registry: true
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Supply chain — ${{ inputs.language }} (${{ inputs.image }})"
+            echo ""
+            echo "- Trivy scan: ${{ inputs.scan_blocking && 'blocking' || 'report-mode (ADR-0070 burn-in)' }}"
+            echo "- Signed/attested: ${{ inputs.digest != '' && 'yes (keyless cosign + provenance)' || 'no — PR build, not pushed' }}"
+          } >> "$GITHUB_STEP_SUMMARY"

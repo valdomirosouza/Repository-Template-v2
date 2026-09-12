@@ -205,6 +205,8 @@ jobs:
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       - name: Build images (no push on PR)
+        env:
+          IMAGE_REPOSITORY_BASE: ${{ vars.IMAGE_REPOSITORY_BASE || format('ghcr.io/{0}', github.repository_owner) }}
         run: |
           find services -name go.mod | while read gomod; do
             dir=$(dirname "$gomod")
@@ -212,7 +214,17 @@ jobs:
             if [ -f "$dir/Dockerfile" ]; then
               echo "Building image for $service..."
               docker build -f "$dir/Dockerfile" \
-                -t "ghcr.io/${{ github.repository_owner }}/${service}:${{ github.sha }}" \
+                -t "${IMAGE_REPOSITORY_BASE}/${service}:${{ github.sha }}" \
                 "$dir"
             fi
           done
+
+  # W14-T5 (issue #380, ADR-0029 amendment): same scan/sign/attest treatment as the Python image.
+  supply-chain-go:
+    needs: [build-go]
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/reusable-image-supply-chain.yml
+    with:
+      image: ${{ vars.IMAGE_REPOSITORY_BASE || format('ghcr.io/{0}', github.repository_owner) }}/event-worker:${{ github.sha }}
+      language: go
+      scan_blocking: false

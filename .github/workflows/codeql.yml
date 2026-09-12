@@ -23,8 +23,12 @@ permissions:
 
 jobs:
   codeql:
-    name: CodeQL — Python
+    name: CodeQL — ${{ matrix.language }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, java, go, javascript] # W14-T5: parity — was python only
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -34,29 +38,32 @@ jobs:
         # Pattern: github/codeql-action/init@<sha> # v3.x.y
         # Dependabot will keep this up to date.
         with:
-          languages: python
+          languages: ${{ matrix.language }}
           # CodeQL query suites:
           #   security-extended  — OWASP top 10 + common Python vulnerabilities
           #   security-and-quality — broader (may produce more noise)
           queries: security-extended
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        if: matrix.language == 'python'
         with:
           python-version: "3.13"
 
       - name: Install uv (pinned, W11-T6)
+        if: matrix.language == 'python'
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
         with:
           version: "0.11.16"
 
       - name: Install dependencies
+        if: matrix.language == 'python'
         # CodeQL needs the project installed so it can resolve imports during analysis.
         run: uv sync --frozen
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@dd903d2e4f5405488e5ef1422510ee31c8b32357 # v3
         with:
-          category: "/language:python"
+          category: "/language:${{ matrix.language }}"
           # SARIF results uploaded to GitHub Security tab → Code scanning alerts.
           # Alert threshold: any HIGH or CRITICAL finding blocks PRs when branch
           # protection includes "Code scanning results / CodeQL" as a required check.
