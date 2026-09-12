@@ -26,18 +26,16 @@ terraform {
       version = "~> 4.0"
     }
   }
+  # Partial backend configuration (ADR-0088): bucket/region/lock table live in backend.hcl
+  # (gitignored; copy backend.hcl.example). Run: terraform init -backend-config=backend.hcl
   backend "s3" {
-    # Replace with your state bucket before first apply:
-    bucket         = "your-org-terraform-state"
-    key            = "monorepo/staging/terraform.tfstate"
-    region         = "us-east-1"
-    encrypt        = true
-    dynamodb_table = "terraform-state-lock"
+    key     = "monorepo/staging/terraform.tfstate"
+    encrypt = true
   }
 }
 
 locals {
-  cluster_name = "monorepo-staging"
+  cluster_name = var.cluster_name # ADR-0088: no literal cluster names; see terraform.tfvars.example
 }
 
 provider "aws" {
@@ -92,7 +90,7 @@ module "networking" {
 module "kubernetes" {
   source              = "../../modules/kubernetes"
   environment         = "staging"
-  cluster_name        = "monorepo-staging"
+  cluster_name        = local.cluster_name
   vpc_id              = module.networking.vpc_id
   private_subnet_ids  = module.networking.private_subnet_ids
   node_instance_types = ["m6i.large"]
@@ -284,3 +282,9 @@ output "obs_api_gateway_sns_arn" { value = module.obs_api_gateway.sns_topic_arn 
 output "obs_domain_service_sns_arn" { value = module.obs_domain_service.sns_topic_arn }
 output "obs_event_worker_sns_arn" { value = module.obs_event_worker.sns_topic_arn }
 output "obs_frontend_sns_arn" { value = module.obs_frontend.sns_topic_arn }
+
+variable "cluster_name" {
+  description = "EKS cluster name (ADR-0088 — set in terraform.tfvars, no literal in .tf)"
+  type        = string
+  default     = "monorepo-staging"
+}

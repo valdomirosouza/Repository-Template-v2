@@ -1,0 +1,3 @@
+# Copy to terraform.tfvars (gitignored) — ADR-0088: account/region/cluster values never live in .tf
+aws_region   = "us-east-1"
+cluster_name = "monorepo-production"
