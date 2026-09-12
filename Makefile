@@ -265,6 +265,15 @@ check-open-questions: ## Fail if an approved/implemented spec still has unresolv
 check-doc-consistency: ## Fail if README/CLAUDE.md/primer ADR counts or relative doc links are stale (W11-T7)
 	@uv run python scripts/governance/check_doc_consistency.py
 
+check-dead-definitions: ## Fail if a metric or Settings field is defined but never observed/read (W12-T5)
+	@uv run python scripts/governance/check_dead_definitions.py
+
+check-dependency-manifest: ## Fail if docs/dependency-manifest.yaml drifts from pyproject/uv.lock/config or is stale (W12-T9)
+	@uv run python scripts/governance/check_dependency_manifest.py
+
+run-harness-spec: ## Execute a harness/*.yml gate spec locally. SPEC=harness/code-check.yml [ONLY=a,b] [SKIP=c]
+	@uv run python scripts/governance/run_harness_spec.py $${SPEC:-harness/code-check.yml} $${ONLY:+--only "$$ONLY"} $${SKIP:+--skip "$$SKIP"}
+
 check-test-integrity: ## Test-integrity gate (ADR-0065): no silent test-count drop / unjustified skip. BASE=main
 	@uv run python scripts/governance/check_test_integrity.py --local --base $${BASE:-main} --allow-text-waiver
 

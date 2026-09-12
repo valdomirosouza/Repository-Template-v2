@@ -572,7 +572,7 @@ CD workflows:
 
 ## Architecture Decisions
 
-All 84 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
+All 86 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
 
 | ADR                                                                | Decision                                               |
 | ------------------------------------------------------------------ | ------------------------------------------------------ |
