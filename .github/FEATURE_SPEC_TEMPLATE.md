@@ -7,11 +7,32 @@
 
 ---
 
-**FEAT-ID:** FEAT-{id} | **Status:** Draft | **Owner:** {name}
+<!-- ADR-0085 frontmatter — REQUIRED. Copy this block to the very top of the file (line 1). -->
+
+```yaml
+---
+id: SPEC-FEAT-{NNN} # SPEC-<DOMAIN>-<NNN>; the FEAT-{id} directory is the issue alias
+kind: feature-spec
+status: draft # draft | in-review | approved | implemented | superseded
+owner: {name}
+issue: {issue-number}
+governing_adrs: [] # ADRs that govern this feature
+new_adrs_required: []
+implemented_by: [] # filled at implementation
+verified_by: [] # tests that prove the ACs
+related_specs: [docs/product/FEAT-{id}/nfr.md]
+last_updated: YYYY-MM-DD
+---
+```
+
+**FEAT-ID:** FEAT-{id} | **Spec id:** SPEC-FEAT-{NNN} | **Owner:** {name}
 **ADR References:** {list ADRs that govern this feature}
 **NFR Reference:** `docs/product/FEAT-{id}/nfr.md`
 **GitHub Issue:** #{issue-number}
 **Sprint:** {sprint-id or milestone}
+
+> This template is a **profile** of `specs/SPEC-TEMPLATE.md` (W13-T8): same lifecycle, same
+> FR→AC coverage gate (§11), same Open Questions (§12) and Assumptions (§13) sections.
 
 ---
 
@@ -40,10 +61,24 @@
 
 ---
 
-## 2. User Stories & Acceptance Criteria (Gherkin)
+## 2. User Stories & Acceptance Criteria
 
-<!-- One story + Gherkin block per user journey segment.
-     These become the test scenarios in tests/integration/. -->
+<!-- Functional requirements use EARS phrasing ("WHEN <trigger> the system SHALL <response>"),
+     numbered FR-01…; the AC table (id → FR → verification) is the canonical, gate-checked form
+     (docs/product/acceptance-criteria-standard.md). Gherkin is an optional companion for
+     tests/integration/ scenarios — keep it, but the table is what the coverage footer counts. -->
+
+### Functional Requirements (EARS)
+
+| FR    | Statement                                                | Priority |
+| ----- | -------------------------------------------------------- | -------- |
+| FR-01 | WHEN {trigger} the system SHALL {response}               | must     |
+
+### Acceptance Criteria (canonical)
+
+| AC    | Covers | Given / When / Then (one line)         | Verified by (test path or `pytest.mark.requirement`) |
+| ----- | ------ | -------------------------------------- | ---------------------------------------------------- |
+| AC-01 | FR-01  | {given} / {when} / {then}              | `tests/…` — `@pytest.mark.requirement("SPEC-FEAT-{NNN}/FR-01")` |
 
 ### Story 1: {title}
 
@@ -263,6 +298,37 @@ spec_contract:
 # Rollback steps
 make rollback SERVICE={service-name}
 ```
+
+---
+
+## 11. Requirement Coverage (gate)
+
+<!-- Every FR in §2 MUST map to at least one AC. Any unmapped FR blocks Definition of Ready / Done
+     (specs/SPEC-TEMPLATE.md §11 rule; checked at Phase 3 and Phase 4). -->
+
+**Requirement coverage footer (gate).** _N_ FRs total · _M_ mapped to ≥ 1 AC · **_K_ unmapped ⚠️**
+
+---
+
+## 12. Open Questions
+
+<!-- Anything that must be resolved at a HITL gate rather than assumed. Every item must be marked
+     resolved/decided/deferred with an ADR, RFC or #issue reference before status: approved —
+     enforced by scripts/governance/check_open_questions.py (W11-T5). "None." is a valid body. -->
+
+None.
+
+---
+
+## 13. Assumptions
+
+<!-- Assumptions carried from docs/product/FEAT-{id}/discovery.md and made during specification.
+     Each has an owner and the phase by which it must be confirmed or converted into an FR/open
+     question. An assumption still unconfirmed at its resolve-by phase is a gate failure. -->
+
+| # | Assumption | Owner | Resolve by (phase) | Status (open / confirmed / rejected) |
+| - | ---------- | ----- | ------------------ | ------------------------------------ |
+| A1 |            |       | 4 — Specification  | open                                 |
 
 ---
 

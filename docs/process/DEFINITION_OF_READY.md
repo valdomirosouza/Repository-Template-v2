@@ -16,7 +16,7 @@ A GitHub Issue may **not** enter a sprint until **ALL** of the following criteri
 - [ ] **GTM brief drafted** _(features intended as reusable products)_ — ICP, positioning, and adoption path captured (templates under `docs/gtm/templates/`), OR "N/A: internal-only"
 - [ ] **Discovery doc linked** — `docs/product/FEAT-{id}/discovery.md` exists and is linked in the Issue body, OR an explicit "N/A: no discovery phase needed" note is present (spike and chore Issues are exempt)
 - [ ] **NFR doc approved** — `docs/product/FEAT-{id}/nfr.md` exists and has been approved by the Security Lead, OR "N/A: no new PII surface or security threat" is explicitly stated and confirmed by Tech Lead
-- [ ] **Acceptance criteria written** — Gherkin-format `Given / When / Then` scenarios in the Issue body, reviewed by Product Owner
+- [ ] **Acceptance criteria written** — an AC table (AC → FR → one-line Given/When/Then → verified-by) in the Issue body or spec §2, reviewed by Product Owner; EARS-phrased FRs; Gherkin scenarios are an optional companion (docs/product/acceptance-criteria-standard.md, W13-T8)
 - [ ] **Open questions resolved** — the spec's *Open Questions* section is empty or every item is marked resolved/decided/deferred with an ADR, RFC or issue reference; assumptions carried from discovery are listed. Enforced for `approved`/`implemented` specs by `make check-open-questions` (W11-T5).
 - [ ] **Feature spec template created** — `specs/features/FEAT-{id}/feature-spec.md` exists with sections 1–5 complete (Goal, User Stories, API Delta, Event Delta, Data Model)
 - [ ] **Size label applied** — one of `size: S`, `size: M`, `size: L`, `size: XL`
