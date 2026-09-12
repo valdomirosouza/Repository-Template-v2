@@ -81,3 +81,16 @@ every agent PR answers the six mandatory Business Value questions in `skills/sre
 - **External approval API:** Integrate with a GRC tool (ServiceNow, Jira) to check ticket
   approval status. Accepted as a future enhancement; the label approach is simpler and
   requires no external dependency.
+
+---
+
+## Amendment 2026-09-12 (W12-T8, issue #361)
+
+The `harness/*.yml` gate specs this ADR introduced were declarative only: no workflow or Makefile
+target executed them, so their `blocking: true` claims were not enforced. Since Wave 12,
+`scripts/governance/run_harness_spec.py` executes a spec's `gates:` in order, honours
+`blocking`, and runs `harness/code-check.yml` in `ci.yml` (report-mode during the ADR-0070
+burn-in, skipping the gates that dedicated jobs already cover). `make run-harness-spec
+SPEC=harness/<name>.yml` runs any spec locally. A gate declared in a harness spec is now a gate
+that runs; a spec that must stay descriptive-only must say so in its header.
+
