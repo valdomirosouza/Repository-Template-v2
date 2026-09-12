@@ -50,6 +50,15 @@ ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH="/app"
 
+# The runtime executes from the uv-built venv, which carries no pip. The base image's
+# system pip (with its vendored msgpack) and setuptools are never used at runtime and
+# only add CVEs to the scanned image (Trivy: GHSA-6v7p-g79w-8964, CVE-2025-47273).
+# Address the system interpreter explicitly: PATH above already puts the venv's python
+# first, and that one has no pip, so a bare `python -m pip` would silently do nothing.
+RUN /usr/local/bin/python3 -m pip uninstall -y pip setuptools wheel \
+    && rm -rf /usr/local/lib/python3.13/site-packages/pip* /usr/local/lib/python3.13/site-packages/setuptools* \
+    && ls /usr/local/lib/python3.13/site-packages
+
 USER appuser
 
 EXPOSE 8000
