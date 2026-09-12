@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/valdomirosouza/Repository-Template-v2/specs/spec-frontmatter.schema.json",
+  "title": "Spec frontmatter (ADR-0085)",
+  "description": "YAML frontmatter every specs/**/*.md carries. Validated by scripts/governance/build_spec_registry.py (rules S1-S7).",
+  "type": "object",
+  "required": [
+    "id",
+    "kind",
+    "status"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^SPEC-[A-Z]{2,6}-[0-9]{3}$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "spec",
+        "policy",
+        "feature-spec",
+        "threat-model"
+      ],
+      "description": "policy = process/compliance/vision document with no code counterpart (exempt from registry rule S5)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "in-review",
+        "approved",
+        "implemented",
+        "superseded"
+      ]
+    },
+    "status_source": {
+      "type": "string",
+      "description": "Set by migrate_spec_frontmatter.py: body-header:<Original> or default"
+    },
+    "owner": {
+      "type": "string"
+    },
+    "issue": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "governing_adrs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^ADR-[0-9]{4}"
+      }
+    },
+    "new_adrs_required": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "implemented_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "verified_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "related_specs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "superseded_by": {
+      "type": "string"
+    },
+    "last_updated": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "created": {},
+    "source": {
+      "type": "string"
+    },
+    "deployment_topology": {
+      "type": "string"
+    },
+    "slo_ref": {
+      "type": "string"
+    }
+  }
+}

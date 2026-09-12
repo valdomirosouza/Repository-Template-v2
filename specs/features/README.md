@@ -19,19 +19,15 @@ specs/features/
 
 ---
 
-## Spec Lifecycle
+## Spec Lifecycle (ADR-0085)
 
 ```
-Draft → Under Review (PR open) → Approved (PR merged) → Implemented → Superseded
+draft → in-review (PR open) → approved (PR merged) → implemented → superseded
 ```
 
-| Status           | Meaning                                                          |
-| ---------------- | ---------------------------------------------------------------- |
-| **Draft**        | Being authored; not yet submitted for review                     |
-| **Under Review** | PR open; awaiting Tech Lead + Security Lead approval             |
-| **Approved**     | PR merged to `main`; agents may implement                        |
-| **Implemented**  | All acceptance criteria verified by tests in CI                  |
-| **Superseded**   | Replaced by a newer spec version; old file kept for traceability |
+Same five lower-case values as every other spec (`specs/README.md`), in the frontmatter
+`status:` field. A feature spec's `id` is `SPEC-FEAT-<NNN>` (or its domain's code); the
+`FEAT-{issue}` directory name is the GitHub-issue alias recorded as `issue:`.
 
 ---
 
@@ -43,7 +39,7 @@ mkdir -p specs/features/FEAT-${FEAT_ID}
 cp .github/FEATURE_SPEC_TEMPLATE.md specs/features/FEAT-${FEAT_ID}/feature-spec.md
 ```
 
-Then open a PR with the spec populated through sections 1–5 minimum before requesting review.
+Fill the frontmatter (`id`, `kind: feature-spec`, `status: draft`, `issue`) and sections 1–5 minimum, then open a PR for review. The template is a *profile* of `specs/SPEC-TEMPLATE.md` (W13-T8): it carries the same FR→AC coverage footer, Open Questions and Assumptions sections.
 
 ---
 

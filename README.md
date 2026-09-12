@@ -570,9 +570,24 @@ CD workflows:
 
 ---
 
+## Worked Example — FEAT-001 end to end
+
+The `specs/features/FEAT-{issue}/` convention has a living instance: **FEAT-001 HTTP Golden
+Signals** (SPEC-FEAT-001, issue #357). Follow it to see every artefact the 15-phase workflow owes:
+
+| Phase | Artefact |
+| --- | --- |
+| 2 Discovery | [`docs/product/FEAT-001/discovery.md`](docs/product/FEAT-001/discovery.md), [`nfr.md`](docs/product/FEAT-001/nfr.md) |
+| 4 Specification | [`specs/features/FEAT-001/feature-spec.md`](specs/features/FEAT-001/feature-spec.md) — EARS FRs, AC table, coverage footer 6/6, open questions, assumptions |
+| 6–8 Code & tests | `src/api/rest/middleware/golden_signals.py`, `tests/unit/api/test_golden_signals_middleware.py`, `tests/integration/test_lifespan_wiring.py` |
+| Report | [`docs/delivery/SPEC-FEAT-001/FINAL-REPORT.md`](docs/delivery/SPEC-FEAT-001/FINAL-REPORT.md) — validated by `make check-delivery-report` |
+| 14 Learn | [`docs/process/retrospectives/FEAT-001.md`](docs/process/retrospectives/FEAT-001.md) |
+
+The generated [`docs/governance/spec-registry.md`](docs/governance/spec-registry.md) links every spec to its ADRs, code and tests (ADR-0085).
+
 ## Architecture Decisions
 
-All 86 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
+All 87 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
 
 | ADR                                                                | Decision                                               |
 | ------------------------------------------------------------------ | ------------------------------------------------------ |

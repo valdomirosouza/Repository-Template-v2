@@ -17,15 +17,15 @@ and CLAUDE.md step 1.
 ## Spec Lifecycle
 
 ```
-Draft → Review → Approved → Implemented → Deprecated
+draft → in-review → approved → implemented → superseded   (ADR-0085 — frontmatter `status:`)
 ```
 
 | Transition             | Who approves              | What changes                                                                                                  |
 | ---------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | Draft → Review         | Spec author               | Open PR; tag spec owner and reviewer                                                                          |
-| Review → Approved      | Owner + Reviewer          | Merge PR; update status field in spec                                                                         |
+| in-review → approved   | Owner + Reviewer          | Merge PR; update status field in spec                                                                         |
 | Approved → Implemented | Tech Lead                 | After implementation PR merges                                                                                |
-| Approved → Deprecated  | Tech Lead + Product Owner | Set `status: superseded`, link the superseding spec, and **move the file to `specs/deprecated/`** (see below) |
+| approved → superseded  | Tech Lead + Product Owner | Set `status: superseded`, link the superseding spec, and **move the file to `specs/deprecated/`** (see below) |
 
 ### Deprecating a spec — move, never delete
 
@@ -36,7 +36,7 @@ so it is **preserved, not removed**.
   `git mv specs/<domain>/<file>.md specs/deprecated/<file>.md` — **never `git rm`** it.
 - In the moved file's metadata, keep `status: superseded` and add the superseding spec to
   `related_specs` (e.g. `superseded_by: SPEC-XXX-NNN`).
-- Update the ownership table in `specs/README.md` to reflect the move.
+- Run `make spec-registry` so the generated registry reflects the move.
 - The `id` stays unique forever — never re-issue a retired spec's id.
 
 `specs/deprecated/` is an archive; its contents are excluded from "active spec" tooling but kept in
@@ -55,12 +55,12 @@ auto-merged).
 2. Fill every section. Pay special attention to **§5 Functional Requirements** (each must trace
    to an acceptance criterion) and **§12 Acceptance Criteria** (observable & runnable — these
    become the dry-run evidence in `/deliver`'s FINAL-REPORT).
-3. Add to the ownership table in `specs/README.md`.
+3. Run `make spec-registry` — the registry is generated from the frontmatter (ADR-0085); there is no hand-maintained ownership table any more.
 4. Open a PR for review — do not start implementation until `status: approved`.
 5. _(Optional)_ Dry-run the full lifecycle: `/deliver specs/<domain>/<your-spec>.md` →
    `reports/<slug>/FINAL-REPORT.md` (governed, no side-effects).
 
-**Naming convention:** `specs/<domain>/<kebab-case-name>.md` (template uses `SPEC-<DOMAIN>-<NNN>-<slug>`).
+**Naming convention (ADR-0085):** new specs are `specs/<domain>/SPEC-<DOMAIN>-<NNN>-<slug>.md`; legacy path-named specs keep their filename and carry `id:` in frontmatter.
 
 ---
 
@@ -130,7 +130,7 @@ The marker works in any language — use that language's line-comment syntax (`/
 
 ## Checklist: Is This Spec Ready to Implement?
 
-- [ ] Status is `Approved` (not Draft or Review)
+- [ ] Frontmatter `status:` is `approved` or `implemented` (not `draft` / `in-review`) — ADR-0085
 - [ ] Owner and Reviewer have signed off in the PR comments
 - [ ] All terms are defined in `docs/glossary.md`
 - [ ] Success metrics are measurable (not vague)

@@ -19,7 +19,7 @@ You generate code/tests/migrations/docs; a human reviews, adapts, commits, and o
 
 ## Steps
 
-1. Create a short-lived branch: `git checkout -b feature/SPEC-{id}-<slug>`.
+1. Create a short-lived branch: `git checkout -b feature/<spec-id>-<slug>` where `<spec-id>` is the feature spec's frontmatter `id:` (e.g. `SPEC-FEAT-001`, ADR-0085) — never the bare issue number.
 2. Implement strictly against the spec — no gold-plating, no scope creep. Run guardrails
    for any agent/PII path (`pii_filter`, `prompt_injection_guard`, `audit_logger`).
 3. Write unit tests (≥80% for changed code). Update `CHANGELOG.md [Unreleased]`.
