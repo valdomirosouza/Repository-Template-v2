@@ -32,12 +32,19 @@ services:
     port: 8000
     image: yourorg/api-gateway
     owner: platform-team
+    # Topic names below are the literals the Python code passes to broker.publish()/the
+    # request consumer (W11-T2, issue #347). They are validated against this registry, the
+    # AsyncAPI contract and the code by scripts/governance/check_topic_contract.py.
     publishes:
-      - request.created.v1
-      - hitl.decision.v1
-      - audit.event.v1
+      - domain.request.created
+      - agent.action.proposed
+      - agent.action.approved
+      - agent.action.rejected
+      - agent.action.expired
+      - agent.feedback.applied
       - domain.request.dlq # REM-012: unrecoverable consumer failures after max retries
-    subscribes: []
+    subscribes:
+      - domain.request.created # RequestConsumer runs inside the api-gateway lifespan
     depends_on: []
     adr:
       - ADR-0002 # Technology stack selection
@@ -151,20 +158,93 @@ services:
 # Canonical topic definitions. Do not add topics here without a
 # corresponding entry in docs/api/asyncapi/v1/asyncapi.yaml.
 #
+# `lifecycle:` (optional, default `active`) — `active`: published by in-tree code;
+# `reference`: declared for the Java/Go reference pipeline, publisher wiring is adopter work;
+# `planned`: in the AsyncAPI contract, no publisher yet. check_topic_contract.py warns on an
+# `active` topic with no in-tree publisher and requires every topic to exist in AsyncAPI.
 topics:
+  # ── Python api-gateway / agent pipeline (specs/api/async-api-design.md) ──────────────
+  - name: domain.request.created
+    schema: infrastructure/message-broker/schema-registry/avro/domain_request.avsc
+    partitions: 12
+    retention_ms: 604800000 # 7 days
+    owner: platform-team
+
+  - name: agent.action.proposed
+    schema: infrastructure/message-broker/schema-registry/avro/agent_action.avsc
+    partitions: 6
+    retention_ms: 2592000000 # 30 days — HITL audit window
+    owner: platform-team
+
+  - name: agent.action.approved
+    schema: infrastructure/message-broker/schema-registry/avro/hitl_decision.avsc
+    partitions: 6
+    retention_ms: 2592000000
+    owner: platform-team
+
+  - name: agent.action.rejected
+    schema: infrastructure/message-broker/schema-registry/avro/hitl_decision.avsc
+    partitions: 6
+    retention_ms: 2592000000
+    owner: platform-team
+
+  - name: agent.action.expired
+    schema: infrastructure/message-broker/schema-registry/avro/hitl_decision.avsc
+    partitions: 6
+    retention_ms: 2592000000
+    owner: platform-team
+
+  - name: agent.feedback.applied
+    schema: infrastructure/message-broker/schema-registry/avro/agent-feedback-applied-v1.avsc
+    partitions: 3
+    retention_ms: 604800000
+    owner: platform-team
+
+  - name: agent.action.executed
+    schema: infrastructure/message-broker/schema-registry/avro/agent_action.avsc
+    partitions: 6
+    retention_ms: 2592000000
+    owner: platform-team
+    lifecycle: planned # in contract; executed actions are audit events today, not Kafka events
+
+  - name: domain.result.completed
+    schema: infrastructure/message-broker/schema-registry/avro/domain_result.avsc
+    partitions: 12
+    retention_ms: 604800000
+    owner: platform-team
+    lifecycle: planned # results are read via GET /v1/requests/{id}; event fan-out not wired
+
+  - name: audit.event.written
+    schema: infrastructure/message-broker/schema-registry/avro/audit_event.avsc
+    partitions: 24
+    retention_ms: 7776000000 # 90 days (compliance retention)
+    owner: platform-team
+    lifecycle: planned # audit logger writes to Postgres; SIEM fan-out not wired
+
+  - name: agent.harness.state
+    schema: infrastructure/message-broker/schema-registry/avro/agent-harness-state-v1.avsc
+    partitions: 3
+    retention_ms: 604800000
+    owner: platform-team
+    lifecycle: planned # harness coordinator is not wired into the service (see W12-T6)
+
+  # ── Java/Go reference pipeline (domain-service, event-worker) ────────────────────────
   - name: request.created.v1
+    lifecycle: reference # consumed by domain-service; no in-tree publisher (adopter bridge)
     schema: infrastructure/message-broker/schema-registry/avro/request-created-v1.avsc
     partitions: 12
     retention_ms: 604800000 # 7 days
     owner: platform-team
 
   - name: hitl.decision.v1
+    lifecycle: reference # declared for the reference pipeline; no in-tree publisher/subscriber
     schema: infrastructure/message-broker/schema-registry/avro/hitl-decision-v1.avsc
     partitions: 6
     retention_ms: 2592000000 # 30 days
     owner: platform-team
 
   - name: audit.event.v1
+    lifecycle: reference # declared for the reference pipeline; no in-tree publisher/subscriber
     schema: infrastructure/message-broker/schema-registry/avro/audit-event-v1.avsc
     partitions: 24
     retention_ms: 7776000000 # 90 days (compliance retention)

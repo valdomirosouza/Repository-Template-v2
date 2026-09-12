@@ -1,0 +1,20 @@
+{
+  "namespace": "com.template.agent",
+  "type": "record",
+  "name": "AgentHarnessState",
+  "doc": "Harness sprint/task state transition. Spec: specs/ai/harness-design.md, specs/api/async-api-design.md. ADR: ADR-0014. Topic: agent.harness.state (lifecycle: planned — no in-tree publisher yet; see services.yaml). Registered by W11-T2 (issue #347).",
+  "fields": [
+    { "name": "event_id", "type": "string", "doc": "UUID v4 — stable deduplication key" },
+    { "name": "event_type", "type": "string", "doc": "agent.harness.state" },
+    { "name": "schema_version", "type": "string", "doc": "Semver; must match registered version" },
+    { "name": "produced_at", "type": "string", "doc": "ISO8601 UTC timestamp" },
+    { "name": "trace_id", "type": "string", "doc": "W3C traceparent" },
+    { "name": "producer_service", "type": "string", "doc": "Originating service name" },
+    { "name": "correlation_id", "type": "string", "doc": "Propagated across all agents in one user request" },
+    { "name": "task_id", "type": "string", "doc": "Ties back to the originating TaskBrief" },
+    { "name": "sprint_id", "type": "string" },
+    { "name": "status", "type": "string", "doc": "PENDING | IN_PROGRESS | PASSED | FAILED | ESCALATED | COMPLETED" },
+    { "name": "iteration", "type": "int", "doc": ">= 1" },
+    { "name": "autonomy_level", "type": ["null", "string"], "default": null }
+  ]
+}

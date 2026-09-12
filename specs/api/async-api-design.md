@@ -92,6 +92,15 @@ Rules:
 | `domain.result.completed` | `domain.result.completed` | Agent Service | API Gateway     | `avro/domain_result.avsc`  |
 | `audit.event.written`     | `audit.event.written`     | Audit Logger  | SIEM / archival | `avro/audit_event.avsc`    |
 
+**Lifecycle (W11-T2, issue #347).** Every topic above is registered in `services.yaml` with a
+`lifecycle:` of `active` (published by in-tree code), `planned` (in the contract, no publisher
+yet: `agent.action.executed`, `domain.result.completed`, `audit.event.written`,
+`agent.harness.state`) or `reference`. The Java/Go reference pipeline uses the `.v1`-suffixed
+topics (`request.created.v1`, `hitl.decision.v1`, `audit.event.v1`, `domain.entity.created.v1`,
+`domain.entity.updated.v1`, `event.processed.v1`), also registered and carried in
+`docs/api/asyncapi/v1/asyncapi.yaml`. `scripts/governance/check_topic_contract.py` fails CI when
+the registry, the contract and the topic literals in code disagree.
+
 Schema files location: `infrastructure/message-broker/schema-registry/avro/`
 
 ---

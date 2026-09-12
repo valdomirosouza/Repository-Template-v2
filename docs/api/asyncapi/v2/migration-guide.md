@@ -120,11 +120,23 @@ After all consumers have migrated (verified by Kafka consumer group lag = 0 on t
 | `agent.action.approved`   | stable    | null        |                                            |
 | `agent.action.rejected`   | stable    | null        |                                            |
 | `agent.action.expired`    | stable    | null        | Timeout = auto-reject invariant (ADR-0011) |
-| `agent.action.executed`   | stable    | null        |                                            |
-| `domain.result.completed` | stable    | null        |                                            |
+| `agent.action.executed`   | planned   | null        | No in-tree publisher yet (W11-T2)          |
+| `domain.result.completed` | planned   | null        | No in-tree publisher yet (W11-T2)          |
 | `agent.feedback.applied`  | beta      | null        | Feedback loop spec may evolve (Wave 7+)    |
-| `audit.event.written`     | stable    | null        | Append-only; immutable invariant           |
-| `agent.harness.state`     | beta      | null        | Proto-backed; harness design may evolve    |
+| `audit.event.written`     | planned   | null        | Append-only; SIEM fan-out not wired (W11-T2) |
+| `agent.harness.state`     | planned   | null        | Harness coordinator not wired (W12-T6)     |
+| `request.created.v1`      | reference | null        | Java/Go reference pipeline input           |
+| `hitl.decision.v1`        | reference | null        | Reference pipeline                         |
+| `audit.event.v1`          | reference | null        | Reference pipeline                         |
+| `domain.entity.created.v1`| stable    | null        | domain-service → event-worker             |
+| `domain.entity.updated.v1`| stable    | null        | domain-service → event-worker             |
+| `event.processed.v1`      | stable    | null        | event-worker output                        |
+
+Stability values: `stable` (in-tree publisher, compatibility guaranteed) · `beta` (may change) ·
+`planned` (in the contract and the registry, no in-tree publisher yet — consumers must not depend
+on it) · `reference` (declared for the Java/Go reference pipeline; publisher wiring is adopter work).
+The same lifecycle is carried per topic in `services.yaml` and cross-checked by
+`scripts/governance/check_topic_contract.py` (W11-T3).
 
 ---
 
