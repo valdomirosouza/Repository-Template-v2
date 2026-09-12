@@ -13,7 +13,7 @@ from src.api.rest.errors import install_error_handlers
 from src.api.rest.pagination import effective_limit, paginate
 from src.shared.config import settings
 
-pytestmark = pytest.mark.unit
+pytestmark = [pytest.mark.unit, pytest.mark.requirement("SPEC-API-003")]
 
 
 def _make_app() -> FastAPI:

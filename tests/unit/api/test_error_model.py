@@ -19,7 +19,7 @@ from src.api.rest.errors import install_error_handlers, rate_limit_handler
 from src.api.rest.request_context import RequestContextMiddleware
 from src.shared.config import settings
 
-pytestmark = pytest.mark.unit
+pytestmark = [pytest.mark.unit, pytest.mark.requirement("SPEC-API-001")]
 
 HDR = settings.request_id_header
 
