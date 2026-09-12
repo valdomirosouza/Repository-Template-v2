@@ -114,7 +114,7 @@ class TestUnifiedCheck:
             await limiter.check("read", {})
 
     @pytest.mark.asyncio
-    async def test_passes_when_within_all_limits(self):
+    async def test_passes_when_within_all_limits(self):  # noassert: does-not-raise smoke (W15-T2)
         limiter = _make_limiter_with_mock_redis(
             pipe_results=[1, True, 1, True, 1, True],
         )

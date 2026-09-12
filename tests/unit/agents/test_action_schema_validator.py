@@ -152,13 +152,15 @@ class TestValidateOrRaise:
         with pytest.raises(ActionSchemaError, match="schema validation"):
             v.validate_or_raise("write-db-record", {"table": "users"})  # missing data
 
-    def test_no_raise_on_valid_payload(self) -> None:
+    def test_no_raise_on_valid_payload(self) -> None:  # noassert: does-not-raise smoke (W15-T2)
         v = ActionSchemaValidator.from_dict(
             {"write-db-record": {"required": ["table"], "properties": {}}}
         )
         v.validate_or_raise("write-db-record", {"table": "users"})  # must not raise
 
-    def test_no_raise_for_unknown_action_type(self) -> None:
+    def test_no_raise_for_unknown_action_type(
+        self,
+    ) -> None:  # noassert: does-not-raise smoke (W15-T2)
         v = ActionSchemaValidator.from_dict({})
         v.validate_or_raise("ghost-action", {"anything": "goes"})  # unknown → allowed
 

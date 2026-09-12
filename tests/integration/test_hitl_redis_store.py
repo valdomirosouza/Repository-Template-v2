@@ -118,7 +118,9 @@ class TestHITLRedisStoreEviction:
         assert await store.pending_count() == 0
 
     @pytest.mark.integration
-    async def test_evict_nonexistent_is_noop(self, store):
+    async def test_evict_nonexistent_is_noop(
+        self, store
+    ):  # noassert: does-not-raise smoke (W15-T2)
         await store.evict("00000000-0000-0000-0000-000000000000")  # must not raise
 
     @pytest.mark.integration

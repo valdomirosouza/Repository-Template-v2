@@ -105,7 +105,7 @@ class TestRecordGroundednessHelper:
         after = AGENT_HALLUCINATION_FLAGGED_COUNTER.labels("agent_halluc", "sp")._value.get()
         assert after == before + 1.0
 
-    def test_helper_uses_default_labels(self) -> None:
+    def test_helper_uses_default_labels(self) -> None:  # noassert: does-not-raise smoke (W15-T2)
         from src.observability.metrics import record_groundedness
 
         # Should not raise when labels are omitted (defaults applied).

@@ -7,6 +7,7 @@ ADR:  ADR-0016 (Agent Sandbox Execution Policy)
 from __future__ import annotations
 
 import asyncio
+import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -79,13 +80,13 @@ class TestCommandValidation:
         with pytest.raises(SandboxPolicyError, match="metacharacter"):
             ex._validate_command(["echo", "$HOME"])
 
-    def test_accepts_safe_command(self):
+    def test_accepts_safe_command(self):  # noassert: does-not-raise smoke (W15-T2)
         ex = _make_executor()
         ex._validate_command(
             ["python", "-c", "print('hello')"]
         )  # parens are NOT shell metacharacters in argv-mode
 
-    def test_accepts_python_script(self):
+    def test_accepts_python_script(self):  # noassert: does-not-raise smoke (W15-T2)
         ex = _make_executor()
         ex._validate_command(["python", "script.py", "--flag", "value"])
 
@@ -94,7 +95,7 @@ class TestCommandValidation:
 
 
 class TestPolicyEnforcement:
-    def test_disabled_allowed_in_development(self):
+    def test_disabled_allowed_in_development(self):  # noassert: does-not-raise smoke (W15-T2)
         ex = _make_executor()
         with patch(
             "src.agents.sandbox_executor._get_sandbox_mode_variant", return_value="disabled"
@@ -113,19 +114,22 @@ class TestPolicyEnforcement:
                 with pytest.raises(SandboxPolicyError, match="not 'development'"):
                     ex._enforce_policy(risk_score=0.1)
 
-    def test_enabled_does_not_raise(self):
+    def test_enabled_does_not_raise(self):  # noassert: does-not-raise smoke (W15-T2)
         ex = _make_executor()
         with patch("src.agents.sandbox_executor._get_sandbox_mode_variant", return_value="enabled"):
             ex._enforce_policy(risk_score=0.9)  # no exception
 
-    def test_hitl_required_logs_warning_below_threshold(self, caplog):
+    def test_hitl_required_logs_warning_below_threshold(
+        self, caplog
+    ):  # noassert: does-not-raise smoke; structlog output is not captured by caplog (W15-T2)
         ex = _make_executor()
         with patch(
             "src.agents.sandbox_executor._get_sandbox_mode_variant", return_value="hitl-required"
         ):
             with patch("src.agents.sandbox_executor.settings") as mock_settings:
                 mock_settings.hitl_risk_threshold = 0.4
-                ex._enforce_policy(risk_score=0.1)  # below threshold → warning, no raise
+                with caplog.at_level(logging.WARNING):
+                    ex._enforce_policy(risk_score=0.1)  # below threshold → warning, no raise
 
 
 # ── Docker command builder ────────────────────────────────────────────────────

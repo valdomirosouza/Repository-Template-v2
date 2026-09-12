@@ -85,9 +85,11 @@ class TestRequestConsumerStop:
 class TestRequestConsumerHandleParseErrors:
     @pytest.mark.asyncio
     async def test_invalid_json_returns_without_raising(self) -> None:
-        consumer = _make_consumer()
+        store = InMemoryRequestStore()
+        consumer = _make_consumer(store)
         bad_msg = SimpleNamespace(value=b"not-valid-json")
         await consumer._handle(bad_msg)  # must not raise
+        assert store._data == {}  # and nothing was stored
 
     @pytest.mark.asyncio
     async def test_missing_request_id_returns_without_storing(self) -> None:
@@ -99,15 +101,19 @@ class TestRequestConsumerHandleParseErrors:
 
     @pytest.mark.asyncio
     async def test_empty_payload_missing_request_id_skipped(self) -> None:
-        consumer = _make_consumer()
+        store = InMemoryRequestStore()
+        consumer = _make_consumer(store)
         msg = _make_msg({})
         await consumer._handle(msg)  # must not raise
+        assert store._data == {}
 
     @pytest.mark.asyncio
     async def test_non_dict_envelope_logs_error_and_returns(self) -> None:
-        consumer = _make_consumer()
+        store = InMemoryRequestStore()
+        consumer = _make_consumer(store)
         bad_msg = SimpleNamespace(value=b'"just a string"')
         await consumer._handle(bad_msg)  # must not raise
+        assert store._data == {}
 
 
 # ── _handle() — idempotency ───────────────────────────────────────────────────
@@ -428,6 +434,8 @@ class TestRequestConsumerHandleFailure:
             ):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
                     await consumer._handle(msg)  # must not propagate
+        state = await store.get("req-err-003")
+        assert state is not None and state.status == "failed"
 
 
 # ── DLQ routing (REM-012) ─────────────────────────────────────────────────────

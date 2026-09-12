@@ -131,7 +131,9 @@ class TestSessionMemoryDeleteSession:
         assert await memory.get("session-keep", "key") == "safe"
 
     @pytest.mark.asyncio
-    async def test_delete_nonexistent_session_does_not_raise(self, memory: SessionMemory) -> None:
+    async def test_delete_nonexistent_session_does_not_raise(
+        self, memory: SessionMemory
+    ) -> None:  # noassert: does-not-raise smoke (W15-T2)
         await memory.delete_session("ghost-session")  # must not raise
 
     @pytest.mark.asyncio

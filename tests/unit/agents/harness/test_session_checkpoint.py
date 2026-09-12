@@ -257,7 +257,9 @@ class TestDelete:
         assert not (tmp_path / f"{cp.session_id}.json").exists()
 
     @pytest.mark.asyncio
-    async def test_delete_local_no_error_when_file_missing(self, tmp_path, monkeypatch):
+    async def test_delete_local_no_error_when_file_missing(
+        self, tmp_path, monkeypatch
+    ):  # noassert: does-not-raise smoke (W15-T2)
         monkeypatch.setattr("src.agents.harness.session_checkpoint._LOCAL_CHECKPOINT_DIR", tmp_path)
         cp = _make_checkpoint()
         await cp.delete(redis=None)  # file never created — must not raise
