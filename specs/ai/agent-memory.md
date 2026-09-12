@@ -1,3 +1,27 @@
+---
+id: SPEC-AI-002
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Accepted # carried by migrate_spec_frontmatter.py, never promoted
+owner: unassigned
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0017
+implemented_by: 
+  - src/memory/__init__.py
+  - src/memory/bug_history_store.py
+  - src/memory/document_indexer.py
+  - src/memory/session_memory.py
+  - src/memory/vector_store.py
+verified_by: 
+  - tests/unit/memory/test_bug_history_store.py
+  - tests/unit/memory/test_document_indexer.py
+  - tests/unit/memory/test_session_memory.py
+  - tests/unit/memory/test_vector_store.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Spec: Agent Persistent Memory
 
 **ID:** SPEC-agent-memory

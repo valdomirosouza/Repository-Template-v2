@@ -1,3 +1,20 @@
+---
+id: SPEC-K8S-001
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: unassigned
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0042
+implemented_by:
+  - infrastructure/helm/
+  - .github/workflows/ci-k8s-probe-lint.yml
+verified_by: []
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Spec: Kubernetes Probe Strategy
 
 > **Spec ID:** K8S-001  

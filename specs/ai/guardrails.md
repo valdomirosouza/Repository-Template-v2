@@ -1,3 +1,34 @@
+---
+id: SPEC-AI-007
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: Security Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0011
+  - ADR-0012
+implemented_by: 
+  - src/guardrails/action_limits.py
+  - src/guardrails/audit_logger.py
+  - src/guardrails/pii_filter.py
+  - src/guardrails/prompt_injection_guard.py
+  - src/observability/logger.py
+verified_by: 
+  - tests/integration/test_audit_logger_integration.py
+  - tests/integration/test_pii_filter_pipeline.py
+  - tests/performance/benchmarks/test_orchestrator_benchmarks.py
+  - tests/security/test_owasp_llm_top10.py
+  - tests/security/test_pii_leakage.py
+  - tests/unit/guardrails/test_action_limits.py
+  - tests/unit/guardrails/test_audit_logger.py
+  - tests/unit/guardrails/test_output_sanitizer.py
+  - tests/unit/guardrails/test_pii_filter.py
+  - tests/unit/guardrails/test_prompt_injection_guard.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Guardrails Spec
 
 **Status:** Approved | **Owner:** Security Lead | **Last updated:** 2026-05-24

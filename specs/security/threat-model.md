@@ -1,3 +1,24 @@
+---
+id: SPEC-SEC-003
+kind: policy # process/compliance/vision document — no code counterpart (ADR-0085)
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: Security Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0008
+  - ADR-0011
+  - ADR-0012
+  - ADR-0016
+  - ADR-0018
+  - ADR-0019
+implemented_by: []
+verified_by: 
+  - tests/unit/shared/test_url_allowlist.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Threat Model — STRIDE Analysis
 
 **Status:** Approved | **Owner:** Security Lead | **Last updated:** 2026-05-28

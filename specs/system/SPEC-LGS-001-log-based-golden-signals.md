@@ -29,6 +29,11 @@ governing_adrs:
 new_adrs_required: [redis-as-timeseries-store, golden-signal-extraction-rules]
 related_specs: [specs/ai/, specs/privacy/, specs/security/threat-model.md]
 slo_ref: docs/sre/slo/slo.yaml
+kind: spec
+issue: null # GitHub issue number that delivered/owns this spec
+implemented_by: []
+verified_by: []
+last_updated: 2026-09-12
 ---
 
 # SPEC-LGS-001 — Log-Based Golden Signals

@@ -1,3 +1,26 @@
+---
+id: SPEC-LGS-001
+kind: threat-model
+status: draft # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Proposed # carried by migrate_spec_frontmatter.py, never promoted
+owner: Security Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0011
+  - ADR-0012
+  - ADR-0019
+  - ADR-0020
+  - ADR-0026
+  - ADR-0066
+  - ADR-0067
+  - ADR-0068
+  - ADR-0069
+implemented_by: []
+verified_by: []
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Threat Model — SPEC-LGS-001 Log-Based Golden Signals (STRIDE)
 
 **Status:** Proposed | **Owner:** Security Lead | **Last updated:** 2026-06-11

@@ -1,3 +1,20 @@
+---
+id: SPEC-AI-004
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Accepted # carried by migrate_spec_frontmatter.py, never promoted
+owner: unassigned
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0015
+implemented_by:
+  - src/shared/feature_flags.py
+  - infrastructure/feature-flags/
+verified_by: []
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Spec: Granular Autonomy Levels
 
 **ID:** SPEC-autonomous-mode-levels

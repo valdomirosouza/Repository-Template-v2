@@ -1,3 +1,28 @@
+---
+id: SPEC-AI-001
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: AI Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0010
+  - ADR-0011
+  - ADR-0012
+implemented_by: 
+  - src/agents/llm_factory.py
+  - src/agents/orchestrator/orchestrator.py
+  - src/agents/schemas/agent_action_v1.py
+  - src/shared/llm_client.py
+  - src/shared/retry.py
+verified_by: 
+  - tests/e2e/test_autonomous_resolution.py
+  - tests/unit/agents/test_orchestrator.py
+  - tests/unit/shared/test_retry.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Agent Design Spec
 
 **Status:** Approved | **Owner:** AI Lead | **Last updated:** 2026-05-24

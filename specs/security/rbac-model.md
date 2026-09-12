@@ -1,3 +1,21 @@
+---
+id: SPEC-SEC-002
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: Security Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0008
+  - ADR-0011
+  - ADR-0023
+implemented_by:
+  - src/api/rest/auth.py
+verified_by: []
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # RBAC Model — HITL System
 
 **Status:** Approved | **Owner:** Security Lead | **Reviewer:** AI Governance Lead, Tech Lead

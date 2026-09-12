@@ -46,7 +46,7 @@ slo_ref: docs/sre/slo/slo.yaml # where this feature's SLOs are/were recorded
 | §10 Golden Signals & SLO (gate)                      | 11 Observability & Operational Readiness | SLOs + PRR                                       |
 | §11 Governance/Privacy/Security (gate)               | 9 DevSecOps · 10 AI Safety (if agentic)  | STRIDE; AI-safety (conditional)                  |
 | §12 Acceptance Criteria (gate)                       | 8 Testing · all phases                   | **becomes the dry-run evidence in FINAL-REPORT** |
-| §13 Risks, §15 Open Questions                        | every phase boundary                     | surfaced as HITL items                           |
+| §13 Risks, §15 Open Questions, §16 Assumptions     | every phase boundary                     | surfaced as HITL items                           |
 
 ---
 
@@ -188,6 +188,16 @@ record any deviation as a new ADR in `new_adrs_required`.>
 
 1.
 
-## 16. References
+## 16. Assumptions
+
+<!-- Assumptions carried from discovery (Phase 2) and made while writing this spec. Each has an
+     owner and a resolve-by phase; an assumption still `open` at that phase is a gate failure
+     (W13-T8). Convert a rejected assumption into an FR change or an Open Question (§15). -->
+
+| # | Assumption | Owner | Resolve by (phase) | Status (open / confirmed / rejected) |
+| - | ---------- | ----- | ------------------ | ------------------------------------ |
+| A1 |            |       | 4 — Specification  | open                                 |
+
+## 17. References
 
 - <Specs, ADRs, papers, prior art.>

@@ -1,3 +1,24 @@
+---
+id: SPEC-OBS-004
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: unassigned
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0043
+  - ADR-0044
+  - ADR-0045
+  - ADR-0046
+implemented_by: 
+  - src/agents/llm_client_otel.py
+  - src/observability/span_hierarchy.py
+verified_by: 
+  - tests/unit/observability/test_span_hierarchy.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Spec: OTel Agentic AI Observability
 
 > **Spec ID:** OTEL-001

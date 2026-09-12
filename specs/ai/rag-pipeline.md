@@ -20,6 +20,11 @@ related_specs:
     docs/ai/eval-scorecard.md,
   ]
 slo_ref: docs/sre/slo/slo.yaml
+kind: spec
+issue: null # GitHub issue number that delivered/owns this spec
+implemented_by: []
+verified_by: []
+last_updated: 2026-09-12
 ---
 
 # SPEC-AI-010 — RAG reference pipeline

@@ -19,6 +19,15 @@ related_specs:
     specs/ai/hitl-hotl.md,
   ]
 slo_ref: docs/sre/slo/slo.yaml # SLO targets surfaced (read-only) by GET /v1/governance/slo-status
+kind: spec
+issue: null # GitHub issue number that delivered/owns this spec
+implemented_by: 
+  - src/api/rest/routers/governance.py
+  - src/api/rest/routers/runs.py
+verified_by: 
+  - tests/unit/api/test_runs.py
+  - tests/unit/api/test_slo_status.py
+last_updated: 2026-09-12
 ---
 
 # SPEC-API-004 — Read-only run-trace and SLO-status endpoints

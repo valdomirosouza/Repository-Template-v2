@@ -1,3 +1,21 @@
+---
+id: SPEC-AI-013
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: Tech Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0014
+  - ADR-0033
+implemented_by: 
+  - src/agents/harness/session_checkpoint.py
+verified_by: 
+  - tests/unit/agents/harness/test_session_checkpoint.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Spec — Long-Running Agent Session Durability
 
 **Status:** Approved | **Owner:** Tech Lead | **Last updated:** 2026-06-05

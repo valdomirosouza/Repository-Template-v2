@@ -1,3 +1,36 @@
+---
+id: SPEC-AI-009
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: AI Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0011
+implemented_by: 
+  - src/agents/action_policy.py
+  - src/agents/compensation_registry.py
+  - src/agents/hitl_gateway.py
+  - src/agents/hitl_store.py
+  - src/agents/hotl_monitor.py
+  - src/agents/override_service.py
+  - src/agents/risk_scorer.py
+  - src/agents/tool_executor.py
+  - src/api/rest/auth.py
+  - src/api/rest/routers/hitl.py
+  - src/workers/approval_consumer.py
+verified_by: 
+  - tests/abuse_cases/test_hitl_approval_tamper.py
+  - tests/e2e/test_hitl_operator_ui.py
+  - tests/integration/test_hitl_gateway_integration.py
+  - tests/integration/test_hitl_redis_store.py
+  - tests/unit/agents/test_hitl_gateway.py
+  - tests/unit/agents/test_risk_scorer.py
+  - tests/unit/api/test_hitl_router.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # HITL / HOTL Oversight Model
 
 **Status:** Approved | **Owner:** AI Lead | **Last updated:** 2026-05-24

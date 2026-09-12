@@ -43,6 +43,12 @@ related_specs:
     specs/compliance/iso27001-change-management.md,
   ]
 slo_ref: docs/sre/slo/slo.yaml
+kind: spec
+issue: null # GitHub issue number that delivered/owns this spec
+implemented_by:
+  - infrastructure/terraform/
+verified_by: []
+last_updated: 2026-09-12
 ---
 
 # SPEC-INFRA-001 — AWS Production Platform (Immutable Terraform IaC)
