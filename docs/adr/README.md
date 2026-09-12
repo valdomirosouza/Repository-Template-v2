@@ -154,6 +154,8 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0082](ADR-0082-backup-rpo-rto-and-restore-drill-verification.md)      | Consolidated backup RPO/RTO + scheduled, evidenced restore-drill verification            | Accepted   | 2026-06-15 |
 | [ADR-0083](ADR-0083-frontend-app-directory-rename.md)                      | Rename `frontend/frontend` → `frontend/web` (refines ADR-0023 path; pattern unchanged)   | Accepted   | 2026-06-15 |
 | [ADR-0084](ADR-0084-dependency-updates-via-dependabot.md)                  | Dependency & digest updates via Dependabot (supersedes ADR-0074 Renovate)                | Accepted   | 2026-06-17 |
+| [ADR-0086](ADR-0086-hitl-approval-resumption-and-expiry-sweep.md)          | HITL approval resumption (ApprovalConsumer executes approved actions) + expiry sweep     | Accepted   | 2026-09-12 |
+| [ADR-0089](ADR-0089-documented-capability-reachability-invariant.md)       | Documented-capability reachability as a tested invariant (lifespan wiring test)          | Accepted   | 2026-09-12 |
 
 ### AI Agents Module _(opt-in)_
 

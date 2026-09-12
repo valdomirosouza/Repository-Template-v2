@@ -77,14 +77,38 @@
    b. LLM call with masked context → proposed action
    c. Risk scorer evaluates action
    d. Score < threshold → HOTL (execute autonomously)
-   e. Score ≥ threshold → HITL Gateway (block until human approves)
-5. Action executed → result published as domain.completed event
+   e. Score ≥ threshold → HITL Gateway (request stored as waiting_for_human_approval)
+5. Human decides via POST /v1/hitl/requests/{id}/decision → agent.action.approved|rejected
+   → ApprovalConsumer executes the *stored* action through ToolExecutor (hitl_approved=True)
+   and settles the request: completed | failed | rejected | expired (ADR-0086)
 6. Audit Logger records all decisions (immutable)
 7. User notified via webhook or polling
 ```
 
 PII masking applied at steps 4a (pre-LLM), and also before any log write and
 before any broker publish throughout the flow (ADR-0012).
+
+---
+
+## Runtime Wiring Invariants (ADR-0089)
+
+Every capability this spec, CLAUDE.md §0.1 or an accepted ADR describes as part of the runtime
+is constructed by the application lifespan (`src/api/rest/main.py`) and asserted by
+`tests/integration/test_lifespan_wiring.py`, which boots the real lifespan offline (every
+infrastructure client forced to its documented in-memory fallback). A capability documented
+ahead of implementation must carry a "not wired" label with its tracking issue.
+
+| Capability | Constructed by | Asserted by |
+| --- | --- | --- |
+| LLM client stack `Otel → Resilient → Timeout → Anthropic` (ADR-0044/0045/0075) | `src/agents/llm_factory.build_llm_client` | `test_llm_client_is_the_documented_wrapper_stack` |
+| HTTP Golden Signals (`http_requests_total`, latency) | `GoldenSignalsMiddleware` | `test_http_golden_signals_middleware_is_installed` |
+| Request consumer (Kafka or in-memory subscription) | lifespan → `RequestConsumer` | `test_submitted_request_is_processed_end_to_end_in_memory` |
+| Approval consumer + HITL expiry sweep (ADR-0086) | lifespan → `ApprovalConsumer`, sweeper task | `test_approval_consumer_and_expiry_sweeper_are_running` |
+| Agent concurrency semaphore (`max_concurrent_agents`) | lifespan; acquired per agent run | `test_semaphore_is_acquired_around_agent_runs` |
+| Harness modes `simplified` / `full` (ADR-0014) | lifespan → `HarnessCoordinator` | `test_harness_coordinator_is_constructed_when_mode_is_not_solo` |
+| `ai_agents_enabled=false` disables the extension at runtime | lifespan gate | `test_agents_disabled_starts_no_consumers` |
+
+A new documented runtime capability adds a row here and an assertion there in the same PR.
 
 ---
 

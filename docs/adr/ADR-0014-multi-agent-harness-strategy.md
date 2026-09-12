@@ -132,3 +132,15 @@ control over every agent boundary for audit compliance.
 Rejected: the 22× cost multiplier makes full harness economically inviable for simple
 tasks. Mode selection (`solo` / `simplified` / `full`) allows the system to apply the
 minimum necessary harness for a given task complexity.
+
+---
+
+## Amendment 2026-09-12 (ADR-0089, W12-T6, issue #359)
+
+Until Wave 12 `HarnessCoordinator` was never constructed by the running service: only `solo`
+could execute. The lifespan now builds Planner, Evaluator and Coordinator over the production
+LLM client when `settings.harness_mode` is `simplified` or `full` and injects the coordinator
+into the `RequestConsumer`, which routes each request through `HarnessCoordinator.run(TaskBrief)`.
+No new flag: the existing setting is the only switch. Asserted by
+`tests/integration/test_lifespan_wiring.py::test_harness_coordinator_is_constructed_when_mode_is_not_solo`.
+
