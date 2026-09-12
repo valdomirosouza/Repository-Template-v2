@@ -1,8 +1,11 @@
 name: Template Sync
 
-# Opens a draft PR with upstream template changes that adopters can review and merge
-# selectively — replaces the fragile `git merge --allow-unrelated-histories` flow.
-# Never runs on the source template itself. Reusability Uplift, ADR-0059.
+# Opens a draft PR with upstream template changes for adopters. Since W14-T1 (issue #376,
+# ADR-0087) this is a per-path THREE-WAY MERGE against the template commit recorded in
+# `.template-version`, driven by scripts/template_sync.sh: adopter edits survive, only
+# overlapping hunks produce conflict markers, and paths the adopter owns come from
+# `.template-sync.yml` (not this file). The previous whole-tree overwrite is kept one release
+# as template-sync-legacy.yml (manual only). Never runs on the source template itself.
 
 on:
   schedule:
@@ -14,62 +17,65 @@ permissions:
   pull-requests: write
 
 env:
-  TEMPLATE_REPO: "https://github.com/valdomirosouza/Repository-Template-v2.git"
-  # Project-specific files that must NEVER be overwritten by a sync.
-  # Keep this list identical to the one shown in the PR body below.
-  EXCLUDES: "CLAUDE.md CLAUDE_SESSION_INIT.md services.yaml .env.example docs/adr specs CHANGELOG.md .github/CODEOWNERS AGENTS.md"
+  # Repository variable TEMPLATE_REPO_URL overrides the default (ADR-0087 §3).
+  TEMPLATE_REPO: ${{ vars.TEMPLATE_REPO_URL || 'https://github.com/valdomirosouza/Repository-Template-v2.git' }}
+  TEMPLATE_REF: ${{ vars.TEMPLATE_REF || 'main' }}
 
 jobs:
   sync:
-    name: Sync from template
+    name: Sync from template (three-way)
     runs-on: ubuntu-latest
-    # Skip on the source template — adopters only.
     if: github.repository != 'valdomirosouza/Repository-Template-v2'
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
-      - name: Build sync PR
+      - name: Merge template changes
+        id: merge
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git remote add template "$TEMPLATE_REPO" 2>/dev/null || true
-          git fetch --depth=1 template main
-
           DATE="$(date +%Y%m%d)"
           BRANCH="chore/template-sync-$DATE"
           git checkout -b "$BRANCH"
-
-          read -ra EXCLUDE_ARR <<< "$EXCLUDES"
-
-          # Bring in all template files, then restore project-specific exclusions.
-          git checkout template/main -- .
-          for path in "${EXCLUDE_ARR[@]}"; do
-            git checkout HEAD -- "$path" 2>/dev/null || true
-          done
-
+          OLD="$(cut -d' ' -f1 .template-version 2>/dev/null || echo '')"
+          bash scripts/template_sync.sh --template-url "$TEMPLATE_REPO" --template-ref "$TEMPLATE_REF" | tee sync-summary.txt
+          NEW="$(cut -d' ' -f1 .template-version)"
+          git add -A
           if git diff --cached --quiet; then
-            echo "No template changes to sync."
-            exit 0
+            echo "No template changes to sync."; echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
-
-          git commit -m "chore: sync from template ($DATE)"
+          git commit -m "chore: sync from template ($DATE) ${OLD:0:7}..${NEW:0:7}"
           git push -u origin "$BRANCH"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "old=$OLD" >> "$GITHUB_OUTPUT"; echo "new=$NEW" >> "$GITHUB_OUTPUT"
+          conflicts="$(grep -c '^CONFLICT' sync-summary.txt || true)"
+          echo "conflicts=$conflicts" >> "$GITHUB_OUTPUT"
 
-          EXCLUDE_LIST=""
-          for path in "${EXCLUDE_ARR[@]}"; do
-            EXCLUDE_LIST="${EXCLUDE_LIST}- \`${path}\`"$'\n'
-          done
+      - name: Open draft PR
+        if: steps.merge.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Automated draft PR with upstream template changes (three-way merge, ADR-0087)."
+            echo ""
+            echo "**Template base:** \`${{ steps.merge.outputs.old }}\` → \`${{ steps.merge.outputs.new }}\`"
+            echo "**Conflicts to resolve:** ${{ steps.merge.outputs.conflicts }} (files marked CONFLICT below carry \`<<<<<<<\` markers)"
+            echo ""
+            echo "**Excluded (adopter-owned, from \`.template-sync.yml\`):** see the file."
+            echo ""
+            echo '```'
+            cat sync-summary.txt
+            echo '```'
+            echo ""
+            echo "Review the diff, resolve conflicts, and merge. Close without merging if not needed."
+          } > pr-body.md
           gh pr create --draft \
-            --base main --head "$BRANCH" \
-            --title "chore: template sync $DATE" \
-            --body "Automated draft PR with upstream template changes for review.
-
-          **Excluded (never overwritten):**
-          $EXCLUDE_LIST
-
-          Review the diff and merge selectively. Close without merging if not needed."
+            --base main --head "${{ steps.merge.outputs.branch }}" \
+            --title "chore: template sync $(date +%Y%m%d) (${{ steps.merge.outputs.conflicts }} conflicts)" \
+            --body-file pr-body.md

@@ -206,10 +206,28 @@ Do **not** remove existing rules without a governance decision — they exist be
 
 ---
 
+## 6b. GitHub-only governance (what you lose on another host)
+
+Every workflow under `.github/workflows/` and the governance gates they run are GitHub Actions.
+Agents, skills and scripts reach the host only through `scripts/vcs.sh` (W14-T6), so porting the
+*calls* is one file — but these capabilities have no equivalent until you rebuild them:
+
+| Capability | GitHub-specific pieces | On GitLab / Bitbucket / Azure DevOps |
+| --- | --- | --- |
+| Blocking PR gates (`pr-governance.yml`, `governance-gate.yml`, `ci.yml` governance job) | Actions, required checks, rulesets (`.github/rulesets/`) | rebuild as pipelines + merge-request approval rules |
+| Dual-approval on guardrail paths | CODEOWNERS + rulesets | CODEOWNERS equivalents differ per host |
+| Release automation | release-please, `release.yml`, attestations | semantic-release or host-native release notes |
+| Template init/sync | `template-init.yml`, `template-sync.yml` (the script `scripts/template_sync.sh` itself is host-neutral) | run the script from any CI and open the MR yourself |
+| Security scanning uploads | CodeQL, SARIF upload, Dependabot | host-native SAST/SCA |
+| Delivery agents' issue/PR verbs | `scripts/vcs.sh` → `gh` | implement the `VCS_PROVIDER=<host>` branch in `scripts/vcs.sh` |
+
+Everything else — the Python service, Helm charts, governance *scripts* under `scripts/governance/`,
+`make` targets — is host-neutral.
+
 ## 7. Keeping Your Fork in Sync
 
 This template evolves. The recommended way to pull upstream improvements is the
-**`template-sync` workflow** (`.github/workflows/template-sync.yml`) — it runs weekly
+**`template-sync` workflow** (`.github/workflows/template-sync.yml`, three-way merge since ADR-0087: your edits survive, `.template-sync.yml` lists what the template never touches, `.template-version` records your base) — it runs weekly
 (and on demand via **Actions → Template Sync → Run workflow**), fetches the template,
 and opens a **draft PR** with the changed files so you can review and merge selectively.
 It never overwrites your project-specific files:

@@ -1,0 +1,16 @@
+# Paths this repository owns — the template sync (scripts/template_sync.sh, ADR-0087) never
+# writes them. Add project-specific files here; remove entries to let the template manage them.
+exclude:
+  - CLAUDE.md
+  - CLAUDE_SESSION_INIT.md
+  - AGENTS.md
+  - services.yaml
+  - .env.example
+  - CHANGELOG.md
+  - .github/CODEOWNERS
+  - docs/adr
+  - specs
+  - docs/delivery
+  - docs/product
+  - infrastructure/terraform/environments/*/backend.hcl
+  - infrastructure/terraform/environments/*/terraform.tfvars
