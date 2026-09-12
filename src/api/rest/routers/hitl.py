@@ -23,6 +23,7 @@ from src.agents.hitl_gateway import (
     HITLStatus,
 )
 from src.api.rest.auth import Principal, require_hitl_operator
+from src.api.rest.errors import error_responses
 from src.api.rest.pagination import effective_limit, paginate
 from src.observability.logger import get_logger
 from src.shared.config import settings
@@ -100,6 +101,7 @@ async def hitl_status(
 
 @router.get(
     "/requests",
+    responses=error_responses(401, 403, 422),
     response_model=list[HITLRequestSummary],
     summary="List pending HITL approval requests",
 )
@@ -140,6 +142,7 @@ async def list_pending_requests(
 
 @router.post(
     "/requests/{request_id}/decision",
+    responses=error_responses(401, 403, 404, 422),
     response_model=DecisionOut,
     summary="Submit an approval or rejection decision",
 )

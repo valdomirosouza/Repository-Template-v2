@@ -11,6 +11,7 @@ ADR:  ADR-0076 (error model + correlation), ADR-0012 (PII masking), ADR-0004 (Ob
 from __future__ import annotations
 
 from http import HTTPStatus
+from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -200,4 +201,14 @@ def install_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(Exception, unhandled_exception_handler)
 
 
-__all__ = ["AppError", "ErrorResponse", "FieldError", "install_error_handlers"]
+def error_responses(*codes: int) -> dict[int | str, dict[str, Any]]:
+    """OpenAPI `responses=` entries for the ADR-0076 envelope (W15-T3, issue #390).
+
+    Routes declare every non-2xx status they can actually return so the live schema documents
+    them (schemathesis' undocumented-status check) and 422 is described as the envelope rather
+    than FastAPI's default `HTTPValidationError` list.
+    """
+    return {code: {"model": ErrorResponse, "description": _title_for(code)} for code in codes}
+
+
+__all__ = ["AppError", "ErrorResponse", "FieldError", "error_responses", "install_error_handlers"]

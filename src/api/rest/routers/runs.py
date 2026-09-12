@@ -23,7 +23,7 @@ from pydantic import BaseModel, Field
 
 from src.agents.request_store import RequestState, RequestStoreProtocol
 from src.api.rest.auth import Principal, get_principal
-from src.api.rest.errors import AppError
+from src.api.rest.errors import AppError, error_responses
 from src.api.rest.routers.requests import get_request_store
 from src.guardrails.audit_logger import AuditLogger
 from src.observability.logger import get_logger
@@ -130,6 +130,7 @@ async def _build_timeline(
 
 @router.get(
     "/runs/{request_id}",
+    responses=error_responses(401, 404, 422),
     response_model=RunTraceResponse,
     summary="Get a request's execution trace",
 )

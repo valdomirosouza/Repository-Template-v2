@@ -24,7 +24,7 @@ from src.agents.idempotency_store import (
 )
 from src.agents.request_store import RequestState, RequestStoreProtocol
 from src.api.rest._limiter import limiter
-from src.api.rest.errors import AppError
+from src.api.rest.errors import AppError, error_responses
 from src.guardrails.pii_filter import mask_dict
 from src.observability.logger import get_logger
 from src.observability.metrics import AGENT_SEMAPHORE_WAITING
@@ -109,6 +109,7 @@ _IDEMPOTENCY_KEY = re.compile(r"^[\x20-\x7e]{8,200}$")
 
 @router.post(
     "/requests",
+    responses=error_responses(400, 422, 429, 503),
     response_model=RequestOut,
     status_code=status.HTTP_202_ACCEPTED,
     summary="Submit a domain request for async processing",
@@ -215,6 +216,7 @@ async def submit_request(
 
 @router.get(
     "/requests/{request_id}",
+    responses=error_responses(404, 422),
     response_model=RequestStatusResponse,
     summary="Poll request status",
 )

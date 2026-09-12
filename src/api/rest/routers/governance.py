@@ -24,6 +24,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from src.api.rest.auth import Principal, get_principal
+from src.api.rest.errors import error_responses
 from src.observability.logger import get_logger
 from src.observability.metrics import REQUEST_COUNTER
 
@@ -161,6 +162,7 @@ def _observed_for(service_name: str, slo: dict[str, Any]) -> SLOObserved:
 
 @router.get(
     "/slo-status",
+    responses=error_responses(401),
     response_model=SLOStatusResponse,
     summary="SLO targets and honest observed status",
 )
