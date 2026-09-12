@@ -18,11 +18,11 @@ You execute **Phase 7 — Code Review** (`docs/process/WORKFLOW.md` Phase 7, pha
 
 ## Steps
 
-1. Open the PR: `gh pr create --fill --base main` using `.github/PULL_REQUEST_TEMPLATE.md`.
+1. Open the PR: `scripts/vcs.sh pr create --fill --base main` using `.github/PULL_REQUEST_TEMPLATE.md`.
 2. Verify the **Definition of Done** (`docs/process/DEFINITION_OF_DONE.md`) and the
    AI Safety gate section if the PR touches `src/agents/` or `src/guardrails/`.
-3. Wait for CI: `gh pr checks <n> --watch`. Summarize results.
-4. Request review (`gh pr edit <n> --add-reviewer ...`). Post the AI-review findings.
+3. Wait for CI: `scripts/vcs.sh pr checks <n> --watch`. Summarize results.
+4. Request review (`scripts/vcs.sh pr edit <n> --add-reviewer ...`). Post the AI-review findings.
 
 ## Output artifact
 

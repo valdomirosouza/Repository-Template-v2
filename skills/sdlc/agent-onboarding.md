@@ -66,7 +66,7 @@ artifacts (rules, guardrails, ADR, RFC, harness wiring, tests, observability) an
 ### Step 4 — Identify Open GitHub Issues
 
 ```bash
-gh issue list --repo <org>/<repo> --state open --limit 20
+scripts/vcs.sh issue list --repo <org>/<repo> --state open --limit 20
 ```
 
 - Find the issue that corresponds to this task.

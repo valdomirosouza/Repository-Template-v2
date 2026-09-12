@@ -22,7 +22,7 @@ You verify readiness; you do not write specs here.
    feature-spec shell, size/component labels, **risk class**, ADR-need, threat-model-need,
    observability expectations, test strategy, Tech Lead comment.
 2. If any DoR item fails → emit `blocked` listing the unmet items (do not advance).
-3. If DoR passes → `gh issue edit <n> --add-label "status: ready" --remove-label "status: discovery"`.
+3. If DoR passes → `scripts/vcs.sh issue edit <n> --add-label "status: ready" --remove-label "status: discovery"`.
 
 ## Output artifact
 

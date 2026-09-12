@@ -62,7 +62,7 @@ SECURITY_FINDING_COUNTER.labels(
 ### Step 4 — For HIGH/CRITICAL: create a GitHub Security Advisory draft
 
 ```bash
-gh api repos/{owner}/{repo}/security-advisories \
+scripts/vcs.sh api repos/{owner}/{repo}/security-advisories \
   --method POST \
   --field summary="[{tool}] {severity}: {description}" \
   --field description="$(cat <<EOF
@@ -93,7 +93,7 @@ EOF
 ### Step 5 — Post a structured PR comment
 
 ```bash
-gh pr comment {pr_number} --body "$(cat <<EOF
+scripts/vcs.sh pr comment {pr_number} --body "$(cat <<EOF
 ## 🔒 Security Finding — Action Required
 
 | Field | Value |

@@ -119,6 +119,8 @@ HIGH_RISK_CMD = re.compile(
         (
             _cmd("git", r"push"),
             _cmd("gh", r"pr\s+merge|pr\s+create|pr\s+ready|release\s+create"),
+            # W14-T6: scripts/vcs.sh is the shim agents use instead of gh — same risk, same guard.
+            _cmd(r"vcs\.sh", r"pr\s+merge|pr\s+create|pr\s+ready|release\s+create"),
             _cmd("helm", r"upgrade|install|rollback"),
             _cmd("kubectl", r"apply|delete|rollout"),
             _cmd("make", r"deploy|rollback"),

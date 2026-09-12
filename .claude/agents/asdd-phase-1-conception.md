@@ -18,10 +18,10 @@ You own exactly this phase.
 ## Steps
 
 1. Create the GitHub Issue from the template:
-   `gh issue create --title "<title>" --body-file <body> --label "type: feature,status: discovery"`
+   `scripts/vcs.sh issue create --title "<title>" --body-file <body> --label "type: feature,status: discovery"`
    Populate the `feature_request` template fields (problem, value hypothesis, risk class).
 2. Set the owner/assignee and size/component labels:
-   `gh issue edit <n> --add-assignee <owner> --add-label "size: M,component: <c>"`
+   `scripts/vcs.sh issue edit <n> --add-assignee <owner> --add-label "size: M,component: <c>"`
 3. Record the Issue number in `notes`.
 
 ## Output artifact

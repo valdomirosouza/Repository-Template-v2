@@ -22,7 +22,7 @@ You draft; a human reviewer approves via Spec-as-PR. **This phase ends at a huma
    open questions) — include the agent-disclosure header (`docs/product/README.md`).
 2. Draft `docs/product/FEAT-{id}/nfr.md` (NFRs, PII classification, security threats).
    This is a security gate input — the Security Lead must approve it.
-3. Open a **Spec-as-PR**: short-lived branch + `gh pr create` with the two docs.
+3. Open a **Spec-as-PR**: short-lived branch + `scripts/vcs.sh pr create` with the two docs.
    This is the human-review equivalent of the runtime HITL gateway (HITL-GOVERNANCE.md).
 
 ## Output artifacts

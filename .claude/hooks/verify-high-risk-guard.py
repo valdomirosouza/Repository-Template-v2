@@ -72,6 +72,11 @@ CASES: list[tuple[str, object, str]] = [
     ("main · gh pr create", _bash("gh pr create --title x --body y"), "ask"),
     ("main · gh pr ready", _bash("gh pr ready 7"), "ask"),
     ("main · gh release create", _bash("gh release create v1"), "ask"),
+    # W14-T6: the vcs.sh shim must not bypass the guard.
+    ("main · scripts/vcs.sh pr merge", _bash("scripts/vcs.sh pr merge 5 --squash"), "ask"),
+    ("main · vcs.sh pr create", _bash("bash scripts/vcs.sh pr create --title x"), "ask"),
+    ("main · vcs.sh release create", _bash("./scripts/vcs.sh release create v1"), "ask"),
+    ("main · vcs.sh issue list (safe)", _bash("scripts/vcs.sh issue list --state open"), "defer"),
     # real action after a read-only segment must still flag
     ("main · cat x && git push", _bash("cat notes && git push"), "ask"),
     ("main · echo $(git push) (cmd subst executes)", _bash("echo $(git push)"), "ask"),
@@ -102,6 +107,7 @@ CASES: list[tuple[str, object, str]] = [
     # --- subagent context -> DENY (autonomous runs hard-blocked) ---
     ("subagent · git -C . push", _bash("git -C . push", agent="phase-executor"), "deny"),
     ("subagent · gh pr create", _bash("gh pr create -t x", agent="phase-executor"), "deny"),
+    ("subagent · vcs.sh pr merge", _bash("scripts/vcs.sh pr merge 5", agent="phase-executor"), "deny"),
     ("subagent · make deploy", _bash("make deploy-staging", agent="phase-executor"), "deny"),
     ("subagent · edit guardrails", _edit("src/guardrails/x.py", agent="phase-executor"), "deny"),
     ("subagent · make lint (safe)", _bash("make lint-python", agent="phase-executor"), "defer"),
