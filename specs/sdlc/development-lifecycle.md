@@ -5,7 +5,7 @@ status: approved # draft | in-review | approved | implemented | superseded (ADR-
 status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
 owner: Tech Lead
 issue: null # GitHub issue number that delivered/owns this spec
-governing_adrs: 
+governing_adrs:
   - ADR-0001
   - ADR-0003
   - ADR-0006
@@ -77,22 +77,22 @@ ruff lint + format, mypy strict, detect-secrets, bandit SAST.
 All gates are defined in `harness/code-check.yml` and enforced by `.github/workflows/ci.yml`.
 **All blocking gates must pass before a PR may be merged.**
 
-| Gate            | Tool                                                            | Threshold                  | Blocking      |
-| --------------- | --------------------------------------------------------------- | -------------------------- | ------------- |
-| Lint            | ruff + mypy strict                                              | Zero violations            | Yes           |
-| Unit tests      | pytest                                                          | ≥ 80% line coverage        | Yes           |
-| SAST            | bandit                                                          | No MEDIUM/HIGH findings    | Yes           |
-| Secret scan     | detect-secrets                                                  | No new secrets vs baseline | Yes           |
-| PII leakage     | `tests/security/test_pii_leakage.py`                            | All assertions pass        | Yes           |
-| Spec compliance | PR body contains `specs/` path                                  | Reference present          | No (advisory) |
-| ADR index       | All linked ADR files exist                                      | Zero broken links          | Yes           |
-| Contract drift  | OpenAPI + AsyncAPI parseable; `services.yaml` schema refs valid | Zero errors                | Yes           |
+| Gate            | Tool                                                                                                                                        | Threshold                  | Blocking |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | -------- |
+| Lint            | ruff + mypy strict                                                                                                                          | Zero violations            | Yes      |
+| Unit tests      | pytest                                                                                                                                      | ≥ 80% line coverage        | Yes      |
+| SAST            | bandit                                                                                                                                      | No MEDIUM/HIGH findings    | Yes      |
+| Secret scan     | detect-secrets                                                                                                                              | No new secrets vs baseline | Yes      |
+| PII leakage     | `tests/security/test_pii_leakage.py`                                                                                                        | All assertions pass        | Yes      |
+| Spec compliance | `pr-governance` spec gate: body cites a `specs/*.md` whose status is approved/implemented (ADR-0085); `no-spec` label is the audited escape | Binding spec present       | Yes      |
+| ADR index       | All linked ADR files exist                                                                                                                  | Zero broken links          | Yes      |
+| Contract drift  | OpenAPI + AsyncAPI parseable; `services.yaml` schema refs valid                                                                             | Zero errors                | Yes      |
 
 **PR requirements:**
 
 - At least one approval from a `CODEOWNERS` reviewer
 - All CI jobs green
-- `CHANGELOG.md` updated under `[Unreleased]`
+- Conventional PR title (release-please generates `CHANGELOG.md` from titles; no manual `[Unreleased]` section)
 - Branch is up to date with `main`
 
 ---
@@ -164,7 +164,7 @@ A change is **Done** when all of the following are true:
 - [ ] All CI gates pass on `main`
 - [ ] Staging smoke tests pass
 - [ ] Production deployed and Golden Signals green for 30+ minutes
-- [ ] `CHANGELOG.md` updated and release tagged
+- [ ] Release tagged (release-please writes `CHANGELOG.md` from Conventional-Commit PR titles)
 - [ ] ADRs updated if architectural decisions changed
 - [ ] Spec updated if implementation diverged from it
 - [ ] On-call runbooks updated if operational behaviour changed
