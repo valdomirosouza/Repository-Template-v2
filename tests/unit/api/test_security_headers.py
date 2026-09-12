@@ -1,6 +1,6 @@
 """Unit tests for SecurityHeadersMiddleware.
 
-Spec: specs/api/rest-api-design.md (Security Headers)
+Spec: docs/api/api-standards.md (Security Headers)
 """
 
 from __future__ import annotations

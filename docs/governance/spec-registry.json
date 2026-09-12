@@ -1,0 +1,1037 @@
+{
+  "specs": [
+    {
+      "governing_adrs": [
+        "ADR-0010",
+        "ADR-0011",
+        "ADR-0012"
+      ],
+      "id": "SPEC-AI-001",
+      "implemented_by": [
+        "src/agents/llm_factory.py",
+        "src/agents/orchestrator/orchestrator.py",
+        "src/agents/schemas/agent_action_v1.py",
+        "src/shared/llm_client.py",
+        "src/shared/retry.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "AI Lead",
+      "path": "specs/ai/agent-design.md",
+      "requirement_tests": [
+        "tests/unit/governance/test_spec_registry_and_migration.py (FR-01)"
+      ],
+      "status": "approved",
+      "verified_by": [
+        "tests/e2e/test_autonomous_resolution.py",
+        "tests/unit/agents/test_orchestrator.py",
+        "tests/unit/shared/test_retry.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0017"
+      ],
+      "id": "SPEC-AI-002",
+      "implemented_by": [
+        "src/memory/__init__.py",
+        "src/memory/bug_history_store.py",
+        "src/memory/document_indexer.py",
+        "src/memory/session_memory.py",
+        "src/memory/vector_store.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "unassigned",
+      "path": "specs/ai/agent-memory.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/unit/memory/test_bug_history_store.py",
+        "tests/unit/memory/test_document_indexer.py",
+        "tests/unit/memory/test_session_memory.py",
+        "tests/unit/memory/test_vector_store.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0040"
+      ],
+      "id": "SPEC-AI-003",
+      "implemented_by": [
+        "scripts/agentic_maturity_check.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "AI Governance Lead",
+      "path": "specs/ai/agentic-maturity-assessment.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0015"
+      ],
+      "id": "SPEC-AI-004",
+      "implemented_by": [
+        "src/shared/feature_flags.py",
+        "infrastructure/feature-flags/"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "unassigned",
+      "path": "specs/ai/autonomous-mode-levels.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0041"
+      ],
+      "id": "SPEC-AI-005",
+      "implemented_by": [
+        "src/agents/context_graph.py",
+        "src/shared/feature_flags.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "AI Governance Lead",
+      "path": "specs/ai/context-graph.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [],
+      "id": "SPEC-AI-006",
+      "implemented_by": [
+        "src/agents/feedback_loop.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "unassigned",
+      "path": "specs/ai/feedback-loop.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/unit/agents/test_feedback_loop.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0011",
+        "ADR-0012"
+      ],
+      "id": "SPEC-AI-007",
+      "implemented_by": [
+        "src/guardrails/action_limits.py",
+        "src/guardrails/audit_logger.py",
+        "src/guardrails/pii_filter.py",
+        "src/guardrails/prompt_injection_guard.py",
+        "src/observability/logger.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "Security Lead",
+      "path": "specs/ai/guardrails.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/integration/test_audit_logger_integration.py",
+        "tests/integration/test_pii_filter_pipeline.py",
+        "tests/performance/benchmarks/test_orchestrator_benchmarks.py",
+        "tests/security/test_owasp_llm_top10.py",
+        "tests/security/test_pii_leakage.py",
+        "tests/unit/guardrails/test_action_limits.py",
+        "tests/unit/guardrails/test_audit_logger.py",
+        "tests/unit/guardrails/test_output_sanitizer.py",
+        "tests/unit/guardrails/test_pii_filter.py",
+        "tests/unit/guardrails/test_prompt_injection_guard.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0010",
+        "ADR-0011",
+        "ADR-0014"
+      ],
+      "id": "SPEC-AI-008",
+      "implemented_by": [
+        "src/agents/harness/__init__.py",
+        "src/agents/harness/context_manager.py",
+        "src/agents/harness/coordinator.py",
+        "src/agents/harness/decision_tree_logger.py",
+        "src/agents/harness/evaluator.py",
+        "src/agents/harness/models.py",
+        "src/agents/harness/planner.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "AI Lead",
+      "path": "specs/ai/harness-design.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/contract/test_harness_contracts.py",
+        "tests/integration/test_harness_pipeline.py",
+        "tests/unit/agents/harness/test_context_manager.py",
+        "tests/unit/agents/harness/test_coordinator_reflection.py",
+        "tests/unit/agents/harness/test_decision_tree_logger.py",
+        "tests/unit/agents/harness/test_evaluator.py",
+        "tests/unit/agents/harness/test_planner.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0011"
+      ],
+      "id": "SPEC-AI-009",
+      "implemented_by": [
+        "src/agents/action_policy.py",
+        "src/agents/compensation_registry.py",
+        "src/agents/hitl_gateway.py",
+        "src/agents/hitl_store.py",
+        "src/agents/hotl_monitor.py",
+        "src/agents/override_service.py",
+        "src/agents/risk_scorer.py",
+        "src/agents/tool_executor.py",
+        "src/api/rest/auth.py",
+        "src/api/rest/routers/hitl.py",
+        "src/workers/approval_consumer.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "AI Lead",
+      "path": "specs/ai/hitl-hotl.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/abuse_cases/test_hitl_approval_tamper.py",
+        "tests/e2e/test_hitl_operator_ui.py",
+        "tests/integration/test_hitl_gateway_integration.py",
+        "tests/integration/test_hitl_redis_store.py",
+        "tests/unit/agents/test_hitl_gateway.py",
+        "tests/unit/agents/test_risk_scorer.py",
+        "tests/unit/api/test_hitl_router.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0003",
+        "ADR-0011"
+      ],
+      "id": "SPEC-AI-011",
+      "implemented_by": [
+        "src/agents/hotl_monitor.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "AI Lead + Security Lead",
+      "path": "specs/ai/hitl-notification.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0038"
+      ],
+      "id": "SPEC-AI-012",
+      "implemented_by": [
+        "src/agents/feedback_learner.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "AI Governance Lead",
+      "path": "specs/ai/learn-stage.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0014",
+        "ADR-0033"
+      ],
+      "id": "SPEC-AI-013",
+      "implemented_by": [
+        "src/agents/harness/session_checkpoint.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "Tech Lead",
+      "path": "specs/ai/long-running-session.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/unit/agents/harness/test_session_checkpoint.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0017",
+        "ADR-0018",
+        "ADR-0019",
+        "ADR-0038",
+        "ADR-0080"
+      ],
+      "id": "SPEC-AI-010",
+      "implemented_by": [],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "ai-governance-lead",
+      "path": "specs/ai/rag-pipeline.md",
+      "requirement_tests": [],
+      "status": "draft",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0016"
+      ],
+      "id": "SPEC-AI-014",
+      "implemented_by": [
+        "src/agents/sandbox_executor.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "unassigned",
+      "path": "specs/ai/sandbox-execution.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/unit/agents/test_sandbox_executor.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0014",
+        "ADR-0032"
+      ],
+      "id": "SPEC-AI-015",
+      "implemented_by": [
+        "src/agents/harness/sub_agent_registry.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "Tech Lead",
+      "path": "specs/ai/sub-agent-specialization.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/unit/agents/harness/test_sub_agent_registry.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0039"
+      ],
+      "id": "SPEC-AI-016",
+      "implemented_by": [
+        "src/agents/tool_registry.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "Security Lead",
+      "path": "specs/ai/tool-registry.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0004",
+        "ADR-0012",
+        "ADR-0024",
+        "ADR-0026",
+        "ADR-0029"
+      ],
+      "id": "SPEC-API-001",
+      "implemented_by": [
+        "src/api/rest/errors.py",
+        "src/api/rest/request_context.py",
+        "src/observability/request_context.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "valdomirosouza",
+      "path": "specs/api/SPEC-API-001-error-model-and-request-correlation.md",
+      "requirement_tests": [
+        "tests/contract/test_openapi_live_vs_documented.py",
+        "tests/unit/api/test_error_model.py"
+      ],
+      "status": "approved",
+      "verified_by": [
+        "tests/unit/api/test_error_model.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0009",
+        "ADR-0019",
+        "ADR-0024",
+        "ADR-0076"
+      ],
+      "id": "SPEC-API-002",
+      "implemented_by": [
+        "src/agents/idempotency_store.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "valdomirosouza",
+      "path": "specs/api/SPEC-API-002-idempotency-keys.md",
+      "requirement_tests": [
+        "tests/integration/test_idempotency_redis_store.py",
+        "tests/unit/api/test_idempotency.py"
+      ],
+      "status": "implemented",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0024",
+        "ADR-0076"
+      ],
+      "id": "SPEC-API-003",
+      "implemented_by": [
+        "src/api/rest/pagination.py",
+        "src/api/rest/routers/hitl.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "valdomirosouza",
+      "path": "specs/api/SPEC-API-003-pagination.md",
+      "requirement_tests": [
+        "tests/unit/api/test_pagination.py"
+      ],
+      "status": "implemented",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0076",
+        "ADR-0011",
+        "ADR-0004"
+      ],
+      "id": "SPEC-API-004",
+      "implemented_by": [
+        "src/api/rest/routers/governance.py",
+        "src/api/rest/routers/runs.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "valdomirosouza",
+      "path": "specs/api/SPEC-API-004-runs-trace-and-slo-status.md",
+      "requirement_tests": [
+        "tests/unit/api/test_runs.py",
+        "tests/unit/api/test_slo_status.py"
+      ],
+      "status": "draft",
+      "verified_by": [
+        "tests/unit/api/test_runs.py",
+        "tests/unit/api/test_slo_status.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0003",
+        "ADR-0005",
+        "ADR-0012"
+      ],
+      "id": "SPEC-API-005",
+      "implemented_by": [
+        "docs/api/asyncapi/v1/asyncapi.yaml",
+        "src/shared/broker.py",
+        "services.yaml"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "Tech Lead",
+      "path": "specs/api/async-api-design.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/integration/test_kafka_events.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0027"
+      ],
+      "id": "SPEC-COMP-001",
+      "implemented_by": [
+        ".github/workflows/pr-governance.yml",
+        ".github/workflows/cd-production.yml"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "Tech Lead, DevOps Lead",
+      "path": "specs/compliance/iso27001-change-management.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0026"
+      ],
+      "id": "SPEC-COMP-002",
+      "implemented_by": [
+        "src/guardrails/audit_logger.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "Tech Lead, Security Lead",
+      "path": "specs/compliance/sox-controls.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0011",
+        "ADR-0015",
+        "ADR-0016"
+      ],
+      "id": "SPEC-ETH-001",
+      "implemented_by": [],
+      "issue": null,
+      "kind": "policy",
+      "last_updated": "2026-09-12",
+      "owner": "AI Governance Lead",
+      "path": "specs/ethics/ethical-ai-principles.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0006",
+        "ADR-0043",
+        "ADR-0089"
+      ],
+      "id": "SPEC-FEAT-001",
+      "implemented_by": [
+        "src/api/rest/middleware/golden_signals.py",
+        "src/api/rest/main.py"
+      ],
+      "issue": 357,
+      "kind": "feature-spec",
+      "last_updated": "2026-09-12",
+      "owner": "Tech Lead",
+      "path": "specs/features/FEAT-001/feature-spec.md",
+      "requirement_tests": [],
+      "status": "implemented",
+      "verified_by": [
+        "tests/unit/api/test_golden_signals_middleware.py",
+        "tests/integration/test_lifespan_wiring.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0003",
+        "ADR-0011",
+        "ADR-0012",
+        "ADR-0020",
+        "ADR-0026",
+        "ADR-0066",
+        "ADR-0067"
+      ],
+      "id": "SPEC-LGS-001",
+      "implemented_by": [],
+      "issue": null,
+      "kind": "feature-spec",
+      "last_updated": "2026-09-12",
+      "owner": "valdomirosouza",
+      "path": "specs/features/SPEC-LGS-001-golden-signals-feature-spec.md",
+      "requirement_tests": [],
+      "status": "draft",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [],
+      "id": "SPEC-GOV-001",
+      "implemented_by": [],
+      "issue": null,
+      "kind": "policy",
+      "last_updated": "2026-09-12",
+      "owner": "unassigned",
+      "path": "specs/governance/team-topology.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0003",
+        "ADR-0004",
+        "ADR-0012",
+        "ADR-0018",
+        "ADR-0019",
+        "ADR-0020",
+        "ADR-0026",
+        "ADR-0027",
+        "ADR-0029"
+      ],
+      "id": "SPEC-INFRA-001",
+      "implemented_by": [
+        "infrastructure/terraform/"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "valdomirosouza",
+      "path": "specs/infrastructure/SPEC-INFRA-001-aws-platform-terraform.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0042"
+      ],
+      "id": "SPEC-K8S-001",
+      "implemented_by": [
+        "infrastructure/helm/",
+        ".github/workflows/ci-k8s-probe-lint.yml"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "unassigned",
+      "path": "specs/k8s/probe-strategy.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0004"
+      ],
+      "id": "SPEC-OBS-001",
+      "implemented_by": [
+        "src/observability/metrics.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "SRE Lead",
+      "path": "specs/observability/agent-performance.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/unit/observability/test_agent_performance_metrics.py"
+      ]
+    },
+    {
+      "governing_adrs": [],
+      "id": "SPEC-OBS-002",
+      "implemented_by": [
+        "infrastructure/monitoring/grafana/"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "unassigned",
+      "path": "specs/observability/agent-supervision.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0028"
+      ],
+      "id": "SPEC-OBS-003",
+      "implemented_by": [
+        "src/observability/dora_metrics.py",
+        ".github/workflows/cd-production.yml"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "SRE Lead",
+      "path": "specs/observability/dora-metrics.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0043",
+        "ADR-0044",
+        "ADR-0045",
+        "ADR-0046"
+      ],
+      "id": "SPEC-OBS-004",
+      "implemented_by": [
+        "src/agents/llm_client_otel.py",
+        "src/observability/span_hierarchy.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "unassigned",
+      "path": "specs/observability/otel-agentic-observability.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/unit/observability/test_span_hierarchy.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0012",
+        "ADR-0013"
+      ],
+      "id": "SPEC-PRIV-001",
+      "implemented_by": [
+        "src/jobs/retention_job.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "DPO",
+      "path": "specs/privacy/data-retention.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0018"
+      ],
+      "id": "SPEC-PRIV-002",
+      "implemented_by": [
+        "src/shared/db_encryption.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "unassigned",
+      "path": "specs/privacy/db-encryption-at-rest.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/unit/shared/test_db_encryption.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0012",
+        "ADR-0013"
+      ],
+      "id": "SPEC-PRIV-003",
+      "implemented_by": [],
+      "issue": null,
+      "kind": "policy",
+      "last_updated": "2026-09-12",
+      "owner": "DPO",
+      "path": "specs/privacy/dpia-ripd.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0012",
+        "ADR-0013"
+      ],
+      "id": "SPEC-PRIV-004",
+      "implemented_by": [
+        "src/guardrails/pii_filter.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "DPO",
+      "path": "specs/privacy/pii-inventory.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0019"
+      ],
+      "id": "SPEC-PRIV-005",
+      "implemented_by": [
+        "src/api/rest/main.py",
+        "src/shared/config.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "unassigned",
+      "path": "specs/privacy/redis-tls.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/unit/agents/test_hitl_store.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0001",
+        "ADR-0003",
+        "ADR-0006"
+      ],
+      "id": "SPEC-SDLC-001",
+      "implemented_by": [],
+      "issue": null,
+      "kind": "policy",
+      "last_updated": "2026-09-12",
+      "owner": "Tech Lead",
+      "path": "specs/sdlc/development-lifecycle.md",
+      "requirement_tests": [
+        "tests/unit/governance/test_spec_registry_and_migration.py"
+      ],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [],
+      "id": "SPEC-SEC-001",
+      "implemented_by": [],
+      "issue": null,
+      "kind": "policy",
+      "last_updated": "2026-09-12",
+      "owner": "Security Lead",
+      "path": "specs/security/pentest-checklist.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0008",
+        "ADR-0011",
+        "ADR-0023"
+      ],
+      "id": "SPEC-SEC-002",
+      "implemented_by": [
+        "src/api/rest/auth.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "Security Lead",
+      "path": "specs/security/rbac-model.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0011",
+        "ADR-0012",
+        "ADR-0019",
+        "ADR-0020",
+        "ADR-0026",
+        "ADR-0066",
+        "ADR-0067",
+        "ADR-0068",
+        "ADR-0069"
+      ],
+      "id": "SPEC-LGS-001",
+      "implemented_by": [],
+      "issue": null,
+      "kind": "threat-model",
+      "last_updated": "2026-09-12",
+      "owner": "Security Lead",
+      "path": "specs/security/threat-model-SPEC-LGS-001-golden-signals.md",
+      "requirement_tests": [],
+      "status": "draft",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0008",
+        "ADR-0011",
+        "ADR-0012",
+        "ADR-0016",
+        "ADR-0018",
+        "ADR-0019"
+      ],
+      "id": "SPEC-SEC-003",
+      "implemented_by": [],
+      "issue": null,
+      "kind": "policy",
+      "last_updated": "2026-09-12",
+      "owner": "Security Lead",
+      "path": "specs/security/threat-model.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/unit/shared/test_url_allowlist.py"
+      ]
+    },
+    {
+      "governing_adrs": [],
+      "id": "SPEC-SRE-001",
+      "implemented_by": [],
+      "issue": null,
+      "kind": "policy",
+      "last_updated": "2026-09-12",
+      "owner": "unassigned",
+      "path": "specs/sre/capacity-planning.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0020"
+      ],
+      "id": "SPEC-SRE-002",
+      "implemented_by": [],
+      "issue": null,
+      "kind": "policy",
+      "last_updated": "2026-09-12",
+      "owner": "unassigned",
+      "path": "specs/sre/finops.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0003",
+        "ADR-0011",
+        "ADR-0012",
+        "ADR-0020",
+        "ADR-0025",
+        "ADR-0026",
+        "ADR-0029",
+        "ADR-0066"
+      ],
+      "id": "SPEC-LGS-001",
+      "implemented_by": [],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "valdomirosouza",
+      "path": "specs/system/SPEC-LGS-001-log-based-golden-signals.md",
+      "requirement_tests": [],
+      "status": "draft",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0011"
+      ],
+      "id": "SPEC-SYS-001",
+      "implemented_by": [
+        "src/api/rest/main.py",
+        "src/api/rest/routers/health.py",
+        "src/observability/metrics.py",
+        "src/observability/otel_setup.py",
+        "src/shared/config.py",
+        "src/shared/db_client.py",
+        "src/shared/models.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "Tech Lead",
+      "path": "specs/system/architecture.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/integration/test_lifespan_wiring.py",
+        "tests/unit/api/test_health.py",
+        "tests/unit/shared/test_config.py",
+        "tests/unit/shared/test_db_client.py",
+        "tests/unit/shared/test_metrics.py"
+      ]
+    },
+    {
+      "governing_adrs": [
+        "ADR-0003",
+        "ADR-0005"
+      ],
+      "id": "SPEC-SYS-002",
+      "implemented_by": [
+        "src/workers/request_consumer.py",
+        "src/shared/broker.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "Tech Lead",
+      "path": "specs/system/async-event-flow.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    },
+    {
+      "governing_adrs": [
+        "ADR-0003",
+        "ADR-0005",
+        "ADR-0009",
+        "ADR-0011",
+        "ADR-0012"
+      ],
+      "id": "SPEC-SYS-003",
+      "implemented_by": [
+        "src/agents/request_store.py",
+        "src/api/rest/routers/requests.py",
+        "src/shared/broker.py",
+        "src/workers/request_consumer.py"
+      ],
+      "issue": null,
+      "kind": "spec",
+      "last_updated": "2026-09-12",
+      "owner": "Tech Lead",
+      "path": "specs/system/request-pipeline.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": [
+        "tests/e2e/test_request_lifecycle.py",
+        "tests/unit/agents/test_request_consumer.py",
+        "tests/unit/agents/test_request_store.py",
+        "tests/unit/api/test_requests_router.py",
+        "tests/unit/shared/test_broker.py"
+      ]
+    },
+    {
+      "governing_adrs": [],
+      "id": "SPEC-SYS-004",
+      "implemented_by": [],
+      "issue": null,
+      "kind": "policy",
+      "last_updated": "2026-09-12",
+      "owner": "Product Owner",
+      "path": "specs/system/vision.md",
+      "requirement_tests": [],
+      "status": "approved",
+      "verified_by": []
+    }
+  ],
+  "warnings": []
+}

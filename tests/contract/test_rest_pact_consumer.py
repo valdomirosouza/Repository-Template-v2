@@ -1,6 +1,6 @@
 """REST consumer contract tests — frontend ↔ api-gateway.
 
-Spec:  docs/api/asyncapi/v2/migration-guide.md, specs/api/rest-api-design.md
+Spec:  docs/api/asyncapi/v2/migration-guide.md, docs/api/api-standards.md
 ADR:   ADR-0022 (Testing Strategy §3), ADR-0024 (API Versioning Strategy)
 Pact:  tests/contract/pacts/frontend-api_gateway.json
 

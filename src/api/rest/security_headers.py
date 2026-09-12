@@ -3,7 +3,7 @@
 Adds defence-in-depth headers to every API response. HSTS is gated on
 app_env=production so local development over HTTP is not broken.
 
-Spec: specs/api/rest-api-design.md (Security Headers)
+Spec: docs/api/api-standards.md (Security Headers)
 ADR:  ADR-0002 (Technology Stack Selection)
 """
 
