@@ -268,12 +268,19 @@ masked and must never contain stack traces (FR-03/07). Does **not** touch `src/a
 
 ## 15. Open Questions
 
+<!-- Every item must be resolved (with an ADR/#issue reference) before status: approved — enforced by
+     scripts/governance/check_open_questions.py (W11-T5). -->
+
 1. Adopt the full RFC 9457 `application/problem+json` content-type, or keep `application/json` with the
-   same body shape? (Recommend the latter initially to minimise client friction; decide in the ADR.)
-2. Introduce the typed `AppError` domain hierarchy now, or only the handler-level mapping? (Recommend
-   handler-level first; add `AppError` when the first domain code needs it.)
+   same body shape? — **Resolved in ADR-0076**: keep `application/json`; `problem+json` is explicitly
+   deferred (ADR-0076 §Alternatives).
+2. Introduce the typed `AppError` domain hierarchy now, or only the handler-level mapping? — **Resolved
+   in ADR-0076 §Decision 6**: handler-level mapping ships first; a typed base is added when the first
+   domain code needs it.
 3. Should `request_id` also be written into audit `metadata` for HITL decisions, or is `trace_id` there
-   sufficient? (Lean: add `request_id` for human-quotable correlation.)
+   sufficient? — **Resolved (implemented)**: `HITLGateway.record_decision` writes
+   `metadata.request_id` on every `hitl.decision.recorded` audit event (`src/agents/hitl_gateway.py`);
+   traceability per ADR-0076 §Consequences.
 
 ## 16. References
 

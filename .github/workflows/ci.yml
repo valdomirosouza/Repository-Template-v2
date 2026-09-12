@@ -253,6 +253,27 @@ jobs:
           [ "$rc" = 0 ] || echo "::warning::Topic-contract gate reported violations (report mode, ADR-0070 burn-in) — see job summary."
           exit "$rc"
 
+      # REPORT MODE (ADR-0070 burn-in, W11-T5 / issue #350): an approved/implemented spec must have
+      # every §15 Open Question resolved with a traceable reference. Deterministic, but the
+      # resolution-marker heuristic is new — burns in before the flip (remove `continue-on-error`).
+      - name: Open-questions gate (approved specs)
+        continue-on-error: true
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if python3 scripts/governance/check_open_questions.py; then verdict=PASS; rc=0; else verdict=FAIL; rc=1; fi
+          today="$(date -u +%Y-%m-%d)"
+          if [ "$verdict" = FAIL ]; then fp='? (classify)'; else fp='no'; fi
+          {
+            echo "### Open-questions gate — burn-in row (ADR-0070)"
+            echo ""
+            echo "| Date (UTC) | PR | Verdict | False positive? | Notes |"
+            echo "| ---------- | --- | ------- | --------------- | ----- |"
+            echo "| ${today} | #${PR_NUMBER:-push} | ${verdict} | ${fp} | report-mode |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$rc" = 0 ] || echo "::warning::Open-questions gate reported violations (report mode, ADR-0070 burn-in) — see job summary."
+          exit "$rc"
+
       # BLOCKING from introduction (ADR-0065 binds it; ADR-0070 deterministic carve-out): a
       # test-count decrease vs the committed baseline, or a newly added skip/xfail without a
       # rationale, is unambiguous. Waiver = a CODEOWNER applies the `test-waiver` label (W11-T1,

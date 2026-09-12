@@ -259,6 +259,9 @@ verify-traceability: ## Verify service→ADR→topic→schema→SLO→runbook tr
 check-topic-contract: ## Fail if services.yaml topics, AsyncAPI channels and code topic literals disagree (W11-T3)
 	@uv run python scripts/governance/check_topic_contract.py
 
+check-open-questions: ## Fail if an approved/implemented spec still has unresolved Open Questions (W11-T5)
+	@uv run python scripts/governance/check_open_questions.py
+
 check-test-integrity: ## Test-integrity gate (ADR-0065): no silent test-count drop / unjustified skip. BASE=main
 	@uv run python scripts/governance/check_test_integrity.py --local --base $${BASE:-main} --allow-text-waiver
 

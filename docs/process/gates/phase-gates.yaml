@@ -206,7 +206,7 @@ phases:
     allowed_agent_actions: [read, draft_doc, open_pr]
     prohibited_agent_actions:
       [write_code, deploy, rollback, change_feature_flag]
-    exit_criteria: "Spec PR merged; governance spec-lint gate green; Tech + Security Lead approved"
+    exit_criteria: "Spec PR merged; governance spec-lint gate green; open-questions gate green (§15 empty or every item resolved with an ADR/RFC/issue reference — W11-T5); Tech + Security Lead approved"
     applicability: # ADR-0064 — CONTROL: "no code without a spec" (§3.4). Required in every tier;
       # only the ARTIFACT WEIGHT scales — TRIVIAL may use a lightweight spec (issue + inline AC)
       # instead of a full feature-spec.md, but never zero spec.

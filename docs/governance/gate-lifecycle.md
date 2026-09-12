@@ -52,6 +52,7 @@ streak; a `yes` row resets it.
 | Test-integrity (ADR-0065, issue #346, W11-T1)         | `ci.yml` → _Test-integrity gate (ADR-0065)_             | **blocking** | n/a (deterministic carve-out; baseline refreshed 2026-09-12 to 1,347)   | Was declared only in `harness/code-check.yml` (never executed). Waiver = `test-waiver` label |
 | Topic contract (W11-T3, issue #348)                   | `ci.yml` → _Topic-contract gate_                        | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | services.yaml topics ↔ AsyncAPI channels ↔ code literals (1/17 overlapped before W11-T2) |
 | Contract + E2E suites (W11-T4, issue #349)            | `ci.yml` → _Contract + E2E Tests (in-process)_          | **blocking** | n/a (deterministic carve-out; 129/129 green at introduction)          | 130 offline tests ran in no workflow; 16 had rotted (HITL auth, REM-001) and were repaired |
+| Open questions in approved specs (W11-T5, issue #350) | `ci.yml` → _Open-questions gate (approved specs)_       | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | SPEC-API-001 was approved with 3 unresolved §15 items; DoR + Phase 4 exit now require zero |
 | Conventional PR title / Spec / Issue / Version        | `pr-governance.yml`                                     | **blocking** | past lifecycle                                                        | Pre-existing                                                             |
 | detect-secrets · Bandit · CodeQL · Trivy · ZAP (DAST) | `ci.yml` / `codeql.yml` / `secret-scanning.yml`         | **blocking** | past lifecycle (ADR-0070 §Neutral)                                    | Pre-existing                                                             |
 
@@ -104,6 +105,25 @@ window. Check progress with `make burn-in-status GATE=topic-contract-gate`.
 ### The flip (prepared, NOT yet applied)
 
 Remove the `continue-on-error: true` line from the _Topic-contract gate_ step in `ci.yml`.
+
+---
+
+## Open-questions gate (W11-T5) — burn-in log
+
+<!-- BURN-IN-START: 2026-09-12 -->
+<!-- BURN-IN-TARGET: open-questions-gate -->
+
+`scripts/governance/check_open_questions.py` runs in **report mode** in the `ci.yml` governance
+job. A `yes` in _False positive?_ (an item was genuinely resolved but the marker heuristic missed
+it) resets the window and should widen the marker list. Progress: `make burn-in-status GATE=open-questions-gate`.
+
+| Date (UTC) | PR  | Verdict | False positive? | Notes                                                             |
+| ---------- | --- | ------- | --------------- | ----------------------------------------------------------------- |
+| 2026-09-12 | —   | —       | —               | Burn-in started (W11-T5). Awaiting first report-mode run on a PR. |
+
+### The flip (prepared, NOT yet applied)
+
+Remove the `continue-on-error: true` line from the _Open-questions gate_ step in `ci.yml`.
 
 ---
 
