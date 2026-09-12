@@ -19,6 +19,7 @@ _service_version_default: str = (
 class Settings(BaseSettings):
     # ── App core ──────────────────────────────────────────────────────────────
     app_env: str = "development"
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     app_port: int = 8000
     log_level: str = "INFO"
     service_name: str = "template-service"
@@ -27,6 +28,7 @@ class Settings(BaseSettings):
     # ── Database ──────────────────────────────────────────────────────────────
     database_url: str = "postgresql+asyncpg://appuser:placeholder-set-in-env@localhost:5432/appdb"
     database_pool_size: int = 10
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     database_max_overflow: int = 20
 
     # ── Redis ─────────────────────────────────────────────────────────────────
@@ -39,13 +41,17 @@ class Settings(BaseSettings):
     # Redis High Availability — Sentinel mode (see docs/sre/runbooks/redis-ha.md).
     # When redis_sentinel_enabled=True, redis_url is used as a fallback only;
     # the Sentinel cluster manages primary discovery automatically.
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     redis_sentinel_enabled: bool = False
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     redis_sentinel_master_name: str = "mymaster"
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     redis_sentinel_hosts: str = ""  # comma-separated "host:port" pairs
 
     # ── Kafka ─────────────────────────────────────────────────────────────────
     kafka_bootstrap_servers: str = "localhost:9092"
     kafka_consumer_group: str = "template-consumer-group"
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     kafka_schema_registry_url: str = "http://localhost:8081"
     kafka_dlq_topic: str = "domain.request.dlq"  # topic for unrecoverable messages (REM-012)
     kafka_consumer_max_retries: int = 3  # attempts before routing to DLQ (REM-012)
@@ -55,6 +61,7 @@ class Settings(BaseSettings):
     # AI agents are OPT-IN. When disabled (default), no LLM key is required and the
     # app runs the full non-AI platform cleanly (Reusability Uplift, ADR-0059).
     ai_agents_enabled: bool = False
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     llm_provider: str = "anthropic"
     llm_model: str = "claude-sonnet-4-6"
     # Canonical LLM key. ANTHROPIC_API_KEY is a backward-compat alias used when this
@@ -62,6 +69,7 @@ class Settings(BaseSettings):
     llm_api_key: str = "placeholder-set-in-env"
     anthropic_api_key: str = ""
     llm_max_tokens: int = 4096
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     llm_token_budget_per_request: int = 2000
     hitl_approval_timeout_seconds: int = 3600
     hitl_risk_threshold: float = 0.4  # MEDIUM/HIGH boundary per specs/ai/hitl-hotl.md
@@ -71,6 +79,7 @@ class Settings(BaseSettings):
     hitl_redis_key_prefix: str = "hitl"
     hitl_redis_ttl_grace_hours: int = 24  # TTL extension beyond expires_at for active keys
     hitl_expired_ttl_days: int = 7  # retention period for archived (expired) HITL requests
+    hitl_expiry_sweep_seconds: int = 60  # lifespan task period for expire_stale_requests() (W12-T2)
     request_redis_key_prefix: str = "request"
     request_result_ttl_hours: int = 24
     llm_call_timeout_seconds: float = 30.0  # asyncio.wait_for ceiling on LLM API calls
@@ -94,21 +103,27 @@ class Settings(BaseSettings):
 
     # ── Agent Memory (ADR-0017) ───────────────────────────────────────────────
     memory_session_ttl_seconds: int = 86400  # 24 h Redis session TTL
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     memory_vector_search_k: int = 5  # default top-k for similarity search
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     memory_embedding_dim: int = 256  # embedding vector dimension (must match embedder)
     memory_docs_retention_days: int = 90  # vector doc retention (aligns with ADR-0013)
 
     # ── Observability ─────────────────────────────────────────────────────────
     otel_exporter_otlp_endpoint: str = "http://localhost:4317"
     otel_service_name: str = "template-service"
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     prometheus_port: int = 9090
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     jaeger_agent_host: str = "localhost"
     # When True, prompt/response content is attached as span events on llm.inference spans.
     # MUST remain False in production — Collector strips these events before Jaeger export.
     otel_capture_prompts: bool = False
 
     # ── Feature flags ─────────────────────────────────────────────────────────
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     feature_flag_provider: str = "local"
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     feature_flag_sdk_key: str = ""
     autonomous_mode_enabled: bool = False  # fallback for legacy is_autonomous_mode_enabled()
 
@@ -129,6 +144,7 @@ class Settings(BaseSettings):
     # HS256 is symmetric and suitable for single-service deployments.
     # For multi-service or public-key verification use RS256 or ES256.
     jwt_algorithm: str = "HS256"
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     jwt_expiry_seconds: int = 3600
     # Role claim required to submit HITL approval decisions (REM-001, ADR-0011).
     hitl_operator_role: str = "hitl-operator"
@@ -167,7 +183,9 @@ class Settings(BaseSettings):
 
     # ── Privacy ───────────────────────────────────────────────────────────────
     pii_masking_enabled: bool = True
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     pii_audit_log_enabled: bool = True
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     data_retention_days: int = 30
 
     # ── Feedback loop ─────────────────────────────────────────────────────────
@@ -192,6 +210,7 @@ class Settings(BaseSettings):
 
     # ── FinOps ────────────────────────────────────────────────────────────────
     llm_monthly_token_budget: int = 1_000_000
+    # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     cost_alert_threshold_usd: float = 100.0
 
     @field_validator("allowed_origins", "outbound_url_allowlist", mode="before")
