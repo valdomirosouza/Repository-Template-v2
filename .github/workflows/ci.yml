@@ -300,8 +300,10 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.13"
-      - name: Install uv
-        run: pip install uv
+      - name: Install uv (pinned, W11-T6)
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          version: "0.11.16"
       - name: Install dependencies
         run: uv sync --extra dev
       - name: Ruff lint
@@ -322,8 +324,10 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.13"
-      - name: Install uv
-        run: pip install uv
+      - name: Install uv (pinned, W11-T6)
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          version: "0.11.16"
       - name: Install dependencies
         run: uv sync --extra dev
       - name: Run unit tests
@@ -360,14 +364,40 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.13"
-      - name: Install uv
-        run: pip install uv
+      - name: Install uv (pinned, W11-T6)
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          version: "0.11.16"
       - name: Install dependencies
         run: uv sync --extra dev
       - name: Contract tests (consumer pact + provider verification)
         run: uv run pytest tests/contract/ -q
       - name: E2E tests (CUJ-001/002/003, in-process ASGI)
         run: uv run pytest tests/e2e/ -q
+
+  # W11-T6 (issue #351): next-interpreter canary. requires-python admits 3.14 and mypy strict
+  # broke there silently (openfeature namespace import). Non-blocking by design — it warns before
+  # the .python-version pin is bumped, it does not gate merges.
+  test-unit-py314:
+    name: Unit Tests (Python 3.14, informational)
+    runs-on: ubuntu-latest
+    needs: lint
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+      - name: Install uv (pinned, W11-T6)
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          version: "0.11.16"
+      - name: Install dependencies
+        run: uv sync --extra dev --python 3.14
+      - name: Mypy strict on 3.14
+        run: uv run --python 3.14 mypy src/
+      - name: Unit tests on 3.14
+        run: uv run --python 3.14 pytest tests/unit/ -q
 
   test-integration:
     name: Integration Tests
@@ -410,8 +440,10 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.13"
-      - name: Install uv
-        run: pip install uv
+      - name: Install uv (pinned, W11-T6)
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          version: "0.11.16"
       - name: Install dependencies
         run: uv sync --extra dev
       - name: Run integration tests
@@ -483,8 +515,10 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.13"
-      - name: Install uv
-        run: pip install uv
+      - name: Install uv (pinned, W11-T6)
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          version: "0.11.16"
       - name: Install dependencies
         run: uv sync --extra dev
       - name: SAST — Bandit
@@ -509,8 +543,10 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install uv
-        run: pip install uv
+      - name: Install uv (pinned, W11-T6)
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          version: "0.11.16"
 
       - name: Install Python deps (for openapi-python-client)
         run: uv sync --extra dev
@@ -559,8 +595,10 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.13"
-      - name: Install uv
-        run: pip install uv
+      - name: Install uv (pinned, W11-T6)
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          version: "0.11.16"
       - name: Install dependencies
         run: uv sync --frozen
       - name: Start API in in-memory mode
