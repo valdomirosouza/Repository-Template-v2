@@ -161,10 +161,9 @@ jobs:
 
       - name: Run Playwright E2E tests
         working-directory: frontend/${{ matrix.app }}
-        # --pass-with-no-tests: the e2e suite (src/__tests__/e2e) is intentionally
-        # empty for now; without this flag `playwright test` exits 1 on "No tests found",
-        # turning a clean run red. Remove the flag once the first e2e spec lands.
-        run: pnpm e2e --pass-with-no-tests
+        # W15-T4 (issue #391): the suite has specs now (src/__tests__/e2e); "No tests found"
+        # is a failure again, as it should be.
+        run: pnpm e2e
         env:
           BASE_URL: http://localhost:3000
           NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
