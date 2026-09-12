@@ -126,7 +126,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RequestOut"
+                $ref: "#/components/schemas/RequestStatusResponse"
         "404":
           description: Request not found
           content:
@@ -349,11 +349,46 @@ components:
           type: string
           format: uuid
         status:
-          type: string
-          enum: [queued, processing, completed, failed]
+          $ref: "#/components/schemas/RequestStatus"
         created_at:
           type: string
           format: date-time
+        message:
+          type: string
+
+    RequestStatus:
+      type: string
+      description: >-
+        Lifecycle of a domain request. `waiting_for_human_approval` is the honest suspended
+        state while a HITL decision is pending; `rejected` / `expired` are terminal HITL
+        outcomes (ADR-0086).
+      enum:
+        [queued, processing, waiting_for_human_approval, completed, rejected, expired, failed]
+
+    RequestStatusResponse:
+      type: object
+      description: GET /v1/requests/{request_id} — status poll (W12-T7 aligned with the live app).
+      required: [request_id, status, created_at, updated_at, message]
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/RequestStatus"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        result:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Orchestrator / approval outcome once available (PII-masked).
+        error:
+          type: string
+          nullable: true
         message:
           type: string
 
