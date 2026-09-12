@@ -1,0 +1,40 @@
+name: Benchmarks (nightly)
+
+# W11-T4 (issue #349): tests/performance/benchmarks asserts orchestrator latency against SLO
+# thresholds with a stub LLM. It ran in no workflow. Nightly and non-blocking by design (timing
+# on shared runners is noisy); a regression opens visibility, not a red PR. Trend the numbers
+# before promoting any threshold to a PR gate.
+
+on:
+  schedule:
+    - cron: "17 3 * * *" # 03:17 UTC daily
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  benchmarks:
+    name: Orchestrator latency benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.13"
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync --extra dev
+      - name: Run benchmarks
+        run: uv run pytest tests/performance/benchmarks/ -q -m benchmark --durations=15 | tee benchmarks.txt
+      - name: Publish summary
+        if: always()
+        run: |
+          {
+            echo "### Orchestrator latency benchmarks (nightly, non-blocking)"
+            echo ""
+            echo '```'
+            tail -40 benchmarks.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

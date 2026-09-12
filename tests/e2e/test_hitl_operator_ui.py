@@ -63,16 +63,44 @@ def _build_asgi_app() -> FastAPI:
 async def _make_client() -> tuple[AsyncClient, Any]:
     """Return (client, context_manager) suited to the chosen transport."""
     if _LIVE:
-        client = AsyncClient(base_url=BASE_URL, timeout=10.0)
+        client = AsyncClient(base_url=BASE_URL, timeout=10.0, headers=_operator_headers())
         return client, client
     app = _build_asgi_app()
-    client = AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
+    client = AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test", headers=_operator_headers()
+    )
     return client, client
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 _SYNTHETIC_APPROVER = "operator-00000000-0000-0000-0000-000000000001"
+
+
+def _operator_headers() -> dict[str, str]:
+    """Bearer token for the HITL operator (REM-001: approver identity comes from the JWT).
+
+    Live mode honours ``HITL_OPERATOR_TOKEN``; otherwise a token is minted with the same
+    ``SECRET_KEY`` the server under test uses.
+    """
+    token = os.environ.get("HITL_OPERATOR_TOKEN")
+    if not token:
+        import jwt
+
+        from src.shared.config import settings
+
+        token = jwt.encode(
+            {
+                "sub": _SYNTHETIC_APPROVER,
+                "role": settings.hitl_operator_role,
+                "exp": datetime.now(UTC) + timedelta(hours=1),
+            },
+            settings.secret_key,
+            algorithm=settings.jwt_algorithm,
+        )
+    return {"Authorization": f"Bearer {token}"}
+
+
 _SYNTHETIC_RATIONALE = "Action verified against approved scope. Risk within accepted bounds."
 
 
@@ -116,7 +144,11 @@ class TestHITLStatusEndpoint:
         gateway = app.state.hitl_gateway
         rid = await _seed_hitl_request(gateway)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers=_operator_headers(),
+        ) as client:
             response = await client.get("/v1/hitl/status")
 
         assert response.status_code == 200
@@ -134,13 +166,16 @@ class TestHITLApproveDecision:
         gateway = app.state.hitl_gateway
         request_id = await _seed_hitl_request(gateway)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers=_operator_headers(),
+        ) as client:
             response = await client.post(
                 f"/v1/hitl/requests/{request_id}/decision",
                 json={
                     "decision": "APPROVED",
                     "rationale": _SYNTHETIC_RATIONALE,
-                    "approver_id": _SYNTHETIC_APPROVER,
                 },
             )
 
@@ -154,14 +189,17 @@ class TestHITLApproveDecision:
         gateway = app.state.hitl_gateway
         request_id = await _seed_hitl_request(gateway)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers=_operator_headers(),
+        ) as client:
             depth_before = (await client.get("/v1/hitl/status")).json()["pending_count"]
             await client.post(
                 f"/v1/hitl/requests/{request_id}/decision",
                 json={
                     "decision": "APPROVED",
                     "rationale": _SYNTHETIC_RATIONALE,
-                    "approver_id": _SYNTHETIC_APPROVER,
                 },
             )
             depth_after = (await client.get("/v1/hitl/status")).json()["pending_count"]
@@ -173,14 +211,17 @@ class TestHITLApproveDecision:
         gateway = app.state.hitl_gateway
         request_id = await _seed_hitl_request(gateway)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers=_operator_headers(),
+        ) as client:
             body = (
                 await client.post(
                     f"/v1/hitl/requests/{request_id}/decision",
                     json={
                         "decision": "APPROVED",
                         "rationale": _SYNTHETIC_RATIONALE,
-                        "approver_id": _SYNTHETIC_APPROVER,
                     },
                 )
             ).json()
@@ -198,13 +239,16 @@ class TestHITLRejectDecision:
         gateway = app.state.hitl_gateway
         request_id = await _seed_hitl_request(gateway)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers=_operator_headers(),
+        ) as client:
             response = await client.post(
                 f"/v1/hitl/requests/{request_id}/decision",
                 json={
                     "decision": "REJECTED",
                     "rationale": "Action exceeds approved risk threshold for this action_type.",
-                    "approver_id": _SYNTHETIC_APPROVER,
                 },
             )
 
@@ -218,13 +262,16 @@ class TestHITLRejectDecision:
         gateway = app.state.hitl_gateway
         request_id = await _seed_hitl_request(gateway)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers=_operator_headers(),
+        ) as client:
             response = await client.post(
                 f"/v1/hitl/requests/{request_id}/decision",
                 json={
                     "decision": "REJECTED",
                     "rationale": "too short",  # < 10 chars
-                    "approver_id": _SYNTHETIC_APPROVER,
                 },
             )
 
@@ -240,13 +287,16 @@ class TestHITLNotFound:
         app = _build_asgi_app()
         unknown_id = "00000000-0000-0000-0000-000000000099"
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers=_operator_headers(),
+        ) as client:
             response = await client.post(
                 f"/v1/hitl/requests/{unknown_id}/decision",
                 json={
                     "decision": "APPROVED",
                     "rationale": _SYNTHETIC_RATIONALE,
-                    "approver_id": _SYNTHETIC_APPROVER,
                 },
             )
 
@@ -258,11 +308,14 @@ class TestHITLNotFound:
         gateway = app.state.hitl_gateway
         request_id = await _seed_hitl_request(gateway)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers=_operator_headers(),
+        ) as client:
             decision_payload = {
                 "decision": "APPROVED",
                 "rationale": _SYNTHETIC_RATIONALE,
-                "approver_id": _SYNTHETIC_APPROVER,
             }
             first = await client.post(
                 f"/v1/hitl/requests/{request_id}/decision", json=decision_payload
@@ -286,13 +339,16 @@ class TestHITLValidation:
         gateway = app.state.hitl_gateway
         request_id = await _seed_hitl_request(gateway)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers=_operator_headers(),
+        ) as client:
             response = await client.post(
                 f"/v1/hitl/requests/{request_id}/decision",
                 json={
                     "decision": "MAYBE",  # not in enum
                     "rationale": _SYNTHETIC_RATIONALE,
-                    "approver_id": _SYNTHETIC_APPROVER,
                 },
             )
 
@@ -303,10 +359,14 @@ class TestHITLValidation:
         gateway = app.state.hitl_gateway
         request_id = await _seed_hitl_request(gateway)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers=_operator_headers(),
+        ) as client:
             response = await client.post(
                 f"/v1/hitl/requests/{request_id}/decision",
-                json={"decision": "APPROVED", "approver_id": _SYNTHETIC_APPROVER},
+                json={"decision": "APPROVED"},  # rationale missing; approver comes from the JWT
             )
 
         assert response.status_code == 422

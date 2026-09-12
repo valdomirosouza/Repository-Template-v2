@@ -219,12 +219,18 @@
         "method": "POST",
         "path": "/v1/hitl/requests/00000000-0000-0000-0000-000000000010/decision",
         "headers": {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": "Bearer <operator-jwt>"
         },
         "body": {
           "decision": "APPROVED",
-          "rationale": "Action is safe and within approved scope.",
-          "approver_id": "operator-001"
+          "rationale": "Action is safe and within approved scope."
+        },
+        "matchingRules": {
+          "$.headers.Authorization": {
+            "match": "regex",
+            "regex": "^Bearer .+$"
+          }
         }
       },
       "response": {
@@ -258,12 +264,18 @@
         "method": "POST",
         "path": "/v1/hitl/requests/00000000-0000-0000-0000-000000000011/decision",
         "headers": {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": "Bearer <operator-jwt>"
         },
         "body": {
           "decision": "REJECTED",
-          "rationale": "Action exceeds approved risk threshold for this environment.",
-          "approver_id": "operator-001"
+          "rationale": "Action exceeds approved risk threshold for this environment."
+        },
+        "matchingRules": {
+          "$.headers.Authorization": {
+            "match": "regex",
+            "regex": "^Bearer .+$"
+          }
         }
       },
       "response": {
@@ -297,12 +309,18 @@
         "method": "POST",
         "path": "/v1/hitl/requests/00000000-0000-0000-0000-000000000099/decision",
         "headers": {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": "Bearer <operator-jwt>"
         },
         "body": {
           "decision": "APPROVED",
-          "rationale": "Attempting to approve an unknown request.",
-          "approver_id": "operator-001"
+          "rationale": "Attempting to approve an unknown request."
+        },
+        "matchingRules": {
+          "$.headers.Authorization": {
+            "match": "regex",
+            "regex": "^Bearer .+$"
+          }
         }
       },
       "response": {
@@ -328,6 +346,7 @@
     "client": {
       "name": "Repository-Template",
       "version": "1.10.0"
-    }
+    },
+    "x-note": "REM-001: HITL decision interactions authenticate with an operator bearer token; approver_id is derived from the JWT subject, never from the body (W11-T4, issue #349)."
   }
 }

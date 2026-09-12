@@ -11,9 +11,9 @@ This directory contains all automated tests for the system. Tests are organised 
 | `tests/unit/`        | Unit tests                            | pytest                  | Every PR (CI gate)        |
 | `tests/integration/` | Integration tests                     | pytest + docker-compose | Every PR after unit tests |
 | `tests/security/`    | Security tests (SAST, PII, OWASP LLM) | pytest                  | Every PR (blocking gate)  |
-| `tests/e2e/`         | End-to-end tests                      | pytest                  | Staging gate only         |
-| `tests/contract/`    | Contract tests (Pact)                 | pytest                  | Every PR                  |
-| `tests/performance/` | Load and benchmark tests              | k6 / pytest-benchmark   | Staging gate only         |
+| `tests/e2e/`         | End-to-end tests (CUJ journeys)       | pytest                  | Every PR in-process (`test-contract-e2e`); live mode via `BASE_URL` in staging |
+| `tests/contract/`    | Contract tests (Pact)                 | pytest                  | Every PR (`test-contract-e2e`, blocking) |
+| `tests/performance/` | Load and benchmark tests              | k6 / pytest             | Benchmarks nightly (`benchmarks-nightly.yml`, non-blocking); k6 `smoke.js` at the staging gate |
 | `tests/chaos/`       | Chaos engineering experiments         | Litmus / Chaos Toolkit  | Weekly scheduled game day |
 
 ---
