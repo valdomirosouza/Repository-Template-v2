@@ -1,0 +1,77 @@
+# versions.yaml — the single source of truth for every toolchain version (W14-T2, issue #377).
+#
+# Before this file the same numbers lived in five places and disagreed (Go was 1.26 in go.mod
+# and ci-go.yml but 1.24 in two Dockerfiles, the devcontainer, doctor.sh and check-versions.sh).
+# scripts/governance/check_toolchain_versions.py asserts every consumer below agrees with this
+# file; scripts/doctor.sh and scripts/check-versions.sh read their minimums from it.
+#
+# `minimum` is what `make doctor` requires locally; `pinned` is what CI, Dockerfiles and the
+# devcontainer use. Bump here first, then run `make check-toolchain-versions` to find every
+# consumer that must follow.
+
+python:
+  minimum: "3.13"
+  pinned: "3.13"
+  consumers:
+    - { path: .python-version, pattern: "^{v}$" }
+    - { path: pyproject.toml, pattern: 'requires-python = ">={v}"' }
+    - { path: Dockerfile, pattern: "FROM python:{v}-slim" }
+    - { path: .devcontainer/devcontainer.json, pattern: '"version": "{v}"' }
+    - { path: .github/workflows/ci.yml, pattern: 'python-version: "{v}"' }
+
+uv:
+  minimum: "0.4"
+  pinned: "0.11.16"
+  consumers:
+    - { path: .github/workflows/ci.yml, pattern: 'version: "{v}"' }
+
+node:
+  minimum: "22"
+  pinned: "22"
+  consumers:
+    - {
+        path: .github/workflows/ci-frontend.yml,
+        pattern: 'NODE_VERSION: "{v}"',
+      }
+    - { path: frontend/web/Dockerfile, pattern: "FROM node:{v}-alpine" }
+    - {
+        path: scaffold/templates/frontend/Dockerfile,
+        pattern: "FROM node:{v}-alpine",
+      }
+    - { path: .devcontainer/devcontainer.json, pattern: '"version": "{v}"' }
+
+pnpm:
+  minimum: "9"
+  pinned: "9"
+  consumers:
+    - {
+        path: .github/workflows/ci-frontend.yml,
+        pattern: 'PNPM_VERSION: "{v}"',
+      }
+
+go:
+  minimum: "1.26"
+  pinned: "1.26"
+  consumers:
+    - { path: services/event-worker/go.mod, pattern: "^go {v}" }
+    - { path: .github/workflows/ci-go.yml, pattern: 'GO_VERSION: "{v}"' }
+    - {
+        path: services/event-worker/Dockerfile,
+        pattern: "FROM golang:{v}-alpine",
+      }
+    - {
+        path: scaffold/templates/go/Dockerfile,
+        pattern: "FROM golang:{v}-alpine",
+      }
+    - { path: .devcontainer/devcontainer.json, pattern: '"version": "{v}"' }
+
+java:
+  minimum: "21"
+  pinned: "21"
+  consumers:
+    - { path: .github/workflows/ci-java.yml, pattern: 'JAVA_VERSION: "{v}"' }
+    - {
+        path: scaffold/templates/java/Dockerfile,
+        pattern: "FROM eclipse-temurin:{v}-jdk-alpine",
+      }
+    - { path: .devcontainer/devcontainer.json, pattern: '"version": "{v}"' }
