@@ -77,3 +77,16 @@ The six triggers are:
   `[HITL-NOTE]` path for near-miss situations that do not actually meet a trigger.
 - This protocol governs Claude Code sessions only, not the runtime HITL gateway.
   It is a complementary, not a replacement, control.
+
+---
+
+## Amendment 2026-09-12 (W13-T9, issue #374)
+
+A seventh mandatory trigger is added to CLAUDE.md §14.1: **a requirement conflicts with a
+binding ADR or another `approved` spec**. Until now an agent facing contradictory requirements
+had no mandated escalation — only Phase 6's informal "spec is ambiguous → blocked". The
+phase-executor return envelope gains `open_questions`, `assumptions` and `confidence`, and the
+`/deliver` FINAL-REPORT carries an Ambiguity ledger, so unresolved ambiguity is surfaced
+mechanically at every phase boundary instead of living only in prose. `uncertain — verify`
+(CLAUDE.md §3.6) is the artefact-level marker; `confidence: low` is its envelope-level twin.
+
