@@ -43,7 +43,9 @@ export default function RunTracePage({ params }: PageProps) {
   }, [requestId]);
 
   useEffect(() => {
-    load();
+    // Deferred: see react-hooks/set-state-in-effect (W14-T10).
+    const initial = setTimeout(load, 0);
+    return () => clearTimeout(initial);
   }, [load]);
 
   if (loading && trace === null) {

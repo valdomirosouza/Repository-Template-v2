@@ -25,9 +25,14 @@ export default function HITLQueuePage() {
   }, []);
 
   useEffect(() => {
-    load();
+    // Deferred so the effect schedules work instead of setting state synchronously
+    // (react-hooks/set-state-in-effect, ESLint 9 / Next 16 — W14-T10).
+    const initial = setTimeout(load, 0);
     const interval = setInterval(load, 15_000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(interval);
+    };
   }, [load]);
 
   const handleDecision = async (id: string, approved: boolean, rationale: string) => {
