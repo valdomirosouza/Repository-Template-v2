@@ -16,6 +16,8 @@ import pytest
 from src.guardrails.pii_filter import mask_dict
 from src.shared.broker import InMemoryBroker, build_envelope
 
+pytestmark = pytest.mark.unit
+
 SYNTHETIC_EMAIL = "fake@example.com"
 SYNTHETIC_CPF = "000.000.000-00"
 

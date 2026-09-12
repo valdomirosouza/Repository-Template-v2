@@ -22,6 +22,8 @@ from src.agents.spec_contract_enforcer import (
     SpecViolationError,
 )
 
+pytestmark = pytest.mark.abuse_case
+
 
 @pytest.mark.abuse_case
 class TestSpecBoundaryViolations:

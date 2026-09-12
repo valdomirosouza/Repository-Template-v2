@@ -14,6 +14,8 @@ import pytest
 
 from src.agents.harness.context_seal import ContextSeal, ContextTamperingError, SealedContext
 
+pytestmark = pytest.mark.unit
+
 
 class TestContextSealSign:
     def test_sign_returns_sealed_context(self) -> None:

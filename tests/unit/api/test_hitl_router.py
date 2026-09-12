@@ -21,6 +21,8 @@ from src.api.rest.routers.hitl import router
 from src.guardrails.audit_logger import AuditLogger, InMemoryAuditStorage
 from src.shared.config import settings
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

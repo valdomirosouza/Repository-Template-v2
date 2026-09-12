@@ -15,6 +15,8 @@ from src.agents.tool_registry import (
     ToolRiskLevel,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def _reversible_low() -> ToolDefinition:
     return ToolDefinition(

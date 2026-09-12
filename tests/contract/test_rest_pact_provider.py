@@ -31,6 +31,8 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
+pytestmark = pytest.mark.contract
+
 # ── Load Pact file ────────────────────────────────────────────────────────────
 
 PACT_FILE = Path(__file__).parent / "pacts" / "frontend-api_gateway.json"
@@ -153,7 +155,6 @@ async def _seed_hitl_request(app: FastAPI) -> str:
 # ── Pact metadata verification ────────────────────────────────────────────────
 
 
-@pytest.mark.unit
 class TestPactMetadataVerification:
     """Verify that the provider's identity matches the Pact file."""
 
@@ -192,7 +193,6 @@ class TestPactMetadataVerification:
 # ── Interaction: POST /v1/requests (valid) ────────────────────────────────────
 
 
-@pytest.mark.unit
 class TestProviderSubmitRequestValid:
     """Pact interaction: 'a POST /v1/requests to submit a domain request'."""
 
@@ -248,7 +248,6 @@ class TestProviderSubmitRequestValid:
 # ── Interaction: POST /v1/requests (validation error) ────────────────────────
 
 
-@pytest.mark.unit
 class TestProviderSubmitRequestValidationError:
     """Pact interaction: 'a POST /v1/requests with an empty request_text'."""
 
@@ -270,7 +269,6 @@ class TestProviderSubmitRequestValidationError:
 # ── Interaction: GET /v1/requests/{id} (queued) ───────────────────────────────
 
 
-@pytest.mark.unit
 class TestProviderGetRequestQueued:
     """Pact interaction: 'a GET /v1/requests/{id} for a queued request'."""
 
@@ -310,7 +308,6 @@ class TestProviderGetRequestQueued:
 # ── Interaction: GET /v1/requests/{id} (completed) ───────────────────────────
 
 
-@pytest.mark.unit
 class TestProviderGetRequestCompleted:
     """Pact interaction: 'a GET /v1/requests/{id} for a completed request'."""
 
@@ -341,7 +338,6 @@ class TestProviderGetRequestCompleted:
 # ── Interaction: GET /v1/requests/{id} (not found) ───────────────────────────
 
 
-@pytest.mark.unit
 class TestProviderGetRequestNotFound:
     """Pact interaction: 'a GET /v1/requests/{id} for an unknown request_id'."""
 
@@ -357,7 +353,6 @@ class TestProviderGetRequestNotFound:
 # ── Interaction: GET /v1/hitl/status ─────────────────────────────────────────
 
 
-@pytest.mark.unit
 class TestProviderHITLStatus:
     """Pact interaction: 'a GET /v1/hitl/status when the gateway is operational'."""
 
@@ -385,7 +380,6 @@ class TestProviderHITLStatus:
 # ── Interaction: POST /v1/hitl/requests/{id}/decision (APPROVED) ─────────────
 
 
-@pytest.mark.unit
 class TestProviderHITLDecisionApproved:
     """Pact interaction: 'a POST /v1/hitl/requests/{id}/decision with APPROVED'."""
 
@@ -447,7 +441,6 @@ class TestProviderHITLDecisionApproved:
 # ── Interaction: POST /v1/hitl/requests/{id}/decision (REJECTED) ─────────────
 
 
-@pytest.mark.unit
 class TestProviderHITLDecisionRejected:
     """Pact interaction: 'a POST /v1/hitl/requests/{id}/decision with REJECTED'."""
 
@@ -479,7 +472,6 @@ class TestProviderHITLDecisionRejected:
 # ── Interaction: POST /v1/hitl/requests/{id}/decision (not found) ────────────
 
 
-@pytest.mark.unit
 class TestProviderHITLDecisionNotFound:
     """Pact interaction: 'a POST /v1/hitl/requests/{id}/decision for an unknown or expired request'."""
 

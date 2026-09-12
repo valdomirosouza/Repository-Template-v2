@@ -6,6 +6,8 @@ This directory contains all automated tests for the system. Tests are organised 
 
 ## Test Types
 
+Every test module declares its tier once — `pytestmark = pytest.mark.<tier>` — and the tier must match the directory (`tests/conftest.py` fails collection otherwise; W11-T8).
+
 | Directory            | Type                                  | Runner                  | When it runs              |
 | -------------------- | ------------------------------------- | ----------------------- | ------------------------- |
 | `tests/unit/`        | Unit tests                            | pytest                  | Every PR (CI gate)        |
@@ -38,7 +40,7 @@ uv run pytest tests/unit/guardrails/test_pii_filter.py -v
 
 ## Coverage Requirements
 
-- Unit test coverage: **≥ 80%** (enforced as CI gate — see `harness/code-check.yml`)
+- Unit test coverage: **≥ 85%** (ratchet, RFC-0020; enforced by `--cov-fail-under=85` in `ci.yml` and `pyproject.toml` `fail_under`; `harness/code-check.yml` mirrors it)
 - Security tests: **100% pass rate** (zero findings allowed)
 - Branch coverage on all guardrail decision paths: **100%**
 

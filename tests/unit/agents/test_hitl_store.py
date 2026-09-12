@@ -16,6 +16,8 @@ from src.agents.hitl_gateway import HITLRequest, HITLStatus
 from src.agents.hitl_store import HITLRedisStore
 from src.shared.db_encryption import EncryptedField
 
+pytestmark = pytest.mark.unit
+
 _TEST_KEY = "b" * 64  # valid 32-byte test key — never use in production
 
 

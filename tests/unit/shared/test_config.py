@@ -11,6 +11,8 @@ from pydantic import ValidationError
 
 from src.shared.config import Settings
 
+pytestmark = pytest.mark.unit
+
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
 

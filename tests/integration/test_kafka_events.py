@@ -27,6 +27,8 @@ import pytest
 
 from src.guardrails.pii_filter import mask_dict
 
+pytestmark = pytest.mark.integration
+
 # ── Synthetic PII constants (no real personal data) ───────────────────────────
 
 SYNTHETIC_EMAIL = "fake@example.com"

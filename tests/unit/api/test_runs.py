@@ -24,6 +24,8 @@ from src.guardrails.audit_logger import AuditLogger, InMemoryAuditStorage
 from src.shared.config import settings
 from src.shared.models import AuditEvent
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

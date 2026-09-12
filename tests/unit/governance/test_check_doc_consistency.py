@@ -72,7 +72,9 @@ def test_l1_dangling_relative_link_and_placeholders(tmp_path: Path):
     rep = dc.evaluate(root)
     l1 = [e for e in rep.errors if e.startswith("L1")]
     assert len(l1) == 1 and "nope.md" in l1[0]
-    assert rep.links_checked == 5  # README(1) + adr index(2) + ok + gone; placeholder/http/anchor skipped
+    assert (
+        rep.links_checked == 5
+    )  # README(1) + adr index(2) + ok + gone; placeholder/http/anchor skipped
 
 
 def test_real_repository_is_consistent():

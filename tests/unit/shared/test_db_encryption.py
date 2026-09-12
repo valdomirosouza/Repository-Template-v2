@@ -11,6 +11,8 @@ from cryptography.exceptions import InvalidTag
 
 from src.shared.db_encryption import _KEY_BYTES, _PREFIX, EncryptedField
 
+pytestmark = pytest.mark.unit
+
 # A valid 32-byte test key (never use in production).
 _TEST_KEY = "a" * 64  # 64 hex chars = 32 bytes
 

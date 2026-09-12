@@ -11,6 +11,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+pytestmark = pytest.mark.unit
+
 _ROOT = Path(__file__).resolve().parents[3]
 _PHASE_GATES = _ROOT / "docs" / "process" / "gates" / "phase-gates.yaml"
 _STATE_TEMPLATE = _ROOT / "docs" / "product" / "state-template.yaml"

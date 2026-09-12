@@ -22,6 +22,8 @@ import pytest
 from src.agents.risk_scorer import RiskScorer
 from src.shared.config import Settings
 
+pytestmark = pytest.mark.unit
+
 _TOL = 0.005
 
 # Calibrate routing against the CANONICAL DEFAULT threshold read straight from the model schema —

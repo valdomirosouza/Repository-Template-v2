@@ -21,6 +21,8 @@ from src.shared.retry import (
     ResilientLLMClientWrapper,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def _make_client(return_value: str = "response") -> AsyncMock:
     client = AsyncMock()

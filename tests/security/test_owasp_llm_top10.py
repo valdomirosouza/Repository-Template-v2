@@ -26,6 +26,8 @@ from src.guardrails.output_sanitizer import detect_code_exec_sinks, sanitize_out
 from src.guardrails.pii_filter import PIIFilter
 from src.guardrails.prompt_injection_guard import PromptInjectionGuard, RejectionReason
 
+pytestmark = pytest.mark.security
+
 
 class TestLLM01_InputManipulationPrevention:
     """Verify guard rejects structurally anomalous inputs (LLM01 category)."""

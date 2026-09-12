@@ -19,6 +19,8 @@ from src.agents.harness.session_checkpoint import (
     SessionCheckpoint,
 )
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

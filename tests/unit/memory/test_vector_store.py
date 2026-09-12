@@ -18,6 +18,8 @@ from src.memory.vector_store import (
     VectorDocument,
 )
 
+pytestmark = pytest.mark.unit
+
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 

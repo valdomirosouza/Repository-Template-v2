@@ -15,6 +15,8 @@ import json
 
 import pytest
 
+pytestmark = pytest.mark.model_contract
+
 SYSTEM_PROMPT_WITH_CONTRACT = """You are an autonomous agent assistant.
 
 [SPEC_CONTRACT]

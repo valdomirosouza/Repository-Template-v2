@@ -21,6 +21,8 @@ from src.agents.runtime_policy_gateway import (
     RuntimePolicyGateway,
 )
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

@@ -240,3 +240,14 @@ def test_cli_fails_on_deletion(tmp_path):
     # Delete a test → tree now has fewer than the baseline; no waiver ⇒ fail.
     (root / "test_sample.py").write_text("def test_a():\n    assert 1\n")
     assert ti.main(["--root", str(root), "--baseline", str(baseline)]) == 1
+
+
+def test_unmarked_decrease_is_not_a_drop():
+    """Adding tier markers moves tests out of `unmarked`; that must never count as a deletion."""
+    rep = ti.evaluate(
+        before=_counts(10, unmarked=8, unit=2),
+        after=_counts(10, unmarked=0, unit=10),
+        diff_text="",
+        waiver_text="",
+    )
+    assert rep.ok, ti.render(rep)

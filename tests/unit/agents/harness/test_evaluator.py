@@ -18,6 +18,8 @@ from src.agents.harness.evaluator import EvaluatorAgent
 from src.agents.harness.models import EvaluatorScore, GeneratorArtifact, SprintContract
 from src.shared.llm_client import StubLLMClient
 
+pytestmark = pytest.mark.unit
+
 
 def _make_llm_response(
     quality: float = 0.9,

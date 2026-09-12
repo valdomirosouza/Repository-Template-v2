@@ -17,6 +17,8 @@ from src.agents.schemas import (
     parse_agent_action,
 )
 
+pytestmark = pytest.mark.unit
+
 # ── Valid v1 envelopes ────────────────────────────────────────────────────────
 
 

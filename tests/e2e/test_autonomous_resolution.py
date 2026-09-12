@@ -46,6 +46,8 @@ from src.agents.hitl_store import InMemoryHITLStore
 from src.agents.orchestrator.orchestrator import AgentOrchestrator
 from src.guardrails.audit_logger import AuditLogger, InMemoryAuditStorage
 
+pytestmark = pytest.mark.e2e
+
 # ── OpenFeature autonomy-flag helpers (autonomy levels are global flag state) ──
 
 

@@ -18,6 +18,8 @@ import pytest
 from src.agents.hitl_gateway import HITLRequest, HITLStatus
 from src.agents.hitl_store import HITLRedisStore
 
+pytestmark = pytest.mark.integration
+
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
 

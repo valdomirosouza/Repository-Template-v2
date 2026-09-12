@@ -45,6 +45,7 @@ KNOWN_MARKERS = (
     "model_contract",
     "e2e",
     "benchmark",
+    "contract",
 )
 
 _WAIVER_RE = re.compile(r"TEST-WAIVER:\s*(?P<reason>.+)$")
@@ -258,6 +259,8 @@ def evaluate(
         drops.append(f"total {before.total} -> {after.total} (-{before.total - after.total})")
     for marker, n_before in sorted(before.per_marker.items()):
         n_after = after.per_marker.get(marker, 0)
+        if marker == "unmarked":
+            continue  # marking previously unmarked tests is progress, not a drop (W11-T8)
         if n_after < n_before:
             drops.append(f"{marker} {n_before} -> {n_after} (-{n_before - n_after})")
     rep.drops = drops

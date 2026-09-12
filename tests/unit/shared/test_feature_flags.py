@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
+import pytest
 from openfeature import api
 from openfeature.provider.in_memory_provider import InMemoryFlag, InMemoryProvider
 
@@ -19,6 +20,8 @@ from src.shared.feature_flags import (
     get_autonomy_level,
     is_autonomous_mode_enabled,
 )
+
+pytestmark = pytest.mark.unit
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

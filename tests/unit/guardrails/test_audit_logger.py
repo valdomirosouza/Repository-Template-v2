@@ -15,6 +15,8 @@ import pytest
 from src.guardrails.audit_logger import AuditLogger, AuditWriteError, InMemoryAuditStorage
 from src.shared.models import AuditEvent
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

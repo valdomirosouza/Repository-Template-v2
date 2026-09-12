@@ -31,6 +31,8 @@ from src.agents.risk_scorer import RiskScorer
 from src.guardrails.pii_filter import mask_dict, mask_text
 from src.guardrails.prompt_injection_guard import PromptInjectionGuard
 
+pytestmark = pytest.mark.benchmark
+
 # ── Benchmark helper ──────────────────────────────────────────────────────────
 
 _NS_PER_MS = 1_000_000

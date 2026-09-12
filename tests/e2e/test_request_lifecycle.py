@@ -28,6 +28,8 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
+pytestmark = pytest.mark.e2e
+
 BASE_URL = os.environ.get("BASE_URL", "")
 _LIVE = bool(BASE_URL)
 

@@ -20,6 +20,8 @@ from src.agents.prompts import (
 )
 from src.agents.prompts.loader import _PROMPT_PATHS
 
+pytestmark = pytest.mark.unit
+
 # ── Frozen copies of the former inline prompts (byte-identical expectation) ──────
 
 # Live src/agents/harness/evaluator.py::_SYSTEM_PROMPT — now evaluate.v2.md (ADR-0080):

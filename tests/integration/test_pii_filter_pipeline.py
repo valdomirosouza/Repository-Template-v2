@@ -17,6 +17,8 @@ import pytest
 
 from src.guardrails.pii_filter import PIIFilter, PIILevel, mask_dict, mask_text
 
+pytestmark = pytest.mark.integration
+
 SYNTHETIC_EMAIL = "fake@example.com"
 SYNTHETIC_CPF = "000.000.000-00"
 SYNTHETIC_IP = "192.0.2.1"  # TEST-NET per RFC 5737

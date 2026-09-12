@@ -24,6 +24,8 @@ from src.agents.hitl_gateway import (
 )
 from src.guardrails.audit_logger import AuditLogger, InMemoryAuditStorage
 
+pytestmark = pytest.mark.integration
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

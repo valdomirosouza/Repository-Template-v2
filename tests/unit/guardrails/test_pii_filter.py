@@ -11,6 +11,8 @@ import pytest
 
 from src.guardrails.pii_filter import PIIFilter, PIILevel, mask_dict, mask_ip, mask_text
 
+pytestmark = pytest.mark.unit
+
 
 class TestPIIFilterEmail:
     def test_masks_email_in_plain_text(self):

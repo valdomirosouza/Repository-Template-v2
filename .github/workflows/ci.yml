@@ -107,10 +107,12 @@ jobs:
           missing = [f for f in fields if f not in env_src]
 
           if missing:
-              print(f"::warning::These Settings fields are not documented in .env.example:")
+              # BLOCKING since W11-T8 (issue #353): advisory for 90 days with no false positives.
+              # Document the field in .env.example (a commented line is enough for internal-only).
+              print(f"::error::These Settings fields are not documented in .env.example:")
               for f in missing:
                   print(f"  - {f}")
-              # Advisory only — warn, do not fail (new fields may be internal-only)
+              sys.exit(1)
           else:
               print(f"All {len(fields)} Settings fields are documented in .env.example.")
           EOF

@@ -17,6 +17,8 @@ from src.agents.behavioral_monitor import (
     BehavioralMonitor,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestActionFrequency:
     def test_initial_total_is_zero(self) -> None:

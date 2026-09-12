@@ -14,6 +14,8 @@ import pytest
 from src.shared.db_client import ResilientDBPool
 from src.shared.retry import CircuitBreaker, CircuitBreakerError, TransientError
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

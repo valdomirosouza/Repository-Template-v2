@@ -22,6 +22,8 @@ from src.agents.hitl_gateway import (
 )
 from src.agents.hitl_store import InMemoryHITLStore
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

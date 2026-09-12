@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import pytest
 
+pytestmark = pytest.mark.model_contract
+
 # Synthetic, self-contained context with known facts (fictional — no real entities).
 GROUNDED_CONTEXT = (
     "Internal knowledge base — Project Aurora (fictional):\n"

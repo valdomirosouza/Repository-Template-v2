@@ -14,6 +14,8 @@ from src.agents.tool_executor import ToolExecutor, ToolNotRegisteredError
 from src.agents.tool_registry import ToolRegistry
 from src.guardrails.audit_logger import AuditLogger
 
+pytestmark = pytest.mark.security
+
 
 def _mock_audit() -> AuditLogger:
     audit = MagicMock(spec=AuditLogger)

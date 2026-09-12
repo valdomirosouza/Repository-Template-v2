@@ -14,6 +14,8 @@ from httpx import ASGITransport, AsyncClient
 
 from src.api.rest.routers.health import router
 
+pytestmark = pytest.mark.unit
+
 
 def _make_app(db_pool: object = None, redis: object = None) -> FastAPI:
     app = FastAPI()

@@ -14,6 +14,8 @@ from src.agents.feedback_learner import (
     OutcomeFeedback,
 )
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

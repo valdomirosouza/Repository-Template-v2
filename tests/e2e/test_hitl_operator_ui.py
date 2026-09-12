@@ -31,6 +31,8 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
+pytestmark = pytest.mark.e2e
+
 # ── Transport selection ───────────────────────────────────────────────────────
 
 BASE_URL = os.environ.get("BASE_URL", "")

@@ -7,11 +7,15 @@ All test inputs use clearly synthetic placeholder tokens.
 No real exploit strings appear in this file.
 """
 
+import pytest
+
 from src.guardrails.prompt_injection_guard import (
     PromptInjectionGuard,
     RejectionReason,
     ValidationResult,
 )
+
+pytestmark = pytest.mark.unit
 
 
 class TestNormalInputs:
