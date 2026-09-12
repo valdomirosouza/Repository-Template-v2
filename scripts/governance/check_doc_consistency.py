@@ -51,6 +51,7 @@ _PLACEHOLDER_RE = re.compile(r"[{}<>]|YYYY|NNN|XXX|\$\{|^\.\.\.$")
 @dataclass
 class Report:
     errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     links_checked: int = 0
 
     @property
@@ -92,6 +93,11 @@ def check_links(files: list[Path], repo_root: Path, rep: Report) -> None:
                     continue
                 candidate = (repo_root / path) if path.startswith("/") else (source.parent / path)
                 if not candidate.exists():
+                    if "deprecated/" in path.replace("\\", "/"):
+                        # Local-only archive (gitignored `deprecated/`, docs/adr/EXTERNAL-INPUTS.md)
+                        # — absent in CI by design: a warning, never a failure.
+                        rep.warnings.append(f"L1 {rel}:{i}: archived-only link -> {target}")
+                        continue
                     rep.errors.append(f"L1 {rel}:{i}: dangling link -> {target}")
 
 
@@ -148,6 +154,7 @@ def evaluate(repo_root: Path = REPO_ROOT, *, links: bool = True) -> Report:
 
 def render(rep: Report) -> str:
     out = [f"Doc-consistency gate (W11-T7): {rep.links_checked} relative links checked"]
+    out += [f"  WARN {w}" for w in rep.warnings]
     out += [f"::error::{e}" for e in rep.errors]
     out.append("RESULT: PASS" if rep.ok else f"RESULT: FAIL ({len(rep.errors)} violation(s))")
     return "\n".join(out)
