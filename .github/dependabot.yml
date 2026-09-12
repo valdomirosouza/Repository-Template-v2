@@ -4,7 +4,9 @@ version: 2
 # updates are grouped to limit PR noise; majors stay individual for review.
 updates:
   - package-ecosystem: pip
-    directory: /
+    directories:
+      - /
+      - /scaffold/templates/python
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -22,7 +24,9 @@ updates:
         update-types: ["minor", "patch"]
 
   - package-ecosystem: npm
-    directory: /frontend/web
+    directories:
+      - /frontend/web
+      - /scaffold/templates/frontend
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -31,7 +35,9 @@ updates:
         update-types: ["minor", "patch"]
 
   - package-ecosystem: gomod
-    directory: /services/event-worker
+    directories:
+      - /services/event-worker
+      - /scaffold/templates/go
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -40,7 +46,10 @@ updates:
         update-types: ["minor", "patch"]
 
   - package-ecosystem: maven
-    directory: /services/domain-service
+    directories: # W14-T4 (issue #379): golden-signals was outside Dependabot
+      - /services/domain-service
+      - /services/golden-signals
+      - /scaffold/templates/java
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -58,4 +67,15 @@ updates:
     open-pull-requests-limit: 5
     groups:
       docker-minor-patch:
+        update-types: ["minor", "patch"]
+
+  # W14-T4 (issue #379): docker-compose.yml pinned 2024-era observability images that no bot
+  # bumped (OTel collector, Prometheus, Grafana, Jaeger, Alertmanager).
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      compose-minor-patch:
         update-types: ["minor", "patch"]
