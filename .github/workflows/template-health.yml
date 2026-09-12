@@ -1,0 +1,97 @@
+name: Template Health (monthly)
+
+# W14-T9 (issue #384): the template had no heartbeat — it went 86 days with no activity while
+# the scheduled chaos run failed silently. This workflow runs the checks that rot when nobody is
+# looking and opens a `tracking` issue on any regression, so staleness surfaces on its own.
+#
+# It never mutates the repository. Runs on the source template and on adopters alike.
+
+on:
+  schedule:
+    - cron: "0 6 1 * *" # 06:00 UTC on the 1st of every month
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  health:
+    name: Doctor · freshness · offline test tree · gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.13"
+      - name: Install uv (pinned, W11-T6)
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          version: "0.11.16"
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Toolchain versions agree (W14-T2)
+        id: versions
+        continue-on-error: true
+        run: uv run python scripts/governance/check_toolchain_versions.py
+
+      - name: Dependency manifest fresh (W12-T9)
+        id: manifest
+        continue-on-error: true
+        run: uv run python scripts/governance/check_dependency_manifest.py
+
+      - name: Known vulnerabilities (pip-audit)
+        id: audit
+        continue-on-error: true
+        run: uv run pip-audit
+
+      - name: Offline test tree
+        id: tests
+        continue-on-error: true
+        run: >
+          uv run pytest tests/unit tests/contract tests/e2e tests/security tests/abuse_cases
+          tests/chaos tests/performance tests/integration/test_lifespan_wiring.py -q
+
+      - name: Governance gates
+        id: gates
+        continue-on-error: true
+        run: |
+          set -e
+          for s in check_traceability check_adr_index_status check_doc_references check_control_matrix \
+                   check_topic_contract check_open_questions check_doc_consistency check_dead_definitions \
+                   build_spec_registry; do
+            echo "== $s"; uv run python "scripts/governance/$s.py"
+          done
+
+      - name: Open a tracking issue on regression
+        if: >-
+          steps.versions.outcome == 'failure' || steps.manifest.outcome == 'failure' ||
+          steps.audit.outcome == 'failure' || steps.tests.outcome == 'failure' ||
+          steps.gates.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Template health regression — $(date -u +%Y-%m)"
+          body="Monthly template-health run found a regression.
+
+          | Check | Outcome |
+          | --- | --- |
+          | Toolchain versions | ${{ steps.versions.outcome }} |
+          | Dependency manifest freshness | ${{ steps.manifest.outcome }} |
+          | pip-audit | ${{ steps.audit.outcome }} |
+          | Offline test tree | ${{ steps.tests.outcome }} |
+          | Governance gates | ${{ steps.gates.outcome }} |
+
+          Run: ${RUN_URL}
+
+          Introduced by W14-T9 (issue #384). Close when the failing checks are green again."
+          existing="$(gh issue list --label tracking --state open --search "$title" --json number --jq '.[0].number')"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --label tracking --label governance --body "$body"
+          fi
