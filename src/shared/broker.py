@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from typing import Any, Protocol
 
@@ -37,6 +38,9 @@ def build_envelope(
     }
 
 
+Handler = Callable[[str, dict[str, Any]], Awaitable[None]]
+
+
 class EventBrokerProtocol(Protocol):
     """Structural protocol satisfied by both KafkaEventBroker and InMemoryBroker."""
 
@@ -46,10 +50,18 @@ class EventBrokerProtocol(Protocol):
 
 
 class InMemoryBroker:
-    """Test stub — captures published events in memory without a real Kafka connection."""
+    """Kafka fallback — captures published events in memory and dispatches to subscribers.
+
+    Used when Kafka is unreachable (local dev, tests). Since W12 (issue #355) it also carries
+    subscriptions, so the request and approval consumers work end-to-end in-process instead of
+    silently doing nothing: ``subscribe(topic, handler)`` registers an async handler that is
+    awaited on every ``publish`` to that topic. Handler exceptions are logged, never propagated
+    to the publisher (a consumer bug must not break the API request that emitted the event).
+    """
 
     def __init__(self) -> None:
         self.published: list[dict[str, Any]] = []
+        self._subscribers: dict[str, list[Handler]] = {}
 
     async def start(self) -> None:
         """No-op: the in-memory broker needs no connection setup."""
@@ -57,8 +69,21 @@ class InMemoryBroker:
     async def stop(self) -> None:
         """No-op: the in-memory broker needs no teardown."""
 
+    def subscribe(self, topic: str, handler: Handler) -> None:
+        self._subscribers.setdefault(topic, []).append(handler)
+
+    def unsubscribe(self, topic: str, handler: Handler) -> None:
+        handlers = self._subscribers.get(topic, [])
+        if handler in handlers:
+            handlers.remove(handler)
+
     async def publish(self, topic: str, payload: dict[str, Any], key: str | None = None) -> None:
         self.published.append({"topic": topic, "payload": payload})
+        for handler in list(self._subscribers.get(topic, [])):
+            try:
+                await handler(topic, payload)
+            except Exception as exc:
+                logger.error("In-memory subscriber failed", topic=topic, error=str(exc))
 
 
 class KafkaEventBroker:
