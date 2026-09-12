@@ -8,10 +8,15 @@
 # (e.g. Renovate) that also runs a security scan before merging the update.
 FROM python:3.13-slim AS builder
 
+# Apply Debian security updates at build time: the floating slim tag can lag a fixed CVE by
+# days (Trivy blocked on perl-base/gzip CVEs in the untouched base). Idempotent, cache-safe.
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /build
 
 # Install uv for fast, reproducible dependency installation
-COPY --from=ghcr.io/astral-sh/uv:0.4 /uv /usr/local/bin/uv
+# uv pinned to versions.yaml (W11 follow-up): 0.4 predates the uv.lock format this repo writes.
+COPY --from=ghcr.io/astral-sh/uv:0.11.16 /uv /usr/local/bin/uv
 
 # Copy dependency manifests first to maximise layer cache reuse
 COPY pyproject.toml ./
@@ -25,6 +30,9 @@ COPY src/ ./src/
 
 # ── Stage 2: production ───────────────────────────────────────────────────────
 FROM python:3.13-slim AS production
+
+# Same security-update step for the runtime layer (see builder stage).
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 # Security: run as non-root user
 RUN groupadd --gid 1001 appgroup && \
