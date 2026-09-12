@@ -14,9 +14,9 @@ gates:
     failure_message: "Unit tests failed or coverage < 80%. All tests must pass and coverage must be ≥ 80% before merge."
 
   - name: test-integrity
-    command: "uv run python scripts/governance/check_test_integrity.py --local --base main"
+    command: "uv run python scripts/governance/check_test_integrity.py --local --base main --allow-text-waiver"
     blocking: true
-    failure_message: "Test-integrity gate failed (ADR-0065): a test-count decrease without a 'TEST-WAIVER: <reason>' line, or a newly added skip/xfail without a rationale (reason= or inline comment). Coverage is a quantity metric; this guards integrity. See skills/engineering/testing-strategy.md. If a deletion is intended, add the TEST-WAIVER line and refresh tests/.test-integrity-baseline.json with --update-baseline."
+    failure_message: "Test-integrity gate failed (ADR-0065): a test-count decrease without a 'TEST-WAIVER: <reason>' line, or a newly added skip/xfail without a rationale (reason= or inline comment). Coverage is a quantity metric; this guards integrity. See skills/engineering/testing-strategy.md. If a deletion is intended, a CODEOWNER applies the `test-waiver` label on the PR (CI honours the label, not the text line), add the TEST-WAIVER line for the record, and refresh tests/.test-integrity-baseline.json with `make update-test-baseline`."
 
   - name: sast
     command: "uv run bandit -r src/ -ll -x tests/"

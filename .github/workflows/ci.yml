@@ -231,6 +231,23 @@ jobs:
           python3 scripts/governance/check_service_slo_files.py
           python3 scripts/governance/check_runbook_links.py
 
+      # BLOCKING from introduction (ADR-0065 binds it; ADR-0070 deterministic carve-out): a
+      # test-count decrease vs the committed baseline, or a newly added skip/xfail without a
+      # rationale, is unambiguous. Waiver = a CODEOWNER applies the `test-waiver` label (W11-T1,
+      # issue #346); a self-authored TEST-WAIVER diff line is NOT sufficient in CI.
+      - name: Test-integrity gate (ADR-0065)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          git fetch --quiet origin "$BASE_REF"
+          git diff "origin/$BASE_REF...HEAD" > /tmp/ti_diff.txt
+          printf '%s' "$PR_BODY" > /tmp/ti_body.txt
+          python3 scripts/governance/check_test_integrity.py \
+            --diff /tmp/ti_diff.txt --waiver-text /tmp/ti_body.txt --labels "$PR_LABELS"
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
