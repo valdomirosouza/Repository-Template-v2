@@ -417,6 +417,10 @@ jobs:
         run: uv run mypy src/
       - name: Secret scan
         run: uv run detect-secrets scan --baseline .secrets.baseline
+      # BLOCKING lint (W15-T2, issue #389, ADR-0065): a test that asserts nothing passes no
+      # matter what the code does. Deterministic — no burn-in needed.
+      - name: Assertion-presence lint for tests
+        run: uv run python scripts/governance/check_test_assertions.py
 
   test-unit:
     name: Unit Tests
@@ -434,7 +438,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra dev
       - name: Run unit tests
-        run: uv run pytest tests/unit/ -v --cov=src --cov-report=xml --cov-fail-under=85
+        run: uv run pytest tests/unit/ -v --cov=src --cov-report=xml --cov-report=json --cov-fail-under=85
+      # BLOCKING (W15-T1, issue #388; RFC-0020 ratchet): a package can rot behind a healthy
+      # average — src/api/rest, src/guardrails, the HITL gateway and workers carry their own floor.
+      - name: Per-package coverage floors
+        run: uv run python scripts/governance/check_coverage_floors.py
       - name: Upload coverage
         uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
         with:
@@ -562,6 +570,20 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
+      # W15-T3 (issue #390): the Alembic round-trip test needs a real PostgreSQL.
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app-ci-only # synthetic CI credential, never used elsewhere
+          POSTGRES_DB: template_ci
+        options: >-
+          --health-cmd "pg_isready -U app -d template_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -574,13 +596,14 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra dev
       - name: Run integration tests
-        # --cov collects data for the combined report; --cov-fail-under=0 overrides the
-        # pyproject 80% gate here (integration alone covers far less; the gate lives on
-        # the unit job + the combined report). Integration test failures still fail this job.
-        run: uv run pytest tests/integration/ -v --cov=src --cov-report= --cov-fail-under=0
+        # --cov collects data for the combined report. W15-T1 (issue #388): the integration
+        # tier now carries its own floor (was 0) so it cannot silently stop covering the
+        # service boundaries; the unit job keeps the 85 % ratchet.
+        run: uv run pytest tests/integration/ -v --cov=src --cov-report= --cov-fail-under=40
         env:
           KAFKA_BOOTSTRAP_SERVERS: localhost:9092
           REDIS_URL: redis://localhost:6379
+          DATABASE_URL: postgresql+asyncpg://app:app-ci-only@localhost:5432/template_ci
       - name: Save integration coverage data (RFC-0017)
         run: mv .coverage .coverage.integration
       - name: Upload integration coverage data
