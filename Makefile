@@ -274,6 +274,18 @@ check-dependency-manifest: ## Fail if docs/dependency-manifest.yaml drifts from 
 run-harness-spec: ## Execute a harness/*.yml gate spec locally. SPEC=harness/code-check.yml [ONLY=a,b] [SKIP=c]
 	@uv run python scripts/governance/run_harness_spec.py $${SPEC:-harness/code-check.yml} $${ONLY:+--only "$$ONLY"} $${SKIP:+--skip "$$SKIP"}
 
+spec-registry: ## Regenerate docs/governance/spec-registry.{md,json} from spec frontmatter (ADR-0085, W13-T3)
+	@uv run python scripts/governance/build_spec_registry.py --write
+
+check-spec-registry: ## Fail if the spec registry is stale or an ADR-0085 rule (S1–S7) is violated
+	@uv run python scripts/governance/build_spec_registry.py
+
+migrate-spec-frontmatter: ## Backfill/complete ADR-0085 frontmatter on specs (idempotent). DRY=1 for a preview
+	@uv run python scripts/governance/migrate_spec_frontmatter.py $${DRY:+--dry-run}
+
+check-delivery-report: ## Validate a /deliver FINAL-REPORT against the spec registry (W13-T6). REPORT=docs/delivery/<id>/FINAL-REPORT.md
+	@uv run python scripts/governance/check_delivery_report.py $${REPORT:?set REPORT=docs/delivery/<SPEC-ID>/FINAL-REPORT.md}
+
 check-test-integrity: ## Test-integrity gate (ADR-0065): no silent test-count drop / unjustified skip. BASE=main
 	@uv run python scripts/governance/check_test_integrity.py --local --base $${BASE:-main} --allow-text-waiver
 

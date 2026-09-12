@@ -58,6 +58,7 @@ streak; a `yes` row resets it.
 | Dependency manifest (W12-T9, issue #362)              | `ci.yml` → _Dependency-manifest gate_                   | **report**   | in progress (introduced 2026-09-12) — expected FAIL until W14-T3      | Manifest is 107 days past its quarterly cadence; freshness rule M3 fires by design until the model promotion |
 | Harness spec runner (W12-T8, issue #361)              | `ci.yml` → _Harness spec — code-check_                  | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | Executes harness/code-check.yml gates that no workflow ran before (ADR-0037 amendment) |
 | OpenAPI live-vs-doc drift (W12-T7, issue #360)        | `ci.yml` → _Contract Drift Check_ / _OpenAPI drift_     | **blocking** | n/a (deterministic; inside an already-blocking job)                   | The job named 'Contract Drift Check' now diffs a contract |
+| Spec registry (W13-T3, issue #368, ADR-0085)          | `ci.yml` → _Spec registry gate_                         | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | 57 specs carry frontmatter; registry generated; S1–S7 rules |
 | Conventional PR title / Spec / Issue / Version        | `pr-governance.yml`                                     | **blocking** | past lifecycle                                                        | Pre-existing                                                             |
 | detect-secrets · Bandit · CodeQL · Trivy · ZAP (DAST) | `ci.yml` / `codeql.yml` / `secret-scanning.yml`         | **blocking** | past lifecycle (ADR-0070 §Neutral)                                    | Pre-existing                                                             |
 
@@ -187,6 +188,20 @@ Remove the `continue-on-error: true` line from the _Doc-consistency gate_ step i
 | Date (UTC) | PR  | Verdict | False positive? | Notes                                       |
 | ---------- | --- | ------- | --------------- | ------------------------------------------- |
 | 2026-09-12 | —   | —       | —               | Burn-in started (Wave 12). Awaiting first PR run. |
+
+---
+
+## Spec registry gate (W13-T3) — burn-in log
+
+<!-- BURN-IN-START: 2026-09-12 -->
+<!-- BURN-IN-TARGET: spec-registry-gate -->
+
+`scripts/governance/build_spec_registry.py` runs in **report mode** in `ci.yml`. Progress:
+`make burn-in-status GATE=spec-registry-gate`.
+
+| Date (UTC) | PR  | Verdict | False positive? | Notes                                             |
+| ---------- | --- | ------- | --------------- | ------------------------------------------------- |
+| 2026-09-12 | —   | —       | —               | Burn-in started (W13-T3). Awaiting first PR run.  |
 
 ---
 
