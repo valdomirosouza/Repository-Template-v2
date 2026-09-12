@@ -68,6 +68,23 @@ order/omission is tolerated:
    `applicability` from `phase-gates.yaml`). For a non-PYTHON language, note the canonical
    location + validation targets it maps to (see **Languages**).
 
+## Tier ↔ risk class (one mapping, W13-T6)
+
+The DoR assigns a **risk class** (ADR-0058 Phase 0); `/deliver` takes a **tier** (ADR-0064 scope
+axis). They are different axes — risk class says *how dangerous*, tier says *how big* — and the
+tier can never go **below** the floor its risk class implies:
+
+| Risk class (DoR)          | Minimum tier | Notes                                                              |
+| ------------------------- | ------------ | ------------------------------------------------------------------ |
+| small fix                 | TRIVIAL      | may be raised to STANDARD by the ADR-0064 safety valve             |
+| normal feature            | STANDARD     |                                                                    |
+| high-risk feature         | GOVERNED     |                                                                    |
+| AI/LLM/agentic feature    | GOVERNED     | REGULATED if it touches `src/guardrails/` or the HITL gateway      |
+| security-sensitive        | REGULATED    |                                                                    |
+| infrastructure/platform   | GOVERNED     | REGULATED for production-affecting Terraform / feature-flag change |
+
+A run whose declared tier is below the floor emits `TIER_ESCALATION` at Phase 0.
+
 ## Modes
 
 | Mode                  | What the executor does                                                                                                                      | Writes to                                                                                                     | Validation                                                                                                     | Human gates                                                                                           |
@@ -295,7 +312,16 @@ SERVICE=`; NODE|TS `lint-frontend`/`test-unit-frontend APP=`; IAC terraform vali
 
 ### FINAL-REPORT
 
-Write `reports/<SLUG>/FINAL-REPORT.md` containing, in order:
+Write the FINAL-REPORT containing, in order (W13-T6, issue #371):
+
+- **DRY-RUN** → `reports/<SLUG>/FINAL-REPORT.md` (gitignored sandbox, as before).
+- **CODE** → `docs/delivery/<SPEC-ID>/FINAL-REPORT.md` (**tracked**; `<SPEC-ID>` is the spec's
+  frontmatter `id:`, ADR-0085) plus `docs/delivery/<SPEC-ID>/logs/`. The report is validated by
+  `scripts/governance/check_delivery_report.py` (`make check-delivery-report
+  REPORT=docs/delivery/<SPEC-ID>/FINAL-REPORT.md`): the spec id must be in the generated
+  registry, every ADR cited must exist, every evidence path must resolve, and the Ambiguity
+  ledger must have no blocking open question or overdue assumption.
+
 
 0. **Run header** — `MODE` (DRY-RUN | CODE), `TIER` (TRIVIAL | STANDARD | GOVERNED | REGULATED, the
    ADR-0064 scope axis — and the _effective_ tier if the safety valve escalated), `LANGUAGE` (+ the
@@ -316,6 +342,10 @@ Write `reports/<SLUG>/FINAL-REPORT.md` containing, in order:
    - End with **totals** for both columns and a **speedup ratio** (human-equiv ÷ agent wall-clock).
 4. **Evidence appendix** — log excerpts, **≤ 20 lines each**, referencing files in `logs/`.
 5. **Open-HITL-items list** — every gate that would need a real human, with its payload.
+6. **Ambiguity ledger** (W13-T9) — the union of every phase's `open_questions` and `assumptions`
+   from the return envelopes, one row each (`| Phase | Kind | Item | Owner | Resolve by | Status |`),
+   plus the per-phase `confidence`. A CODE run with any `blocking: true` open question or any
+   `open` assumption past its resolve-by phase ends with `gate: BLOCKED`, not a green report.
 
 ### Close-out — restore the tracked tree (DRY-RUN)
 

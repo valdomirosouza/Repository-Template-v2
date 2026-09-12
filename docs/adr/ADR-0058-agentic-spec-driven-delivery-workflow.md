@@ -100,3 +100,15 @@ the tracked lifecycle (no Issue yet), matching the recommendation and common "Ph
 - `docs/sdlc/agentic-spec-driven-delivery.md`, `docs/process/WORKFLOW.md`
 - `agentic-sdlc-documentation-recommendation.md`
 - Issues: #48, #49, #50
+
+---
+
+## Amendment 2026-09-12 (W13-T6, issue #371)
+
+CODE-mode `/deliver` runs write their FINAL-REPORT to `docs/delivery/<SPEC-ID>/` (tracked)
+instead of the gitignored `reports/` sandbox, so the requirement-traceability table is durable
+evidence rather than prose that disappears. `scripts/governance/check_delivery_report.py`
+validates the report against the generated spec registry (ADR-0085). The DoR risk class and
+the ADR-0064 tier are reconciled by one mapping table in `.claude/skills/deliver/SKILL.md`; a
+declared tier below its risk-class floor triggers `TIER_ESCALATION` at Phase 0.
+
