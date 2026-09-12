@@ -53,6 +53,7 @@ streak; a `yes` row resets it.
 | Topic contract (W11-T3, issue #348)                   | `ci.yml` → _Topic-contract gate_                        | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | services.yaml topics ↔ AsyncAPI channels ↔ code literals (1/17 overlapped before W11-T2) |
 | Contract + E2E suites (W11-T4, issue #349)            | `ci.yml` → _Contract + E2E Tests (in-process)_          | **blocking** | n/a (deterministic carve-out; 129/129 green at introduction)          | 130 offline tests ran in no workflow; 16 had rotted (HITL auth, REM-001) and were repaired |
 | Open questions in approved specs (W11-T5, issue #350) | `ci.yml` → _Open-questions gate (approved specs)_       | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | SPEC-API-001 was approved with 3 unresolved §15 items; DoR + Phase 4 exit now require zero |
+| Doc consistency (W11-T7, issue #352)                  | `ci.yml` → _Doc-consistency gate_                       | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | README said 51 ADRs, CLAUDE.md 0075, primer 0058 while 84 existed; widens link check to root + docs/ |
 | Conventional PR title / Spec / Issue / Version        | `pr-governance.yml`                                     | **blocking** | past lifecycle                                                        | Pre-existing                                                             |
 | detect-secrets · Bandit · CodeQL · Trivy · ZAP (DAST) | `ci.yml` / `codeql.yml` / `secret-scanning.yml`         | **blocking** | past lifecycle (ADR-0070 §Neutral)                                    | Pre-existing                                                             |
 
@@ -124,6 +125,25 @@ it) resets the window and should widen the marker list. Progress: `make burn-in-
 ### The flip (prepared, NOT yet applied)
 
 Remove the `continue-on-error: true` line from the _Open-questions gate_ step in `ci.yml`.
+
+---
+
+## Doc-consistency gate (W11-T7) — burn-in log
+
+<!-- BURN-IN-START: 2026-09-12 -->
+<!-- BURN-IN-TARGET: doc-consistency-gate -->
+
+`scripts/governance/check_doc_consistency.py` runs in **report mode** in the `ci.yml` governance
+job. A `yes` in _False positive?_ (a link that resolves but the checker flagged, or a count sentence
+worded differently) resets the window. Progress: `make burn-in-status GATE=doc-consistency-gate`.
+
+| Date (UTC) | PR  | Verdict | False positive? | Notes                                                             |
+| ---------- | --- | ------- | --------------- | ----------------------------------------------------------------- |
+| 2026-09-12 | —   | —       | —               | Burn-in started (W11-T7). Awaiting first report-mode run on a PR. |
+
+### The flip (prepared, NOT yet applied)
+
+Remove the `continue-on-error: true` line from the _Doc-consistency gate_ step in `ci.yml`.
 
 ---
 

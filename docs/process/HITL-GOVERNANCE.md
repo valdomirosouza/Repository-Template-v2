@@ -143,6 +143,6 @@ When `MEDIUM_RISK` or `FULL` autonomy is enabled (HOTL mode), human monitors are
 - `src/agents/hitl_store.py` — Encrypted HITL payload persistence
 - `src/shared/feature_flags.py` — Autonomy level feature flags
 - `docs/process/RACI.md` — Who owns each decision
-- `docs/adr/ADR-0015-autonomy-levels.md` — Autonomy governance ADR
+- `docs/adr/ADR-0015-feature-flag-strategy.md` — Autonomy governance ADR (feature-flag strategy)
 - `docs/adr/ADR-0034-agentic-escalation-protocol.md` — Escalation protocol
 - `infrastructure/feature-flags/` — flagd configuration

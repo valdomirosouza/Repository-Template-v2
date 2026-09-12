@@ -22,7 +22,7 @@ _Confirm the mandatory 10-step SDD cycle was followed before code was written:_
 - [ ] **Step 7 — Tests written:** Unit coverage ≥ 80%; integration tests for service boundaries
 - [ ] **Step 8 — Guardrails run:** `pii_filter`, `prompt_injection_guard`, `audit_logger` verified
 - [ ] **Step 9 — ADR updated:** New ADR filed if an architectural decision was made
-- [ ] **Step 10 — CHANGELOG updated:** Entry added under `[Unreleased]`
+- [ ] **Step 10 — CHANGELOG:** nothing to do by hand — release-please generates it from the Conventional-Commit PR title (RFC-0012)
 
 ## Linked Issue
 
@@ -68,7 +68,7 @@ Rollback plan: <!-- describe or reference runbook -->
 
 - [ ] Tests written and passing — coverage ≥ 80%
 - [ ] No secrets or real PII in any changed file
-- [ ] `CHANGELOG.md` updated under `[Unreleased]`
+- [ ] PR title follows Conventional Commits (release-please owns `CHANGELOG.md`, RFC-0012)
 - [ ] Spec updated if implementation diverged from it
 - [ ] ADR filed if a new architectural decision was made
 - [ ] `services.yaml` updated if a new service, port, or Kafka topic was added
@@ -98,4 +98,4 @@ _Only when this PR touches `src/agents/`, `src/guardrails/`, a new `action_type`
 - [ ] DevSecOps: IaC scan (Checkov) passed on any `infrastructure/` changes
 - [ ] DevSecOps: SBOM generated and signed (cosign attestation present)
 
-> CI gates defined in `harness/code-check.yml` (lint, unit tests ≥ 80%, SAST, secret scan, PII scan, ISO-CM-01/02, OWASP-A03/A08/A09, DSEC-01–03, DORA-01) must all pass before merge.
+> Blocking CI gates are the jobs in `.github/workflows/ci.yml` and `pr-governance.yml` (registry: `docs/governance/gate-lifecycle.md`). `harness/code-check.yml` is the Claude Code review-agent spec, not a CI runner (see W12-T8).

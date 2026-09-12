@@ -55,31 +55,30 @@ Wave labels: `wave-1` (done) → `wave-2` → `wave-3` → `wave-4` → `wave-5`
 
 ## ADR Quick Index (most recent)
 
+<!-- Kept honest by scripts/governance/check_doc_consistency.py (C3): the highest ADR here must be the highest ADR on disk. Regenerate: the last 20 rows of docs/adr/README.md. -->
+
 | ADR      | Decision                                          |
 | -------- | ------------------------------------------------- |
-| ADR-0031 | Agent onboarding protocol                         |
-| ADR-0032 | Sub-agent specialization registry                 |
-| ADR-0033 | Long-running agent session durability             |
-| ADR-0034 | Agentic escalation protocol                       |
-| ADR-0035 | AI-assisted CI review                             |
-| ADR-0036 | Agentic cyber defense protocol                    |
-| ADR-0037 | Governance gate enforcement                       |
-| ADR-0038 | Learn stage feedback loop                         |
-| ADR-0039 | Governed tool registry                            |
-| ADR-0040 | Agentic maturity self-assessment                  |
-| ADR-0041 | Context graph — autonomy tier                     |
-| ADR-0042 | Kubernetes probe strategy                         |
-| ADR-0043 | OTel Collector OTTL PII redaction + tail sampling |
-| ADR-0044 | OTel agent span hierarchy                         |
-| ADR-0045 | GenAI semantic conventions for LLM                |
-| ADR-0046 | HITL trace linking + guardrail events             |
-| ADR-0047 | Spec contract enforcement at runtime              |
-| ADR-0048 | Zero-trust tool registry + operator auth          |
-| ADR-0049 | Runtime behavioral monitoring                     |
-| ADR-0050 | Adversarial abuse testing strategy                |
-| ADR-0051 | Model behavioral contracts (MLSecOps)             |
-| ADR-0052 | Agentic SDLC E2E workflow (origin)                |
-| ADR-0058 | Agentic Spec-Driven Delivery (15-phase, 0–14)     |
+| ADR-0065 | Test-Integrity Invariants (RED-first, co-location… |
+| ADR-0066 | SPEC-LGS-001 runtime stack: Java 21 / Spring Boot… |
+| ADR-0067 | Redis as the time-series store for golden-signals… |
+| ADR-0068 | Golden-Signal extraction rules (saturation proxy,… |
+| ADR-0069 | golden-signals queue: in-JVM bounded virtual-thre… |
+| ADR-0070 | Governance gate enforcement lifecycle (report-mod… |
+| ADR-0071 | Repository settings as code (branch protection co… |
+| ADR-0072 | Versioned security control matrices (OWASP ASVS v… |
+| ADR-0073 | SLO-driven canary thresholds (per-service config,… |
+| ADR-0074 | Automated dependency & digest update policy (Reno… |
+| ADR-0075 | Resilience fallback policy (degrade-open vs fail-… |
+| ADR-0076 | Structured API error model (problem+json flavour)… |
+| ADR-0077 | Idempotency keys for write endpoints (Idempotency… |
+| ADR-0078 | List-endpoint pagination standard (offset/limit +… |
+| ADR-0079 | Prompt externalisation (evaluator + orchestrator … |
+| ADR-0080 | Groundedness scoring as an SLI (model-contract te… |
+| ADR-0081 | RAG reference pipeline (chunk→embed→retrieve→rera… |
+| ADR-0082 | Consolidated backup RPO/RTO + scheduled, evidence… |
+| ADR-0083 | Rename `frontend/frontend` → `frontend/web` (refi… |
+| ADR-0084 | Dependency & digest updates via Dependabot (super… |
 
 Full index: `docs/adr/README.md`
 

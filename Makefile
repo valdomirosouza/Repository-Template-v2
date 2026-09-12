@@ -262,6 +262,9 @@ check-topic-contract: ## Fail if services.yaml topics, AsyncAPI channels and cod
 check-open-questions: ## Fail if an approved/implemented spec still has unresolved Open Questions (W11-T5)
 	@uv run python scripts/governance/check_open_questions.py
 
+check-doc-consistency: ## Fail if README/CLAUDE.md/primer ADR counts or relative doc links are stale (W11-T7)
+	@uv run python scripts/governance/check_doc_consistency.py
+
 check-test-integrity: ## Test-integrity gate (ADR-0065): no silent test-count drop / unjustified skip. BASE=main
 	@uv run python scripts/governance/check_test_integrity.py --local --base $${BASE:-main} --allow-text-waiver
 

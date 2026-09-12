@@ -496,9 +496,9 @@ This template implements a five-wave **Secure by Design** framework for agentic 
 
 ---
 
-## Agentic SDLC E2E Workflow — Wave Summary (v2.6.0)
+## Agentic SDLC E2E Workflow — Wave Summary (historical, v2.6.0 baseline)
 
-Four waves implementing the **13-phase Agentic SDLC E2E Workflow** (ADR-0052). Each wave is tracked as a GitHub Issue and delivered as a standalone, reviewable commit on `main`.
+Four waves implementing the Agentic SDLC E2E Workflow — originally 13 phases (ADR-0052), now the **15-phase (0–14) Agentic Spec-Driven Delivery** lifecycle (ADR-0058). Each wave is tracked as a GitHub Issue and delivered as a standalone, reviewable commit on `main`.
 
 | Wave        | Issue | Theme                                                   | ADR                | Key Deliverables                                                                                                                                                                                                   | Main Betterments                                                                                                                                                                                                                                                                                                                 |
 | ----------- | ----- | ------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -572,7 +572,7 @@ CD workflows:
 
 ## Architecture Decisions
 
-All 51 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
+All 84 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
 
 | ADR                                                                | Decision                                               |
 | ------------------------------------------------------------------ | ------------------------------------------------------ |
