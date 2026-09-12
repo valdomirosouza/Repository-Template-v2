@@ -50,6 +50,7 @@ streak; a `yes` row resets it.
 | Checkov IaC scan (ADR-0029 §1, issue #337)            | `iac-secret-scan.yml` → _Checkov IaC scan_              | **report**   | in progress (introduced 2026-06-18) — flip after burn-in              | Scans `infrastructure/` Terraform/Helm/K8s; was unimplemented until #337 |
 | Gitleaks history scan (ADR-0029 §4, issue #337)       | `iac-secret-scan.yml` → _Gitleaks history scan_         | **report**   | in progress (introduced 2026-06-18) — flip after burn-in + tag verify | Full git-history secret scan (complements staged detect-secrets)         |
 | Test-integrity (ADR-0065, issue #346, W11-T1)         | `ci.yml` → _Test-integrity gate (ADR-0065)_             | **blocking** | n/a (deterministic carve-out; baseline refreshed 2026-09-12 to 1,347)   | Was declared only in `harness/code-check.yml` (never executed). Waiver = `test-waiver` label |
+| Topic contract (W11-T3, issue #348)                   | `ci.yml` → _Topic-contract gate_                        | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | services.yaml topics ↔ AsyncAPI channels ↔ code literals (1/17 overlapped before W11-T2) |
 | Conventional PR title / Spec / Issue / Version        | `pr-governance.yml`                                     | **blocking** | past lifecycle                                                        | Pre-existing                                                             |
 | detect-secrets · Bandit · CodeQL · Trivy · ZAP (DAST) | `ci.yml` / `codeql.yml` / `secret-scanning.yml`         | **blocking** | past lifecycle (ADR-0070 §Neutral)                                    | Pre-existing                                                             |
 
@@ -83,6 +84,25 @@ Flipping to blocking is a **one-line** change to `.github/workflows/ci.yml` — 
 **not** apply it until the burn-in above is MET and HITL-approved. The day-zero no-op
 (placeholders before `make template-init`) is already handled inside
 `scripts/governance/check_control_bindings.py` and must remain intact after the flip.
+
+---
+
+## Topic-contract gate (W11-T3) — burn-in log
+
+<!-- BURN-IN-START: 2026-09-12 -->
+<!-- BURN-IN-TARGET: topic-contract-gate -->
+
+`scripts/governance/check_topic_contract.py` runs in **report mode** in the `ci.yml` governance
+job. A `yes` in _False positive?_ (the three sources agreed but the gate reported FAIL) resets the
+window. Check progress with `make burn-in-status GATE=topic-contract-gate`.
+
+| Date (UTC) | PR  | Verdict | False positive? | Notes                                                              |
+| ---------- | --- | ------- | --------------- | ------------------------------------------------------------------ |
+| 2026-09-12 | —   | —       | —               | Burn-in started (W11-T3). Awaiting first report-mode run on a PR.  |
+
+### The flip (prepared, NOT yet applied)
+
+Remove the `continue-on-error: true` line from the _Topic-contract gate_ step in `ci.yml`.
 
 ---
 

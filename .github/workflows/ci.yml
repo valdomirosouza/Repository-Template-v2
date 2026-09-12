@@ -231,6 +231,28 @@ jobs:
           python3 scripts/governance/check_service_slo_files.py
           python3 scripts/governance/check_runbook_links.py
 
+      # REPORT MODE (ADR-0070 burn-in, W11-T3 / issue #348): registry vs AsyncAPI vs code topic
+      # literals. Deterministic, but new — burns in for 15 runs / 14 days before the flip
+      # (remove `continue-on-error`). Burn-in log: docs/governance/gate-lifecycle.md.
+      - name: Topic-contract gate (services.yaml ↔ AsyncAPI ↔ code)
+        continue-on-error: true
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python3 -m pip install --quiet pyyaml
+          if python3 scripts/governance/check_topic_contract.py; then verdict=PASS; rc=0; else verdict=FAIL; rc=1; fi
+          today="$(date -u +%Y-%m-%d)"
+          if [ "$verdict" = FAIL ]; then fp='? (classify)'; else fp='no'; fi
+          {
+            echo "### Topic-contract gate — burn-in row (ADR-0070)"
+            echo ""
+            echo "| Date (UTC) | PR | Verdict | False positive? | Notes |"
+            echo "| ---------- | --- | ------- | --------------- | ----- |"
+            echo "| ${today} | #${PR_NUMBER:-push} | ${verdict} | ${fp} | report-mode |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$rc" = 0 ] || echo "::warning::Topic-contract gate reported violations (report mode, ADR-0070 burn-in) — see job summary."
+          exit "$rc"
+
       # BLOCKING from introduction (ADR-0065 binds it; ADR-0070 deterministic carve-out): a
       # test-count decrease vs the committed baseline, or a newly added skip/xfail without a
       # rationale, is unambiguous. Waiver = a CODEOWNER applies the `test-waiver` label (W11-T1,
