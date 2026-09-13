@@ -19,6 +19,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from src.agents.request_store import InMemoryRequestStore, RequestState
+from src.shared.llm_client import StubLLMClient
 from src.workers.request_consumer import RequestConsumer
 
 pytestmark = pytest.mark.unit
@@ -40,7 +41,15 @@ def _make_consumer(store=None, broker=None) -> RequestConsumer:
     audit = MagicMock()
     audit.log_event = AsyncMock()
     hitl = MagicMock()
-    return RequestConsumer(store=store, audit_logger=audit, hitl_gateway=hitl, broker=broker)
+    # W12-T3: the LLM client is injected by the lifespan; tests inject a stub so the consumer
+    # never builds the production stack.
+    return RequestConsumer(
+        store=store,
+        audit_logger=audit,
+        hitl_gateway=hitl,
+        broker=broker,
+        llm_client=StubLLMClient(),
+    )
 
 
 def _make_msg(payload: dict, trace_id: str | None = "trace-001") -> SimpleNamespace:
@@ -159,7 +168,9 @@ class TestRequestConsumerHandleIdempotency:
         mock_orch.run = AsyncMock(return_value={"output": "done"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 await consumer._handle(msg)
 
         mock_orch.run.assert_called_once()
@@ -180,7 +191,9 @@ class TestRequestConsumerHandleHappyPath:
         msg = _make_msg({"request_id": "req-new-001", "request_text": "analyse this"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 await consumer._handle(msg)
 
         state = await store.get("req-new-001")
@@ -198,7 +211,9 @@ class TestRequestConsumerHandleHappyPath:
         msg = _make_msg({"request_id": "req-dict-001", "request_text": "read file"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 await consumer._handle(msg)
 
         state = await store.get("req-dict-001")
@@ -215,7 +230,9 @@ class TestRequestConsumerHandleHappyPath:
         msg = _make_msg({"request_id": "req-str-001", "request_text": "summarise"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 await consumer._handle(msg)
 
         state = await store.get("req-str-001")
@@ -241,7 +258,9 @@ class TestRequestConsumerHandleHappyPath:
         msg = _make_msg({"request_id": "req-ts-001", "request_text": "go"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 await consumer._handle(msg)
 
         state = await store.get("req-ts-001")
@@ -259,7 +278,9 @@ class TestRequestConsumerHandleHappyPath:
         msg = _make_msg({"request_id": "req-ts-002", "request_text": "go"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 await consumer._handle(msg)
 
         state = await store.get("req-ts-002")
@@ -279,7 +300,9 @@ class TestRequestConsumerHandleHappyPath:
         )
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 await consumer._handle(msg)
 
         mock_orch.run.assert_called_once_with(
@@ -298,7 +321,9 @@ class TestRequestConsumerHandleHappyPath:
         msg = _make_msg({"request_id": "req-text-001", "request_text": "specific task text"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 await consumer._handle(msg)
 
         call_kwargs = mock_orch.run.call_args
@@ -315,7 +340,9 @@ class TestRequestConsumerHandleHappyPath:
         msg = _make_msg({"request_id": "req-notext-001"})  # no request_text
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 await consumer._handle(msg)
 
         call_kwargs = mock_orch.run.call_args
@@ -333,7 +360,9 @@ class TestRequestConsumerHandleHappyPath:
         msg = _make_msg({"request_id": "req-nodlq-001", "request_text": "ok"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 await consumer._handle(msg)
 
         broker.publish.assert_not_called()
@@ -354,7 +383,9 @@ class TestRequestConsumerHandleFailure:
         msg = _make_msg({"request_id": "req-err-001", "request_text": "will fail"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
                     await consumer._handle(msg)
 
@@ -372,7 +403,9 @@ class TestRequestConsumerHandleFailure:
         msg = _make_msg({"request_id": "req-err-002", "request_text": "will timeout"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
                     await consumer._handle(msg)
 
@@ -390,7 +423,9 @@ class TestRequestConsumerHandleFailure:
         msg = _make_msg({"request_id": "req-err-003", "request_text": "crash"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
                     await consumer._handle(msg)  # must not propagate
 
@@ -412,7 +447,9 @@ class TestRequestConsumerDLQ:
         msg = _make_msg({"request_id": "req-dlq-001", "request_text": "always fails"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
                     with patch("src.shared.config.settings.kafka_consumer_max_retries", 0):
                         await consumer._handle(msg)
@@ -434,7 +471,9 @@ class TestRequestConsumerDLQ:
         msg = _make_msg({"request_id": "req-dlq-002", "request_text": "fail me"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
                     with patch("src.shared.config.settings.kafka_consumer_max_retries", 0):
                         await consumer._handle(msg)
@@ -456,7 +495,9 @@ class TestRequestConsumerDLQ:
         msg = _make_msg({"request_id": "req-dlq-key-001", "request_text": "x"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
                     with patch("src.shared.config.settings.kafka_consumer_max_retries", 0):
                         await consumer._handle(msg)
@@ -477,7 +518,9 @@ class TestRequestConsumerDLQ:
         msg = _make_msg({"request_id": "req-dlq-003", "request_text": "x"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
                     with patch("src.shared.config.settings.kafka_consumer_max_retries", 0):
                         await consumer._handle(msg)
@@ -500,7 +543,9 @@ class TestRequestConsumerDLQ:
         msg = _make_msg({"request_id": "req-dlq-004", "request_text": "x"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
                     with patch("src.shared.config.settings.kafka_consumer_max_retries", 0):
                         await consumer._handle(msg)  # must not raise
@@ -535,7 +580,9 @@ class TestRequestConsumerRetry:
         msg = _make_msg({"request_id": "req-retry-001", "request_text": "flaky"})
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 with patch("asyncio.sleep", new_callable=AsyncMock):
                     with patch("src.shared.config.settings.kafka_consumer_max_retries", 3):
                         await consumer._handle(msg)
@@ -561,7 +608,9 @@ class TestRequestConsumerRetry:
             sleep_calls.append(delay)
 
         with patch("src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch):
-            with patch("src.workers.request_consumer.AnthropicLLMClient"):
+            with patch(
+                "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds", 0.0
+            ):
                 with patch("asyncio.sleep", side_effect=capture_sleep):
                     with patch("src.shared.config.settings.kafka_consumer_max_retries", 2):
                         with patch(
@@ -662,7 +711,10 @@ class TestRequestConsumerRun:
                 with patch(
                     "src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch
                 ):
-                    with patch("src.workers.request_consumer.AnthropicLLMClient"):
+                    with patch(
+                        "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds",
+                        0.0,
+                    ):
                         await consumer.run()
 
         kafka.commit.assert_called_once()
@@ -738,7 +790,10 @@ class TestRequestConsumerHeartbeat:
                 with patch(
                     "src.workers.request_consumer.AgentOrchestrator", return_value=mock_orch
                 ):
-                    with patch("src.workers.request_consumer.AnthropicLLMClient"):
+                    with patch(
+                        "src.workers.request_consumer.settings.kafka_consumer_retry_backoff_seconds",
+                        0.0,
+                    ):
                         from src.observability.metrics import CONSUMER_HEARTBEAT_TIMESTAMP
                         from src.shared.config import settings
 

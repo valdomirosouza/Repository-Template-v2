@@ -29,9 +29,9 @@ dependencies = [
     "structlog>=24.1.0",
     "anthropic>=0.28.0",
     "cryptography>=42.0.0",
-    "tenacity>=8.3.0",
     "slowapi>=0.1.9",
     "openfeature-sdk>=0.4.0",
+    "tenacity>=8.3.0",  # used by src/shared/retry.py (@with_retry); NOT unused — corrected 2026-09-12
     "pyjwt>=2.13.0",
 ]
 
@@ -151,7 +151,6 @@ source = ["src"]
 relative_files = true  # RFC-0017: combine coverage data across the unit + integration CI jobs
 omit = [
     "src/shared/generated/*",   # generated gRPC stubs
-    "src/api/rest/main.py",     # lifespan/startup wiring — covered by integration tests
     "alembic/*",
 ]
 

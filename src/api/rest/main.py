@@ -151,20 +151,84 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         store=hitl_store,
     )
 
-    # Agent concurrency cap — limits simultaneous coroutines to prevent event-loop starvation
+    # Agent concurrency cap — limits simultaneous coroutines to prevent event-loop starvation.
+    # Acquired by the RequestConsumer around every agent run (W12-T3); the capacity gate in
+    # routers/requests.py reads it.
     app.state.agent_semaphore = asyncio.Semaphore(settings.max_concurrent_agents)
 
-    # Request consumer background task — drives AgentOrchestrator for each queued request.
-    # Skipped gracefully if Kafka is unavailable (consumer startup would fail the same way).
-    from src.workers.request_consumer import RequestConsumer
+    # ── AI agents extension (opt-in, settings.ai_agents_enabled) ─────────────
+    # Everything below is the runtime the docs describe (CLAUDE.md §0.1, ADR-0089): LLM client
+    # stack, harness, request + approval consumers, HITL expiry sweep. With ai_agents_enabled
+    # false none of it starts and submitted requests stay `queued` (logged loudly).
+    app.state.ai_agents_active = settings.ai_agents_enabled
+    if settings.ai_agents_enabled:
+        from src.agents.llm_factory import build_llm_client
+        from src.agents.tool_executor import ToolExecutor
+        from src.workers.approval_consumer import ApprovalConsumer
+        from src.workers.request_consumer import RequestConsumer
 
-    _consumer = RequestConsumer(
-        store=app.state.request_store,
-        audit_logger=app.state.audit_logger,
-        hitl_gateway=app.state.hitl_gateway,
-        broker=app.state.broker,  # REM-012: needed for DLQ publishing on exhausted retries
-    )
-    app.state.consumer_task = asyncio.create_task(_consumer.run())
+        app.state.llm_client = build_llm_client()
+
+        harness = None
+        if settings.harness_mode != "solo":
+            from src.agents.harness.coordinator import HarnessCoordinator
+            from src.agents.harness.evaluator import EvaluatorAgent
+            from src.agents.harness.planner import PlannerAgent
+            from src.agents.orchestrator.orchestrator import AgentOrchestrator
+
+            harness = HarnessCoordinator(
+                audit_logger=app.state.audit_logger,
+                planner=PlannerAgent(app.state.audit_logger, app.state.llm_client),
+                evaluator=EvaluatorAgent(app.state.audit_logger, app.state.llm_client),
+                orchestrator=AgentOrchestrator(
+                    agent_id=settings.service_name,
+                    audit_logger=app.state.audit_logger,
+                    hitl_gateway=app.state.hitl_gateway,
+                    llm_client=app.state.llm_client,
+                ),
+                hitl_gateway=app.state.hitl_gateway,
+                llm_client=app.state.llm_client,
+            )
+        app.state.harness = harness
+
+        _consumer = RequestConsumer(
+            store=app.state.request_store,
+            audit_logger=app.state.audit_logger,
+            hitl_gateway=app.state.hitl_gateway,
+            broker=app.state.broker,  # REM-012: needed for DLQ publishing on exhausted retries
+            llm_client=app.state.llm_client,
+            semaphore=app.state.agent_semaphore,
+            harness=harness,
+        )
+        app.state.request_consumer = _consumer
+        app.state.consumer_task = asyncio.create_task(_consumer.run())
+
+        _approvals = ApprovalConsumer(
+            hitl_gateway=app.state.hitl_gateway,
+            request_store=app.state.request_store,
+            tool_executor=ToolExecutor(app.state.audit_logger),
+            audit_logger=app.state.audit_logger,
+            broker=app.state.broker,
+        )
+        app.state.approval_consumer = _approvals
+        app.state.approval_consumer_task = asyncio.create_task(_approvals.run())
+
+        async def _hitl_expiry_sweep() -> None:
+            while True:
+                await asyncio.sleep(settings.hitl_expiry_sweep_seconds)
+                try:
+                    expired = await app.state.hitl_gateway.expire_stale_requests()
+                    if expired:
+                        logger.info("HITL expiry sweep archived %d request(s)", len(expired))
+                except Exception as exc:  # keep the sweeper alive
+                    logger.warning("HITL expiry sweep failed: %s", exc)
+
+        app.state.hitl_sweeper_task = asyncio.create_task(_hitl_expiry_sweep())
+    else:
+        logger.warning(
+            "AI agents extension disabled (AI_AGENTS_ENABLED=false): no request/approval "
+            "consumers started — POST /v1/requests will queue but never process."
+        )
 
     yield
 
@@ -173,11 +237,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     # connections are torn down, preventing in-flight request drops.
     await asyncio.sleep(settings.shutdown_drain_seconds)
 
-    # Cancel the consumer task and stop the Kafka producer cleanly.
-    if hasattr(app.state, "consumer_task"):
-        app.state.consumer_task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await app.state.consumer_task
+    # Cancel the background tasks and stop the Kafka producer cleanly.
+    for _name in ("consumer_task", "approval_consumer_task", "hitl_sweeper_task"):
+        _task = getattr(app.state, _name, None)
+        if _task is not None:
+            _task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await _task
 
     from src.shared.broker import KafkaEventBroker
 
@@ -223,6 +289,11 @@ app.add_middleware(RequestContextMiddleware)
 
 # Prometheus metrics scrape endpoint — required for Golden Signals alert rules
 app.mount("/metrics", make_asgi_app())
+
+# HTTP Golden Signals (FEAT-001, W12-T4): outermost middleware so every request is counted.
+from src.api.rest.middleware.golden_signals import GoldenSignalsMiddleware  # noqa: E402
+
+app.add_middleware(GoldenSignalsMiddleware)
 
 app.include_router(health.router)
 app.include_router(requests.router, prefix="/v1")

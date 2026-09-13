@@ -59,11 +59,6 @@ Wave labels: `wave-1` (done) → `wave-2` → `wave-3` → `wave-4` → `wave-5`
 
 | ADR      | Decision                                          |
 | -------- | ------------------------------------------------- |
-| ADR-0065 | Test-Integrity Invariants (RED-first, co-location… |
-| ADR-0066 | SPEC-LGS-001 runtime stack: Java 21 / Spring Boot… |
-| ADR-0067 | Redis as the time-series store for golden-signals… |
-| ADR-0068 | Golden-Signal extraction rules (saturation proxy,… |
-| ADR-0069 | golden-signals queue: in-JVM bounded virtual-thre… |
 | ADR-0070 | Governance gate enforcement lifecycle (report-mod… |
 | ADR-0071 | Repository settings as code (branch protection co… |
 | ADR-0072 | Versioned security control matrices (OWASP ASVS v… |
@@ -79,6 +74,8 @@ Wave labels: `wave-1` (done) → `wave-2` → `wave-3` → `wave-4` → `wave-5`
 | ADR-0082 | Consolidated backup RPO/RTO + scheduled, evidence… |
 | ADR-0083 | Rename `frontend/frontend` → `frontend/web` (refi… |
 | ADR-0084 | Dependency & digest updates via Dependabot (super… |
+| ADR-0086 | HITL approval resumption (ApprovalConsumer execut… |
+| ADR-0089 | Documented-capability reachability as a tested in… |
 
 Full index: `docs/adr/README.md`
 

@@ -54,6 +54,10 @@ streak; a `yes` row resets it.
 | Contract + E2E suites (W11-T4, issue #349)            | `ci.yml` → _Contract + E2E Tests (in-process)_          | **blocking** | n/a (deterministic carve-out; 129/129 green at introduction)          | 130 offline tests ran in no workflow; 16 had rotted (HITL auth, REM-001) and were repaired |
 | Open questions in approved specs (W11-T5, issue #350) | `ci.yml` → _Open-questions gate (approved specs)_       | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | SPEC-API-001 was approved with 3 unresolved §15 items; DoR + Phase 4 exit now require zero |
 | Doc consistency (W11-T7, issue #352)                  | `ci.yml` → _Doc-consistency gate_                       | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | README said 51 ADRs, CLAUDE.md 0075, primer 0058 while 84 existed; widens link check to root + docs/ |
+| Dead definitions (W12-T5, issue #358)                 | `ci.yml` → _Dead-definition gate_                       | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | 13 metrics + 18 settings were defined and never read; annotated with the tracking issue |
+| Dependency manifest (W12-T9, issue #362)              | `ci.yml` → _Dependency-manifest gate_                   | **report**   | in progress (introduced 2026-09-12) — expected FAIL until W14-T3      | Manifest is 107 days past its quarterly cadence; freshness rule M3 fires by design until the model promotion |
+| Harness spec runner (W12-T8, issue #361)              | `ci.yml` → _Harness spec — code-check_                  | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | Executes harness/code-check.yml gates that no workflow ran before (ADR-0037 amendment) |
+| OpenAPI live-vs-doc drift (W12-T7, issue #360)        | `ci.yml` → _Contract Drift Check_ / _OpenAPI drift_     | **blocking** | n/a (deterministic; inside an already-blocking job)                   | The job named 'Contract Drift Check' now diffs a contract |
 | Conventional PR title / Spec / Issue / Version        | `pr-governance.yml`                                     | **blocking** | past lifecycle                                                        | Pre-existing                                                             |
 | detect-secrets · Bandit · CodeQL · Trivy · ZAP (DAST) | `ci.yml` / `codeql.yml` / `secret-scanning.yml`         | **blocking** | past lifecycle (ADR-0070 §Neutral)                                    | Pre-existing                                                             |
 
@@ -144,6 +148,45 @@ worded differently) resets the window. Progress: `make burn-in-status GATE=doc-c
 ### The flip (prepared, NOT yet applied)
 
 Remove the `continue-on-error: true` line from the _Doc-consistency gate_ step in `ci.yml`.
+
+---
+
+## Dead-definition gate (W12-T5) — burn-in log
+
+<!-- BURN-IN-START: 2026-09-12 -->
+<!-- BURN-IN-TARGET: dead-definitions-gate -->
+
+`scripts/governance/check_dead_definitions.py` runs in **report mode** in `ci.yml`. Progress: `make burn-in-status GATE=dead-definitions-gate`.
+
+| Date (UTC) | PR  | Verdict | False positive? | Notes                                       |
+| ---------- | --- | ------- | --------------- | ------------------------------------------- |
+| 2026-09-12 | —   | —       | —               | Burn-in started (Wave 12). Awaiting first PR run. |
+
+---
+
+## Dependency-manifest gate (W12-T9) — burn-in log
+
+<!-- BURN-IN-START: 2026-09-12 -->
+<!-- BURN-IN-TARGET: dependency-manifest-gate -->
+
+`scripts/governance/check_dependency_manifest.py` runs in **report mode** in `ci.yml`. Progress: `make burn-in-status GATE=dependency-manifest-gate`.
+
+| Date (UTC) | PR  | Verdict | False positive? | Notes                                       |
+| ---------- | --- | ------- | --------------- | ------------------------------------------- |
+| 2026-09-12 | —   | —       | —               | Burn-in started (Wave 12). Awaiting first PR run. |
+
+---
+
+## Harness spec runner (W12-T8) — burn-in log
+
+<!-- BURN-IN-START: 2026-09-12 -->
+<!-- BURN-IN-TARGET: harness-code-check -->
+
+`scripts/governance/run_harness_spec.py harness/code-check.yml` runs in **report mode** in `ci.yml`. Progress: `make burn-in-status GATE=harness-code-check`.
+
+| Date (UTC) | PR  | Verdict | False positive? | Notes                                       |
+| ---------- | --- | ------- | --------------- | ------------------------------------------- |
+| 2026-09-12 | —   | —       | —               | Burn-in started (Wave 12). Awaiting first PR run. |
 
 ---
 

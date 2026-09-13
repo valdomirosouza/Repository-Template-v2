@@ -17,6 +17,7 @@ REQUEST_COUNTER = Counter(
     ["service", "method", "path", "status_code"],
 )
 
+# unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
 AGENT_ACTIONS_COUNTER = Counter(
     "agent_actions_total",
     "Total agent actions",
@@ -53,6 +54,7 @@ REQUEST_LATENCY = Histogram(
     buckets=_LATENCY_BUCKETS,
 )
 
+# unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
 AGENT_ACTION_LATENCY = Histogram(
     "agent_action_duration_seconds",
     "Agent action execution latency in seconds",
@@ -75,6 +77,7 @@ HITL_WAIT_SECONDS = Histogram(
 )
 
 # ── Gauges ────────────────────────────────────────────────────────────────────
+# unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
 KAFKA_CONSUMER_LAG = Gauge(
     "kafka_consumer_lag",
     "Current Kafka consumer lag (messages behind)",
@@ -158,6 +161,7 @@ _MTTD_BUCKETS = (1, 5, 10, 30, 60, 120, 300, 600)
 _MTTR_BUCKETS = (10, 30, 60, 120, 300, 600, 1800, 3600)
 _TOKEN_BUCKETS = (100, 500, 1000, 2000, 5000, 10000, 20000, 50000)
 
+# unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
 AGENT_MTTD_SECONDS = Histogram(
     "agent_mttd_seconds",
     "Time from problem detection to agent action start",
@@ -165,6 +169,7 @@ AGENT_MTTD_SECONDS = Histogram(
     buckets=_MTTD_BUCKETS,
 )
 
+# unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
 AGENT_MTTR_SECONDS = Histogram(
     "agent_mttr_seconds",
     "Time from agent action start to verified resolution",
@@ -172,12 +177,14 @@ AGENT_MTTR_SECONDS = Histogram(
     buckets=_MTTR_BUCKETS,
 )
 
+# unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
 AGENT_AUTONOMOUS_RESOLUTION_RATE = Gauge(
     "agent_autonomous_resolution_rate",
     "Fraction of tasks resolved without HITL escalation",
     ["action_type"],
 )
 
+# unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
 AGENT_COST_PER_RESOLUTION_TOKENS = Histogram(
     "agent_cost_per_resolution_tokens",
     "Total LLM tokens consumed per resolved task",
@@ -259,6 +266,7 @@ def record_llm_call(
 # ── Sub-agent specialization metrics (Issue #6) ───────────────────────────────
 # Spec: specs/ai/sub-agent-specialization.md §5 | ADR: ADR-0032
 
+# unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
 AGENT_SUBTASK_DURATION = Histogram(
     "agent_subtask_duration_seconds",
     "Execution latency per sub-agent specialization",
@@ -266,6 +274,7 @@ AGENT_SUBTASK_DURATION = Histogram(
     buckets=_LATENCY_BUCKETS,
 )
 
+# unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
 AGENT_SUBTASK_ERROR_COUNTER = Counter(
     "agent_subtask_error_total",
     "Error count per sub-agent specialization and error class",
@@ -278,6 +287,7 @@ AGENT_SUBTASK_ERROR_COUNTER = Counter(
 _CYCLE_TIME_BUCKETS = (60, 300, 600, 1800, 3600, 7200, 14400, 86400)
 _SESSION_DURATION_BUCKETS = (60, 300, 600, 1800, 3600, 7200, 14400)
 
+# unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
 AGENT_SESSION_TASKS_COUNTER = Counter(
     "agent_session_tasks_total",
     "Tasks completed per session, broken down by type and outcome",
@@ -285,12 +295,14 @@ AGENT_SESSION_TASKS_COUNTER = Counter(
     ["task_type", "outcome"],
 )
 
+# unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
 AGENT_SESSION_DURATION = Histogram(
     "agent_session_duration_seconds",
     "Wall-clock duration of a Claude Code agentic session",
     buckets=_SESSION_DURATION_BUCKETS,
 )
 
+# unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
 AGENT_CYCLE_TIME = Histogram(
     "agent_cycle_time_seconds",
     "Lead time between pipeline stages (e.g. spec creation to first green CI)",
@@ -298,6 +310,7 @@ AGENT_CYCLE_TIME = Histogram(
     buckets=_CYCLE_TIME_BUCKETS,
 )
 
+# unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
 SECURITY_FINDING_COUNTER = Counter(
     "security_finding_total",
     "Security findings from CI gates, by tool and severity",

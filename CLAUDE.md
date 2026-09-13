@@ -92,12 +92,13 @@ POST /v1/requests → requests.py router
   └─ Creates RequestState (Redis or InMemoryRequestStore)
   └─ Publishes domain.request.created → Kafka (or InMemoryBroker)
 
-RequestConsumer (asyncio task in lifespan) polls store for QUEUED requests
+RequestConsumer (asyncio task in lifespan; Kafka or in-memory subscription) consumes domain.request.created
   └─ AgentOrchestrator.run_cycle(context)
       ├─ Perception: PII masking via pii_filter.py
       ├─ Reason:     LLM call via AnthropicLLMClient (prompt_injection_guard first)
       └─ Act:        HITLGateway
-                      ├─ HITL (default): block, store, await POST /v1/hitl/{id}/decide
+                      ├─ HITL (default): store as waiting_for_human_approval; POST /v1/hitl/{id}/decision →
+                      │     agent.action.approved → ApprovalConsumer executes the stored action (ADR-0086)
                       └─ HOTL (autonomous): execute if autonomy level allows (feature flags)
 ```
 
@@ -117,7 +118,7 @@ RequestConsumer (asyncio task in lifespan) polls store for QUEUED requests
 | Memory        | `src/memory/`                             | Session memory, vector store, doc indexer, bug history (opt-in, ADR-0017)                                                                                                          |
 | Frontend      | `frontend/`                               | Next.js app; HITL operator approval UI                                                                                                                                             |
 | PR Gates      | `harness/`                                | Claude Code harness specs (code/doc/release/staging-check)                                                                                                                         |
-| ADRs          | `docs/adr/`                               | ADR-0001–ADR-0084, all binding. See `docs/adr/README.md` for the index                                                                                                             |
+| ADRs          | `docs/adr/`                               | ADR-0001–ADR-0089, all binding. See `docs/adr/README.md` for the index                                                                                                             |
 | Process       | `docs/process/`                           | WORKFLOW (15-phase 0–14; ADR-0058), RACI, HITL-GOVERNANCE, SPRINT-TRACKING, RETROSPECTIVE-GUIDE, DoR/DoD/DoR-Release. Canonical model: `docs/sdlc/agentic-spec-driven-delivery.md` |
 
 ### Infrastructure Fallback Pattern
@@ -129,6 +130,8 @@ Every infra dependency has an in-memory fallback so the app starts cleanly witho
 - DB down → `InMemoryAuditStorage` (**blocked in `app_env=production`**)
 
 ### Harness Modes (`settings.harness_mode`)
+
+Wired by the lifespan into the RequestConsumer when the mode is not `solo` (ADR-0089; asserted by `tests/integration/test_lifespan_wiring.py`).
 
 | Mode         | Behaviour                                                                   |
 | ------------ | --------------------------------------------------------------------------- |

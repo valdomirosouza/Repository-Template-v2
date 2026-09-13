@@ -44,21 +44,39 @@ def _build_asgi_app() -> FastAPI:
     from src.agents.hitl_gateway import HITLGateway
     from src.agents.hitl_store import InMemoryHITLStore
     from src.agents.request_store import InMemoryRequestStore
+    from src.agents.tool_executor import ToolExecutor
     from src.api.rest.routers.hitl import router as hitl_router
     from src.api.rest.routers.requests import router as req_router
     from src.guardrails.audit_logger import AuditLogger, InMemoryAuditStorage
     from src.shared.broker import InMemoryBroker
+    from src.workers.approval_consumer import ApprovalConsumer
 
     audit = AuditLogger(InMemoryAuditStorage())
     store = InMemoryHITLStore()
-    gateway = HITLGateway(audit_logger=audit, broker=None, store=store)
+    broker = InMemoryBroker()
+    # The gateway publishes decisions to the broker; the ApprovalConsumer (ADR-0086) is
+    # subscribed so an APPROVED decision executes the stored action in-process (CUJ-002 step 4).
+    gateway = HITLGateway(audit_logger=audit, broker=broker, store=store)
+    request_store = InMemoryRequestStore()
 
     app = FastAPI()
     app.include_router(req_router, prefix="/v1")
     app.include_router(hitl_router, prefix="/v1/hitl")
-    app.state.request_store = InMemoryRequestStore()
-    app.state.broker = InMemoryBroker()
+    app.state.request_store = request_store
+    app.state.broker = broker
     app.state.hitl_gateway = gateway
+    app.state.audit_logger = audit
+    app.state.approval_consumer = ApprovalConsumer(
+        hitl_gateway=gateway,
+        request_store=request_store,
+        tool_executor=ToolExecutor(audit),
+        audit_logger=audit,
+        broker=broker,
+    )
+    from src.workers.approval_consumer import TOPICS
+
+    for topic in TOPICS:
+        broker.subscribe(topic, app.state.approval_consumer.handle_event)
     return app
 
 
@@ -372,3 +390,111 @@ class TestHITLValidation:
             )
 
         assert response.status_code == 422
+
+
+# ── Tests — approval executes the stored action (ADR-0086) ───────────────────
+
+
+async def _seed_suspended_domain_request(app: FastAPI, hitl_id: str, action_type: str) -> str:
+    """Seed a registered-tool HITL request plus the domain request waiting on it."""
+    from src.agents.hitl_gateway import HITLRequest
+    from src.agents.request_store import RequestState
+
+    now = datetime.now(UTC)
+    await app.state.hitl_gateway._store.save(
+        HITLRequest(
+            request_id=hitl_id,
+            agent_id="test-agent-00000000",
+            action_type=action_type,
+            action_parameters={"format": "csv", "dataset": "synthetic-orders"},
+            risk_score=0.5,
+            context_summary="Agent proposes generating a synthetic report.",
+            created_at=now,
+            expires_at=now + timedelta(hours=1),
+        )
+    )
+    domain_id = str(uuid.uuid4())
+    await app.state.request_store.save(
+        RequestState(
+            request_id=domain_id,
+            status="waiting_for_human_approval",
+            created_at=now,
+            updated_at=now,
+            result={"status": "waiting_for_human_approval", "hitl_request_id": hitl_id},
+        )
+    )
+    return domain_id
+
+
+@pytest.mark.e2e
+class TestHITLApprovalExecutesAction:
+    """CUJ-002 step 4 (W12-T2): approval is not just recorded — the action runs and the
+    domain request leaves `waiting_for_human_approval` with an honest terminal status."""
+
+    async def test_approved_registered_tool_executes_and_completes_request(self) -> None:
+        if _LIVE:
+            pytest.skip("in-process wiring assertion; live mode covers the API surface only")
+        app = _build_asgi_app()
+        hitl_id = str(uuid.uuid4())
+        domain_id = await _seed_suspended_domain_request(app, hitl_id, "generate-report")
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers=_operator_headers(),
+        ) as client:
+            response = await client.post(
+                f"/v1/hitl/requests/{hitl_id}/decision",
+                json={"decision": "APPROVED", "rationale": _SYNTHETIC_RATIONALE},
+            )
+            assert response.status_code == 200
+            status = await client.get(f"/v1/requests/{domain_id}")
+
+        assert status.status_code == 200
+        body = status.json()
+        assert body["status"] == "completed", body
+        assert body["result"]["outcome"] == "EXECUTED"
+        assert body["result"]["hitl_request_id"] == hitl_id
+
+    async def test_rejected_decision_settles_request_as_rejected_without_executing(self) -> None:
+        if _LIVE:
+            pytest.skip("in-process wiring assertion; live mode covers the API surface only")
+        app = _build_asgi_app()
+        hitl_id = str(uuid.uuid4())
+        domain_id = await _seed_suspended_domain_request(app, hitl_id, "generate-report")
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers=_operator_headers(),
+        ) as client:
+            await client.post(
+                f"/v1/hitl/requests/{hitl_id}/decision",
+                json={"decision": "REJECTED", "rationale": _SYNTHETIC_RATIONALE},
+            )
+            body = (await client.get(f"/v1/requests/{domain_id}")).json()
+
+        assert body["status"] == "rejected", body
+        assert body["result"].get("outcome") == "REJECTED"
+
+    async def test_approved_unregistered_tool_fails_honestly(self) -> None:
+        """Approval never bypasses the tool registry (ADR-0039): the request ends `failed`."""
+        if _LIVE:
+            pytest.skip("in-process wiring assertion; live mode covers the API surface only")
+        app = _build_asgi_app()
+        hitl_id = str(uuid.uuid4())
+        domain_id = await _seed_suspended_domain_request(app, hitl_id, "write_file")
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers=_operator_headers(),
+        ) as client:
+            await client.post(
+                f"/v1/hitl/requests/{hitl_id}/decision",
+                json={"decision": "APPROVED", "rationale": _SYNTHETIC_RATIONALE},
+            )
+            body = (await client.get(f"/v1/requests/{domain_id}")).json()
+
+        assert body["status"] == "failed", body
+        assert "not registered" in (body.get("error") or "")
