@@ -143,7 +143,9 @@
       "last_updated": "2026-09-12",
       "owner": "Security Lead",
       "path": "specs/ai/guardrails.md",
-      "requirement_tests": [],
+      "requirement_tests": [
+        "tests/unit/guardrails/test_guardrail_properties.py"
+      ],
       "status": "approved",
       "verified_by": [
         "tests/integration/test_audit_logger_integration.py",
@@ -377,6 +379,7 @@
       "path": "specs/api/SPEC-API-001-error-model-and-request-correlation.md",
       "requirement_tests": [
         "tests/contract/test_openapi_live_vs_documented.py",
+        "tests/contract/test_openapi_schemathesis.py",
         "tests/unit/api/test_error_model.py"
       ],
       "status": "approved",
@@ -677,7 +680,9 @@
       "last_updated": "2026-09-12",
       "owner": "SRE Lead",
       "path": "specs/observability/dora-metrics.md",
-      "requirement_tests": [],
+      "requirement_tests": [
+        "tests/unit/observability/test_otel_setup_and_dora.py"
+      ],
       "status": "approved",
       "verified_by": []
     },
@@ -718,9 +723,13 @@
       "last_updated": "2026-09-12",
       "owner": "DPO",
       "path": "specs/privacy/data-retention.md",
-      "requirement_tests": [],
+      "requirement_tests": [
+        "tests/unit/jobs/test_retention_job.py"
+      ],
       "status": "approved",
-      "verified_by": []
+      "verified_by": [
+        "tests/unit/jobs/test_retention_job.py"
+      ]
     },
     {
       "governing_adrs": [
@@ -735,7 +744,9 @@
       "last_updated": "2026-09-12",
       "owner": "unassigned",
       "path": "specs/privacy/db-encryption-at-rest.md",
-      "requirement_tests": [],
+      "requirement_tests": [
+        "tests/integration/test_alembic_round_trip.py"
+      ],
       "status": "approved",
       "verified_by": [
         "tests/unit/shared/test_db_encryption.py"
@@ -842,9 +853,13 @@
       "last_updated": "2026-09-12",
       "owner": "Security Lead",
       "path": "specs/security/rbac-model.md",
-      "requirement_tests": [],
+      "requirement_tests": [
+        "tests/unit/api/test_auth.py"
+      ],
       "status": "approved",
-      "verified_by": []
+      "verified_by": [
+        "tests/unit/api/test_auth.py"
+      ]
     },
     {
       "governing_adrs": [

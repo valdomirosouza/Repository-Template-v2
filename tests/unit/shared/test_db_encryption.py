@@ -18,7 +18,7 @@ _TEST_KEY = "a" * 64  # 64 hex chars = 32 bytes
 
 
 class TestEncryptedFieldInit:
-    def test_valid_key_accepted(self) -> None:
+    def test_valid_key_accepted(self) -> None:  # noassert: does-not-raise smoke (W15-T2)
         EncryptedField(_TEST_KEY)
 
     def test_key_too_short_raises(self) -> None:

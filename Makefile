@@ -292,6 +292,12 @@ check-toolchain-versions: ## Fail if any Dockerfile/CI/devcontainer pin disagree
 template-sync: ## Three-way merge upstream template changes into this repo (ADR-0087). TEMPLATE_URL=<git url> [DRY=1]
 	@bash scripts/template_sync.sh --template-url $${TEMPLATE_URL:?set TEMPLATE_URL=<template git url>} $${DRY:+--dry-run}
 
+check-test-assertions: ## Fail on a test function that asserts nothing (W15-T2, ADR-0065). `# noassert: <reason>` waives
+	@uv run python scripts/governance/check_test_assertions.py
+
+check-coverage-floors: ## Per-package coverage floors from coverage.json (W15-T1). Run test-unit-python with --cov-report=json first
+	@uv run python scripts/governance/check_coverage_floors.py
+
 check-test-integrity: ## Test-integrity gate (ADR-0065): no silent test-count drop / unjustified skip. BASE=main
 	@uv run python scripts/governance/check_test_integrity.py --local --base $${BASE:-main} --allow-text-waiver
 

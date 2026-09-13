@@ -66,7 +66,7 @@ class TestSpecBoundaryViolations:
         with pytest.raises(SpecViolationError):
             enforcer.validate_action("delete_file")
 
-    def test_allowed_action_passes(self) -> None:
+    def test_allowed_action_passes(self) -> None:  # noassert: does-not-raise smoke (W15-T2)
         """A legitimately declared action passes spec enforcement."""
         enforcer = SpecContractEnforcer.from_dict(
             {"allowed_action_types": ["read_file", "search_code", "summarise"]}
@@ -88,7 +88,7 @@ class TestSpecBoundaryViolations:
         assert "delete_database" in prompt
         assert "Read-only local filesystem access" in prompt
 
-    def test_empty_spec_allows_any_action(self) -> None:
+    def test_empty_spec_allows_any_action(self) -> None:  # noassert: does-not-raise smoke (W15-T2)
         """A permissive spec (no allowed list, no prohibited ops) allows all actions."""
         enforcer = SpecContractEnforcer.from_dict({})
         enforcer.validate_action("any_action")  # must not raise

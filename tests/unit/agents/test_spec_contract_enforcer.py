@@ -44,7 +44,7 @@ class TestSpecContract:
 
 
 class TestValidateAction:
-    def test_allows_action_in_allowed_list(self) -> None:
+    def test_allows_action_in_allowed_list(self) -> None:  # noassert: does-not-raise smoke (W15-T2)
         enforcer = SpecContractEnforcer.from_dict(
             {"allowed_action_types": ["read_file", "search_code"]}
         )
@@ -65,7 +65,9 @@ class TestValidateAction:
         with pytest.raises(SpecViolationError, match="explicitly prohibited"):
             enforcer.validate_action("execute_code")
 
-    def test_empty_allowed_list_permits_any_action(self) -> None:
+    def test_empty_allowed_list_permits_any_action(
+        self,
+    ) -> None:  # noassert: does-not-raise smoke (W15-T2)
         enforcer = SpecContractEnforcer.from_dict({"allowed_action_types": []})
         enforcer.validate_action("any_action")  # must not raise
 

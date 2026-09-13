@@ -16,6 +16,7 @@ import asyncio
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel
 
+from src.api.rest.errors import error_responses
 from src.shared.config import settings
 
 router = APIRouter(tags=["health"])
@@ -32,7 +33,12 @@ async def health() -> HealthResponse:
     return HealthResponse(status="ok", version=settings.service_version)
 
 
-@router.get("/ready", response_model=HealthResponse, summary="Readiness probe")
+@router.get(
+    "/ready",
+    response_model=HealthResponse,
+    summary="Readiness probe",
+    responses=error_responses(503),
+)
 async def ready(request: Request) -> HealthResponse:
     """Returns 200 only when DB and Redis are reachable.
 

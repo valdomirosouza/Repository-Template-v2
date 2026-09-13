@@ -17,7 +17,7 @@
 | SPEC-AI-004 | spec | approved | unassigned |  | `specs/ai/autonomous-mode-levels.md` | ADR-0015 | 2 | 0 | 0 |
 | SPEC-AI-005 | spec | approved | AI Governance Lead |  | `specs/ai/context-graph.md` | ADR-0041 | 2 | 0 | 0 |
 | SPEC-AI-006 | spec | approved | unassigned |  | `specs/ai/feedback-loop.md` |  | 1 | 1 | 0 |
-| SPEC-AI-007 | spec | approved | Security Lead |  | `specs/ai/guardrails.md` | ADR-0011, ADR-0012 | 5 | 10 | 0 |
+| SPEC-AI-007 | spec | approved | Security Lead |  | `specs/ai/guardrails.md` | ADR-0011, ADR-0012 | 5 | 10 | 1 |
 | SPEC-AI-008 | spec | approved | AI Lead |  | `specs/ai/harness-design.md` | ADR-0010, ADR-0011, ADR-0014 | 7 | 7 | 0 |
 | SPEC-AI-009 | spec | approved | AI Lead |  | `specs/ai/hitl-hotl.md` | ADR-0011 | 11 | 7 | 0 |
 | SPEC-AI-010 | spec | draft | ai-governance-lead |  | `specs/ai/rag-pipeline.md` | ADR-0017, ADR-0018, ADR-0019, ADR-0038, ADR-0080 | 0 | 0 | 0 |
@@ -27,7 +27,7 @@
 | SPEC-AI-014 | spec | approved | unassigned |  | `specs/ai/sandbox-execution.md` | ADR-0016 | 1 | 1 | 0 |
 | SPEC-AI-015 | spec | approved | Tech Lead |  | `specs/ai/sub-agent-specialization.md` | ADR-0014, ADR-0032 | 1 | 1 | 0 |
 | SPEC-AI-016 | spec | approved | Security Lead |  | `specs/ai/tool-registry.md` | ADR-0039 | 1 | 0 | 0 |
-| SPEC-API-001 | spec | approved | valdomirosouza |  | `specs/api/SPEC-API-001-error-model-and-request-correlation.md` | ADR-0004, ADR-0012, ADR-0024, ADR-0026, ADR-0029 | 3 | 1 | 2 |
+| SPEC-API-001 | spec | approved | valdomirosouza |  | `specs/api/SPEC-API-001-error-model-and-request-correlation.md` | ADR-0004, ADR-0012, ADR-0024, ADR-0026, ADR-0029 | 3 | 1 | 3 |
 | SPEC-API-002 | spec | implemented | valdomirosouza |  | `specs/api/SPEC-API-002-idempotency-keys.md` | ADR-0009, ADR-0019, ADR-0024, ADR-0076 | 1 | 0 | 2 |
 | SPEC-API-003 | spec | implemented | valdomirosouza |  | `specs/api/SPEC-API-003-pagination.md` | ADR-0024, ADR-0076 | 2 | 0 | 1 |
 | SPEC-API-004 | spec | draft | valdomirosouza |  | `specs/api/SPEC-API-004-runs-trace-and-slo-status.md` | ADR-0076, ADR-0011, ADR-0004 | 2 | 2 | 2 |
@@ -44,16 +44,16 @@
 | SPEC-LGS-001 | threat-model | draft | Security Lead |  | `specs/security/threat-model-SPEC-LGS-001-golden-signals.md` | ADR-0011, ADR-0012, ADR-0019, ADR-0020, ADR-0026, ADR-0066, ADR-0067, ADR-0068, ADR-0069 | 0 | 0 | 0 |
 | SPEC-OBS-001 | spec | approved | SRE Lead |  | `specs/observability/agent-performance.md` | ADR-0004 | 1 | 1 | 0 |
 | SPEC-OBS-002 | spec | approved | unassigned |  | `specs/observability/agent-supervision.md` |  | 1 | 0 | 0 |
-| SPEC-OBS-003 | spec | approved | SRE Lead |  | `specs/observability/dora-metrics.md` | ADR-0028 | 2 | 0 | 0 |
+| SPEC-OBS-003 | spec | approved | SRE Lead |  | `specs/observability/dora-metrics.md` | ADR-0028 | 2 | 0 | 1 |
 | SPEC-OBS-004 | spec | approved | unassigned |  | `specs/observability/otel-agentic-observability.md` | ADR-0043, ADR-0044, ADR-0045, ADR-0046 | 2 | 1 | 0 |
-| SPEC-PRIV-001 | spec | approved | DPO |  | `specs/privacy/data-retention.md` | ADR-0012, ADR-0013 | 1 | 0 | 0 |
-| SPEC-PRIV-002 | spec | approved | unassigned |  | `specs/privacy/db-encryption-at-rest.md` | ADR-0018 | 1 | 1 | 0 |
+| SPEC-PRIV-001 | spec | approved | DPO |  | `specs/privacy/data-retention.md` | ADR-0012, ADR-0013 | 1 | 1 | 1 |
+| SPEC-PRIV-002 | spec | approved | unassigned |  | `specs/privacy/db-encryption-at-rest.md` | ADR-0018 | 1 | 1 | 1 |
 | SPEC-PRIV-003 | policy | approved | DPO |  | `specs/privacy/dpia-ripd.md` | ADR-0012, ADR-0013 | 0 | 0 | 0 |
 | SPEC-PRIV-004 | spec | approved | DPO |  | `specs/privacy/pii-inventory.md` | ADR-0012, ADR-0013 | 1 | 0 | 0 |
 | SPEC-PRIV-005 | spec | approved | unassigned |  | `specs/privacy/redis-tls.md` | ADR-0019 | 2 | 1 | 0 |
 | SPEC-SDLC-001 | policy | approved | Tech Lead |  | `specs/sdlc/development-lifecycle.md` | ADR-0001, ADR-0003, ADR-0006 | 0 | 0 | 1 |
 | SPEC-SEC-001 | policy | approved | Security Lead |  | `specs/security/pentest-checklist.md` |  | 0 | 0 | 0 |
-| SPEC-SEC-002 | spec | approved | Security Lead |  | `specs/security/rbac-model.md` | ADR-0008, ADR-0011, ADR-0023 | 1 | 0 | 0 |
+| SPEC-SEC-002 | spec | approved | Security Lead |  | `specs/security/rbac-model.md` | ADR-0008, ADR-0011, ADR-0023 | 1 | 1 | 1 |
 | SPEC-SEC-003 | policy | approved | Security Lead |  | `specs/security/threat-model.md` | ADR-0008, ADR-0011, ADR-0012, ADR-0016, ADR-0018, ADR-0019 | 0 | 1 | 0 |
 | SPEC-SRE-001 | policy | approved | unassigned |  | `specs/sre/capacity-planning.md` |  | 0 | 0 | 0 |
 | SPEC-SRE-002 | policy | approved | unassigned |  | `specs/sre/finops.md` | ADR-0020 | 0 | 0 | 0 |

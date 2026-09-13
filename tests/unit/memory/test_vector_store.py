@@ -182,7 +182,9 @@ class TestInMemoryVectorStoreDelete:
         assert all(d.id != doc.id for d in results)
 
     @pytest.mark.asyncio
-    async def test_delete_nonexistent_doc_does_not_raise(self) -> None:
+    async def test_delete_nonexistent_doc_does_not_raise(
+        self,
+    ) -> None:  # noassert: does-not-raise smoke (W15-T2)
         store = InMemoryVectorStore()
         await store.delete("nonexistent-id")  # must not raise
 

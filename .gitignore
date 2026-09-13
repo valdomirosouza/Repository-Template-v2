@@ -96,3 +96,4 @@ headroom.sh
 
 # Local repo-evaluation scratch (improvement-plan reruns) — not part of the repo
 improvement-plan-repository-template-v2-rerun.md
+coverage.json

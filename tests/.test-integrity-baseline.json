@@ -1,14 +1,14 @@
 {
-  "total": 1447,
+  "total": 1482,
   "per_marker": {
     "abuse_case": 76,
     "benchmark": 30,
     "chaos": 7,
-    "contract": 99,
+    "contract": 100,
     "e2e": 74,
-    "integration": 138,
+    "integration": 140,
     "model_contract": 20,
     "security": 56,
-    "unit": 1118
+    "unit": 1150
   }
 }

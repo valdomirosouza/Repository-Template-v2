@@ -126,7 +126,7 @@ class TestAuditLogger:
     async def test_log_event_returns_event_id(self):
         logger = AuditLogger(InMemoryAuditStorage())
         event_id = await logger.log_event(_make_event())
-        uuid.UUID(event_id)  # raises ValueError if not a valid UUID
+        assert uuid.UUID(event_id).version == 4  # a fresh v4 id, not a placeholder
 
     @pytest.mark.asyncio
     async def test_audit_write_error_raised_on_storage_failure(self):

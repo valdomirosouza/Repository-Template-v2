@@ -65,7 +65,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/requests:
     post:
@@ -95,6 +95,24 @@ paths:
             schema:
               $ref: "#/components/schemas/RequestIn"
       responses:
+        "400":
+          description: Bad Request — malformed JSON body (ADR-0076 envelope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too Many Requests (ADR-0076 envelope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Service Unavailable (ADR-0076 envelope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "202":
           description: Request accepted for async processing
           content:
@@ -106,7 +124,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/requests/{request_id}:
     get:
@@ -121,6 +139,12 @@ paths:
             type: string
             format: uuid
       responses:
+        "422":
+          description: Unprocessable Content (ADR-0076 envelope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "200":
           description: Current request status
           content:
@@ -132,7 +156,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/hitl/status:
     get:
@@ -176,6 +200,18 @@ paths:
             minimum: 0
             default: 0
       responses:
+        "401":
+          description: Unauthorized (ADR-0076 envelope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden (ADR-0076 envelope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "200":
           description: Pending HITL requests (a page)
           headers:
@@ -198,7 +234,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/hitl/requests/{request_id}/decision:
     post:
@@ -219,6 +255,18 @@ paths:
             schema:
               $ref: "#/components/schemas/DecisionIn"
       responses:
+        "401":
+          description: Unauthorized (ADR-0076 envelope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden (ADR-0076 envelope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "200":
           description: Decision recorded
           content:
@@ -230,13 +278,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/ErrorResponse"
         "422":
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/runs/{request_id}:
     get:
@@ -260,6 +308,12 @@ paths:
             type: string
             format: uuid
       responses:
+        "422":
+          description: Unprocessable Content (ADR-0076 envelope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "200":
           description: Request execution trace
           content:
@@ -271,13 +325,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Run not found (unknown request_id or expired)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/governance/slo-status:
     get:
@@ -306,7 +360,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
   securitySchemes:
@@ -623,7 +677,7 @@ components:
         message:
           type: string
 
-    Error:
+    ErrorResponse:
       # The single error envelope returned by every non-2xx response (ADR-0076 / SPEC-API-001).
       type: object
       required: [status, code, title, request_id]

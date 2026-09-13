@@ -141,7 +141,7 @@ class TestUnregister:
         reg.unregister("temp")
         assert len(reg) == 0
 
-    def test_no_error_on_missing_name(self):
+    def test_no_error_on_missing_name(self):  # noassert: does-not-raise smoke (W15-T2)
         reg = _fresh()
         reg.unregister("nonexistent")  # must not raise
 

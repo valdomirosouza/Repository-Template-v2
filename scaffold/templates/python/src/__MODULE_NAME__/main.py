@@ -13,7 +13,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from prometheus_client import Counter, make_asgi_app
 
-from .__MODULE_NAME__.config import settings
+from .config import settings  # W15-T5: was .__MODULE_NAME__.config, which never resolved
 
 REQUEST_COUNT = Counter(
     "http_requests_total",

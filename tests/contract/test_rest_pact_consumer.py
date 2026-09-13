@@ -57,7 +57,8 @@ class TestPactFileStructure:
         assert PACT_FILE.exists(), f"Pact file not found: {PACT_FILE}"
 
     def test_pact_file_is_valid_json(self) -> None:
-        _load_pact()  # raises json.JSONDecodeError if malformed
+        pact = _load_pact()  # raises json.JSONDecodeError if malformed
+        assert isinstance(pact, dict) and pact.get("interactions")
 
     def test_consumer_is_frontend(self) -> None:
         pact = _load_pact()

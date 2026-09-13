@@ -157,7 +157,9 @@ class TestRecordAgentPerformanceHelper:
 
         assert callable(record_agent_performance)
 
-    def test_helper_does_not_raise_on_autonomous_resolution(self) -> None:
+    def test_helper_does_not_raise_on_autonomous_resolution(
+        self,
+    ) -> None:  # noassert: does-not-raise smoke (W15-T2)
         from src.observability.metrics import record_agent_performance
 
         record_agent_performance(
@@ -168,7 +170,9 @@ class TestRecordAgentPerformanceHelper:
             tokens_used=3000,
         )
 
-    def test_helper_does_not_raise_on_hitl_escalation(self) -> None:
+    def test_helper_does_not_raise_on_hitl_escalation(
+        self,
+    ) -> None:  # noassert: does-not-raise smoke (W15-T2)
         from src.observability.metrics import record_agent_performance
 
         record_agent_performance(
