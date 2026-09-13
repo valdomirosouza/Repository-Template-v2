@@ -19,6 +19,7 @@
 #   subscribes:  Kafka topics this service consumes from
 #   depends_on:  other services this service calls at runtime (REST or gRPC)
 #   adr:         list of ADRs that govern this service's design decisions
+#   spec:        governing spec path (ADR-0085) — must exist and carry frontmatter
 
 services:
   # ────────────────────────────────────────────────────────────────
@@ -27,6 +28,7 @@ services:
   # optional — see docs/optional-extensions/ai-agents/README.md
   # ────────────────────────────────────────────────────────────────
   - name: api-gateway
+    spec: specs/system/request-pipeline.md # governing spec (ADR-0085 / W13-T3; validated by build_spec_registry.py)
     language: python
     type: api
     port: 8000
@@ -58,6 +60,7 @@ services:
   # Core business logic, domain events, JPA persistence
   # ────────────────────────────────────────────────────────────────
   - name: domain-service
+    spec: specs/system/architecture.md # governing spec (ADR-0085 / W13-T3; validated by build_spec_registry.py)
     language: java
     type: api
     port: 8080
@@ -80,6 +83,7 @@ services:
   # Log-based Golden-Signal ingestion & predictive-analytics pipeline (SPEC-LGS-001)
   # ────────────────────────────────────────────────────────────────
   - name: golden-signals
+    spec: specs/system/SPEC-LGS-001-log-based-golden-signals.md # governing spec (ADR-0085 / W13-T3; validated by build_spec_registry.py)
     language: java
     type: api
     port: 8085
@@ -99,6 +103,7 @@ services:
   # High-throughput Kafka consumer, stateless event processing
   # ────────────────────────────────────────────────────────────────
   - name: event-worker
+    spec: specs/system/async-event-flow.md # governing spec (ADR-0085 / W13-T3; validated by build_spec_registry.py)
     language: go
     type: worker
     port: 8090
@@ -120,6 +125,7 @@ services:
   # Customer-facing UI + HITL operator approval interface
   # ────────────────────────────────────────────────────────────────
   - name: frontend
+    spec: specs/ai/hitl-hotl.md # governing spec (ADR-0085 / W13-T3; validated by build_spec_registry.py)
     language: nodejs
     type: frontend
     port: 3000
@@ -138,6 +144,7 @@ services:
   # Scheduled nightly jobs (data cleanup, retention enforcement, etc.)
   # ────────────────────────────────────────────────────────────────
   - name: batch-jobs
+    spec: specs/privacy/data-retention.md # governing spec (ADR-0085 / W13-T3; validated by build_spec_registry.py)
     language: python
     type: job
     port: null # no inbound port — CronJob, not a server

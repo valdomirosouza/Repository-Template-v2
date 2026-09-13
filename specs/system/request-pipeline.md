@@ -1,3 +1,31 @@
+---
+id: SPEC-SYS-003
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: Tech Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0003
+  - ADR-0005
+  - ADR-0009
+  - ADR-0011
+  - ADR-0012
+implemented_by: 
+  - src/agents/request_store.py
+  - src/api/rest/routers/requests.py
+  - src/shared/broker.py
+  - src/workers/request_consumer.py
+verified_by: 
+  - tests/e2e/test_request_lifecycle.py
+  - tests/unit/agents/test_request_consumer.py
+  - tests/unit/agents/test_request_store.py
+  - tests/unit/api/test_requests_router.py
+  - tests/unit/shared/test_broker.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Request Pipeline Spec
 
 **Status:** Approved | **Owner:** Tech Lead | **Last updated:** 2026-05-26

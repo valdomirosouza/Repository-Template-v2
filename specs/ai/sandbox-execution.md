@@ -1,3 +1,20 @@
+---
+id: SPEC-AI-014
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Accepted # carried by migrate_spec_frontmatter.py, never promoted
+owner: unassigned
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0016
+implemented_by: 
+  - src/agents/sandbox_executor.py
+verified_by: 
+  - tests/unit/agents/test_sandbox_executor.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Spec: Agent Sandbox Execution Policy
 
 **ID:** SPEC-sandbox-execution

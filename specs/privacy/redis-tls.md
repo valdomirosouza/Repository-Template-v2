@@ -1,3 +1,21 @@
+---
+id: SPEC-PRIV-005
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Accepted # carried by migrate_spec_frontmatter.py, never promoted
+owner: unassigned
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0019
+implemented_by:
+  - src/api/rest/main.py
+  - src/shared/config.py
+verified_by: 
+  - tests/unit/agents/test_hitl_store.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Spec: Redis TLS and Value Encryption
 
 **ID:** SPEC-redis-tls

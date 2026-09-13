@@ -1,3 +1,19 @@
+---
+id: SPEC-AI-006
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Accepted # carried by migrate_spec_frontmatter.py, never promoted
+owner: unassigned
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: []
+implemented_by: 
+  - src/agents/feedback_loop.py
+verified_by: 
+  - tests/unit/agents/test_feedback_loop.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Spec: Agent Feedback Loop (Telemetria → Comportamento)
 
 **ID:** SPEC-feedback-loop

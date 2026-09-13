@@ -18,6 +18,13 @@ related_specs:
     specs/ai/hitl-hotl.md,
   ]
 slo_ref: docs/sre/slo/slo.yaml
+kind: spec
+issue: null # GitHub issue number that delivered/owns this spec
+implemented_by:
+  - src/api/rest/pagination.py
+  - src/api/rest/routers/hitl.py
+verified_by: []
+last_updated: 2026-09-12
 ---
 
 # SPEC-API-003 — List-endpoint pagination standard

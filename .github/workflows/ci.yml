@@ -337,6 +337,26 @@ jobs:
           [ "$rc" = 0 ] || echo "::warning::Dependency-manifest gate (consistency + freshness) reported violations (report mode, ADR-0070 burn-in) — see job summary."
           exit "$rc"
 
+      # REPORT MODE (ADR-0070 burn-in, W13-T3 / issue #368, ADR-0085). Flip: remove `continue-on-error`.
+      - name: Spec registry gate (frontmatter S1–S7 + registry freshness)
+        continue-on-error: true
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python3 -m pip install --quiet pyyaml
+          if python3 scripts/governance/build_spec_registry.py; then verdict=PASS; rc=0; else verdict=FAIL; rc=1; fi
+          today="$(date -u +%Y-%m-%d)"
+          if [ "$verdict" = FAIL ]; then fp='? (classify)'; else fp='no'; fi
+          {
+            echo "### Spec registry gate — burn-in row (ADR-0070)"
+            echo ""
+            echo "| Date (UTC) | PR | Verdict | False positive? | Notes |"
+            echo "| ---------- | --- | ------- | --------------- | ----- |"
+            echo "| ${today} | #${PR_NUMBER:-push} | ${verdict} | ${fp} | report-mode |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$rc" = 0 ] || echo "::warning::Spec registry gate reported violations (report mode, ADR-0070 burn-in) — run make spec-registry."
+          exit "$rc"
+
       # BLOCKING from introduction (ADR-0065 binds it; ADR-0070 deterministic carve-out): a
       # test-count decrease vs the committed baseline, or a newly added skip/xfail without a
       # rationale, is unambiguous. Waiver = a CODEOWNER applies the `test-waiver` label (W11-T1,

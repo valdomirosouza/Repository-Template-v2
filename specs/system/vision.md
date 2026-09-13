@@ -1,3 +1,17 @@
+---
+id: SPEC-SYS-004
+kind: policy # process/compliance/vision document — no code counterpart (ADR-0085)
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: Product Owner
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: []
+implemented_by: []
+verified_by: []
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Product Vision
 
 **Status:** Approved | **Owner:** Product Owner | **Last updated:** 2026-05-24

@@ -1,3 +1,34 @@
+---
+id: SPEC-AI-008
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: AI Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0010
+  - ADR-0011
+  - ADR-0014
+implemented_by: 
+  - src/agents/harness/__init__.py
+  - src/agents/harness/context_manager.py
+  - src/agents/harness/coordinator.py
+  - src/agents/harness/decision_tree_logger.py
+  - src/agents/harness/evaluator.py
+  - src/agents/harness/models.py
+  - src/agents/harness/planner.py
+verified_by: 
+  - tests/contract/test_harness_contracts.py
+  - tests/integration/test_harness_pipeline.py
+  - tests/unit/agents/harness/test_context_manager.py
+  - tests/unit/agents/harness/test_coordinator_reflection.py
+  - tests/unit/agents/harness/test_decision_tree_logger.py
+  - tests/unit/agents/harness/test_evaluator.py
+  - tests/unit/agents/harness/test_planner.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Harness Design Spec
 
 **Status:** Approved | **Owner:** AI Lead | **Last updated:** 2026-05-24

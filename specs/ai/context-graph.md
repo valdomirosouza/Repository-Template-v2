@@ -1,3 +1,20 @@
+---
+id: SPEC-AI-005
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: AI Governance Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0041
+implemented_by: 
+  - src/agents/context_graph.py
+  - src/shared/feature_flags.py
+verified_by: []
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Spec: Context Graph — Autonomy Tier
 
 **Status:** Approved

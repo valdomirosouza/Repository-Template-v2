@@ -26,6 +26,7 @@
 
 | Activity                                     | Product Owner | Tech Lead | Security Lead | SRE / Platform | Developer / Agent |    CI / Automation    |
 | -------------------------------------------- | :-----------: | :-------: | :-----------: | :------------: | :---------------: | :-------------------: |
+| Resolve requirement ambiguity (open question / contradictory spec) |     **A**     |   **R**   |       C       |       I        |         R         | **R** (surfaces via envelope) |
 | Complete DoD checklist in PR description     |       I       |     C     |       I       |       I        |       **R**       |           I           |
 | Verify unit test coverage ≥ 80%              |       I       |     C     |       I       |       I        |       **R**       |   **R** (blocking)    |
 | Verify security tests pass                   |       I       |     C     |     **R**     |       I        |         C         |   **R** (blocking)    |

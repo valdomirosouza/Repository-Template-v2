@@ -132,6 +132,13 @@ This is the **return envelope** of the sub-agent context contract
 (`docs/sdlc/agent-handoff-schema.md` › _Sub-agent context contract_) — a fixed object so the
 orchestrator can parse it mechanically into the FINAL-REPORT, never free-text:
 
+- `open_questions`: list of `{question, owner, blocking: true|false}` this phase could not resolve
+  (W13-T9). Empty is a valid, *asserted* value — never omit the key.
+- `assumptions`: list of `{assumption, owner, resolve_by_phase, status: open|confirmed|rejected}`
+  the phase made or carried forward; an `open` assumption at its resolve-by phase is `gate: FAIL`.
+- `confidence`: `high | medium | low` — how well the produced artefact is grounded in the spec,
+  code and docs (CLAUDE.md §3.6 chain). `low` MUST be accompanied by at least one
+  `open_questions` entry or an `uncertain — verify` marker in the artefact.
 - `mode`: DRY-RUN | CODE · `tier`: TRIVIAL | STANDARD | GOVERNED | REGULATED (+ effective tier if escalated)
 - `status`: done | blocked | failed
 - `phase`, `gate`: PASS | FAIL | N-A | BLOCKED | SIMULATED | WAIVED (+ one-line reason)

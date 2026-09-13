@@ -1,3 +1,20 @@
+---
+id: SPEC-OBS-001
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: SRE Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0004
+implemented_by:
+  - src/observability/metrics.py
+verified_by: 
+  - tests/unit/observability/test_agent_performance_metrics.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Agent Performance Metrics — Specification
 
 **ID:** SPEC-agent-performance  

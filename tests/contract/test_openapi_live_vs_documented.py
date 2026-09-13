@@ -27,7 +27,7 @@ from typing import Any
 import pytest
 import yaml
 
-pytestmark = pytest.mark.contract
+pytestmark = [pytest.mark.contract, pytest.mark.requirement("SPEC-API-001")]
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DOC_PATH = REPO_ROOT / "docs" / "api" / "openapi" / "v1" / "openapi.yaml"

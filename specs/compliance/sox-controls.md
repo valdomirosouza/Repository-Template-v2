@@ -1,3 +1,19 @@
+---
+id: SPEC-COMP-002
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: Tech Lead, Security Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0026
+implemented_by:
+  - src/guardrails/audit_logger.py
+verified_by: []
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # SOX IT General Controls — Specification
 
 **ID:** SPEC-sox-controls

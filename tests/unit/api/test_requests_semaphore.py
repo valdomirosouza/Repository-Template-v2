@@ -1,6 +1,6 @@
 """Unit tests for submit_request endpoint — semaphore cap behaviour.
 
-Spec: specs/api/rest-api-design.md (Rate Limiting, Backpressure)
+Spec: docs/api/api-standards.md (Rate Limiting, Backpressure)
 ADR:  ADR-0002 (Technology Stack Selection)
 """
 

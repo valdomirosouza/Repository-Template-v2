@@ -69,6 +69,12 @@ def check(services_path: Path = _SERVICES) -> list[str]:
             if m.group(1) not in adrs_on_disk:
                 problems.append(f"service '{name}': ADR-{m.group(1)} has no file in docs/adr/.")
 
+    # 1b. Governing spec (ADR-0085, W13-T3)
+    for svc in services:
+        spec = svc.get("spec")
+        if spec and not (_REPO_ROOT / str(spec)).exists():
+            problems.append(f"service '{svc.get('name')}': spec path does not exist -> {spec}")
+
     # 2. Topic schema paths
     for topic in topics:
         tname = topic.get("name")

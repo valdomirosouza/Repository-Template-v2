@@ -1,3 +1,20 @@
+---
+id: SPEC-OBS-003
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: SRE Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0028
+implemented_by:
+  - src/observability/dora_metrics.py
+  - .github/workflows/cd-production.yml
+verified_by: []
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # DORA Metrics Instrumentation — Specification
 
 **ID:** SPEC-dora-metrics

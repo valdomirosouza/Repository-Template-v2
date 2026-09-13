@@ -1,3 +1,21 @@
+---
+id: SPEC-AI-015
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: Tech Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0014
+  - ADR-0032
+implemented_by: 
+  - src/agents/harness/sub_agent_registry.py
+verified_by: 
+  - tests/unit/agents/harness/test_sub_agent_registry.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Spec — Sub-Agent Specialization Registry
 
 **Status:** Approved | **Owner:** Tech Lead | **Last updated:** 2026-06-05

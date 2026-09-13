@@ -90,8 +90,12 @@ jobs:
       TITLE: ${{ github.event.pull_request.title }}
       BODY: ${{ github.event.pull_request.body }}
       LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+      HEAD_REF: ${{ github.head_ref }}
     steps:
-      - name: Require a spec reference for product/code changes
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      # W13-T5 (issue #370, ADR-0085): the cited spec must exist and be binding
+      # (status approved|implemented); the branch should carry the spec id (warning).
+      - name: Require a binding spec reference for product/code changes
         run: |
           if printf ',%s,' "$LABELS" | grep -q ',no-spec,'; then
             echo "no-spec label present — exempt"; exit 0
@@ -102,16 +106,34 @@ jobs:
           if printf '%s' "$TITLE" | grep -qE '^\w+\(docs\):'; then
             echo "Docs-scoped PR — spec not required"; exit 0
           fi
-          if printf '%s' "$TITLE" | grep -qE '^(feat|fix|security|privacy|perf)(\(|!|:)'; then
-            if printf '%s' "$BODY" | grep -qE 'specs/[A-Za-z0-9/._-]+\.md'; then
-              echo "spec reference found"
-            else
-              echo "::error::feat/fix/security/privacy/perf PRs must reference a spec (specs/....md) in the body, or add the 'no-spec' label with justification."
-              exit 1
-            fi
-          else
-            echo "PR type is exempt from the spec requirement"
+          if ! printf '%s' "$TITLE" | grep -qE '^(feat|fix|security|privacy|perf)(\(|!|:)'; then
+            echo "PR type is exempt from the spec requirement"; exit 0
           fi
+          if printf '%s' "$BODY" | grep -qE '\bREM-[0-9]{3}\b'; then
+            echo "REM-NNN remediation reference found"; exit 0
+          fi
+          specs="$(printf '%s' "$BODY" | grep -oE 'specs/[A-Za-z0-9/._-]+\.md' | sort -u)"
+          if [ -z "$specs" ]; then
+            echo "::error::feat/fix/security/privacy/perf PRs must reference a spec (specs/....md) in the body, or add the 'no-spec' label with justification."
+            exit 1
+          fi
+          rc=0
+          for spec in $specs; do
+            if [ ! -f "$spec" ]; then
+              echo "::error::referenced spec does not exist: $spec"; rc=1; continue
+            fi
+            status="$(awk 'NR==1&&$0!="---"{exit} /^---$/{c++; if(c==2) exit; next} /^status:/{sub(/^status:[ ]*/,""); sub(/[ ]*#.*/,""); print; exit}' "$spec")"
+            id="$(awk 'NR==1&&$0!="---"{exit} /^---$/{c++; if(c==2) exit; next} /^id:/{sub(/^id:[ ]*/,""); sub(/[ ]*#.*/,""); print; exit}' "$spec")"
+            case "$status" in
+              approved|implemented) echo "spec $spec ($id) is $status — binding" ;;
+              "") echo "::error::$spec has no ADR-0085 frontmatter status (run scripts/governance/migrate_spec_frontmatter.py)"; rc=1 ;;
+              *) echo "::error::$spec is '$status' — code may only reference an approved or implemented spec (ADR-0085, CLAUDE.md §3.4)"; rc=1 ;;
+            esac
+            if [ -n "$id" ] && ! printf '%s' "$HEAD_REF" | grep -q "$id"; then
+              echo "::warning::branch '$HEAD_REF' does not carry the spec id $id (CLAUDE.md §6 grammar: feature/$id-<desc>)"
+            fi
+          done
+          exit "$rc"
 
   version-consistency:
     name: Version consistency

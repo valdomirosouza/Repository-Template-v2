@@ -1,3 +1,30 @@
+---
+id: SPEC-SYS-001
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: Tech Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0011
+implemented_by: 
+  - src/api/rest/main.py
+  - src/api/rest/routers/health.py
+  - src/observability/metrics.py
+  - src/observability/otel_setup.py
+  - src/shared/config.py
+  - src/shared/db_client.py
+  - src/shared/models.py
+verified_by: 
+  - tests/integration/test_lifespan_wiring.py
+  - tests/unit/api/test_health.py
+  - tests/unit/shared/test_config.py
+  - tests/unit/shared/test_db_client.py
+  - tests/unit/shared/test_metrics.py
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # System Architecture
 
 **Status:** Approved | **Owner:** Tech Lead | **Last updated:** 2026-05-24

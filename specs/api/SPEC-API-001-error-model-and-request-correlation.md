@@ -19,6 +19,15 @@ related_specs:
     specs/privacy/pii-inventory.md,
   ]
 slo_ref: docs/sre/slo/slo.yaml
+kind: spec
+issue: null # GitHub issue number that delivered/owns this spec
+implemented_by: 
+  - src/api/rest/errors.py
+  - src/api/rest/request_context.py
+  - src/observability/request_context.py
+verified_by: 
+  - tests/unit/api/test_error_model.py
+last_updated: 2026-09-12
 ---
 
 # SPEC-API-001 — Structured API error model and request correlation (X-Request-ID)

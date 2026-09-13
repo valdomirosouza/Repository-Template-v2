@@ -1,3 +1,20 @@
+---
+id: SPEC-PRIV-001
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: DPO
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0012
+  - ADR-0013
+implemented_by: 
+  - src/jobs/retention_job.py
+verified_by: []
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Data Retention Spec
 
 **Status:** Approved | **Owner:** DPO | **Last updated:** 2026-05-24

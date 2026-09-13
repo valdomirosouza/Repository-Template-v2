@@ -1,3 +1,20 @@
+---
+id: SPEC-COMP-001
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: Tech Lead, DevOps Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0027
+implemented_by:
+  - .github/workflows/pr-governance.yml
+  - .github/workflows/cd-production.yml
+verified_by: []
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # ISO 27001 A.12.1 Change Management — Specification
 
 **ID:** SPEC-iso27001-change-management

@@ -331,7 +331,8 @@ All terms are defined in `docs/glossary.md`; on ambiguity the glossary wins. Key
 ## 6. Branch & Commit Conventions
 
 ```
-feature/SPEC-NNN-<desc>   fix/SPEC-NNN-<desc>   hotfix/SPEC-NNN-<desc>   chore/SPEC-NNN-<desc>
+feature/SPEC-<DOMAIN>-NNN-<desc>   fix/SPEC-<DOMAIN>-NNN-<desc>   hotfix/SPEC-<DOMAIN>-NNN-<desc>   chore/SPEC-<DOMAIN>-NNN-<desc>
+# e.g. feature/SPEC-API-005-cursor-pagination — the id is the spec's frontmatter `id:` (ADR-0085)
 ```
 
 Conventional Commits:
@@ -341,7 +342,7 @@ Conventional Commits:
 
 [optional body]
 
-Refs: #<issue>, SPEC-NNN, ADR-NNNN
+Refs: #<issue>, SPEC-<DOMAIN>-NNN, ADR-NNNN
 ```
 
 Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `security`, `privacy`, `perf`, `ci`, `build`, `style`, `revert`.
@@ -374,7 +375,7 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `security`, `privacy`
 
 - **Conventional PR title** — squash subject matches §6 grammar.
 - **CHANGELOG updated** — non-docs changes touch `[Unreleased]`. Escape: `skip-changelog` label. Docs-only & Dependabot auto-exempt.
-- **Spec reference** — `feat`/`fix`/`security`/`privacy`/`perf` cite a spec (`SPEC-NNN`/`REM-NNN`). Escape: `no-spec` label.
+- **Spec reference** — `feat`/`fix`/`security`/`privacy`/`perf` cite a spec path (`specs/…/*.md`) whose frontmatter `status` is `approved` or `implemented` (ADR-0085; the gate verifies the file and its status, and warns if the branch name lacks the spec `id`), or a `REM-NNN`. Escape: `no-spec` label.
 - **Version consistency** — `version.txt` is the single source of truth (ADR-0057, REM-010); `version.txt` and `pyproject.toml` must agree. Don't bump in one place only.
 - **Test integrity** (ADR-0065) — `scripts/governance/check_test_integrity.py` (wired in `harness/code-check.yml`) blocks a silent test-count decrease (escape: a `TEST-WAIVER: <reason>` line + refreshed `tests/.test-integrity-baseline.json`) and a skip/xfail added without a rationale. Coverage is the quantity gate; this is the integrity gate beside it. Never weaken or skip a test to make a gate pass.
 
@@ -504,6 +505,7 @@ Emit `[HITL-ESCALATE]` and **stop all file writes** when ANY is true:
 | A spec reference can't be found after two distinct searches     | SDD invariant: no code without a spec       |
 | Coverage would drop below 75%                                   | Quality gate — exception needs approval     |
 | Enabling/disabling/modifying any feature flag                   | Autonomy changes need governance (ADR-0015) |
+| A requirement conflicts with a binding ADR or another `approved` spec | Contradictory requirements are resolved by humans, never silently by the agent (W13-T9) |
 | A `[HITL-ESCALATE]` already emitted this session and unresolved | Cascading escalations must not auto-resolve |
 
 ### 14.2 Escalation Block Format

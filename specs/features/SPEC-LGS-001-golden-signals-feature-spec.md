@@ -1,3 +1,24 @@
+---
+id: SPEC-LGS-001
+kind: feature-spec
+status: draft # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:draft # carried by migrate_spec_frontmatter.py, never promoted
+owner: valdomirosouza
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0003
+  - ADR-0011
+  - ADR-0012
+  - ADR-0020
+  - ADR-0026
+  - ADR-0066
+  - ADR-0067
+implemented_by: []
+verified_by: []
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Feature Spec — SPEC-LGS-001 Log-Based Golden Signals (Java 21 / Spring Boot 3.4.5)
 
 **Status:** draft (Phase 4 — Specification, CONTROL) | **Owner:** valdomirosouza

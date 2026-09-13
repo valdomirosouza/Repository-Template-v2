@@ -18,6 +18,12 @@ related_specs:
     specs/system/request-pipeline.md,
   ]
 slo_ref: docs/sre/slo/slo.yaml
+kind: spec
+issue: null # GitHub issue number that delivered/owns this spec
+implemented_by: 
+  - src/agents/idempotency_store.py
+verified_by: []
+last_updated: 2026-09-12
 ---
 
 # SPEC-API-002 — Idempotency keys for POST endpoints

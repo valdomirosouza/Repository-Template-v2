@@ -22,7 +22,7 @@ from src.api.rest.errors import install_error_handlers
 from src.api.rest.routers import requests as requests_router
 from src.shared.broker import InMemoryBroker
 
-pytestmark = pytest.mark.unit
+pytestmark = [pytest.mark.unit, pytest.mark.requirement("SPEC-API-002")]
 
 KEY = "test-key-12345"
 BODY = {"request_text": "do a thing", "priority": "normal"}

@@ -1,3 +1,20 @@
+---
+id: SPEC-ETH-001
+kind: policy # process/compliance/vision document — no code counterpart (ADR-0085)
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: AI Governance Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0011
+  - ADR-0015
+  - ADR-0016
+implemented_by: []
+verified_by: []
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Ethical AI Principles
 
 **Status:** Approved | **Owner:** AI Governance Lead | **Last updated:** 2026-05-28

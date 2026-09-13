@@ -1,6 +1,6 @@
 """Shared slowapi Limiter instance.
 
-Spec: specs/api/rest-api-design.md (Rate Limiting)
+Spec: docs/api/api-standards.md (Rate Limiting)
 ADR:  ADR-0002 (Technology Stack Selection)
 
 Import this module (not slowapi directly) to ensure a single Limiter instance

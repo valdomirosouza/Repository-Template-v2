@@ -1,3 +1,19 @@
+---
+id: SPEC-AI-012
+kind: spec
+status: approved # draft | in-review | approved | implemented | superseded (ADR-0085)
+status_source: body-header:Approved # carried by migrate_spec_frontmatter.py, never promoted
+owner: AI Governance Lead
+issue: null # GitHub issue number that delivered/owns this spec
+governing_adrs: 
+  - ADR-0038
+implemented_by: 
+  - src/agents/feedback_learner.py
+verified_by: []
+related_specs: []
+last_updated: 2026-09-12
+---
+
 # Spec: Learn Stage — Perceive → Reason → Act → Learn
 
 **Status:** Approved

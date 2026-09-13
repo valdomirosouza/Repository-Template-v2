@@ -12,7 +12,7 @@ import pytest
 
 from src.agents.idempotency_store import IdempotencyRecord, RedisIdempotencyStore
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.requirement("SPEC-API-002")]
 
 
 @pytest.fixture

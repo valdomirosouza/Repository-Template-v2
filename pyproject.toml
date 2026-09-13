@@ -142,6 +142,7 @@ markers = [
     "e2e: full user journey tests; set BASE_URL env var to run against a live server",
     "benchmark: performance benchmark; measures latency against SLO thresholds",
     "contract: consumer/provider contract tests (pact JSON, in-process provider); run on every PR",
+    "requirement(spec_id): binds a test to a spec / FR (ADR-0085, W13-T4) — e.g. requirement(\"SPEC-API-002/FR-01\")",
 ]
 
 # ── Coverage ──────────────────────────────────────────────────────────────────
