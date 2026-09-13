@@ -5,7 +5,10 @@ Spec: specs/observability/agent-performance.md
 
 from __future__ import annotations
 
+import pytest
 from prometheus_client import CollectorRegistry, Gauge, Histogram
+
+pytestmark = pytest.mark.unit
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 

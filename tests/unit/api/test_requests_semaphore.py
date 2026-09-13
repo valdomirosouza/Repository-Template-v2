@@ -8,11 +8,14 @@ from __future__ import annotations
 
 import asyncio
 
+import pytest
 from fastapi.testclient import TestClient
 
 from src.agents.request_store import InMemoryRequestStore
 from src.api.rest.main import app
 from src.shared.broker import InMemoryBroker
+
+pytestmark = pytest.mark.unit
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

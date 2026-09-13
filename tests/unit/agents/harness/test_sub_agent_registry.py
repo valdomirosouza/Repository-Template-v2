@@ -14,6 +14,8 @@ from src.agents.harness.sub_agent_registry import (
     default_registry,
 )
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

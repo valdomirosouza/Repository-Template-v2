@@ -26,6 +26,8 @@ from src.agents.override_service import (
 from src.agents.tool_registry import ToolDefinition, ToolRegistry, ToolRiskLevel
 from src.guardrails.audit_logger import AuditLogger
 
+pytestmark = pytest.mark.unit
+
 
 def _audit() -> MagicMock:
     audit = MagicMock(spec=AuditLogger)

@@ -205,9 +205,13 @@ returns the caller's own prior result or a 422. No `src/agents/`/`src/guardrails
 
 ## 15. Open Questions
 
-1. Scope keys by auth subject as well (`subject:key`) to prevent cross-tenant key guessing? (Lean: yes
-   when auth is mandatory; for the template, key-only with a note.)
-2. Return a `Idempotency-Replayed: true` response header on a replay? (Lean: yes — cheap observability.)
+1. Scope keys by auth subject as well (`subject:key`) to prevent cross-tenant key guessing? —
+   **Decided (ADR-0077): key-only for the template**, because `POST /v1/requests` does not require
+   authentication; subject scoping is **deferred** to the ADR-0077 review point where auth becomes
+   mandatory on that route.
+2. Return a `Idempotency-Replayed: true` response header on a replay? — **Resolved (implemented)**:
+   `src/api/rest/routers/requests.py` sets `Idempotency-Replayed: true` on every replay; verified by
+   `tests/unit/api/test_idempotency.py` (ADR-0077).
 
 ## 16. References
 

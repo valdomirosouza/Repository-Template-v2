@@ -19,6 +19,8 @@ import pytest
 
 from src.agents.harness.context_seal import ContextSeal, ContextTamperingError, SealedContext
 
+pytestmark = pytest.mark.abuse_case
+
 
 @pytest.mark.abuse_case
 class TestAgentIdentityAndContextTampering:

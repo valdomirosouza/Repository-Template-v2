@@ -97,7 +97,7 @@ channels:
 
   agent.action.executed:
     description: Fired after an agent action completes execution (HOTL or post-HITL approval).
-    x-stability: stable
+    x-stability: planned # no in-tree publisher yet (W11-T2, issue #347); see services.yaml lifecycle
     x-sunset-date: null
     subscribe:
       operationId: onAgentActionExecuted
@@ -110,7 +110,7 @@ channels:
 
   domain.result.completed:
     description: Fired when the full domain request processing pipeline completes.
-    x-stability: stable
+    x-stability: planned # no in-tree publisher yet (W11-T2, issue #347); see services.yaml lifecycle
     x-sunset-date: null
     subscribe:
       operationId: onDomainResultCompleted
@@ -141,7 +141,7 @@ channels:
 
   audit.event.written:
     description: Fired for every immutable audit record written by the Audit Logger.
-    x-stability: stable
+    x-stability: planned # no in-tree publisher yet (W11-T2, issue #347); see services.yaml lifecycle
     x-sunset-date: null
     subscribe:
       operationId: onAuditEventWritten
@@ -181,7 +181,7 @@ channels:
       Proto schema: infrastructure/proto/harness_state.proto (HarnessStateEnvelope).
       Spec: specs/ai/harness-design.md §2, §9. ADR-0013, ADR-0014.
       All user-content fields are PII-masked before publish.
-    x-stability: beta
+    x-stability: planned # no in-tree publisher yet (W11-T2, issue #347); see services.yaml lifecycle
     x-sunset-date: null
     subscribe:
       operationId: onHarnessStateChanged
@@ -193,6 +193,106 @@ channels:
       summary: HarnessCoordinator publishes on every sprint state transition
       message:
         $ref: "#/components/messages/HarnessStateChanged"
+
+  # ── Java/Go reference pipeline (services.yaml topics with `.v1` suffix). Registered here by
+  # W11-T2 (issue #347) so the registry and this contract carry the same topic set; validated
+  # by scripts/governance/check_topic_contract.py. Payloads are the Avro schemas the Java/Go
+  # services are generated from (make gen-sources-java).
+  request.created.v1:
+    description: |
+      Request Created (v1, reference pipeline). Owner: see services.yaml. Lifecycle: reference.
+    x-stability: reference
+    x-sunset-date: null
+    subscribe:
+      operationId: on_request_created_v1
+      summary: domain-service consumes and creates the domain entity
+      message:
+        $ref: "#/components/messages/RequestCreatedV1"
+    publish:
+      operationId: publish_request_created_v1
+      summary: API Gateway (adopter bridge) publishes a validated request
+      message:
+        $ref: "#/components/messages/RequestCreatedV1"
+
+  hitl.decision.v1:
+    description: |
+      HITL Decision (v1, reference pipeline). Owner: see services.yaml. Lifecycle: reference.
+    x-stability: reference
+    x-sunset-date: null
+    subscribe:
+      operationId: on_hitl_decision_v1
+      summary: Reference consumers (adopter-defined)
+      message:
+        $ref: "#/components/messages/HitlDecisionV1"
+    publish:
+      operationId: publish_hitl_decision_v1
+      summary: HITL gateway publishes the operator decision
+      message:
+        $ref: "#/components/messages/HitlDecisionV1"
+
+  audit.event.v1:
+    description: |
+      Audit Event (v1, reference pipeline). Owner: see services.yaml. Lifecycle: reference.
+    x-stability: reference
+    x-sunset-date: null
+    subscribe:
+      operationId: on_audit_event_v1
+      summary: SIEM / archival (adopter-defined)
+      message:
+        $ref: "#/components/messages/AuditEventV1"
+    publish:
+      operationId: publish_audit_event_v1
+      summary: audit-worker publishes immutable audit records
+      message:
+        $ref: "#/components/messages/AuditEventV1"
+
+  domain.entity.created.v1:
+    description: |
+      Domain Entity Created (v1). Owner: see services.yaml. Lifecycle: active.
+    x-stability: stable
+    x-sunset-date: null
+    subscribe:
+      operationId: on_domain_entity_created_v1
+      summary: event-worker enriches and forwards
+      message:
+        $ref: "#/components/messages/DomainEntityCreatedV1"
+    publish:
+      operationId: publish_domain_entity_created_v1
+      summary: domain-service publishes after persisting a new entity
+      message:
+        $ref: "#/components/messages/DomainEntityCreatedV1"
+
+  domain.entity.updated.v1:
+    description: |
+      Domain Entity Updated (v1). Owner: see services.yaml. Lifecycle: active.
+    x-stability: stable
+    x-sunset-date: null
+    subscribe:
+      operationId: on_domain_entity_updated_v1
+      summary: event-worker enriches and forwards
+      message:
+        $ref: "#/components/messages/DomainEntityUpdatedV1"
+    publish:
+      operationId: publish_domain_entity_updated_v1
+      summary: domain-service publishes after updating an entity
+      message:
+        $ref: "#/components/messages/DomainEntityUpdatedV1"
+
+  event.processed.v1:
+    description: |
+      Event Processed (v1). Owner: see services.yaml. Lifecycle: active.
+    x-stability: stable
+    x-sunset-date: null
+    subscribe:
+      operationId: on_event_processed_v1
+      summary: Downstream analytics (adopter-defined)
+      message:
+        $ref: "#/components/messages/EventProcessedV1"
+    publish:
+      operationId: publish_event_processed_v1
+      summary: event-worker publishes the processing outcome
+      message:
+        $ref: "#/components/messages/EventProcessedV1"
 
 components:
   messages:
@@ -265,6 +365,54 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/HarnessStateChangedPayload"
+
+    RequestCreatedV1:
+      name: RequestCreatedV1
+      title: Request Created (v1, reference pipeline)
+      contentType: avro/binary
+      schemaFormat: "application/vnd.apache.avro;version=1.9.0"
+      payload:
+        $ref: "../../../../infrastructure/message-broker/schema-registry/avro/request-created-v1.avsc"
+
+    HitlDecisionV1:
+      name: HitlDecisionV1
+      title: HITL Decision (v1, reference pipeline)
+      contentType: avro/binary
+      schemaFormat: "application/vnd.apache.avro;version=1.9.0"
+      payload:
+        $ref: "../../../../infrastructure/message-broker/schema-registry/avro/hitl-decision-v1.avsc"
+
+    AuditEventV1:
+      name: AuditEventV1
+      title: Audit Event (v1, reference pipeline)
+      contentType: avro/binary
+      schemaFormat: "application/vnd.apache.avro;version=1.9.0"
+      payload:
+        $ref: "../../../../infrastructure/message-broker/schema-registry/avro/audit-event-v1.avsc"
+
+    DomainEntityCreatedV1:
+      name: DomainEntityCreatedV1
+      title: Domain Entity Created (v1)
+      contentType: avro/binary
+      schemaFormat: "application/vnd.apache.avro;version=1.9.0"
+      payload:
+        $ref: "../../../../infrastructure/message-broker/schema-registry/avro/domain-entity-created-v1.avsc"
+
+    DomainEntityUpdatedV1:
+      name: DomainEntityUpdatedV1
+      title: Domain Entity Updated (v1)
+      contentType: avro/binary
+      schemaFormat: "application/vnd.apache.avro;version=1.9.0"
+      payload:
+        $ref: "../../../../infrastructure/message-broker/schema-registry/avro/domain-entity-updated-v1.avsc"
+
+    EventProcessedV1:
+      name: EventProcessedV1
+      title: Event Processed (v1)
+      contentType: avro/binary
+      schemaFormat: "application/vnd.apache.avro;version=1.9.0"
+      payload:
+        $ref: "../../../../infrastructure/message-broker/schema-registry/avro/event-processed-v1.avsc"
 
   schemas:
     EventEnvelope:

@@ -24,6 +24,8 @@ from src.observability.span_hierarchy import (
     SPAN_HARNESS_PLANNER,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def _make_tracer_with_exporter() -> tuple[TracerProvider, InMemorySpanExporter]:
     exporter = InMemorySpanExporter()

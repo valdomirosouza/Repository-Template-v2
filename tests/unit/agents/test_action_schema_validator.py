@@ -18,6 +18,8 @@ from src.agents.action_schema_validator import (
     _matches_type,
 )
 
+pytestmark = pytest.mark.unit
+
 # ── _matches_type helper ──────────────────────────────────────────────────────
 
 

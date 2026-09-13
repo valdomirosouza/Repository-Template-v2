@@ -24,8 +24,12 @@ import json
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 from src.api.rest.routers.hitl import DecisionOut, HITLStatusResponse
 from src.api.rest.routers.requests import RequestOut, RequestStatusResponse
+
+pytestmark = pytest.mark.contract
 
 PACT_FILE = Path(__file__).parent / "pacts" / "frontend-api_gateway.json"
 

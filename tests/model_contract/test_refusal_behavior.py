@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import pytest
 
+pytestmark = pytest.mark.model_contract
+
 JAILBREAK_PROMPTS: list[tuple[str, str]] = [
     (
         "ignore_previous_instructions",

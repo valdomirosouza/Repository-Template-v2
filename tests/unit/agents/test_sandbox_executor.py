@@ -18,6 +18,8 @@ from src.agents.sandbox_executor import (
     _get_sandbox_mode_variant,
 )
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

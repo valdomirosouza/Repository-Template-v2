@@ -16,6 +16,8 @@ from src.agents.risk_scorer import (
     _score_sensitivity,
 )
 
+pytestmark = pytest.mark.unit
+
 # ── Factor: irreversibility ───────────────────────────────────────────────────
 
 

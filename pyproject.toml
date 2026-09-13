@@ -141,6 +141,7 @@ markers = [
     "model_contract: real LLM contract tests; requires ANTHROPIC_API_KEY; run on model-version PRs only",
     "e2e: full user journey tests; set BASE_URL env var to run against a live server",
     "benchmark: performance benchmark; measures latency against SLO thresholds",
+    "contract: consumer/provider contract tests (pact JSON, in-process provider); run on every PR",
 ]
 
 # ── Coverage ──────────────────────────────────────────────────────────────────

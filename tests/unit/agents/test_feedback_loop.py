@@ -15,6 +15,8 @@ from src.agents.feedback_loop import (
     FeedbackLoop,
 )
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

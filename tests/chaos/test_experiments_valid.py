@@ -15,6 +15,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+pytestmark = pytest.mark.chaos
+
 EXPERIMENTS_DIR = Path(__file__).parent / "experiments"
 EXPERIMENT_FILES = sorted(EXPERIMENTS_DIR.glob("*.yaml"))
 

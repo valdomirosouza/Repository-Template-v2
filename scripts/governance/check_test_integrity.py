@@ -4,7 +4,8 @@ Enforces the test invariants that *coverage cannot see* — coverage is a quanti
 fully satisfiable by adding weak tests while gutting strong ones. This gate guards integrity:
 
   1. **No silent test-count decrease.** A drop in the total (or per-marker) test count vs the
-     committed baseline fails the PR unless justified with a `TEST-WAIVER: <reason>` line.
+     committed baseline fails the PR unless a CODEOWNER applies the `test-waiver` label
+     (plus a `TEST-WAIVER: <reason>` line for the record).
   2. **No unjustified skip / xfail.** A newly *added* `@pytest.mark.skip|xfail|skipif`,
      `pytest.skip(...)`, or `@unittest.skip` without a rationale (`reason=`, a string argument,
      or an inline `#` comment) fails the PR.
@@ -44,6 +45,7 @@ KNOWN_MARKERS = (
     "model_contract",
     "e2e",
     "benchmark",
+    "contract",
 )
 
 _WAIVER_RE = re.compile(r"TEST-WAIVER:\s*(?P<reason>.+)$")
@@ -224,16 +226,32 @@ def find_added_skips(diff_text: str) -> list[tuple[str, bool]]:
 # --------------------------------------------------------------------------- core
 
 
+WAIVER_LABEL = "test-waiver"
+
+
 def evaluate(
     *,
     before: TestCounts,
     after: TestCounts,
     diff_text: str,
     waiver_text: str,
+    labels: list[str] | None = None,
+    waiver_label: str = WAIVER_LABEL,
+    allow_text_waiver: bool = False,
 ) -> Report:
-    """Pure evaluation. Returns a Report (violations + summary)."""
+    """Pure evaluation. Returns a Report (violations + summary).
+
+    A test-count drop is waived only when the PR carries ``waiver_label`` (applied by a
+    CODEOWNER — the label is the approval), or, for local/dev runs that pass
+    ``allow_text_waiver=True``, when a ``TEST-WAIVER: <reason>`` line is present. CI never
+    sets ``allow_text_waiver``, so a self-authored diff line cannot waive a drop (W11-T1).
+    """
     rep = Report(before=before, after=after)
     rep.waivers = parse_waivers(waiver_text) + parse_waivers(diff_text)
+    label_waived = waiver_label in (labels or [])
+    waived = label_waived or (allow_text_waiver and bool(rep.waivers))
+    if label_waived:
+        rep.waivers.insert(0, f"label `{waiver_label}` applied")
 
     # (1) No silent test-count decrease (total + per-marker).
     drops: list[str] = []
@@ -241,23 +259,22 @@ def evaluate(
         drops.append(f"total {before.total} -> {after.total} (-{before.total - after.total})")
     for marker, n_before in sorted(before.per_marker.items()):
         n_after = after.per_marker.get(marker, 0)
+        if marker == "unmarked":
+            continue  # marking previously unmarked tests is progress, not a drop (W11-T8)
         if n_after < n_before:
             drops.append(f"{marker} {n_before} -> {n_after} (-{n_before - n_after})")
     rep.drops = drops
-    if drops:
-        if rep.waivers:
-            # Waived — recorded, not a violation.
-            pass
-        else:
-            rep.violations.append(
-                Violation(
-                    "test-count-drop",
-                    "test count decreased without justification: "
-                    + "; ".join(drops)
-                    + ". Add a `TEST-WAIVER: <reason>` line (PR body or diff) if the deletion is "
-                    "intended, or restore the tests. Tests are the spec (ADR-0065).",
-                )
+    if drops and not waived:
+        rep.violations.append(
+            Violation(
+                "test-count-drop",
+                "test count decreased without justification: "
+                + "; ".join(drops)
+                + f". If the deletion is intended, a CODEOWNER applies the `{waiver_label}` "
+                "label and the PR body carries a `TEST-WAIVER: <reason>` line; otherwise "
+                "restore the tests. Tests are the spec (ADR-0065).",
             )
+        )
 
     # (2) No unjustified skip / xfail in added lines.
     for line, justified in find_added_skips(diff_text):
@@ -325,6 +342,17 @@ def main(argv: list[str] | None = None) -> int:
         "--local", action="store_true", help="gather the diff from git (origin/<base>...HEAD)"
     )
     ap.add_argument("--base", default="main", help="base ref for --local (default: main)")
+    ap.add_argument(
+        "--labels",
+        default="",
+        help="comma-separated PR labels; a drop is waived only if `--waiver-label` is present",
+    )
+    ap.add_argument("--waiver-label", default=WAIVER_LABEL, help="label that waives a drop")
+    ap.add_argument(
+        "--allow-text-waiver",
+        action="store_true",
+        help="dev/local only: honour TEST-WAIVER lines without the label (never set in CI)",
+    )
     args = ap.parse_args(argv)
 
     after = count_tests(args.root)
@@ -351,7 +379,16 @@ def main(argv: list[str] | None = None) -> int:
 
     waiver_text = _read(args.waiver_text) if args.waiver_text else ""
 
-    rep = evaluate(before=before, after=after, diff_text=diff_text, waiver_text=waiver_text)
+    labels = [x.strip() for x in args.labels.split(",") if x.strip()]
+    rep = evaluate(
+        before=before,
+        after=after,
+        diff_text=diff_text,
+        waiver_text=waiver_text,
+        labels=labels,
+        waiver_label=args.waiver_label,
+        allow_text_waiver=args.allow_text_waiver,
+    )
     print(render(rep))
     return 0 if rep.ok else 1
 

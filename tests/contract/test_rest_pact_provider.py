@@ -31,6 +31,8 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
+pytestmark = pytest.mark.contract
+
 # ── Load Pact file ────────────────────────────────────────────────────────────
 
 PACT_FILE = Path(__file__).parent / "pacts" / "frontend-api_gateway.json"
@@ -73,6 +75,27 @@ def _build_app() -> FastAPI:
 
 # ── Shared fixtures ───────────────────────────────────────────────────────────
 
+_SYNTHETIC_OPERATOR = "operator-00000000-0000-0000-0000-000000000001"
+
+
+def _operator_headers() -> dict[str, str]:
+    """HITL operator bearer (REM-001): the pact's decision interactions carry an Authorization
+    header and no ``approver_id`` body field — the server takes the approver from the JWT."""
+    import jwt
+
+    from src.shared.config import settings
+
+    token = jwt.encode(
+        {
+            "sub": _SYNTHETIC_OPERATOR,
+            "role": settings.hitl_operator_role,
+            "exp": datetime.now(UTC) + timedelta(hours=1),
+        },
+        settings.secret_key,
+        algorithm=settings.jwt_algorithm,
+    )
+    return {"Authorization": f"Bearer {token}"}
+
 
 @pytest.fixture
 def app() -> FastAPI:
@@ -81,7 +104,9 @@ def app() -> FastAPI:
 
 @pytest.fixture
 async def client(app: FastAPI) -> AsyncClient:
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test", headers=_operator_headers()
+    ) as c:
         yield c
 
 
@@ -130,7 +155,6 @@ async def _seed_hitl_request(app: FastAPI) -> str:
 # ── Pact metadata verification ────────────────────────────────────────────────
 
 
-@pytest.mark.unit
 class TestPactMetadataVerification:
     """Verify that the provider's identity matches the Pact file."""
 
@@ -169,7 +193,6 @@ class TestPactMetadataVerification:
 # ── Interaction: POST /v1/requests (valid) ────────────────────────────────────
 
 
-@pytest.mark.unit
 class TestProviderSubmitRequestValid:
     """Pact interaction: 'a POST /v1/requests to submit a domain request'."""
 
@@ -225,7 +248,6 @@ class TestProviderSubmitRequestValid:
 # ── Interaction: POST /v1/requests (validation error) ────────────────────────
 
 
-@pytest.mark.unit
 class TestProviderSubmitRequestValidationError:
     """Pact interaction: 'a POST /v1/requests with an empty request_text'."""
 
@@ -247,7 +269,6 @@ class TestProviderSubmitRequestValidationError:
 # ── Interaction: GET /v1/requests/{id} (queued) ───────────────────────────────
 
 
-@pytest.mark.unit
 class TestProviderGetRequestQueued:
     """Pact interaction: 'a GET /v1/requests/{id} for a queued request'."""
 
@@ -287,7 +308,6 @@ class TestProviderGetRequestQueued:
 # ── Interaction: GET /v1/requests/{id} (completed) ───────────────────────────
 
 
-@pytest.mark.unit
 class TestProviderGetRequestCompleted:
     """Pact interaction: 'a GET /v1/requests/{id} for a completed request'."""
 
@@ -318,7 +338,6 @@ class TestProviderGetRequestCompleted:
 # ── Interaction: GET /v1/requests/{id} (not found) ───────────────────────────
 
 
-@pytest.mark.unit
 class TestProviderGetRequestNotFound:
     """Pact interaction: 'a GET /v1/requests/{id} for an unknown request_id'."""
 
@@ -334,7 +353,6 @@ class TestProviderGetRequestNotFound:
 # ── Interaction: GET /v1/hitl/status ─────────────────────────────────────────
 
 
-@pytest.mark.unit
 class TestProviderHITLStatus:
     """Pact interaction: 'a GET /v1/hitl/status when the gateway is operational'."""
 
@@ -362,7 +380,6 @@ class TestProviderHITLStatus:
 # ── Interaction: POST /v1/hitl/requests/{id}/decision (APPROVED) ─────────────
 
 
-@pytest.mark.unit
 class TestProviderHITLDecisionApproved:
     """Pact interaction: 'a POST /v1/hitl/requests/{id}/decision with APPROVED'."""
 
@@ -373,7 +390,6 @@ class TestProviderHITLDecisionApproved:
             json={
                 "decision": "APPROVED",
                 "rationale": "Action is safe and within approved scope.",
-                "approver_id": "operator-001",
             },
         )
         assert response.status_code == 200
@@ -386,7 +402,6 @@ class TestProviderHITLDecisionApproved:
                 json={
                     "decision": "APPROVED",
                     "rationale": "Action is safe and within approved scope.",
-                    "approver_id": "operator-001",
                 },
             )
         ).json()
@@ -401,7 +416,6 @@ class TestProviderHITLDecisionApproved:
                 json={
                     "decision": "APPROVED",
                     "rationale": "Action is safe and within approved scope.",
-                    "approver_id": "operator-001",
                 },
             )
         ).json()
@@ -417,7 +431,6 @@ class TestProviderHITLDecisionApproved:
                 json={
                     "decision": "APPROVED",
                     "rationale": "Action is safe and within approved scope.",
-                    "approver_id": "operator-001",
                 },
             )
         ).json()
@@ -428,7 +441,6 @@ class TestProviderHITLDecisionApproved:
 # ── Interaction: POST /v1/hitl/requests/{id}/decision (REJECTED) ─────────────
 
 
-@pytest.mark.unit
 class TestProviderHITLDecisionRejected:
     """Pact interaction: 'a POST /v1/hitl/requests/{id}/decision with REJECTED'."""
 
@@ -439,7 +451,6 @@ class TestProviderHITLDecisionRejected:
             json={
                 "decision": "REJECTED",
                 "rationale": "Action exceeds approved risk threshold for this environment.",
-                "approver_id": "operator-001",
             },
         )
         assert response.status_code == 200
@@ -452,7 +463,6 @@ class TestProviderHITLDecisionRejected:
                 json={
                     "decision": "REJECTED",
                     "rationale": "Action exceeds approved risk threshold for this environment.",
-                    "approver_id": "operator-001",
                 },
             )
         ).json()
@@ -462,7 +472,6 @@ class TestProviderHITLDecisionRejected:
 # ── Interaction: POST /v1/hitl/requests/{id}/decision (not found) ────────────
 
 
-@pytest.mark.unit
 class TestProviderHITLDecisionNotFound:
     """Pact interaction: 'a POST /v1/hitl/requests/{id}/decision for an unknown or expired request'."""
 
@@ -472,7 +481,6 @@ class TestProviderHITLDecisionNotFound:
             json={
                 "decision": "APPROVED",
                 "rationale": "Attempting to approve an unknown request.",
-                "approver_id": "operator-001",
             },
         )
         assert response.status_code == 404
@@ -484,7 +492,6 @@ class TestProviderHITLDecisionNotFound:
                 json={
                     "decision": "APPROVED",
                     "rationale": "Attempting to approve an unknown request.",
-                    "approver_id": "operator-001",
                 },
             )
         ).json()

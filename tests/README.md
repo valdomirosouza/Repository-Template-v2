@@ -6,14 +6,16 @@ This directory contains all automated tests for the system. Tests are organised 
 
 ## Test Types
 
+Every test module declares its tier once — `pytestmark = pytest.mark.<tier>` — and the tier must match the directory (`tests/conftest.py` fails collection otherwise; W11-T8).
+
 | Directory            | Type                                  | Runner                  | When it runs              |
 | -------------------- | ------------------------------------- | ----------------------- | ------------------------- |
 | `tests/unit/`        | Unit tests                            | pytest                  | Every PR (CI gate)        |
 | `tests/integration/` | Integration tests                     | pytest + docker-compose | Every PR after unit tests |
 | `tests/security/`    | Security tests (SAST, PII, OWASP LLM) | pytest                  | Every PR (blocking gate)  |
-| `tests/e2e/`         | End-to-end tests                      | pytest                  | Staging gate only         |
-| `tests/contract/`    | Contract tests (Pact)                 | pytest                  | Every PR                  |
-| `tests/performance/` | Load and benchmark tests              | k6 / pytest-benchmark   | Staging gate only         |
+| `tests/e2e/`         | End-to-end tests (CUJ journeys)       | pytest                  | Every PR in-process (`test-contract-e2e`); live mode via `BASE_URL` in staging |
+| `tests/contract/`    | Contract tests (Pact)                 | pytest                  | Every PR (`test-contract-e2e`, blocking) |
+| `tests/performance/` | Load and benchmark tests              | k6 / pytest             | Benchmarks nightly (`benchmarks-nightly.yml`, non-blocking); k6 `smoke.js` at the staging gate |
 | `tests/chaos/`       | Chaos engineering experiments         | Litmus / Chaos Toolkit  | Weekly scheduled game day |
 
 ---
@@ -38,7 +40,7 @@ uv run pytest tests/unit/guardrails/test_pii_filter.py -v
 
 ## Coverage Requirements
 
-- Unit test coverage: **≥ 80%** (enforced as CI gate — see `harness/code-check.yml`)
+- Unit test coverage: **≥ 85%** (ratchet, RFC-0020; enforced by `--cov-fail-under=85` in `ci.yml` and `pyproject.toml` `fail_under`; `harness/code-check.yml` mirrors it)
 - Security tests: **100% pass rate** (zero findings allowed)
 - Branch coverage on all guardrail decision paths: **100%**
 

@@ -34,6 +34,8 @@ from src.agents.tool_registry import ToolDefinition, ToolRegistry, ToolRiskLevel
 from src.guardrails.audit_logger import AuditWriteError
 from src.shared.llm_client import StubLLMClient
 
+pytestmark = pytest.mark.unit
+
 # ── OpenFeature provider helpers (autonomy levels are global flag state) ───────
 
 

@@ -16,6 +16,8 @@ import pytest
 
 from src.guardrails.prompt_injection_guard import PromptInjectionGuard, RejectionReason
 
+pytestmark = pytest.mark.abuse_case
+
 
 @pytest.mark.abuse_case
 class TestJailbreakAttempts:

@@ -9,6 +9,8 @@ import pytest
 
 from src.agents.context_graph import ContextGraph
 
+pytestmark = pytest.mark.unit
+
 # ── TestInit ──────────────────────────────────────────────────────────────────
 
 

@@ -23,6 +23,8 @@ from src.agents.tool_registry import (
 )
 from src.guardrails.audit_logger import AuditLogger
 
+pytestmark = pytest.mark.unit
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

@@ -281,9 +281,9 @@ def _get_sandbox_mode_variant() -> str:
     2. Fallback: 'enabled' — safe default that enforces the sandbox.
     """
     try:
-        from openfeature import api
+        import openfeature.api as api  # namespace pkg: explicit submodule import (W11-T6)
 
         client = api.get_client()
-        return client.get_string_value("sandbox-mode", "enabled")
+        return str(client.get_string_value("sandbox-mode", "enabled"))
     except Exception:
         return "enabled"

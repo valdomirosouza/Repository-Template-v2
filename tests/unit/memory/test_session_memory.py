@@ -14,6 +14,8 @@ import pytest
 
 from src.memory.session_memory import SessionMemory
 
+pytestmark = pytest.mark.unit
+
 # ── fixture ───────────────────────────────────────────────────────────────────
 
 

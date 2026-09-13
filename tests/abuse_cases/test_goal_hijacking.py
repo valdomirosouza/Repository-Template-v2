@@ -17,6 +17,8 @@ import pytest
 
 from src.guardrails.prompt_injection_guard import PromptInjectionGuard
 
+pytestmark = pytest.mark.abuse_case
+
 
 @pytest.mark.abuse_case
 class TestGoalHijackingViaToolResponse:

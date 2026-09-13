@@ -69,10 +69,10 @@ def is_autonomous_mode_enabled() -> bool:
     2. settings.autonomous_mode_enabled fallback.
     """
     try:
-        from openfeature import api
+        import openfeature.api as api  # namespace pkg: explicit submodule import (W11-T6)
 
         client = api.get_client()
-        return client.get_boolean_value(_FLAG_LEGACY, settings.autonomous_mode_enabled)
+        return bool(client.get_boolean_value(_FLAG_LEGACY, settings.autonomous_mode_enabled))
     except Exception:
         return settings.autonomous_mode_enabled
 
@@ -94,7 +94,7 @@ def get_autonomy_level(action_type: str, risk_score: float) -> AutonomyLevel:
         AutonomyLevel — never raises; falls back to NONE on SDK errors.
     """
     try:
-        from openfeature import api
+        import openfeature.api as api  # namespace pkg: explicit submodule import (W11-T6)
 
         client = api.get_client()
         return _evaluate(client, action_type, risk_score)
@@ -159,7 +159,7 @@ def is_autonomy_tier_ready() -> bool:
     Spec: specs/ai/context-graph.md §5 | ADR: ADR-0041
     """
     try:
-        from openfeature import api
+        import openfeature.api as api  # namespace pkg: explicit submodule import (W11-T6)
 
         client = api.get_client()
         enabled = client.get_boolean_value("autonomy-tier-ready", False)
@@ -197,7 +197,7 @@ def get_learning_mode() -> str:
     - active:  precedents injected into Reason-stage LLM prompt (requires governance sign-off)
     """
     try:
-        from openfeature import api
+        import openfeature.api as api  # namespace pkg: explicit submodule import (W11-T6)
 
         client = api.get_client()
         return str(client.get_string_value("learning-mode", "passive"))

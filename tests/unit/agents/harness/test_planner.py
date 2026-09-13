@@ -18,6 +18,8 @@ from src.agents.harness.models import ProductSpec, SprintContract, TaskBrief
 from src.agents.harness.planner import PlannerAgent
 from src.shared.llm_client import StubLLMClient
 
+pytestmark = pytest.mark.unit
+
 
 def _make_llm_response(
     sprint_count: int = 2,

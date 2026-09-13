@@ -256,6 +256,21 @@ verify-traceability: ## Verify service→ADR→topic→schema→SLO→runbook tr
 	@uv run python scripts/governance/check_service_slo_files.py
 	@uv run python scripts/governance/check_runbook_links.py
 
+check-topic-contract: ## Fail if services.yaml topics, AsyncAPI channels and code topic literals disagree (W11-T3)
+	@uv run python scripts/governance/check_topic_contract.py
+
+check-open-questions: ## Fail if an approved/implemented spec still has unresolved Open Questions (W11-T5)
+	@uv run python scripts/governance/check_open_questions.py
+
+check-doc-consistency: ## Fail if README/CLAUDE.md/primer ADR counts or relative doc links are stale (W11-T7)
+	@uv run python scripts/governance/check_doc_consistency.py
+
+check-test-integrity: ## Test-integrity gate (ADR-0065): no silent test-count drop / unjustified skip. BASE=main
+	@uv run python scripts/governance/check_test_integrity.py --local --base $${BASE:-main} --allow-text-waiver
+
+update-test-baseline: ## Refresh tests/.test-integrity-baseline.json from the tree (needs test-waiver label on the PR)
+	@uv run python scripts/governance/check_test_integrity.py --update-baseline
+
 verify-f7-hook: ## Verify the F7 high-risk-action guard hook (decision logic + settings.json wiring; issue #133)
 	@python3 .claude/hooks/verify-high-risk-guard.py
 

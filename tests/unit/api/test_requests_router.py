@@ -18,6 +18,8 @@ from src.agents.request_store import InMemoryRequestStore
 from src.api.rest.routers.requests import router
 from src.shared.broker import InMemoryBroker
 
+pytestmark = pytest.mark.unit
+
 # ── App factory ───────────────────────────────────────────────────────────────
 
 

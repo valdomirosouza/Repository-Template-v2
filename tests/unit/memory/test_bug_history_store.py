@@ -13,6 +13,8 @@ import pytest
 from src.memory.bug_history_store import _SOURCE, BugHistoryStore
 from src.memory.vector_store import InMemoryVectorStore, StubEmbedder, VectorDocument
 
+pytestmark = pytest.mark.unit
+
 # ── fixtures ──────────────────────────────────────────────────────────────────
 
 

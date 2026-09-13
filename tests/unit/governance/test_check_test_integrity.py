@@ -1,7 +1,7 @@
 """Unit tests for the test-integrity governance gate (ADR-0065).
 
-Covers the two enforced invariants — no silent test-count decrease (with the TEST-WAIVER
-escape hatch) and no unjustified skip/xfail — plus the static `ast` counter and the CLI.
+Covers the two enforced invariants — no silent test-count decrease (with the `test-waiver`
+label escape hatch) and no unjustified skip/xfail — plus the static `ast` counter and the CLI.
 """
 
 from __future__ import annotations
@@ -71,23 +71,52 @@ def test_per_marker_drop_fails_even_if_total_holds():
     assert any("security" in v.message for v in rep.violations)
 
 
-def test_deletion_with_waiver_passes():
+def test_deletion_with_label_waiver_passes():
+    """CI path (W11-T1): the CODEOWNER-applied `test-waiver` label is the approval."""
     rep = ti.evaluate(
         before=_counts(10, unit=10),
         after=_counts(7, unit=7),
         diff_text="-def test_old():\n",
         waiver_text="TEST-WAIVER: removed three obsolete tests for the deprecated v1 endpoint",
+        labels=["governance", "test-waiver"],
     )
     assert rep.ok, ti.render(rep)
-    assert rep.waivers
+    assert rep.waivers and "test-waiver" in rep.waivers[0]
 
 
-def test_waiver_in_diff_also_counts():
+def test_text_waiver_alone_fails_in_ci_mode():
+    """A self-authored TEST-WAIVER line must not waive a drop without the label."""
+    rep = ti.evaluate(
+        before=_counts(10, unit=10),
+        after=_counts(7, unit=7),
+        diff_text="-def test_old():\n",
+        waiver_text="TEST-WAIVER: I promise this is fine",
+    )
+    assert not rep.ok
+    assert rep.violations[0].code == "test-count-drop"
+    assert "test-waiver" in rep.violations[0].message
+
+
+def test_text_waiver_honoured_only_when_allowed_locally():
+    """Dev/local runs (`make check-test-integrity`) may honour the text line."""
     rep = ti.evaluate(
         before=_counts(5, unit=5),
         after=_counts(4, unit=4),
         diff_text="+# TEST-WAIVER: merged two duplicate cases into one parametrize\n",
         waiver_text="",
+        allow_text_waiver=True,
+    )
+    assert rep.ok, ti.render(rep)
+
+
+def test_custom_waiver_label_name():
+    rep = ti.evaluate(
+        before=_counts(5, unit=5),
+        after=_counts(4, unit=4),
+        diff_text="",
+        waiver_text="",
+        labels=["approved-deletion"],
+        waiver_label="approved-deletion",
     )
     assert rep.ok, ti.render(rep)
 
@@ -211,3 +240,14 @@ def test_cli_fails_on_deletion(tmp_path):
     # Delete a test → tree now has fewer than the baseline; no waiver ⇒ fail.
     (root / "test_sample.py").write_text("def test_a():\n    assert 1\n")
     assert ti.main(["--root", str(root), "--baseline", str(baseline)]) == 1
+
+
+def test_unmarked_decrease_is_not_a_drop():
+    """Adding tier markers moves tests out of `unmarked`; that must never count as a deletion."""
+    rep = ti.evaluate(
+        before=_counts(10, unmarked=8, unit=2),
+        after=_counts(10, unmarked=0, unit=10),
+        diff_text="",
+        waiver_text="",
+    )
+    assert rep.ok, ti.render(rep)

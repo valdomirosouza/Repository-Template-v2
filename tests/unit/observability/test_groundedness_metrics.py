@@ -5,7 +5,10 @@ Spec: docs/ai/eval-scorecard.md · docs/ai/ai-observability-naming.md | ADR: ADR
 
 from __future__ import annotations
 
+import pytest
 from prometheus_client import CollectorRegistry, Counter, Gauge
+
+pytestmark = pytest.mark.unit
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 

@@ -8,6 +8,8 @@ import pytest
 
 from src.agents.action_policy import requires_mandatory_hitl
 
+pytestmark = pytest.mark.unit
+
 # ---------------------------------------------------------------------------
 # Exact-match mandatory actions
 # ---------------------------------------------------------------------------

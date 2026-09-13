@@ -10,6 +10,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 _ROOT = Path(__file__).resolve().parents[3]
 _SCRIPT = _ROOT / "scripts" / "check_version_consistency.py"
 

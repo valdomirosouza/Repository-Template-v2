@@ -161,8 +161,9 @@ STRIDE on the new inputs (`limit`,`offset`): validated integers in range; no inj
 
 ## 15. Open Questions
 
-1. Add cursor/keyset pagination later for unbounded lists? (Lean: yes when the first unbounded list
-   endpoint appears; offset is fine for HITL now.)
+1. Add cursor/keyset pagination later for unbounded lists? — **Deferred to SPEC-API-004** (runs
+   listing is the first unbounded collection); offset pagination is sufficient for the bounded HITL
+   queue (ADR-0078).
 
 ## 16. References
 

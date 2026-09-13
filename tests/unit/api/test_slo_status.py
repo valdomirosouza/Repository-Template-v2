@@ -21,6 +21,8 @@ from src.api.rest.routers.governance import load_slo_definitions, router
 from src.observability.metrics import REQUEST_COUNTER
 from src.shared.config import settings
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

@@ -15,6 +15,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+pytestmark = pytest.mark.unit
+
 _ROOT = Path(__file__).resolve().parents[3]
 _WORKFLOW = _ROOT / ".github" / "workflows" / "cd-production.yml"
 

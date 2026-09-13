@@ -16,6 +16,8 @@ import pytest
 from src.memory.document_indexer import DocumentIndexer, _source_tag
 from src.memory.vector_store import InMemoryVectorStore, StubEmbedder
 
+pytestmark = pytest.mark.unit
+
 # ── fixtures ──────────────────────────────────────────────────────────────────
 
 

@@ -12,6 +12,8 @@ from starlette.testclient import TestClient
 
 from src.api.rest.security_headers import SecurityHeadersMiddleware
 
+pytestmark = pytest.mark.unit
+
 
 def _make_app(env: str = "development"):
     from fastapi import FastAPI

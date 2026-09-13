@@ -15,6 +15,8 @@ import pytest
 
 from src.agents.request_store import InMemoryRequestStore, RedisRequestStore, RequestState
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

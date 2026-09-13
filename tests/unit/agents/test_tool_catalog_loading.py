@@ -17,6 +17,8 @@ from src.agents.tool_registry import (
     load_tools_from_yaml,
 )
 
+pytestmark = pytest.mark.unit
+
 _ROOT = Path(__file__).resolve().parents[3]
 _TOOLS_YAML = _ROOT / "infrastructure" / "agent-tools" / "tools.yaml"
 

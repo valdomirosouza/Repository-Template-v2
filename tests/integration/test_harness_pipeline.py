@@ -21,6 +21,8 @@ from src.agents.harness.planner import PlannerAgent
 from src.guardrails.audit_logger import AuditLogger, InMemoryAuditStorage
 from src.shared.llm_client import StubLLMClient
 
+pytestmark = pytest.mark.integration
+
 # ── Synthetic response builders ───────────────────────────────────────────────
 
 

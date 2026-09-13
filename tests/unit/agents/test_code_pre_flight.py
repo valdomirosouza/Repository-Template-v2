@@ -11,6 +11,8 @@ import pytest
 
 from src.agents.code_pre_flight import CodePreFlight, CodePreFlightError
 
+pytestmark = pytest.mark.unit
+
 
 class TestSyntaxCheck:
     def test_invalid_syntax_fails(self) -> None:

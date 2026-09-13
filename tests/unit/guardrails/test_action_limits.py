@@ -12,6 +12,8 @@ import pytest
 
 from src.guardrails.action_limits import ActionLimitConfig, ActionLimiter
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

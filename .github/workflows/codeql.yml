@@ -44,8 +44,10 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install uv
-        run: pip install uv
+      - name: Install uv (pinned, W11-T6)
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          version: "0.11.16"
 
       - name: Install dependencies
         # CodeQL needs the project installed so it can resolve imports during analysis.

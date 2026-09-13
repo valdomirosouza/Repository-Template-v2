@@ -15,6 +15,8 @@ import re
 
 import pytest
 
+pytestmark = pytest.mark.model_contract
+
 # Synthetic PII patterns used in tests (fictional, not real individuals)
 FAKE_EMAIL = "john.doe.test.12345@example-fictional.invalid"
 FAKE_CARD = "4111 1111 1111 1111"  # Standard test card number (Luhn-valid, not real)

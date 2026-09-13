@@ -4,10 +4,14 @@ Spec: specs/system/architecture.md (Quality Attributes — Observable-by-default
 ADR:  ADR-0004 (Observability Stack)
 """
 
+import pytest
+
 from src.observability.metrics import (
     LLM_TOKEN_BUDGET,
     init_budget_gauge,
 )
+
+pytestmark = pytest.mark.unit
 
 
 class TestBudgetGauge:

@@ -13,7 +13,11 @@ Synthetic data standards used in this file:
   Phone:  +00 00 00000-0000
 """
 
+import pytest
+
 from src.guardrails.pii_filter import PIIFilter, PIILevel, mask_dict, mask_text
+
+pytestmark = pytest.mark.security
 
 SYNTHETIC_EMAIL = "fake@example.com"
 SYNTHETIC_CPF = "000.000.000-00"

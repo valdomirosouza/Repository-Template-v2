@@ -16,6 +16,8 @@ from src.agents.tool_registry import (
     UnregisteredToolError,
 )
 
+pytestmark = pytest.mark.unit
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
