@@ -87,5 +87,5 @@ curl -s http://localhost:8000/v1/hitl | jq '.pending | length'
 1. Read `CLAUDE.md` — note §14 Agentic Escalation Protocol
 2. Read `CLAUDE_SESSION_INIT.md` — note the Critical Paths table
 3. Load the relevant skill for the task (observability, data, or incident response)
-4. Check open GitHub Issues for any active incidents: `gh issue list --label incident`
+4. Check open GitHub Issues for any active incidents: `scripts/vcs.sh issue list --label incident`
 5. Confirm the task is within permitted autonomy before any write operation

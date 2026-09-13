@@ -9,12 +9,13 @@
 # Reusability Uplift v2.0.0 (ADR-0059). Spec: reusability-uplift-v2.0.0.md Improvement 1.
 set -euo pipefail
 
-# ── Minimums (keep in sync with .devcontainer, Dockerfiles, README matrix) ──────
-PY_MIN="3.13"
-JAVA_MIN="21"
-GO_MIN="1.24"
-NODE_MIN="22"
-UV_MIN="0.4"
+# ── Minimums come from versions.yaml (single source of truth, W14-T2) ─────────────
+_v() { python3 scripts/governance/check_toolchain_versions.py --print "$1" minimum 2>/dev/null || echo "$2"; }
+PY_MIN="$(_v python 3.13)"
+JAVA_MIN="$(_v java 21)"
+GO_MIN="$(_v go 1.26)"
+NODE_MIN="$(_v node 22)"
+UV_MIN="$(_v uv 0.4)"
 
 if [ -t 1 ]; then
   GREEN=$'\033[0;32m'; RED=$'\033[0;31m'; YELLOW=$'\033[0;33m'; RESET=$'\033[0m'

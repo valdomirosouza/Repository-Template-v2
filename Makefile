@@ -286,6 +286,12 @@ migrate-spec-frontmatter: ## Backfill/complete ADR-0085 frontmatter on specs (id
 check-delivery-report: ## Validate a /deliver FINAL-REPORT against the spec registry (W13-T6). REPORT=docs/delivery/<id>/FINAL-REPORT.md
 	@uv run python scripts/governance/check_delivery_report.py $${REPORT:?set REPORT=docs/delivery/<SPEC-ID>/FINAL-REPORT.md}
 
+check-toolchain-versions: ## Fail if any Dockerfile/CI/devcontainer pin disagrees with versions.yaml (W14-T2)
+	@uv run python scripts/governance/check_toolchain_versions.py
+
+template-sync: ## Three-way merge upstream template changes into this repo (ADR-0087). TEMPLATE_URL=<git url> [DRY=1]
+	@bash scripts/template_sync.sh --template-url $${TEMPLATE_URL:?set TEMPLATE_URL=<template git url>} $${DRY:+--dry-run}
+
 check-test-integrity: ## Test-integrity gate (ADR-0065): no silent test-count drop / unjustified skip. BASE=main
 	@uv run python scripts/governance/check_test_integrity.py --local --base $${BASE:-main} --allow-text-waiver
 

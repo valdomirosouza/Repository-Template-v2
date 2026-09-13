@@ -59,6 +59,8 @@ streak; a `yes` row resets it.
 | Harness spec runner (W12-T8, issue #361)              | `ci.yml` → _Harness spec — code-check_                  | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | Executes harness/code-check.yml gates that no workflow ran before (ADR-0037 amendment) |
 | OpenAPI live-vs-doc drift (W12-T7, issue #360)        | `ci.yml` → _Contract Drift Check_ / _OpenAPI drift_     | **blocking** | n/a (deterministic; inside an already-blocking job)                   | The job named 'Contract Drift Check' now diffs a contract |
 | Spec registry (W13-T3, issue #368, ADR-0085)          | `ci.yml` → _Spec registry gate_                         | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | 57 specs carry frontmatter; registry generated; S1–S7 rules |
+| Toolchain versions (W14-T2, issue #377)               | `ci.yml` → _Toolchain-version consistency_              | **report**   | in progress (introduced 2026-09-12) — flip after burn-in              | versions.yaml is the single source; Go was 1.24 vs 1.26 in five places |
+| Image supply chain Java/Go/Node (W14-T5, issue #380)   | `ci-java/go/frontend.yml` → _supply-chain-*_ (reusable) | **report**   | in progress (introduced 2026-09-12) — flip per language via scan_blocking | Trivy on PRs; cosign + provenance on pushes (ADR-0029 amendment) |
 | Conventional PR title / Spec / Issue / Version        | `pr-governance.yml`                                     | **blocking** | past lifecycle                                                        | Pre-existing                                                             |
 | detect-secrets · Bandit · CodeQL · Trivy · ZAP (DAST) | `ci.yml` / `codeql.yml` / `secret-scanning.yml`         | **blocking** | past lifecycle (ADR-0070 §Neutral)                                    | Pre-existing                                                             |
 
@@ -202,6 +204,32 @@ Remove the `continue-on-error: true` line from the _Doc-consistency gate_ step i
 | Date (UTC) | PR  | Verdict | False positive? | Notes                                             |
 | ---------- | --- | ------- | --------------- | ------------------------------------------------- |
 | 2026-09-12 | —   | —       | —               | Burn-in started (W13-T3). Awaiting first PR run.  |
+
+---
+
+## Toolchain-version gate (W14-T2) — burn-in log
+
+<!-- BURN-IN-START: 2026-09-12 -->
+<!-- BURN-IN-TARGET: toolchain-versions-gate -->
+
+`scripts/governance/check_toolchain_versions.py` runs in **report mode**. Progress: `make burn-in-status GATE=toolchain-versions-gate`.
+
+| Date (UTC) | PR  | Verdict | False positive? | Notes                                            |
+| ---------- | --- | ------- | --------------- | ------------------------------------------------ |
+| 2026-09-12 | —   | —       | —               | Burn-in started (Wave 14). Awaiting first PR run. |
+
+---
+
+## Image supply chain — Java/Go/Node (W14-T5) — burn-in log
+
+<!-- BURN-IN-START: 2026-09-12 -->
+<!-- BURN-IN-TARGET: image-supply-chain-gate -->
+
+`reusable-image-supply-chain.yml (Trivy)` runs in **report mode**. Progress: `make burn-in-status GATE=image-supply-chain-gate`.
+
+| Date (UTC) | PR  | Verdict | False positive? | Notes                                            |
+| ---------- | --- | ------- | --------------- | ------------------------------------------------ |
+| 2026-09-12 | —   | —       | —               | Burn-in started (Wave 14). Awaiting first PR run. |
 
 ---
 

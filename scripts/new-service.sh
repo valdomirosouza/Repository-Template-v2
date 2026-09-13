@@ -2,7 +2,7 @@
 # new-service.sh — scaffold a new service and (optionally) self-register it.
 #
 #   scripts/new-service.sh NAME LANG [OWNER] [PORT] [REGISTER]
-#     LANG     = python | java | go
+#     LANG     = python | java | go | frontend
 #     OWNER    = CODEOWNERS team (default: platform-team)
 #     PORT     = primary port (default: 8010)
 #     REGISTER = true|false (default: false)
@@ -24,7 +24,7 @@ if [ -z "$NAME" ] || [ -z "$LANG" ]; then
   echo "Usage: new-service.sh NAME LANG [OWNER] [PORT] [REGISTER]" >&2
   exit 1
 fi
-case "$LANG" in python|java|go) ;; *) echo "ERROR: LANG must be python|java|go" >&2; exit 1 ;; esac
+case "$LANG" in python|java|go|frontend) ;; *) echo "ERROR: LANG must be python|java|go|frontend" >&2; exit 1 ;; esac
 
 # ── Generate from template ─────────────────────────────────────────────────────
 python3 scaffold/scaffold.py --name "$NAME" --lang "$LANG"

@@ -195,9 +195,19 @@ jobs:
         with:
           context: frontend/${{ matrix.app }}
           push: false
-          tags: ghcr.io/${{ github.repository_owner }}/${{ matrix.app }}:${{ github.sha }}
+          tags: ${{ vars.IMAGE_REPOSITORY_BASE || format('ghcr.io/{0}', github.repository_owner) }}/${{ matrix.app }}:${{ github.sha }}
           build-args: |
             NEXT_PUBLIC_API_BASE_URL=https://api.staging.example.com
             NEXT_PUBLIC_APP_ENV=staging
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # W14-T5 (issue #380, ADR-0029 amendment): same scan/sign/attest treatment as the Python image.
+  supply-chain-frontend:
+    needs: [build-frontend]
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/reusable-image-supply-chain.yml
+    with:
+      image: ${{ vars.IMAGE_REPOSITORY_BASE || format('ghcr.io/{0}', github.repository_owner) }}/web:${{ github.sha }}
+      language: node
+      scan_blocking: false

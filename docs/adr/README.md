@@ -156,6 +156,8 @@ These ADRs apply to every project using this template, regardless of whether the
 | [ADR-0084](ADR-0084-dependency-updates-via-dependabot.md)                  | Dependency & digest updates via Dependabot (supersedes ADR-0074 Renovate)                | Accepted   | 2026-06-17 |
 | [ADR-0085](ADR-0085-unified-spec-identifier-and-status-grammar.md)         | Unified spec identifier (SPEC-<DOMAIN>-NNN) and five-value status grammar in frontmatter     | Accepted   | 2026-09-12 |
 | [ADR-0086](ADR-0086-hitl-approval-resumption-and-expiry-sweep.md)          | HITL approval resumption (ApprovalConsumer executes approved actions) + expiry sweep     | Accepted   | 2026-09-12 |
+| [ADR-0087](ADR-0087-marker-based-template-sync.md)                          | Marker-based three-way template sync (.template-version + .template-sync.yml)             | Accepted   | 2026-09-12 |
+| [ADR-0088](ADR-0088-provider-neutral-terraform-layering.md)                 | Provider-neutral Terraform layering (partial backend, INTERFACE.md, providers/ next)       | Accepted   | 2026-09-12 |
 | [ADR-0089](ADR-0089-documented-capability-reachability-invariant.md)       | Documented-capability reachability as a tested invariant (lifespan wiring test)          | Accepted   | 2026-09-12 |
 
 ### AI Agents Module _(opt-in)_

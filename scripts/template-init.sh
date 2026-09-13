@@ -126,3 +126,10 @@ Next steps:
   make smoke
 ─────────────────────────────────────────
 SUMMARY
+
+# ADR-0087: record the template commit this project was initialised from, so template-sync can
+# three-way merge against it instead of overwriting the tree.
+if git rev-parse --verify -q HEAD >/dev/null 2>&1 && [ ! -f .template-version ]; then
+  printf '%s %s\n' "$(git rev-parse HEAD)" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > .template-version
+  echo "Recorded template base in .template-version (ADR-0087)."
+fi

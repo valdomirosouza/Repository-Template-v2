@@ -139,6 +139,14 @@ See [`CUSTOMISING.md`](CUSTOMISING.md) for the full adoption guide:
 
 ---
 
+## Windows / WSL `[SUPPORTED PATH: devcontainer]`
+
+The Makefile and scripts are Bash (`#!/usr/bin/env bash`) and are exercised on macOS and Linux
+runners. On Windows the **supported path is the devcontainer** (`.devcontainer/`, Ubuntu 22.04
+with every toolchain from `versions.yaml` pre-installed): open the repo in VS Code → "Reopen in
+Container", then run `make doctor`. WSL 2 with Ubuntu also works for the Python service; Docker
+Desktop with the WSL backend is required for `make infra-up`. Native PowerShell is not supported.
+
 ## Verification
 
 **Recommended: validate your environment first.** After the steps above (and after

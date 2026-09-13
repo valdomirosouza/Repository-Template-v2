@@ -76,6 +76,8 @@ Wave labels: `wave-1` (done) → `wave-2` → `wave-3` → `wave-4` → `wave-5`
 | ADR-0084 | Dependency & digest updates via Dependabot (super… |
 | ADR-0085 | Unified spec identifier (SPEC-<DOMAIN>-NNN) and f… |
 | ADR-0086 | HITL approval resumption (ApprovalConsumer execut… |
+| ADR-0087 | Marker-based three-way template sync (.template-v… |
+| ADR-0088 | Provider-neutral Terraform layering (partial back… |
 | ADR-0089 | Documented-capability reachability as a tested in… |
 
 Full index: `docs/adr/README.md`

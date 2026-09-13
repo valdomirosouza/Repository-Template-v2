@@ -35,7 +35,7 @@ terraform {
 }
 
 locals {
-  cluster_name = "monorepo-dev"
+  cluster_name = var.cluster_name # ADR-0088
 }
 
 provider "aws" {
@@ -94,7 +94,7 @@ module "networking" {
 module "kubernetes" {
   source              = "../../modules/kubernetes"
   environment         = "dev"
-  cluster_name        = "monorepo-dev"
+  cluster_name        = local.cluster_name
   vpc_id              = module.networking.vpc_id
   private_subnet_ids  = module.networking.private_subnet_ids
   node_instance_types = ["t3.medium"]
@@ -260,3 +260,9 @@ output "obs_api_gateway_sns_arn" { value = module.obs_api_gateway.sns_topic_arn 
 output "obs_domain_service_sns_arn" { value = module.obs_domain_service.sns_topic_arn }
 output "obs_event_worker_sns_arn" { value = module.obs_event_worker.sns_topic_arn }
 output "obs_frontend_sns_arn" { value = module.obs_frontend.sns_topic_arn }
+
+variable "cluster_name" {
+  description = "Local/dev cluster name (ADR-0088)"
+  type        = string
+  default     = "monorepo-dev"
+}

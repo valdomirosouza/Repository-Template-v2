@@ -25,8 +25,10 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
 
 @pytest.fixture(scope="session")
 def model_id() -> str:
-    """Primary model under test, sourced from dependency-manifest."""
-    return os.environ.get("CONTRACT_MODEL_ID", "claude-sonnet-4-6")
+    """Primary model under test — the code default unless CONTRACT_MODEL_ID overrides it."""
+    from src.shared.config import LLM_MODEL_DEFAULT
+
+    return os.environ.get("CONTRACT_MODEL_ID", LLM_MODEL_DEFAULT)
 
 
 @pytest.fixture(scope="session")
@@ -38,3 +40,36 @@ def anthropic_client():  # type: ignore[return]
     import anthropic
 
     return anthropic.Anthropic(api_key=api_key)
+
+
+def response_text(response: object) -> str:
+    """Concatenate the text blocks of a Messages response.
+
+    Claude 5 responses can start with a thinking block, so ``content[0].text`` raised
+    ``AttributeError`` (W14-T3 contract review, ADR-0051 §"positive change").
+    """
+    parts = [
+        getattr(b, "text", "")
+        for b in getattr(response, "content", [])
+        if getattr(b, "type", "") == "text"
+    ]
+    return "".join(parts)
+
+
+def first_json_object(text: str) -> dict:
+    """Parse the first JSON object in a response that may carry a fence or trailing prose."""
+    import json
+
+    cleaned = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    start = cleaned.find("{")
+    if start < 0:
+        raise json.JSONDecodeError("no JSON object", cleaned, 0)
+    depth = 0
+    for i, ch in enumerate(cleaned[start:], start):
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return json.loads(cleaned[start : i + 1])
+    raise json.JSONDecodeError("unterminated JSON object", cleaned, start)

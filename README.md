@@ -587,7 +587,7 @@ The generated [`docs/governance/spec-registry.md`](docs/governance/spec-registry
 
 ## Architecture Decisions
 
-All 87 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
+All 89 ADRs are recorded in [`docs/adr/`](docs/adr/README.md). Key decisions:
 
 | ADR                                                                | Decision                                               |
 | ------------------------------------------------------------------ | ------------------------------------------------------ |

@@ -17,6 +17,7 @@ Facts used here are synthetic (a fictional company) — no real PII.
 from __future__ import annotations
 
 import pytest
+from conftest import response_text
 
 pytestmark = pytest.mark.model_contract
 
@@ -49,7 +50,7 @@ def _ask(client: object, model_id: str, context: str, question: str) -> str:
             }
         ],
     )
-    return response.content[0].text  # type: ignore[no-any-return]
+    return response_text(response)  # type: ignore[no-any-return]
 
 
 # ── Grounded answers: claim must be supported by the context ──────────────────

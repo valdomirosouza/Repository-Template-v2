@@ -15,7 +15,7 @@ set -euo pipefail
 DRY_RUN=0
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=1
 
-REPO="${REPO:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
+REPO="${REPO:-$(scripts/vcs.sh repo view --json nameWithOwner -q .nameWithOwner)}"
 RULESET_DIR="$(git rev-parse --show-toplevel)/.github/rulesets"
 
 echo "Target repo : $REPO"
@@ -24,7 +24,7 @@ echo "Mode        : $([ "$DRY_RUN" = 1 ] && echo 'DRY-RUN (no writes)' || echo '
 echo "----------------------------------------------------------------------"
 
 # Map of existing ruleset name -> id (so we update in place rather than duplicating).
-existing="$(gh api "repos/$REPO/rulesets" --jq '.[] | "\(.name)\t\(.id)"' 2>/dev/null || true)"
+existing="$(scripts/vcs.sh api "repos/$REPO/rulesets" --jq '.[] | "\(.name)\t\(.id)"' 2>/dev/null || true)"
 
 for f in "$RULESET_DIR"/*.json; do
   name="$(jq -r '.name' "$f")"
@@ -32,10 +32,10 @@ for f in "$RULESET_DIR"/*.json; do
 
   if [ -n "$id" ]; then
     echo "UPDATE  ruleset '$name' (id=$id)  <- $(basename "$f")"
-    [ "$DRY_RUN" = 1 ] || gh api "repos/$REPO/rulesets/$id" -X PUT --input "$f" >/dev/null
+    [ "$DRY_RUN" = 1 ] || scripts/vcs.sh api "repos/$REPO/rulesets/$id" -X PUT --input "$f" >/dev/null
   else
     echo "CREATE  ruleset '$name'  <- $(basename "$f")"
-    [ "$DRY_RUN" = 1 ] || gh api "repos/$REPO/rulesets" -X POST --input "$f" >/dev/null
+    [ "$DRY_RUN" = 1 ] || scripts/vcs.sh api "repos/$REPO/rulesets" -X POST --input "$f" >/dev/null
   fi
 done
 
@@ -43,6 +43,6 @@ echo "----------------------------------------------------------------------"
 if [ "$DRY_RUN" = 1 ]; then
   echo "DRY-RUN complete — no changes made. Re-run without --dry-run to apply."
 else
-  echo "Applied. Verify with: gh api repos/$REPO/rulesets --jq '.[].name'"
+  echo "Applied. Verify with: scripts/vcs.sh api repos/$REPO/rulesets --jq '.[].name'"
   echo "The scheduled branch-protection-audit workflow will flag any later drift."
 fi

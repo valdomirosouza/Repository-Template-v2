@@ -68,3 +68,15 @@ These controls collectively target SLSA Level 3 provenance and address OWASP Top
 **Semgrep Cloud (managed)** — valid complement to Bandit/gosec; deferred. Current SAST toolchain is sufficient for the current language mix.
 
 **Renovate instead of Dependabot for SHA pinning** — valid; Dependabot chosen as it is already configured for dependency updates.
+
+---
+
+## Amendment 2026-09-12 (W14-T5, issue #380)
+
+Image scanning (Trivy), keyless signing (cosign), provenance attestation and CodeQL covered only
+the Python api-gateway image. `.github/workflows/reusable-image-supply-chain.yml` now gives the
+Java, Go and Node images the same treatment, called from `ci-java.yml`, `ci-go.yml` and
+`ci-frontend.yml` (scan on PRs in report-mode during the ADR-0070 burn-in; sign + attest on
+pushes with a digest). CodeQL runs a `[python, java, go, javascript]` matrix.
+`IMAGE_REPOSITORY_BASE` is a repository variable in every workflow (was hard-coded `ghcr.io`).
+

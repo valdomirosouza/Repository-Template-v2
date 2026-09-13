@@ -46,14 +46,25 @@ tool_check() {
   fi
 }
 
+# Minimums come from versions.yaml (W14-T2); fall back to the last known values offline.
+_v() { python3 scripts/governance/check_toolchain_versions.py --print "$1" minimum 2>/dev/null || echo "$2"; }
 echo "── Tools ──────────────────────────────────────────────"
 tool_check git    yes 2.40 "git --version | awk '{print \$3}'"                 "Install from https://git-scm.com"
 tool_check gh     yes 2.40 "gh --version | head -1 | awk '{print \$3}'"        "Install from https://cli.github.com"
-tool_check uv     yes 0.4  "uv --version | awk '{print \$2}'"                  "pip install uv"
-tool_check python3 yes 3.13 "python3 -c 'import platform;print(platform.python_version())'" "uv python install 3.13"
-tool_check node   no  22   "node --version | sed 's/^v//'"                     "nvm install 22"
-tool_check go     no  1.24 "go version | awk '{print \$3}' | sed 's/^go//'"    "Install from https://go.dev/dl"
-tool_check java   no  21   "java -version 2>&1 | head -1 | sed -E 's/.*\"([0-9]+).*/\\1/'" "sdk install java 21-tem"
+tool_check uv     yes "$(_v uv 0.4)"  "uv --version | awk '{print \$2}'"       "pip install uv"
+tool_check python3 yes "$(_v python 3.13)" "python3 -c 'import platform;print(platform.python_version())'" "uv python install 3.13"
+tool_check node   no  "$(_v node 22)" "node --version | sed 's/^v//'"          "nvm install 22"
+tool_check go     no  "$(_v go 1.26)" "go version | awk '{print \$3}' | sed 's/^go//'" "Install from https://go.dev/dl"
+tool_check java   no  "$(_v java 21)" "java -version 2>&1 | head -1 | sed -E 's/.*\"([0-9]+).*/\\1/'" "sdk install java 21-tem"
+# W14-T7 (issue #382): the Makefile needs these too; doctor used to stay silent about them.
+tool_check pnpm   no  9    "pnpm --version"                                      "npm i -g pnpm@9"
+tool_check mvn    no  3.9  "mvn --version 2>/dev/null | head -1 | awk '{print \$3}'" "sdk install maven"
+tool_check helm   no  3.14 "helm version --short 2>/dev/null | sed -E 's/^v([0-9.]+).*/\\1/'" "Install from https://helm.sh"
+tool_check kubectl no 1.29 "kubectl version --client -o json 2>/dev/null | python3 -c 'import sys,json;print(json.load(sys.stdin)[\"clientVersion\"][\"gitVersion\"].lstrip(\"v\"))'" "Install from https://kubernetes.io"
+tool_check syft   no  1.0  "syft version 2>/dev/null | awk '/^Version:/{print \$2}'" "Install from https://github.com/anchore/syft"
+tool_check cosign no  2.0  "cosign version 2>/dev/null | awk '/GitVersion:/{print \$2}' | sed 's/^v//'" "Install from https://github.com/sigstore/cosign"
+tool_check trivy  no  0.50 "trivy --version 2>/dev/null | awk '/^Version:/{print \$2}'" "Install from https://trivy.dev"
+tool_check protoc no  25   "protoc --version 2>/dev/null | awk '{print \$2}'"   "Install protobuf-compiler"
 
 echo
 echo "── Docker ─────────────────────────────────────────────"
@@ -91,7 +102,11 @@ echo
 echo "── Ports (warn only) ──────────────────────────────────"
 check_port() {
   local p="$1" what="$2"
-  if command -v lsof >/dev/null 2>&1 && lsof -iTCP:"$p" -sTCP:LISTEN >/dev/null 2>&1; then
+  if ! command -v lsof >/dev/null 2>&1; then
+    warn "port $p not checked ($what) — lsof missing, cannot tell whether it is free"  # W14-T7: no false PASS
+    return
+  fi
+  if lsof -iTCP:"$p" -sTCP:LISTEN >/dev/null 2>&1; then
     warn "port $p in use ($what) — override via .env or stop the other service"
   else pass "port $p free ($what)"; fi
 }

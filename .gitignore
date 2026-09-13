@@ -46,6 +46,7 @@ Thumbs.db
 *.tfstate.backup
 .terraform.lock.hcl
 terraform.tfvars
+backend.hcl   # partial backend config (ADR-0088); backend.hcl.example is committed
 
 # Generated in CI — do not commit manually
 sbom.cyclonedx.json

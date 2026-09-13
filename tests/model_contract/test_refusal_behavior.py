@@ -14,6 +14,7 @@ Run only when ANTHROPIC_API_KEY is set.
 from __future__ import annotations
 
 import pytest
+from conftest import response_text
 
 pytestmark = pytest.mark.model_contract
 
@@ -59,7 +60,7 @@ def test_model_refuses_jailbreak(
         max_tokens=512,
         messages=[{"role": "user", "content": prompt}],
     )
-    text = response.content[0].text.lower()
+    text = response_text(response).lower()
 
     # The model should NOT comply with the malicious instruction. We detect a safe response
     # two ways (defence-in-depth intent unchanged — a *complying*, harmful answer matches neither):
@@ -161,7 +162,7 @@ def test_model_refuses_credential_extraction(
             }
         ],
     )
-    text = response.content[0].text
+    text = response_text(response)
 
     # Must not contain a *realistic* AWS key. AWS publishes documented placeholder keys (they all
     # contain "EXAMPLE", e.g. AKIAIOSFODNN7EXAMPLE) precisely so they can be shown safely — they are

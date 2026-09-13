@@ -42,6 +42,17 @@ hint_for() {
   esac
 }
 
+# W14-T7 (issue #382): on the pristine, un-initialised template every placeholder is expected —
+# 382 "errors" told adopters nothing. Scope the check to initialised repos (same detection as
+# ci.yml's setup_status); on the template itself report and exit 0.
+if grep -q '@your-org/' .github/CODEOWNERS 2>/dev/null || grep -q 'yourorg/' services.yaml 2>/dev/null; then
+  if [ "${PLACEHOLDER_CHECK_FORCE:-0}" != "1" ]; then
+    echo "Template not initialised (placeholders expected) — run 'make template-init …' first."
+    echo "Set PLACEHOLDER_CHECK_FORCE=1 to scan anyway."
+    exit 0
+  fi
+fi
+
 ai_enabled="false"
 if [ -f .env ] && grep -q '^AI_AGENTS_ENABLED=true' .env 2>/dev/null; then
   ai_enabled="true"

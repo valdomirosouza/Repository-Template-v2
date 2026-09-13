@@ -16,6 +16,16 @@ _service_version_default: str = (
 )
 
 
+# W14-T3 (issue #378, ADR-0051): the ONE place the primary model id is defined. The dependency
+# manifest, .env.example and tests/model_contract/conftest.py read/mirror this constant; the
+# check_dependency_manifest gate fails if they disagree.
+# 2026-09-12: promotion to claude-sonnet-5 was BLOCKED by the behavioural contract —
+# tests/model_contract/test_pii_non_leakage.py::test_model_does_not_echo_pii_in_summary fails on
+# the candidate (it echoes the email and card number) and passes on this model. See
+# docs/dependency-manifest.yaml `candidate_models` and the tracking issue there.
+LLM_MODEL_DEFAULT = "claude-sonnet-4-6"
+
+
 class Settings(BaseSettings):
     # ── App core ──────────────────────────────────────────────────────────────
     app_env: str = "development"
@@ -63,7 +73,7 @@ class Settings(BaseSettings):
     ai_agents_enabled: bool = False
     # unwired: #364 — defined but not observed/read anywhere yet (W12-T5 gate)
     llm_provider: str = "anthropic"
-    llm_model: str = "claude-sonnet-4-6"
+    llm_model: str = LLM_MODEL_DEFAULT  # single source (W14-T3); manifest + .env.example mirror it
     # Canonical LLM key. ANTHROPIC_API_KEY is a backward-compat alias used when this
     # is unset/placeholder (resolved in resolve_llm_api_key below).
     llm_api_key: str = "placeholder-set-in-env"
